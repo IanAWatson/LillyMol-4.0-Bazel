@@ -1,0 +1,22 @@
+  comment: "1.2.1_Aldehyde_reductive_amination_FROM_amines_AND_aldehydes"
+  scaffold {
+     id: 0
+     smarts: "[ND1H2]-[CX4]||[ND2H]([CX4])[CX4]||[ND1H2]-a||[ND2H]([CX4])-a||[ND2H](a)-a"
+  }
+  sidechain {
+     id: 1
+     smarts: "[OD1]=[CD2T1H]"
+     reaction_site {
+       remove_atom: 0
+     }
+     join {
+       a1 {
+         component: 0
+         atom: 0
+       }
+       a2 {
+         component_and_atom: "1.1"
+       }
+       btype: SS_SINGLE_BOND
+     }
+   }

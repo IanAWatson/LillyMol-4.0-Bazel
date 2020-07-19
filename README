@@ -1,0 +1,103 @@
+Welcome to the Eli Lilly LillyMol implementation.
+
+This version is updated by ianiwatson@gmail to use some Google
+tooling, bazel, protocol buffers, the Google test infrastructure
+and RE2.
+
+Building is now more complex. You will need to install
+
+bazel https://docs.bazel.build/versions/master/install.html
+protocol buffers https://github.com/protocolbuffers/protobuf/releases/tag/v3.12.3
+RE2 https://github.com/google/re2
+Gunit https://github.com/google/googletest
+
+This is complex. 
+
+Basically install these packages somewhere, then update the file WORKSPACE to
+reflect where they are installed. Currently they are pointing to
+/home/ian/pub/... You will need to install these packages somewhere on your
+system and update the WORKSPACE file to point to the right locations. Expect
+some pain doing this.
+And no, I do not fully understand Bazel, it is very complex. Within Google it
+just works, but outside it is hard.
+
+Here are some typical build commands I used:
+
+bazel test --cxxopt=-std=c++17 --cxxopt=-msse4 Molecule_Lib:all
+bazel build --cxxopt=-std=c++17 --cxxopt=-msse4 Molecule_Tools:all
+
+The ZLIB requirement mentioned below is probably not needed any more
+since most systems will have an up to date zlib installed by default.
+
+I do most development on an Ubuntu 19.10 system.
+
+REQUIREMENT:
+
+This software requires following packages to build
+1. GCC >= 7.2.1 (see https://gcc.gnu.org/install/index.html)
+Example command(using module load): module load gcc/7.2.1
+
+2. zlib >= 1.2.11 (see http://www.zlib.net/)
+Example command(using module load): module load zlib/1.2.11
+You need to define the location for zlib.a in makefile.public.*
+You may also need to add the location of zlib.h to CPATH
+
+
+BUILD:
+1. Start console
+
+2. Load required packages
+
+3. Pull down the code from repo
+
+4. Enter the root directory of the code
+
+5. Edit the makefile.public.Linux-gcc-7.2.1 (or corresponding version) to add the local path for the zlib library
+Example: ZLIB = /zlib/zlib-1.2.11/lib
+
+6. Run makeall.sh (Skip step 7 if you run this command) 
+
+7. Alternatively, you can run following commands: 
+    make veryclean
+    make copy_include
+    make library
+    make copy_library
+    make exe
+    make copy_exe
+
+
+EXECUTION:
+See Wiki page for sample commands
+See the example folder for data used in the sample commands 
+Example to verify a generated command:
+    cd bin/Linux-gcc-7.2.1/
+    ./common_names
+Note: This command shall print out the help menu on screen if it is built successfully
+      This approach can be used to verify if each command is built successfully
+Example to run sample commands:
+    cd example/common_names/
+    ../../bin/Linux-gcc-7.2.1/common_names input1.smi input2.smi -S ./output -s 10000 -r 10000 -D + -v
+	
+
+
+DIRECTORY:
+src:                             source code
+example:                         data for sample commands (see Wiki page)
+test:                            test scripts for each command
+bin(generated after build):      all generated executables
+lib(generated after build):      all generated library files
+include(generated after build):  shared include files
+contrib:                         legacy tools, data and queries
+
+
+TEST:
+See the test folder for the test case for each command
+Example to run a test:
+    cd test/common_names/case_1/
+    ./test_case_1.sh
+Note: Test shall print out TEST PASS if it is successful, otherwise it shall
+      print out TEST FAIL
+
+LICENSE:
+Consult the LICENSE file for details of the license
+

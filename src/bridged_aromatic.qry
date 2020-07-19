@@ -1,0 +1,5 @@
+(0 Query
+  (A C Comment "Bridged Aromatic")
+# (A C smarts "[/IWrid1aD3x3]@[A][/IWrid1aD3x3]")
+  (A C smarts "[AR]1c2:a:a:c1a:a2")
+)
