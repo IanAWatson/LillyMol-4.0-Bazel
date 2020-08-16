@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <fstream>
-using namespace std;
 
 #include "cmdline.h"
 #include "iw_stl_hash_map.h"

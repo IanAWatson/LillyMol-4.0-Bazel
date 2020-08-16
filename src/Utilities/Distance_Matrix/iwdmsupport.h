@@ -1,7 +1,9 @@
 #ifndef IWDMSUPPORT_H
 #define IWDMSUPPORT_H
 
-#include "iw_stl_hash_map.h"
+#include <ostream>
+
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 extern void write_index_and_id (int i,
                     const IWString * _id,

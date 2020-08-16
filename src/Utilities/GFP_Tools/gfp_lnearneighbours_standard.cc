@@ -2,27 +2,28 @@
   Near neighbour programme where the pool is huge, and must be
   read sequentially.
 */
+
+#include <memory>
+
 //GH Update code to fix the build under mac
-#include <stdlib.h>
+
+#include "re2/re2.h"
 
 #define USE_OMP
 #ifdef USE_OMP
 #include <omp.h>
 #endif
 
-#include "cmdline.h"
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 //GH #define NEIGHBOUR_LIST_IMPLEMENTATION
 
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "cmdline.h"
-#include "iwcrex.h"
-#include "accumulator.h"
-#include "iwdigits.h"
-#include "iwqsort.h"
-#include "report_progress.h"
-#include "iw_auto_array.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/report_progress.h"
+#include "Foundational/iwqsort/iwqsort.h"
 
 #include "gfp_standard.h"
 #include "tversky.h"
@@ -355,7 +356,7 @@ static int
 nearneighbours (iwstring_data_source & input,
                 IWString_and_File_Descriptor & output)
 {
-  similarity_type_t * d = new similarity_type_t[pool_size]; iw_auto_array<similarity_type_t> free_d(d);
+  similarity_type_t * d = new similarity_type_t[pool_size]; std::unique_ptr<similarity_type_t[]> free_d(d);
 
   IW_TDT tdt;
   while (tdt.next(input))

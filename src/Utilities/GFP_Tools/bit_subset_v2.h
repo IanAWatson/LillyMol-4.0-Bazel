@@ -6,7 +6,7 @@
 
 #define BIT_SUBSET_HEADER_RECORD "BitSubSet"
 
-#include "iwstring_data_source.h"
+#include "Foundational/data_source/iwstring_data_source.h"
 
 #include "sparsefp.h"
 #include "dyfp.h"

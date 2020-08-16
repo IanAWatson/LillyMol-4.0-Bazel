@@ -6,19 +6,16 @@
 #include <limits>
 #include <memory>
 #include <ostream>
-
-#include "vector"
+#include <vector>
 #include <algorithm>
 #include <functional>
-using namespace std;
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "misc.h"
-#include "iw_stl_hash_map.h"
-#include "iw_auto_array.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 #include "gfp.h"
 
@@ -33,7 +30,7 @@ static int tdts_read = 0;
 
 static int echo_changed_fingerprint = 0;
 
-static vector<int> numeric_threshold;
+static std::vector<int> numeric_threshold;
 
 static int work_as_filter = 0;
 
@@ -909,7 +906,7 @@ sparse_to_fixed_size(int argc, char ** argv)
       return 2;
     }
 
-    less<unsigned int> intless;
+    std::less<unsigned int> intless;
 
     do_trim(nfp, stfbm, cutoff, intless);
   }
@@ -927,7 +924,7 @@ sparse_to_fixed_size(int argc, char ** argv)
       return 2;
     }
 
-    greater<unsigned int> intgreater;
+    std::greater<unsigned int> intgreater;
 
     do_trim(nfp, stfbm, cutoff, intgreater);
   }

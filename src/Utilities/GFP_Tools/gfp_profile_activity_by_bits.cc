@@ -8,7 +8,6 @@
 #include <memory>
 #include <algorithm>
 #include <random>
-using namespace std;
 
 #include "Foundational/iwmisc/timsort.hpp"
 
@@ -535,7 +534,7 @@ sort_bits_by_activity (const activity_type_t * activity_with_bit,
 {
   typedef std::pair<int, activity_type_t> IA;
 
-  IA * p = new IA[nbits]; unique_ptr<IA[]> free_p(p);
+  IA * p = new IA[nbits]; std::unique_ptr<IA[]> free_p(p);
 
   for (int i = 0; i < nbits; ++i)
   {
@@ -1009,7 +1008,7 @@ identify_molecules_containing_bits_fixed (const IW_General_Fingerprint * pool,
                                     const int pool_size,
                                     const int fpnum,
                                     const resizable_array<T> & bits,
-                                    const unordered_map<int, int> & local_bit_to_global_bit,
+                                    const std::unordered_map<int, int> & local_bit_to_global_bit,
                                     resizable_array<int> * items_with_bit)
 {
   const int n = bits.number_elements();
@@ -1043,7 +1042,7 @@ identify_molecules_containing_bits_sparse (const IW_General_Fingerprint * pool,
                                     const int pool_size,
                                     const int fpnum,
                                     const resizable_array<unsigned int> & bits,
-                                    const unordered_map<unsigned int, int> & local_bit_to_global_bit,
+                                    const std::unordered_map<unsigned int, int> & local_bit_to_global_bit,
                                     resizable_array<int> * items_with_bit)
 {
   const int n = bits.number_elements();
@@ -1087,7 +1086,7 @@ sparse_bits_meeting_support_levels (const IW_General_Fingerprint * pool,
                                     const int fpnum,
                                     resizable_array<unsigned int> & bits)
 {
-  unordered_map<unsigned int, int> bit_count;
+  std::unordered_map<unsigned int, int> bit_count;
 
   Accumulator<activity_type_t> acc_with;
 
@@ -1125,7 +1124,7 @@ fixed_bits_meeting_support_levels (const IW_General_Fingerprint * pool,
 {
   const int nbits = pool[0][fpnum].nbits();
 
-  int * is_set = new_int(nbits); unique_ptr<int[]> free_is_set(is_set);
+  int * is_set = new_int(nbits); std::unique_ptr<int[]> free_is_set(is_set);
 
   for (int i = 0; i < pool_size; ++i)
   {
@@ -1154,7 +1153,7 @@ setup_index_arrays (const int fpnum,
                     const resizable_array<T> & bits,     // the bits already found to meet the support requirements
                     unsigned int * global_bit_to_local_bit,
                     int * global_bit_to_fpnum,
-                    unordered_map<T, int> & local_bit_to_global_bit,
+                    std::unordered_map<T, int> & local_bit_to_global_bit,
                     int & ndx)
 {
   const int n = bits.number_elements();
@@ -1279,8 +1278,8 @@ multi_bit_combinations (const IW_General_Fingerprint * pool,
   const int nfixed = number_fingerprints();
   const int nsparse = number_sparse_fingerprints();
 
-  resizable_array<int> * fixed = new resizable_array<int>[nfixed]; unique_ptr<resizable_array<int>[]> free_fixed(fixed);
-  resizable_array<unsigned int> * sparse = new resizable_array<unsigned int>[nsparse]; unique_ptr<resizable_array<unsigned int>[]> free_sparse(sparse);
+  resizable_array<int> * fixed = new resizable_array<int>[nfixed]; std::unique_ptr<resizable_array<int>[]> free_fixed(fixed);
+  resizable_array<unsigned int> * sparse = new resizable_array<unsigned int>[nsparse]; std::unique_ptr<resizable_array<unsigned int>[]> free_sparse(sparse);
 
   bits_meeting_support_level(pool, pool_size, fixed, sparse);
 
@@ -1307,20 +1306,20 @@ multi_bit_combinations (const IW_General_Fingerprint * pool,
 
 // We need data structures that can map a bit in the local fingerprint to where that bit is in the global array
 
-  unordered_map<int, int> * local_bit_to_global_bit_fixed = new unordered_map<int, int>[nfixed]; unique_ptr<unordered_map<int, int>[]> free_local_bit_to_global_bit_fixed(local_bit_to_global_bit_fixed);
-  unordered_map<unsigned int, int> * local_bit_to_global_bit_sparse = new unordered_map<unsigned int, int>[nsparse]; unique_ptr<unordered_map<unsigned int, int>[]> free_local_bit_to_global_bit_sparse(local_bit_to_global_bit_sparse);
+  std::unordered_map<int, int> * local_bit_to_global_bit_fixed = new std::unordered_map<int, int>[nfixed]; std::unique_ptr<std::unordered_map<int, int>[]> free_local_bit_to_global_bit_fixed(local_bit_to_global_bit_fixed);
+  std::unordered_map<unsigned int, int> * local_bit_to_global_bit_sparse = new std::unordered_map<unsigned int, int>[nsparse]; std::unique_ptr<std::unordered_map<unsigned int, int>[]> free_local_bit_to_global_bit_sparse(local_bit_to_global_bit_sparse);
 
 // for each bit, which molecules have that bit
 
-  resizable_array<int> * items_with_bit = new resizable_array<int>[nbits]; unique_ptr<resizable_array<int>[]> free_items_with_bit(items_with_bit);
+  resizable_array<int> * items_with_bit = new resizable_array<int>[nbits]; std::unique_ptr<resizable_array<int>[]> free_items_with_bit(items_with_bit);
 
 // for each bit, what is the bit number in the initial fingerprint
 
-  unsigned int * global_bit_to_local_bit = new unsigned int[nbits]; unique_ptr<unsigned int[]> free_global_bit_to_local_bit(global_bit_to_local_bit);
+  unsigned int * global_bit_to_local_bit = new unsigned int[nbits]; std::unique_ptr<unsigned int[]> free_global_bit_to_local_bit(global_bit_to_local_bit);
 
 // for each bit, from which fingerprint did it come
 
-  int * global_bit_to_fpnum = new int[nbits]; unique_ptr<int[]> free_global_bit_to_fpnum(global_bit_to_fpnum);
+  int * global_bit_to_fpnum = new int[nbits]; std::unique_ptr<int[]> free_global_bit_to_fpnum(global_bit_to_fpnum);
 
   int ndx = 0;
 
@@ -1356,14 +1355,14 @@ multi_bit_combinations (const IW_General_Fingerprint * pool,
     }
   }
 
-  activity_type_t * activity_with_bit = new activity_type_t[nbits]; unique_ptr<activity_type_t[]> free_activity_with_bit(activity_with_bit);
+  activity_type_t * activity_with_bit = new activity_type_t[nbits]; std::unique_ptr<activity_type_t[]> free_activity_with_bit(activity_with_bit);
 
 #ifdef ACCSAVE_STUFF
   accsave = new activity_type_t[nbits];
   file_scope_nbits = nbits;
 #endif
 
-  int * include_bit = new_int(nbits, 1); unique_ptr<int[]> free_include_bit(include_bit);
+  int * include_bit = new_int(nbits, 1); std::unique_ptr<int[]> free_include_bit(include_bit);
 
   const auto y = std::minmax_element(activity, activity + pool_size);
 
@@ -1394,7 +1393,7 @@ multi_bit_combinations (const IW_General_Fingerprint * pool,
     }
   }
 
-  int * bits_ordered_by_activity = new int[nbits]; unique_ptr<int[]> free_bits_ordered_by_activity(bits_ordered_by_activity);
+  int * bits_ordered_by_activity = new int[nbits]; std::unique_ptr<int[]> free_bits_ordered_by_activity(bits_ordered_by_activity);
   sort_bits_by_activity(activity_with_bit, items_with_bit, nbits, bits_ordered_by_activity);
 
 #ifdef DEBUG_COMPUTE_ACTIVITY
@@ -1427,9 +1426,9 @@ multi_bit_combinations (const IW_General_Fingerprint * pool,
 
   cerr << "Completed different method check\n";
 
-  Subset_of_Bits * sb = new Subset_of_Bits[nsubset]; unique_ptr<Subset_of_Bits[]> free_sb(sb);
+  Subset_of_Bits * sb = new Subset_of_Bits[nsubset]; std::unique_ptr<Subset_of_Bits[]> free_sb(sb);
 
-  Subset_of_Bits ** sbp = new Subset_of_Bits *[nsubset]; unique_ptr<Subset_of_Bits *[]> free_sbp(sbp);
+  Subset_of_Bits ** sbp = new Subset_of_Bits *[nsubset]; std::unique_ptr<Subset_of_Bits *[]> free_sbp(sbp);
 
   for (int i = 0; i < nsubset; ++i)
   {
@@ -1455,8 +1454,8 @@ multi_bit_combinations (const IW_General_Fingerprint * pool,
 //max_recursion_depth = -1;
   if (max_recursion_depth > 0)
   {
-    Accumulator<activity_type_t> * acc = new Accumulator<activity_type_t>[max_recursion_depth + 1]; unique_ptr<Accumulator<activity_type_t>[]> free_acc(acc);
-    Subset_of_Bits * best = new Subset_of_Bits[max_recursion_depth + 1]; unique_ptr<Subset_of_Bits[]> free_best(best);
+    Accumulator<activity_type_t> * acc = new Accumulator<activity_type_t>[max_recursion_depth + 1]; std::unique_ptr<Accumulator<activity_type_t>[]> free_acc(acc);
+    Subset_of_Bits * best = new Subset_of_Bits[max_recursion_depth + 1]; std::unique_ptr<Subset_of_Bits[]> free_best(best);
 
     Subset_of_Bits s;
     recursive_enumeratin(0, nbits, s, activity_with_bit, items_with_bit, 0, max_recursion_depth, acc, best, output);
@@ -2844,7 +2843,7 @@ gfp_profile_activity (int argc, char ** argv)
     return rc;
   }
 
-  activity_type_t * activity = new activity_type_t[pool_size]; unique_ptr<activity_type_t[]> free_activity(activity);
+  activity_type_t * activity = new activity_type_t[pool_size]; std::unique_ptr<activity_type_t[]> free_activity(activity);
 
   int rc;
   if (experimental_file_name.length())

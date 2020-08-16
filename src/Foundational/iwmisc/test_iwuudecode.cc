@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <memory>
-using namespace std;
 
 #include "cmdline.h"
 #include "iwstring_data_source.h"

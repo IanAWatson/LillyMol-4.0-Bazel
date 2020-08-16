@@ -7,16 +7,15 @@
 #include <iomanip>
 #include <memory>
 #include <limits>
-using namespace std;
 
-#include "cmdline.h"
-#include "IWDistanceMatrixBase.h"
+#include "Foundational/cmdline/cmdline.h"
 
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "iw_tdt_filter.h"
-#include "accumulator.h"
-#include "misc.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Utilities/Distance_Matrix/IWDistanceMatrixBase.h"
 
 #include "gfp.h"
 #include "tversky.h"
@@ -30,8 +29,6 @@ static int pool_size = 0;
 static int nfingerprints = 0;
 
 static Accumulator<similarity_type_t> stats;
-
-static IW_TDT_Filter filter;
 
 static similarity_type_t zero_distance_value = 0.0;
 
@@ -63,7 +60,6 @@ usage(int rc)
   cerr << " -S <fname>       name of distance matrix file to create\n";
   cerr << " -F -P -W -Q      standard gfp options, enter '-F help' for info\n";
   cerr << " -V ...           standard Tversky options, enter '-V help' for info\n";
-  cerr << " -O <option>      TDT filter options, enter '-O help' for info\n";
   cerr << " -d <number>      round distances to <number> significant digits\n";
   cerr << " -q               use equal weight tanimoto function on composite fingerprints\n";
   cerr << " -T <dist>        discard singletons, things with no nbrs within <dist>\n";
@@ -186,9 +182,6 @@ build_pool (iwstring_data_source & input)
   IW_TDT tdt;
   while (tdt.next(input))
   {
-    if (filter.active() && ! filter.matches(tdt))
-      continue;
-
     if (! build_pool(tdt))
       return 0;
 
@@ -275,7 +268,7 @@ distance_matrix_float (IWString_and_File_Descriptor & output)
 static int
 distance_matrix (int argc, char ** argv)
 {
-  Command_Line cl (argc, argv, "vs:mV:F:P:W:Q:O:r:S:bd:q");
+  Command_Line cl (argc, argv, "vs:mV:F:P:W:Q:r:S:bd:q");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -301,26 +294,6 @@ distance_matrix (int argc, char ** argv)
 
     if (verbose)
       cerr << "Will report progress every " << report << " steps\n";
-  }
-
-  if (cl.option_present('O'))
-  {
-    const_IWSubstring o = cl.string_value('O');
-
-    if ("help" == o)
-    {
-      display_tdt_filter_syntax(cerr);
-      return 31;
-    }
-
-    if (! filter.build_from_string(o))
-    {
-      cerr << "Cannot construct tdt filter from '" << o << "'\n";
-      return 14;
-    }
-
-    if (verbose)
-      cerr << "Filter built from '" << o << "'\n";
   }
 
   if (cl.option_present('m'))

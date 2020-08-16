@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "bit_and_weight.h"
 
 void

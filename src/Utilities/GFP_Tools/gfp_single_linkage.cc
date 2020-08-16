@@ -2,16 +2,16 @@
   Single linkage clustering of a gfp file
 */
 
-#include <stdlib.h>
 #include <limits>
 
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 
-#include "cmdline.h"
-#include "iwqsort.h"
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwaray/iwaray.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwqsort/iwqsort.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
 
 #include "gfp.h"
 
@@ -160,6 +160,8 @@ Single_Linkage_Object::construct_from_tdt (IW_TDT & tdt)
 
   return 1;
 }
+
+template void resizable_array_base<Single_Linkage_Object*>::iwqsort(Single_Linkage_Object_Comparator&);
 
 static Single_Linkage_Object ** pool = nullptr;
 static int pool_size = 0;
@@ -443,11 +445,10 @@ build_pool (iwstring_data_source & input)
   {
     Single_Linkage_Object * s = new Single_Linkage_Object;
 
-    if (s->construct_from_tdt (tdt))
+    if (s->construct_from_tdt(tdt))
       pool[ndx++] = s;
     else
     {
-      nullptr s;
       return 0;
     }
   }

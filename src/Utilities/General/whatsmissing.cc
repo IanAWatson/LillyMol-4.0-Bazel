@@ -4,11 +4,10 @@
 
 #include <stdlib.h>
 #include <limits>
-using namespace std;
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "misc.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/misc.h"
 
 static int verbose = 0;
 
@@ -81,7 +80,7 @@ static int * items_missing_per_id = NULL;
   of times any descriptor is reported
 */
 
-static int max_report = numeric_limits<int>::max();
+static int max_report = std::numeric_limits<int>::max();
 
 static int break_after_finding_first_missing_value = 0;
 
@@ -260,7 +259,7 @@ establish_column_identities (const const_IWSubstring & header)
 }
 
 static int
-report_overall_column_statistics (ostream & os,
+report_overall_column_statistics (std::ostream & os,
                         int ncols,
                         const int * items_missing_in_column)
 {

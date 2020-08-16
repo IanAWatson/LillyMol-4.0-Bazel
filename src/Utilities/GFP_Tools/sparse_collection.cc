@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <memory>
-using namespace std;
 
 #include "Foundational/cmdline/cmdline.h"
 

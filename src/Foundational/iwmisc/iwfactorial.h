@@ -29,7 +29,6 @@ class IW_Factorial
 
 #include <stdlib.h>
 #include <iostream>
-using namespace std;
 #include <assert.h>
 
 template <typename T>

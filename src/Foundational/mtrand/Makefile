@@ -77,7 +77,6 @@ $(BUILD_DIR)/test_iwrandom_mtrand: $(TIWRANDOM_MTRAND_OBJECTS)
 #~ EXECUTABLES += $(TIWRANDOM_MTRAND_EXE)
 
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -88,14 +87,11 @@ $(BUILD_DIR)/test_iwrandom_mtrand: $(TIWRANDOM_MTRAND_OBJECTS)
 exe copy_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
 	
-copy_include:
-	$(CP) $(SHARED_INC_FILES) $(INCDIR)
-
 # Rule for making static library
 library: $(LIBRARY_NAME)
 
 # Rule for installing static library
-copy_library: copy_include library
+copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBDIR)
 	
 # Rule for making executables

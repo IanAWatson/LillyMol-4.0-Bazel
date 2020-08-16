@@ -1,8 +1,6 @@
-#include <stdlib.h>
+#include "Foundational/data_source/iwstring_data_source.h"
 
 #include "iwdmsupport.h"
-
-#include "iwstring_data_source.h"
 
 void
 write_index_and_id (int i,

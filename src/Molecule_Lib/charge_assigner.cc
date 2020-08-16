@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <memory>
-using namespace std;
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
@@ -72,7 +71,7 @@ Charge_Assigner::~Charge_Assigner ()
 }
 
 int
-Charge_Assigner::report (ostream & os) const
+Charge_Assigner::report (std::ostream & os) const
 {
   os << "Report on Charge_Assigner with " << _number_elements << " queries\n";
   os << "Changed " << _molecules_changed << " of " << _molecules_examined << " molecules examined\n";
@@ -93,7 +92,7 @@ Charge_Assigner::report (ostream & os) const
 }
 
 void
-display_standard_charge_assigner_options (ostream & os,
+display_standard_charge_assigner_options (std::ostream & os,
                                           char cflag)
 {
   os << "  -" << cflag << " <...>       Charge assigner specification, enter \"-" << cflag << " help\" for usage\n";
@@ -102,7 +101,7 @@ display_standard_charge_assigner_options (ostream & os,
 }
 
 void
-display_all_charge_assigner_options (ostream & os,
+display_all_charge_assigner_options (std::ostream & os,
                                           char cflag)
 {
   os << "  -" << cflag << "             charge assigner flags\n";

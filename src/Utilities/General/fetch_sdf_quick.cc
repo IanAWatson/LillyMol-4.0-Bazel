@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <fstream>
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iw_stl_hash_map.h"
-#include "fetch_via_regexp.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwmisc/fetch_via_regexp.h"
 
 const char * prog_name = NULL;
 

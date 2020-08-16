@@ -4,27 +4,24 @@
 
 #include <limits>
 
-#include <assert.h>
 #include <memory>
 #include <unordered_map>
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
+#include "Foundational/iwaray/iwaray.h"
 
-#include "iwaray.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/iwdigits.h"
 
-#include "cmdline.h"
-#include "sparse_fp_creator.h"
-#include "accumulator.h"
-#include "misc.h"
-#include "iw_auto_array.h"
-#include "iwdigits.h"
-
-#include "molecule.h"
-#include "iwstandard.h"
-#include "aromatic.h"
-#include "istream_and_type.h"
-#include "atom_typing.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/atom_typing.h"
 
 static Chemical_Standardisation chemical_standardisation;
 
@@ -830,7 +827,7 @@ iwecfp (Molecule &m,
 //cerr << "Processing " << m.unique_smiles() << "'\n";
   int matoms = m.natoms();
 
-  Atom ** atoms = new Atom * [matoms]; iw_auto_array<Atom *> free_atoms(atoms);
+  Atom ** atoms = new Atom * [matoms]; std::unique_ptr<Atom *[]> free_atoms(atoms);
 
   m.atoms ((const Atom **) atoms);   // disregard of const OK
 
@@ -864,7 +861,7 @@ iwecfp (Molecule &m,
       stream_for_all_bits << m.name() << '\n';
   }
 
-  int * processing_status = new int[matoms]; iw_auto_array<int> free_processing_status(processing_status);
+  int * processing_status = new int[matoms]; std::unique_ptr<int[]> free_processing_status(processing_status);
 
   Sparse_Fingerprint_Creator * sfc;
   if (each_shell_gets_own_fingerprint)
@@ -1035,7 +1032,7 @@ iwecfp_filter(const char * fname,
 
 static int
 iwecfp(const char * fname,
-         int input_type,
+         FileType input_type,
          IWString_and_File_Descriptor & output)
 {
   if (function_as_filter)
@@ -1220,7 +1217,7 @@ iwecfp(int argc, char ** argv)
   if (each_shell_gets_own_fingerprint)
     tag.chop();
 
-  int input_type = 0;
+  FileType input_type = FILE_TYPE_INVALID;
 
   if (cl.option_present('f'))
   {

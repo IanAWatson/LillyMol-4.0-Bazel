@@ -5,7 +5,6 @@
 #endif
 #include <sys/types.h>
 #include <iostream>
-using namespace std;
 
 #include "Foundational/iwmisc/iwconfig.h"
 #include "iwstring.h"
@@ -13,7 +12,7 @@ using namespace std;
 //#define DEBUG_GETLINE
 
 int
-IWString::getline(istream & is, char record_delimiter)
+IWString::getline(std::istream & is, char record_delimiter)
 {
   if (! is.good())
   {
@@ -81,7 +80,7 @@ IWString::getline(istream & is, char record_delimiter)
 }
 
 int
-operator >> (istream & input, IWString & rhs)
+operator >> (std::istream & input, IWString & rhs)
 {
   return rhs.getline(input);
 }

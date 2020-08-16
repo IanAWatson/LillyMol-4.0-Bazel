@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <iomanip>
 
-using namespace std;
 
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"

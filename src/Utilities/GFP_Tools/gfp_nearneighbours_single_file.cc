@@ -8,13 +8,14 @@
 #include <limits>
 #include <cmath>
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "iwhistogram.h"
-#include "iwdigits.h"
-#include "report_progress.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/histogram/iwhistogram.h"
+#include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/report_progress.h"
 
 #include "gfp.h"
 #include "sparse_collection.h"

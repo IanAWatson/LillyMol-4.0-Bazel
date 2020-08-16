@@ -2,7 +2,6 @@
   We want to get a distribution of a set of numbers
 */
 
-#include <stdlib.h>
 #include <limits>
 #include <algorithm>
 
@@ -10,12 +9,12 @@
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION 1
 //#define IWQSORT_FO_IMPLEMENTATION 1
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "iwqsort.h"
-#include "misc.h"
-#include "iwstring_data_source.h"
-#include "iw_stl_hash_map.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/iwqsort/iwqsort.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 const char * prog_name = NULL;
 

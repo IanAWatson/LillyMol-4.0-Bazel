@@ -30,7 +30,7 @@ resizable_array_base<T>::iwqsort (C & comparator)
 
 template <typename T> template <typename C>
 void
-resizable_array_base<T>::iwqsort_lambda (C comparator)
+resizable_array_base<T>::iwqsort_lambda(C comparator)
 {
   if (_number_elements < 2)
     return;

@@ -10,14 +10,14 @@
 #define IWQSORT_FO_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "accumulator.h"
-#include "report_progress.h"
-#include "iw_stl_hash_map.h"
-#include "iw_stl_hash_set.h"
-#include "iwqsort.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/report_progress.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwstring/iw_stl_hash_set.h"
+#include "Foundational/iwqsort/iwqsort.h"
 
 #include "gfp.h"
 #include "bit_subset_v2.h"

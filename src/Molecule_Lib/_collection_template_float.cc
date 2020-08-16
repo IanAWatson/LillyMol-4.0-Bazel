@@ -1,9 +1,6 @@
-#include <stdlib.h>
-#include <iostream>
-
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
-#include "iwaray.h"
+#include "Foundational/iwaray/iwaray.h"
 #include "collection_template.h"
 
 #ifdef __GNUG__

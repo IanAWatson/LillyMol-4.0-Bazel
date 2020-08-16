@@ -1,17 +1,17 @@
-#include <stdlib.h>
+#include "re2/re2.h"
 
 /*
   Sometimes we want all those molecules from one file which are within
   a given distance of those in another file
 */
 
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "cmdline.h"
-#include "accumulator.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/accumulator/accumulator.h"
 #define IWMINMAX_IMPLEMENTATION
-#include "iwminmax.h"
-#include "report_progress.h"
+#include "Foundational/iwmisc/iwminmax.h"
+#include "Foundational/iwmisc/report_progress.h"
 
 #include "gfp.h"
 #include "tversky.h"
@@ -164,12 +164,13 @@ build_pool (const const_IWSubstring & fname)
     IWString tmp;
     tmp << '^' << identifier_tag;
 
-    IW_Regular_Expression pcn (tmp);
-    pool_size = input.grep (pcn);
+    re2::StringPiece string_piece(tmp.data(), tmp.length());
+    re2::RE2 pcn(string_piece);
+    pool_size = input.grep(pcn);
 
     if (0 == pool_size)
     {
-      cerr << "No occurrences of " << pcn.source() << "' in input\n";
+      cerr << "No occurrences of " << pcn.pattern() << "' in input\n";
       return 0;
     }
 

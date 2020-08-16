@@ -35,7 +35,6 @@ $(LIBRARY_OBJECTS): xmlParser.cpp xmlParser.h
 	$(CXX) -c $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES) $< -o $@
 
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -46,14 +45,11 @@ $(LIBRARY_OBJECTS): xmlParser.cpp xmlParser.h
 exe copy_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
 
-copy_include:
-	$(CP) xmlParser.h $(INCDIR)
-
 # Rule for making static library
 library: $(LIBRARY_NAME)
 
 # Rule for installing static library
-copy_library: copy_include library
+copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBDIR)
 	
 clean:

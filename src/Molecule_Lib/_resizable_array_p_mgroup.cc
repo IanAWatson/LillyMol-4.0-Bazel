@@ -1,7 +1,4 @@
 #include <iostream>
-using namespace std;
-#include <iostream>
-using namespace std;
 
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION

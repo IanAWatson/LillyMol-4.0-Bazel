@@ -13,23 +13,23 @@ using std::endl;
 #endif
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
-#include "cmdline.h"
-#include "report_progress.h"
-#include "iw_stl_hash_map.h"
-#include "iwbits.h"
-#include "misc.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/report_progress.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwbits/iwbits.h"
+#include "Foundational/iwmisc/misc.h"
 
 #define ISTREAM_AND_TYPE_IMPLEMENTATION
-#include "istream_and_type.h"
-#include "smiles.h"
-#include "substructure.h"
-#include "molecule_to_query.h"
-#include "aromatic.h"
-#include "target.h"
-#include "path.h"
-#include "molecule.h"
-#include "aromatic.h"
-#include "iwstandard.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/substructure.h"
+#include "Molecule_Lib/molecule_to_query.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/target.h"
+#include "Molecule_Lib/path.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/iwstandard.h"
 
 const char * prog_name = NULL;
 
@@ -675,7 +675,7 @@ class Set_of_Molecules_to_Generate
     Set_of_Molecules_to_Generate();
     ~Set_of_Molecules_to_Generate();
 
-    int read_targets (const char * fname, int input_type);
+    int read_targets (const char * fname, FileType input_type);
     int read_targets (data_source_and_type<T> & input);
 
     int initialise ();
@@ -702,7 +702,7 @@ Set_of_Molecules_to_Generate<T>::~Set_of_Molecules_to_Generate ()
 template <typename T>
 int
 Set_of_Molecules_to_Generate<T>::read_targets (const char * fname,
-                                        int input_type)
+                                        FileType input_type)
 {
   if (0 == input_type)
   {
@@ -1097,7 +1097,7 @@ read_reagents (data_source_and_type<T> & input,
 template <typename T>
 int
 read_reagents (const char * fname,
-               int input_type,
+               FileType input_type,
                resizable_array_p<T> & mols)
 {
   if (0 == input_type)
@@ -1406,7 +1406,7 @@ molecules_from_reactions (int argc, char ** argv)
 
   set_include_isotopic_information_in_unique_smiles(0);
 
-  int input_type = 0;
+  FileType input_type;
 
   if (cl.option_present('i'))
   {
@@ -1417,7 +1417,7 @@ molecules_from_reactions (int argc, char ** argv)
     }
   }
   else if (1 == cl.number_elements() && 0 == strcmp(cl[0], "-"))
-    input_type = SMI;
+    input_type = FILE_TYPE_SMI;
   else if (! all_files_recognised_by_suffix(cl))
     return 4;
 

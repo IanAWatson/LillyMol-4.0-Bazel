@@ -4,7 +4,6 @@
 #include <math.h>
 #include <time.h>
 #include <fstream>
-using namespace std;
 
 #ifdef USE_IWMALLOC
 #include "iwmalloc.h"

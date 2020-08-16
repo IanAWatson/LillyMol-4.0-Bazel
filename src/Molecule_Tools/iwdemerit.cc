@@ -468,7 +468,7 @@ iwdemerit (data_source_and_type<Molecule> & input,
 }
 
 static int
-iwdemerit (const char * fname, FileTYpe input_type,
+iwdemerit (const char * fname, FileType input_type,
            resizable_array_p<Substructure_Hit_Statistics> & q1,
            resizable_array_p<Substructure_Hit_Statistics> & q2)
 {
@@ -703,7 +703,7 @@ iwdemerit (int argc, char ** argv)
     cl.value('R', fname);
 
     if (! cl.option_present('o'))
-      stream_for_rejected_molecules.add_output_type(SMI);
+      stream_for_rejected_molecules.add_output_type(FILE_TYPE_SMI);
     else if (! stream_for_rejected_molecules.determine_output_types(cl))
     {
       cerr << "Cannot discern file types for -R output\n";
@@ -726,7 +726,7 @@ iwdemerit (int argc, char ** argv)
     cl.value('G', fname);
 
     if (! cl.option_present('o'))
-      stream_for_non_rejected_molecules.add_output_type(SMI);
+      stream_for_non_rejected_molecules.add_output_type(FILE_TYPE_SMI);
     else if (! stream_for_non_rejected_molecules.determine_output_types(cl))
     {
       cerr << "Cannot discern file types for -G output\n";

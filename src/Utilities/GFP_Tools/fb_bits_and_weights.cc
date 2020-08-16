@@ -1,8 +1,7 @@
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
-#include "iwstring_data_source.h"
-#include "cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/cmdline/cmdline.h"
 #include "fb_bits_and_weights.h"
 
 FB_Bits_and_Weights_Fixed_Width::FB_Bits_and_Weights_Fixed_Width()

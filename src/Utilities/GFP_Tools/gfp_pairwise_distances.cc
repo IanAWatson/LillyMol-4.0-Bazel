@@ -3,16 +3,15 @@
   distances requested
 */
 
-#include <stdlib.h>
 #include <limits>
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "iw_stl_hash_map.h"
-#include "accumulator.h"
-#include "iwhistogram.h"
-#include "iwrandom.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/histogram/iwhistogram.h"
+#include "Foundational/mtrand/iwrandom.h"
 
 #include "gfp.h"
 #include "tversky.h"

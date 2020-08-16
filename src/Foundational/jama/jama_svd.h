@@ -14,7 +14,6 @@
 // for abs() below
 
 using namespace TNT;
-using namespace std;
 
 namespace JAMA
 {

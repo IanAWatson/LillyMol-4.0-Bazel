@@ -19,7 +19,7 @@ UNAME ?= Linux-gcc-6.2.0
 include $(IWPROGRAMMES)/makefile.public.$(UNAME)
 
 ########################## Shared variables ############################
-LIBS = $(LIB) -lgfp -liwmolecule -liwstring_data_source -liwtemplate -liwstring -lsparsefp -laccumulator -lcmdline  -liwhistogram -liwbits -liwaray -liwtdt -liwmisc -liwrandom -liwcrex  -lxmlParser  $(LIBZ) $(USRLIB) $(SYSTEM_LIBS)
+LIBS = $(LIB) -lgfp -liwmolecule -liwstring_data_source -liwtemplate -liwstring -lsparsefp -laccumulator -lcmdline  -liwhistogram -liwbits -liwaray -liwtdt -liwstring -liwmisc -liwrandom $(RE2LIB)  -lxmlParser  $(LIBZ) $(USRLIB) $(SYSTEM_LIBS)
 
 LIBTEMPLATE = -liwtemplate
  
@@ -168,7 +168,7 @@ PROFILE_ACTIVITY_EXE = $(BUILD_DIR)/gfp_profile_activity_by_bits
 PROFILE_ACTIVITY_OBJECTS = $(BUILD_DIR)/gfp_profile_activity_by_bits.o $(BUILD_DIR)/bit_and_weight.o 
 $(BUILD_DIR)/gfp_profile_activity_by_bits.o: gfp_profile_activity_by_bits.cc nbc.h
 $(BUILD_DIR)/gfp_profile_activity_by_bits: $(PROFILE_ACTIVITY_OBJECTS)
-	$(LD) $(PROF) -o $@ $(PROFILE_ACTIVITY_OBJECTS) $(LIBS) -liwbits   -liwcrex -laccumulator $(LIBTEMPLATE) $(SYSTEM_LIBS)
+	$(LD) $(PROF) -o $@ $(PROFILE_ACTIVITY_OBJECTS) $(LIBS) -liwbits -laccumulator $(LIBTEMPLATE) $(SYSTEM_LIBS)
 EXECUTABLES += $(PROFILE_ACTIVITY_EXE)
 
 ################# Template for public executables ######################
@@ -185,7 +185,7 @@ PLOTNN_EXE = $(BUILD_DIR)/nplotnn
 PLOTNN_OBJECTS = $(BUILD_DIR)/nplotnn.o $(BUILD_DIR)/distance_scaling.o
 $(BUILD_DIR)/nplotnn.o: nplotnn.cc distance_scaling.h
 $(BUILD_DIR)/nplotnn: $(PLOTNN_OBJECTS)
-	$(LD) $(PROF) -o $@ $(PLOTNN_OBJECTS) $(LIBS)
+	$(LD) $(PROF) -o $@ $(PLOTNN_OBJECTS) $(LIBS) $(PROTOLIB)
 EXECUTABLES += $(PLOTNN_EXE)
 
 ################# Template for public executables ######################
@@ -240,7 +240,7 @@ GFP_NAIVE_BAYESIAN_OBJECTS = $(BUILD_DIR)/gfp_naive_bayesian.o
 $(BUILD_DIR)/gfp_naive_bayesian.o: gfp_naive_bayesian.cc 
 #bit_subset_v2.h
 $(BUILD_DIR)/gfp_naive_bayesian: $(GFP_NAIVE_BAYESIAN_OBJECTS)
-	$(LD) $(PROF) -o $@ $(GFP_NAIVE_BAYESIAN_OBJECTS) $(LIBS) -liwbits   -liwcrex -laccumulator $(LIBTEMPLATE) $(SYSTEM_LIBS)
+	$(LD) $(PROF) -o $@ $(GFP_NAIVE_BAYESIAN_OBJECTS) $(LIBS) -liwbits  -laccumulator $(LIBTEMPLATE) $(SYSTEM_LIBS)
 EXECUTABLES += $(GFP_NAIVE_BAYESIAN_EXE)
 
 ################# Template for public executables ######################
@@ -283,7 +283,6 @@ $(BUILD_DIR)/iwstats: $(IWSTATS_OBJECTS)
 	$(LD) $(PROF) -o $@ $(IWSTATS_OBJECTS) -liwmisc $(LIBS) -liwrandom 
 EXECUTABLES += $(IWSTATS_EXE)
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -294,14 +293,11 @@ EXECUTABLES += $(IWSTATS_EXE)
 replace_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
 
-copy_include:
-	$(CP) $(SHARED_INC_FILES) $(INCDIR)
-
 # Rule for making static library
 library: $(LIBRARY_NAME)
 
 # Rule for installing static library
-copy_library: copy_include library
+copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBDIR)
 		
 # Rule for making executables

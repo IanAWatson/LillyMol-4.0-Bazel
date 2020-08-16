@@ -8,11 +8,11 @@
 using std::cerr;
 using std::endl;
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iwhash.h"
-#include "report_progress.h"
-#include "iw_tdt.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iwhash.h"
+#include "Foundational/iwmisc/report_progress.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
 
 const char * prog_name = nullptr;
 

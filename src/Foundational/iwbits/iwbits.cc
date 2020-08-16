@@ -14,7 +14,6 @@
 #include "iwbits.h"
 #include "iwbits_support.h"
 
-using namespace std;
 
 void
 IW_Bits_Base::_default_values()

@@ -4,12 +4,15 @@
 using std::cerr;
 using std::endl;
 
+#include "re2/re2.h"
+
 #define RESIZABLE_ARRAY_IMPLEMENTATION
-#include "iwstring.h"
-#include "iwrandom.h"
-#include "accumulator.h"
-#include "set_or_unset.h"
-#include "iwcrex.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iwstring.h"
+#include "Foundational/iwmisc/set_or_unset.h"
+#include "Foundational/mtrand/iwrandom.h"
 
 /*
   As the buffers get larger, it may be advantageous to sort the stored values
@@ -1014,7 +1017,7 @@ static int * ignore_column = NULL;
   Alternatively, we can process only columns which match a regexp (descriptor files only)
 */
 
-static IW_Regular_Expression process_column_regexp;
+static std::unique_ptr<re2::RE2> process_column_regexp;
 
 static extending_resizable_array<int> missing_value_counter;
 
@@ -1103,8 +1106,6 @@ static int remove_if_all_greater_than_zero = 0;
 */
 
 static float remove_if_all_values_less_than = static_cast<float>(0.0);
-
-#include "iwstring_data_source.h"
 
 static IWString * column_title = NULL;
 
@@ -1246,9 +1247,9 @@ establish_column_titles(const const_IWSubstring & buffer)
   {
     if (ignore_column[column])
       ;
-    else if (! process_column_regexp.active())
+    else if (! process_column_regexp)
       ;
-    else if (! process_column_regexp.matches(column_title[column]))
+    else if (const re2::StringPiece string_piece(column_title[column].data(), column_title[column].length()); ! RE2::PartialMatch(string_piece, *process_column_regexp))
       ignore_column[column] = 1;
     else if (verbose)
     {
@@ -1764,7 +1765,7 @@ notenoughvariance(const char * fname,
     return 13;
   }
 
-  if (ignore_columns_from_cl.number_elements() || process_column_regexp.active() || 
+  if (ignore_columns_from_cl.number_elements() || process_column_regexp || 
       ignore_columns_with_non_numeric_data)
   {
     ignore_column = new int[columns_in_input];
@@ -1852,8 +1853,6 @@ usage(int rc)
 
   exit (rc);
 }
-
-#include "cmdline.h"
 
 /*
   The -V option is so complex that we put it in its own function
@@ -2153,7 +2152,10 @@ notenoughvariance(int argc, char ** argv)
 
     (void) cl.value('P', p);
 
-    if (! process_column_regexp.set_pattern(p))
+    const re2::StringPiece string_piece(p.data(), p.length());
+    process_column_regexp = std::make_unique<re2::RE2>(string_piece);
+
+    if (! process_column_regexp->ok())
     {
       cerr << "Cannot parse process column regexp '" << p << "'\n";
       usage(4);
@@ -2162,7 +2164,7 @@ notenoughvariance(int argc, char ** argv)
     is_descriptor_file = 1;
 
     if (verbose)
-      cerr << "Only columns matching '" << process_column_regexp.source() << "' will be processed\n";
+      cerr << "Only columns matching '" << process_column_regexp->pattern() << "' will be processed\n";
   }
 
   if (cl.option_present('b'))

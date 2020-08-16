@@ -26,7 +26,6 @@ SUBDIRS := $(wildcard */.)
 
 .PHONY : $(SUBDIRS)
 .PHONY : $(DO_X)
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -37,7 +36,6 @@ SUBDIRS := $(wildcard */.)
 
 DO_X = do-clean\
 	do-veryclean\
-	do-copy_include\
 	do-library\
 	do-copy_library\
 	do-exe\
@@ -48,6 +46,7 @@ $(DO_X):
 	@target=`echo $@ | sed -e 's/^do-//'`; \
 	for dir in $(SUBDIRS) ; do \
 		cd $${dir} ; \
+		echo $${dir} ; \
 		if [ -f ./Makefile ]; \
 		then \
 			if [ "$${target}" != "veryclean" ] ; \
@@ -69,8 +68,6 @@ $(DO_X):
 		cd ..;\
 	done;
 
-copy_include: do-copy_include
-	
 veryclean: do-veryclean
 
 clean: do-clean

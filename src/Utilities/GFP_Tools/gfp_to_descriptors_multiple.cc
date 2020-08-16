@@ -8,13 +8,13 @@
 using std::cerr;
 using std::endl;
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iwdigits.h"
-#include "iw_stl_hash_map.h"
-#include "accumulator.h"
-#include "iw_tdt.h"
-#include "misc.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/misc.h"
 
 #include "gfp.h"
 

@@ -21,8 +21,8 @@ include $(IWPROGRAMMES)/makefile.public.$(UNAME)
 ########################## Shared variables ############################
 ML = $(INCDIR)/mol
 
-LIBS = $(LIB) -liwmolecule -liwtemplate -liwrandom -liwstring_data_source -liwcrex -laccumulator\
-	-liwbits -liwmisc -lcmdline -liwstring -liwaray -lxmlParser $(LIBZ)
+LIBS = $(LIB) -liwmolecule -liwtemplate -liwrandom -liwstring_data_source -laccumulator\
+	-liwbits -liwmisc -lcmdline -liwstring -liwaray $(RE2LIB) $(PROTOLIB) -lxmlParser $(LIBZ)
 GFPLIB = -lgfp -liwmolecule -lsparsefp -liwtdt
 MOLECULE_H = $(ML)/molecule.h $(ML)/element.h $(ML)/atom.h $(ML)/bond.h $(ML)/path.h $(ML)/iwrcb.h $(ML)/coordinates.h $(ML)/set_of_atoms.h
 
@@ -42,7 +42,7 @@ UNIQUE_MOLECULE_EXE = $(BUILD_DIR)/unique_molecules
 UNIQUE_MOLECULE_OBJECTS = $(BUILD_DIR)/unique_molecules.o
 $(BUILD_DIR)/unique_molecules.o: unique_molecules.cc smiles_hash.h 
 $(BUILD_DIR)/unique_molecules: $(UNIQUE_MOLECULE_OBJECTS)
-	$(LD) -o $@ $(UNIQUE_MOLECULE_OBJECTS) $(LIBS) -liwtdt $(SYSTEM_LIBS) 
+	$(LD) -o $@ $(UNIQUE_MOLECULE_OBJECTS) $(LIBS) -liwtdt -liwstring $(SYSTEM_LIBS) 
 EXECUTABLES += $(UNIQUE_MOLECULE_EXE)
 
 ################# Template for public executables ######################
@@ -66,7 +66,7 @@ EXECUTABLES += $(TRXN_EXE)
 TSUBSTRUCTURE_EXE = $(BUILD_DIR)/tsubstructure
 # Spliter from internal version
 #TSUBSTRUCTURE_OBJECTS = $(BUILD_DIR)/tsubstructure.o
-TSUBSTRUCTURE_OBJECTS = $(BUILD_DIR)/tsubstructure.o $(BUILD_DIR)/INT_tsubstructure_fp.o
+TSUBSTRUCTURE_OBJECTS = $(BUILD_DIR)/tsubstructure.o
 $(BUILD_DIR)/tsubstructure.o: tsubstructure.cc 
 $(BUILD_DIR)/tsubstructure: $(TSUBSTRUCTURE_OBJECTS)
 	$(LD) $(STATIC) -o $@ $(TSUBSTRUCTURE_OBJECTS) -lsparsefp $(LIBS) $(SYSTEM_LIBS) -liwtdt
@@ -153,7 +153,7 @@ EXECUTABLES += $(RXN_SUBSTRUCTURE_SEARCH_EXE)
 
 ################# Template for public executables ######################
 SMILES_MUTATION_EXE = $(BUILD_DIR)/smiles_mutation
-SMILES_MUTATION_OBJECTS = $(BUILD_DIR)/smiles_mutation.o  $(BUILD_DIR)/count_atoms_in_smiles.o $(BUILD_DIR)/random_reactions.o
+SMILES_MUTATION_OBJECTS = $(BUILD_DIR)/smiles_mutation.o  $(BUILD_DIR)/random_reactions.o
 $(BUILD_DIR)/smiles_mutation.o: smiles_mutation.cc random_reactions.h
 $(BUILD_DIR)/smiles_mutation: $(SMILES_MUTATION_OBJECTS)
 	$(LD) -o $@ $(SMILES_MUTATION_OBJECTS) $(LIBS) $(SYSTEM_LIBS)
@@ -323,21 +323,21 @@ EXECUTABLES += $(TNASS_EXE)
 
 ################# Template for public executables ###################### 
 DICER_EXE = $(BUILD_DIR)/dicer
-DICER_OBJECTS = $(BUILD_DIR)/dicer.o  $(BUILD_DIR)/swap_kekule_forms.o $(BUILD_DIR)/count_atoms_in_smiles.o
+DICER_OBJECTS = $(BUILD_DIR)/dicer.o  $(BUILD_DIR)/swap_kekule_forms.o 
 $(BUILD_DIR)/dicer: $(DICER_OBJECTS) 
 	$(LD) -o $@ $(DICER_OBJECTS) -lsparsefp $(LIBS) 
 EXECUTABLES += $(DICER_EXE)
 
 ################# Template for public executables ###################### 
 IWDESCR_EXE = $(BUILD_DIR)/iwdescr 
-IWDESCR_OBJECTS = $(BUILD_DIR)/iwdescr.o $(BUILD_DIR)/qry_wcharge.o $(BUILD_DIR)/path_around_ring.o $(BUILD_DIR)/nvrtspsa.o
+IWDESCR_OBJECTS = $(BUILD_DIR)/iwdescr.o $(BUILD_DIR)/qry_wcharge.o $(BUILD_DIR)/nvrtspsa.o
 $(BUILD_DIR)/iwdescr: $(IWDESCR_OBJECTS)
 	$(LD) -o $@ $(IWDESCR_OBJECTS) -lsparsefp $(LIBS) -laccumulator -liwstring 
 EXECUTABLES += $(IWDESCR_EXE)
 
 ################# Template for public executables ###################### 
 IWFP_EXE = $(BUILD_DIR)/iwfp         
-IWFP_OBJECTS = $(BUILD_DIR)/iwfp.o $(BUILD_DIR)/iwmfingerprint.o
+IWFP_OBJECTS = $(BUILD_DIR)/iwfp.o 
 $(BUILD_DIR)/iwfp: $(IWFP_OBJECTS)
 	$(LD) -o $@ $(IWFP_OBJECTS) -lsparsefp $(LIBS) 
 EXECUTABLES += $(IWFP_EXE)
@@ -360,14 +360,14 @@ EXECUTABLES += $(MACCSKEYS_FN5_EXE)
 
 ################# Template for public executables ###################### 
 MAV2_EXE = $(BUILD_DIR)/molecular_abstraction 
-MAV2_OBJECTS = $(BUILD_DIR)/mav2.o $(BUILD_DIR)/molecular_abstraction_functions.o $(BUILD_DIR)/molecular_abstraction_specifications.o $(BUILD_DIR)/iwmfingerprint.o
+MAV2_OBJECTS = $(BUILD_DIR)/mav2.o $(BUILD_DIR)/molecular_abstraction_functions.o $(BUILD_DIR)/molecular_abstraction_specifications.o 
 $(BUILD_DIR)/molecular_abstraction: $(MAV2_OBJECTS)
 	$(LD) -o $@ $(MAV2_OBJECTS) -lsparsefp  $(LIBS) 
 EXECUTABLES += $(MAV2_EXE)
 
 ################# Template for public executables ###################### 
 MOLECULAR_TRANSFORMATION_EXE = $(BUILD_DIR)/molecular_transformations
-MOLECULAR_TRANSFORMATION_OBJECTS = $(BUILD_DIR)/molecular_transformations.o $(BUILD_DIR)/iwmfingerprint.o
+MOLECULAR_TRANSFORMATION_OBJECTS = $(BUILD_DIR)/molecular_transformations.o 
 $(BUILD_DIR)/molecular_transformations: $(MOLECULAR_TRANSFORMATION_OBJECTS)
 	$(LD) -o $@ $(MOLECULAR_TRANSFORMATION_OBJECTS) $(LIBS) 
 EXECUTABLES += $(MOLECULAR_TRANSFORMATION_EXE)
@@ -383,7 +383,7 @@ EXECUTABLES += $(PERMUTATIONS_EXE)
 
 ################# Template for public executables ###################### 
 RING_SUBSTITUTION_EXE = $(BUILD_DIR)/ring_substitution      
-RING_SUBSTITUTION_OBJECTS = $(BUILD_DIR)/ring_substitution.o $(BUILD_DIR)/path_around_ring.o
+RING_SUBSTITUTION_OBJECTS = $(BUILD_DIR)/ring_substitution.o
 $(BUILD_DIR)/ring_substitution: $(RING_SUBSTITUTION_OBJECTS) 
 	$(LD) -o $@ $(RING_SUBSTITUTION_OBJECTS) -lsparsefp $(LIBS) 
 EXECUTABLES += $(RING_SUBSTITUTION_EXE)	
@@ -397,14 +397,13 @@ EXECUTABLES += $(RULE_OF_FIVE_EXE)
 
 ################# Template for public executables ###################### 
 RXN_FINGERPRINT_EXE = $(BUILD_DIR)/rxn_fingerprint 
-RXN_FINGERPRINT_OBJECTS = $(BUILD_DIR)/rxn_fingerprint.o $(BUILD_DIR)/rxnfile3.o \
-$(BUILD_DIR)/linear_path_fingerprint.o $(BUILD_DIR)/extended_connectivity_fp.o $(BUILD_DIR)/iwmfingerprint.o 
+RXN_FINGERPRINT_OBJECTS = $(BUILD_DIR)/rxn_fingerprint.o \
+$(BUILD_DIR)/linear_path_fingerprint.o $(BUILD_DIR)/extended_connectivity_fp.o 
 $(BUILD_DIR)/rxn_fingerprint: $(RXN_FINGERPRINT_OBJECTS) 
 	$(LD) -o $@ $(RXN_FINGERPRINT_OBJECTS) -lsparsefp $(LIBS) 
 EXECUTABLES += $(RXN_FINGERPRINT_EXE)
 
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -412,9 +411,6 @@ EXECUTABLES += $(RXN_FINGERPRINT_EXE)
 .PHONY: clean
 .PHONY: veryclean
 
-copy_include library copy_library:
-	@echo "Nothing to do for Molecule_Tools target $@"
-	
 # Rule for making executables
 exe: $(EXECUTABLES)
 

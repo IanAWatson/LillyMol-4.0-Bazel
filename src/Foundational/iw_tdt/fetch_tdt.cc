@@ -5,7 +5,6 @@
 
 #include <stdlib.h>
 #include <fstream>
-using namespace std;
 
 #include "cmdline.h"
 #include "iwstring_data_source.h"

@@ -15,27 +15,27 @@
 using std::pair;
 using std::endl;
 
-#include "cmdline.h"
-#include "minmaxspc.h"
-#include "iwbits.h"
-#include "iwhistogram.h"
-#include "iw_stl_hash_map.h"
-#include "iwminmax.h"
-#include "misc.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/minmaxspc.h"
+#include "Foundational/iwbits/iwbits.h"
+#include "Foundational/histogram/iwhistogram.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwmisc/iwminmax.h"
+#include "Foundational/iwmisc/misc.h"
 
 using std::cerr;
 
-#include "molecule.h"
-#include "target.h"
-#include "istream_and_type.h"
-#include "mdl_molecule.h"
-#include "molecule_to_query.h"
-#include "iwstandard.h"
-#include "aromatic.h"
-#include "qry_wstats.h"
-#include "output.h"
-#include "misc2.h"
-#include "path.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/target.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/mdl_molecule.h"
+#include "Molecule_Lib/molecule_to_query.h"
+#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/qry_wstats.h"
+#include "Molecule_Lib/output.h"
+#include "Molecule_Lib/misc2.h"
+#include "Molecule_Lib/path.h"
 
 
 static int add_properties_to_groups = 0;
@@ -2400,10 +2400,10 @@ substitutions(data_source_and_type<Molecule> & input,
 
 static int
 substitutions(const char * fname,
-         int input_type,
+         FileType input_type,
          std::ostream & output)
 {
-  if (0 == input_type)
+  if (FILE_TYPE_INVALID == input_type)
     input_type = discern_file_type_from_name(fname);
 
   data_source_and_type<Molecule> input(input_type, fname);
@@ -2574,13 +2574,13 @@ read_isotopically_labelled_query_molecules (data_source_and_type<MDL_Molecule> &
 }
 
 static int
-read_isotopically_labelled_query_molecules (const const_IWSubstring & fname,
+read_isotopically_labelled_query_molecules(const const_IWSubstring & fname,
                       resizable_array_p<Substructure_Hit_Statistics> & queries)
 {
   assert(queries.empty());
 
-  int input_type = discern_file_type_from_name(fname);
-  assert (0 != input_type);
+  const FileType input_type = discern_file_type_from_name(fname);
+  assert (FILE_TYPE_INVALID != input_type);
 
   data_source_and_type<MDL_Molecule> input(input_type, fname);
   if (! input.good())
@@ -2600,7 +2600,6 @@ read_isotopically_labelled_query_molecules (const const_IWSubstring & fname,
 
   return read_isotopically_labelled_query_molecules(input, queries);
 }
-
 
 static void
 build_header (IWString & header)
@@ -2908,7 +2907,7 @@ substitutions (int argc, char ** argv)
       cerr << "Will NOT write NO_MATCH data\n";
   }
 
-  int input_type = 0;
+  FileType input_type = FILE_TYPE_INVALID;
   if (cl.option_present('i'))
   {
     if (! process_input_type(cl, input_type))
@@ -2939,7 +2938,7 @@ substitutions (int argc, char ** argv)
       }
     }
     else
-      stream_for_substituents.add_output_type(SMI);
+      stream_for_substituents.add_output_type(FILE_TYPE_SMI);
 
     const_IWSubstring s = cl.string_value('S');
 
@@ -2970,7 +2969,7 @@ substitutions (int argc, char ** argv)
       }
     }
     else
-      stream_for_molecules_not_matching.add_output_type(SMI);
+      stream_for_molecules_not_matching.add_output_type(FILE_TYPE_SMI);
 
     const_IWSubstring s = cl.string_value('Z');
 

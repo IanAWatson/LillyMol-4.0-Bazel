@@ -2,15 +2,16 @@
   splits files
 */
 
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "cmdline_v2.h"
-#include "misc.h"
-#include "iwstring_data_source.h"
+#include "re2/re2.h"
+
+#include "Foundational/cmdline_v2/cmdline_v2.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/data_source/iwstring_data_source.h"
 
 const char * prog_name = NULL;
 
@@ -24,7 +25,7 @@ static int items_per_chunk = 0;
 
 static int chunks_written = 0;
 
-static IW_Regular_Expression rx;
+static std::unique_ptr<re2::RE2> rx;
 
 static int number_to_create = 0;
 
@@ -122,10 +123,10 @@ determine_number_of_items_per_chunk (iwstring_data_source & input,
                                      int number_chunks_reqested,
                                      int & items_per_chunk)
 {
-  if (! rx.active())
+  if (! rx)
     items_in_file = input.records_remaining();
   else
-    items_in_file = input.grep(rx);
+    items_in_file = input.grep(*rx);
 
   return common_check_items_per_chunk(items_in_file, number_chunks_reqested, items_per_chunk);
 }
@@ -279,14 +280,14 @@ iwsplit (int argc, char ** argv)
 
   if (cl.option_present("sdf"))
   {
-    rx.set_pattern("^\\$\\$\\$\\$");
+    rx = std::make_unique<re2::RE2>("^\\$\\$\\$\\$");
     if (verbose)
       cerr << "Regular expression set for SDF input\n";
   }
 
   if (cl.option_present("tdt"))
   {
-    rx.set_pattern("^\\|");
+    rx = std::make_unique<re2::RE2>("^\\|");
     if (verbose)
       cerr << "Regular expression set for TDT input\n";
   }
@@ -297,15 +298,16 @@ iwsplit (int argc, char ** argv)
   {
     const_IWSubstring s;
     cl.value("rx", s);
-
-    if (! rx.set_pattern(s))
+    const re2::StringPiece string_piece(s.data(), s.length());
+    rx = std::make_unique<re2::RE2>(string_piece);
+    if (! rx->ok())
     {
       cerr << "Invalid record termination regular expression '" <<s << "'\n";
       return 4;
     }
 
     if (verbose)
-      cerr << "Regular expression set to '" << rx.source() << "'\n";
+      cerr << "Regular expression set to '" << rx->pattern() << "'\n";
 
     if (cl.option_present('s'))
     {
@@ -599,7 +601,8 @@ iwsplit (int argc, char ** argv)
         mystdout.write_if_buffer_holds_more_than(32768);
       }
 
-      int rx_starts_chunks_and_rx_matches_buffer = (rx_starts_chunks && rx.matches(buffer));
+      const re2::StringPiece string_piece(buffer.data(), buffer.length());
+      const int rx_starts_chunks_and_rx_matches_buffer = (rx_starts_chunks && RE2::PartialMatch(string_piece, *rx));
 
 //    cerr << "From '" << buffer << "' match " << rx_starts_chunks_and_rx_matches_buffer << " this chunk " << items_written_this_chunk << endl;
 
@@ -713,11 +716,11 @@ iwsplit (int argc, char ** argv)
 
       output.write_if_buffer_holds_more_than(32768);
 
-      if (! rx.active())    // every record is an item boundary
+      if (! rx)    // every record is an item boundary
         ;
       else if (rx_starts_chunks_and_rx_matches_buffer)  // definitely a boundary
         ;
-      else if (! rx.matches(buffer))   // not an item boundary
+      else if (const re2::StringPiece string_piece(buffer.data(), buffer.length()); RE2::PartialMatch(string_piece, *rx))  // not an item boundary
         continue;
 
       if (split_by_size > 0)

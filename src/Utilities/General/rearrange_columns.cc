@@ -6,10 +6,10 @@ using namespace std;
   Rearrange the columns in one file to be the same as in another
 */
 
-#include "iw_stl_hash_map.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
 
 #include "valid_descriptor_name.h"
 
@@ -200,7 +200,7 @@ class Input_File
 
     int gather_descriptor_names (resizable_array_p<IWString> &, IW_STL_Hash_Map_int &) const;
 
-    int print_cross_reference (ostream &) const;
+    int print_cross_reference (std::ostream &) const;
 
     int establish_offsets ();
 
@@ -450,7 +450,7 @@ Input_File::establish_column_cross_reference (IW_STL_Hash_Map_int & global_cross
 
 
 int
-Input_File::print_cross_reference (ostream & os) const
+Input_File::print_cross_reference (std::ostream & os) const
 {
   os << "Cross references for '" << _fname << "', " << _columns_in_file << " columns\n";
 

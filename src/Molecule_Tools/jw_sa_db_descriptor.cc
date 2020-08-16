@@ -2097,7 +2097,7 @@ jwsa (data_source_and_type<Molecule> & input,
 }
 
 static int
-jwsa (const char * fname, int input_type, 
+jwsa (const char * fname, FileType input_type, 
       IWString_and_File_Descriptor & output)
 {
   data_source_and_type<Molecule> input (input_type, fname);
@@ -2338,7 +2338,7 @@ jwsa (int argc, char ** argv)
     }
   }
 
-  int input_type = 0;
+  FileType input_type = FILE_TYPE_INVALID;
   if (cl.option_present ('i'))
   {
     if (! process_input_type (cl, input_type))

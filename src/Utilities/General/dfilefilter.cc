@@ -1,11 +1,13 @@
-#include <stdlib.h>
 #include <ctype.h>
 
-#include "cmdline.h"
-#include "set_or_unset.h"
-#include "misc.h"
-#include "iwstring_data_source.h"
-#include "logical_expression.h"
+
+#include "re2/re2.h"
+
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/logical_expression.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/set_or_unset.h"
 
 static int verbose = 0;
 
@@ -236,7 +238,7 @@ class Column_Condition
 
 //  implement regular expressions sometime
 
-    IW_Regular_Expression _rx;
+    std::unique_ptr<re2::RE2> _rx;
 
   public:
     Column_Condition ();
@@ -404,7 +406,9 @@ Column_Condition::build (const const_IWSubstring & e)
 
   if (CC_OPERATOR_RX == _operator)
   {
-    if (! _rx.set_pattern(v))
+    re2::StringPiece string_piece(v.data(), v.length());
+    _rx = std::make_unique<re2::RE2>(string_piece);
+    if (! _rx->ok())
     {
       cerr << "Invalid regular expression '" << v << "'\n";
       return 0;
@@ -459,10 +463,11 @@ Column_Condition::passes (Column_Data * cd)
     const_IWSubstring p = mycd;
 
 #ifdef DEBUG_RX_MATCHES
-    cerr << "Does '" << p << "' match '" << _rx.source() << "'\n";
+    cerr << "Does '" << p << "' match '" << _rx.pattern() << "'\n";
 #endif
 
-    return _rx.matches(p);
+    re2::StringPiece string_piece(p.data(), p.length());
+    return RE2::PartialMatch(string_piece, *_rx);
   }
 
   if (0 == mycd.length())   // should we warn about this...

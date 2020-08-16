@@ -7,22 +7,22 @@
 using std::cerr;
 using std::endl;
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "misc.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
 
-#include "istream_and_type.h"
-#include "molecule.h"
-#include "path.h"
-#include "aromatic.h"
-#include "sparse_fp_creator.h"
-#include "iwstandard.h"
-#include "smiles.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/path.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/smiles.h"
 
 static const char * prog_name = NULL;
 
-static IWString smiles_tag("$SMI<");
-static IWString identifier_tag("PCN<");
+static IWString smiles_tag("Molecule_Lib/$SMI<");
+static IWString identifier_tag("Molecule_Lib/PCN<");
 
 class Ring_Fingerprint
 {
@@ -50,7 +50,7 @@ class Ring_Fingerprint
     int _process (Molecule & m, IWString_and_File_Descriptor & output);
     int _process (data_source_and_type<Molecule> & input,
                              IWString_and_File_Descriptor & output);
-    int _process (const char * fname, int input_type,
+    int _process (const char * fname, FileType input_type,
                              IWString_and_File_Descriptor & output);
     int _write_fingerprint (Molecule & m, const Sparse_Fingerprint_Creator & sfc,
                                       IWString_and_File_Descriptor & output) const;
@@ -1103,15 +1103,15 @@ Ring_Fingerprint::_process (data_source_and_type<Molecule> & input,
 }
 
 int
-Ring_Fingerprint::_process (const char * fname, int input_type,
+Ring_Fingerprint::_process (const char * fname, FileType input_type,
                  IWString_and_File_Descriptor & output)
 {
   assert (NULL != fname);
 
-  if (0 == input_type)
+  if (FILE_TYPE_INVALID == input_type)
   {
     input_type = discern_file_type_from_name(fname);
-    assert (0 != input_type);
+    assert (FILE_TYPE_INVALID != input_type);
   }
 
   data_source_and_type<Molecule> input(input_type, fname);
@@ -1188,7 +1188,7 @@ Ring_Fingerprint::operator() (int argc, char ** argv)
       cerr << "Fingerprint written with tag '" << _tag << "'\n";
   }
 
-  int input_type = 0;
+  FileType input_type = FILE_TYPE_INVALID;
 
   if (cl.option_present('i'))
   {
@@ -1201,7 +1201,7 @@ Ring_Fingerprint::operator() (int argc, char ** argv)
   else if (cl.option_present('f'))
     _work_as_tdt_filter = 1;
   else if (1 == cl.number_elements() && 0 == strcmp(cl[0], "-"))
-    input_type = SMI;
+    input_type = FILE_TYPE_SMI;
   else if (! all_files_recognised_by_suffix(cl))
     return 4;
 

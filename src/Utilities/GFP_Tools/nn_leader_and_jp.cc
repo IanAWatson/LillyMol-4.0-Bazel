@@ -10,15 +10,14 @@
 #include <random>
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
-#include "cmdline.h"
-#include "accumulator.h"
-#include "set_or_unset.h"
-#include "iwstring_data_source.h"
-#include "iw_auto_array.h"
-#include "iw_tdt.h"
-#include "iw_stl_hash_map.h"
-#include "timsort.hpp"
-#include "misc.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/set_or_unset.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwmisc/timsort.hpp"
+#include "Foundational/iwmisc/misc.h"
 
 using std::cout;
 using std::endl;

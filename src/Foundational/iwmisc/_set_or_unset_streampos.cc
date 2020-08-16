@@ -1,5 +1,4 @@
 #include <iostream>
-using namespace std;
 
 #define SET_OR_UNSET_IMPLEMENTATION
 #include "set_or_unset.h"

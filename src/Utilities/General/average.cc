@@ -8,10 +8,12 @@
 #include <random>
 #include <algorithm>
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "set_or_unset.h"
-#include "iwstring_data_source.h"
+#include "re2/re2.h"
+
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/set_or_unset.h"
 
 #include "iwtokeniser.h"
 
@@ -23,9 +25,9 @@ const char * prog_name = NULL;
 
 static int verbose = 0;
 
-static IW_Regular_Expression column_rx;
+static std::unique_ptr<re2::RE2> column_rx;
 
-static IW_Regular_Expression descriptor_rx;
+static std::unique_ptr<re2::RE2> descriptor_rx;
 
 static char word_delimeter = ' ';
 
@@ -404,7 +406,7 @@ fetch_prevalence_value (const const_IWSubstring & buffer,
 }
 
 static int
-average (const const_IWSubstring & buffer)
+average(const const_IWSubstring & buffer)
 {
   int i = 0;
   const_IWSubstring token;
@@ -423,9 +425,10 @@ average (const const_IWSubstring & buffer)
 
   while (get_next_token(buffer, token, i))
   {
-    if (column_rx.active())
+    if (column_rx)
     {
-      if (column_rx.matches(token))
+      re2::StringPiece tmp(token.data(), token.length());
+      if (RE2::PartialMatch(tmp, *column_rx))
       {
         if (get_next_token(buffer, token, i))
         {
@@ -502,8 +505,9 @@ determine_descriptors_to_process (const const_IWSubstring & buffer)
 
   while (iwtokeniser.next_token(token))
   {
+    re2::StringPiece tmp(token.data(), token.length());
+    if (RE2::PartialMatch(tmp, *descriptor_rx))
 //  cerr << "Examining header token '" << token << "'\n";
-    if (descriptor_rx.matches(token))
     {
       columns_to_process[col] = 1;
       matches_found++;
@@ -524,7 +528,7 @@ determine_descriptors_to_process (const const_IWSubstring & buffer)
 
   if (0 == matches_found)
   {
-    cerr << "No descriptor names match '" << descriptor_rx.source() << "'\n";
+    cerr << "No descriptor names match '" << descriptor_rx->pattern() << "'\n";
     return 0;
   }
 
@@ -605,7 +609,7 @@ average (const char * fname,
 
     if (0 > 0)
       ;
-    else if (descriptor_rx.active())
+    else if (descriptor_rx)
     {
       if (! determine_descriptors_to_process(buffer))
       {
@@ -704,10 +708,9 @@ average (const char * fname,
   return average(fname, input, output);
 }
 
-static int
-build_regular_expression_from_components (Command_Line & cl,
-                                          char flag,
-                                          IW_Regular_Expression & rx)
+static std::unique_ptr<re2::RE2>
+build_regular_expression_from_components(Command_Line & cl,
+                                         char flag)
 {
   IWString tmp;
 
@@ -723,7 +726,8 @@ build_regular_expression_from_components (Command_Line & cl,
 
   tmp << ")$";
 
-  return rx.set_pattern(tmp);
+  re2::StringPiece string_piece(tmp.data(), tmp.length());
+  return std::move(std::make_unique<re2::RE2>(string_piece));
 }
 
 static int
@@ -965,14 +969,16 @@ average (int argc, char ** argv)
   {
     const_IWSubstring r = cl.string_value('R');
 
-    if (! column_rx.set_pattern(r))
+    re2::StringPiece tmp(r.data(), r.length());
+    column_rx = std::make_unique<re2::RE2>(tmp);
+    if (! column_rx->ok())
     {
       cerr << "Invalid column regexp '" << r << "'\n";
       return 6;
     }
 
     if (verbose)
-      cerr << "Will check columns that match '" << column_rx.source() << "'\n";
+      cerr << "Will check columns that match '" << column_rx->pattern() << "'\n";
 
     acolumn = new AColumn[1];
   }
@@ -980,9 +986,10 @@ average (int argc, char ** argv)
   {
     if (cl.option_count('d') > 1)
     {
-      if (! build_regular_expression_from_components(cl, 'd', descriptor_rx))
+      descriptor_rx = build_regular_expression_from_components(cl, 'd');
+      if (! descriptor_rx->ok())
       {
-        cerr << "Invalid descriptor regular expression specifications\n";
+        cerr << "Invalid descriptor regular expression specifications (-d)\n";
         usage(5);
       }
     }
@@ -990,18 +997,20 @@ average (int argc, char ** argv)
     {
       const_IWSubstring d(cl.string_value ('d'));
 
-      int tmp;
-
       if (cl.option_present('g'))
-        tmp = descriptor_rx.set_pattern(d);
+      {
+        const re2::StringPiece string_piece(d.data(), d.length());
+        descriptor_rx = std::make_unique<re2::RE2>(string_piece);
+      }
       else
       {
         IWString drx;
         drx << '^' << d << '$';
-        tmp = descriptor_rx.set_pattern(drx);
+        re2::StringPiece string_piece(drx.data(), drx.length());
+        descriptor_rx = std::make_unique<re2::RE2>(string_piece);
       }
 
-      if (! tmp)
+      if (! descriptor_rx->ok())
       {
         cerr << "Invalid descriptor regexp '" << d << "'\n";
         return 2;
@@ -1009,7 +1018,7 @@ average (int argc, char ** argv)
 
     }
     if (verbose)
-      cerr << "Will check descriptors that match '" << descriptor_rx.source() << "'\n";
+      cerr << "Will check descriptors that match '" << descriptor_rx->pattern() << "'\n";
 
     skip_first_records = 1;
   }

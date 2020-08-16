@@ -6,15 +6,13 @@
   dname:B<n>:R,min,max,dx
 */
 
-#include <stdlib.h>
 #include <limits>
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iw_stl_hash_map.h"
-#include "sparse_fp_creator.h"
-#include "iw_auto_array.h"
-#include "misc.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
+#include "Foundational/iwmisc/misc.h"
 
 using std::numeric_limits;
 

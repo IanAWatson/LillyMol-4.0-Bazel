@@ -25,7 +25,9 @@ using std::endl;
 
 #include "Metric.h"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::cerr;
 
 static Enrichment enrichment;
 
@@ -2129,7 +2131,7 @@ identify_most_active_fraction (const IW_STL_Hash_Map<IWString, IWString> & activ
 {
   const auto s = activity.size();
 
-  float * v = new float[s]; unique_ptr<float[]> free_v(v);
+  float * v = new float[s]; std::unique_ptr<float[]> free_v(v);
 
   int ndx = 0;
   for (auto f : activity)

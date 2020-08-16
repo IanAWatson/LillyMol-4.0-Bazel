@@ -22,6 +22,3 @@ PROJECT_NAME = tnt
 
 clean veryclean library copy_library exe copy_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
-
-copy_include: 
-	$(CP) *.h $(INCDIR)

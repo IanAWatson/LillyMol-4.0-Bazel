@@ -3,8 +3,6 @@
 
 #include <iostream>
 
-using namespace std;
-
 #include "Foundational/iwstring/iwstring.h"
 
 #include "kahan_sum.h"
@@ -61,7 +59,7 @@ class Accumulator_V2
 };
 
 template <typename COUNTER, typename T>
-ostream & operator << (ostream &, const Accumulator_V2<COUNTER, T> &);
+std::ostream & operator << (std::ostream &, const Accumulator_V2<COUNTER, T> &);
 
 template <typename COUNTER, typename T>
 class Accumulator_with_Missing_Values_V2 : public Accumulator_V2<COUNTER, T>
@@ -336,10 +334,11 @@ Accumulator_V2<COUNTER, T>::variance (double & v)
 }
 
 template <typename COUNTER, typename T>
-ostream &
-operator << (ostream & os, const Accumulator_V2<COUNTER, T> & ac)
+std::ostream &
+operator << (std::ostream & os, const Accumulator_V2<COUNTER, T> & ac)
 {
   assert (ac.n () > 0);
+  using std::setw;
 
   os << "Accumulator " << ac.n () << " values, average " << setw(8) << ac.average ();
   if (ac.n() > 1)

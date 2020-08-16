@@ -16,9 +16,9 @@
   Objects for storing pair-wise relationships between objects
 */
 
-#include "iw_stl_hash_map.h"
-#include "iwstring_data_source.h"
-#include "accumulator.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/accumulator/accumulator.h"
 
 /*
   We can convert a distance matrix into a .nn file suitable for nplotnn.
@@ -393,12 +393,14 @@ class Distance_Matrix_Statistics : public Accumulator <T>
 using std::cerr;
 using std::endl;
 
-#include "iwqsort.h"
-#include "misc.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwaray/iwaray.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwqsort/iwqsort.h"
+
 #include "IWDistanceMatrixBase.h"
 #include "iwdmsupport.h"
 
-#include "iwstring_data_source.h"
 
 template <typename T>
 IWDistanceMatrixBase<T>::IWDistanceMatrixBase ()

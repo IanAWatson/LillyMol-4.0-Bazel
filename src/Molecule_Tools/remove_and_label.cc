@@ -14,17 +14,17 @@
 using std::cerr;
 using std::endl;
 
-#include "cmdline.h"
-#include "misc.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/misc.h"
 
-#include "istream_and_type.h"
-#include "mdl_molecule.h"
-#include "ematch.h"
-#include "molecule.h"
-#include "output.h"
-#include "aromatic.h"
-#include "molecule_to_query.h"
-#include "iwstandard.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/mdl_molecule.h"
+#include "Molecule_Lib/ematch.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/output.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/molecule_to_query.h"
+#include "Molecule_Lib/iwstandard.h"
 
 const char * prog_name = NULL;
 
@@ -86,7 +86,7 @@ static const Element * star_element = NULL;
   Kludge. Only allow certain non-organic elements
 */
 
-static IW_Regular_Expression rx_for_allowable_non_organics;
+static std::unique_ptr<re2::RE2> rx_for_allowable_non_organics;
 
 class Element_and_Isotope
 {
@@ -381,13 +381,14 @@ remove_and_label (MDL_Molecule & m)
         continue;
       }
 
-      if (! rx_for_allowable_non_organics.active())  // no checking to be done
+      if (rx_for_allowable_non_organics)  // no checking to be done
         ;
-      else if (rx_for_allowable_non_organics.matches(e->symbol()))   // great, OK match
+      else if (const re2::StringPiece string_piece(e->symbol().data(), e->symbol().length());
+      	RE2::PartialMatch(string_piece, *rx_for_allowable_non_organics)) // great, OK match.
         ;
       else
       {
-        cerr << "Non-allowed atomic symbol in match atom '" << e->symbol() << "', must match '" << rx_for_allowable_non_organics.source() << "'\n";
+        cerr << "Non-allowed atomic symbol in match atom '" << e->symbol() << "', must match '" << rx_for_allowable_non_organics->pattern() << "'\n";
         return 0;
       }
 
@@ -599,7 +600,7 @@ remove_and_label (data_source_and_type<MDL_Molecule> & input,
 }
 
 static int
-remove_and_label (const char * fname, int input_type, 
+remove_and_label (const char * fname, FileType input_type, 
                   Molecule_Output_Object & output)
 {
   assert (NULL != fname);
@@ -673,7 +674,7 @@ remove_and_label (int argc, char ** argv)
       cerr << "Will reduce to largest fragment\n";
   }
 
-  int input_type = 0;
+  FileType input_type = FILE_TYPE_INVALID;
 
   if (cl.option_present('i'))
   {
@@ -715,15 +716,17 @@ remove_and_label (int argc, char ** argv)
   if (cl.option_present('H'))
   {
     const_IWSubstring h = cl.string_value('H');
+    const re2::StringPiece string_piece(h.data(), h.length());
 
-    if (! rx_for_allowable_non_organics.set_pattern(h))
+    rx_for_allowable_non_organics = std::make_unique<re2::RE2>(string_piece);
+    if (! rx_for_allowable_non_organics->ok())
     {
       cerr << "Cannot initialise regular expression for allowable non-organics '" << h << "'\n";
       return 3;
     }
 
     if (verbose)
-      cerr << "Only non organic elements matching '" << rx_for_allowable_non_organics.source() << "' will be allowed\n";
+      cerr << "Only non organic elements matching '" << rx_for_allowable_non_organics->pattern() << "' will be allowed\n";
   }
 
   if (cl.option_present('r'))
@@ -810,7 +813,7 @@ remove_and_label (int argc, char ** argv)
     }
   }
   else
-    output.add_output_type(SDF);
+    output.add_output_type(FILE_TYPE_SDF);
 
   if (cl.option_present('S'))
   {
@@ -870,7 +873,7 @@ remove_and_label (int argc, char ** argv)
   {
     const const_IWSubstring j = cl.string_value('J');
 
-    stream_for_R1R2.add_output_type(SMI);
+    stream_for_R1R2.add_output_type(FILE_TYPE_SMI);
 
     if (stream_for_R1R2.would_overwrite_input_files(cl, j))
     {

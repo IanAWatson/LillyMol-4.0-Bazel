@@ -18,7 +18,6 @@ using namespace __gnu_cxx;
 #define IW_Hash_Set std::hash_set
 #else
 #include <hash_set>
-using namespace stdext;
 #define IW_Hash_Set hash_set
 #endif
 

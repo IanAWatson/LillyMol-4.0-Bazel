@@ -67,7 +67,7 @@ SHARED_INC_FILES = molecule.h atom.h element.h bond.h bond_list.h \
 	ostream_and_type.h dihedral.h path.h iwstandard.h ematch.h \
 	etrans.h iwmtypes.h charge_assigner.h iw_vdw.h iwrcb.h \
 	iwrnm.h moleculej.h smiles.h atom_typing.h donor_acceptor.h \
-	mpr.h temp_detach_atoms.h qry_wstats.h qry_wcharge.h substructure.h \
+	mpr.h temp_detach_atoms.h qry_wstats.h substructure.h \
 	target.h rmele.h atom_alias.h output.h rotbond_common.h \
 	molecule_to_query.h mdl_file_data.h mdl_atom_record.h allowed_elements.h \
 	numass.h is_actually_chiral.h path_scoring.h mdl.h mdl_molecule.h \
@@ -99,10 +99,11 @@ SMILES_OBJECTS = smiles.o smiles_support.o
 
 REACTION_OBJECTS = iwreaction.o iwreaction2.o _iwaray_rxn.o reaction_iterator.o rxn_dihedral_angle.o rxn_bond_length.o\
 	rxn_bond_angle.o rxn_matched_sors.o reaction_match_conditions.o rxn_3d_replace.o reaction_from_smirks.o\
-	rxnfile.o rxnfile2.o 
+	rxnfile.o rxnfile2.o rxnfile3.o reaction_proto.o reaction.pb.o
 
-SUBSTRUCTURE_OBJECTS = csubstructure.o iwsubstructure.o rwsubstructure.o \
+SUBSTRUCTURE_OBJECTS = csubstructure.o iwsubstructure.o rwsubstructure.o rwsubstructure_proto.o \
 	substructure_a.o substructure_spec.o\
+	substructure.pb.o\
 	target.o\
 	substructure_results.o\
 	substructure_env.o\
@@ -120,7 +121,6 @@ SUBSTRUCTURE_OBJECTS = csubstructure.o iwsubstructure.o rwsubstructure.o \
 	mdl_file_data.o\
 	mdl_atom_record.o\
 	parse_smarts_tmp.o\
-	isis_link_atom.o\
 	mdl_molecule.o\
 	ISIS_Atom_List.o\
 	charge_calculation.o\
@@ -150,6 +150,7 @@ C1 = molecule.o\
 	$(SMILES_OBJECTS)\
 	$(SUBSTRUCTURE_OBJECTS)\
 	$(REACTION_OBJECTS)\
+	path_around_ring.o\
 	set_of_atoms.o\
 	rwmolecule.o\
 	symmetry.o\
@@ -164,12 +165,12 @@ C1 = molecule.o\
 	_istream_and_type.o\
 	chiral_centre.o\
 	toggle_kekule_form.o\
+	toggle_kekule_form.pb.o\
 	atom_typing.o\
 	donor_acceptor.o\
 	charge_assigner.o\
 	iwqry_wstats.o\
 	_qry_wstats.o\
-	_qry_wcharge.o\
 	allowed_elements.o\
 	is_actually_chiral.o\
 	numass.o\
@@ -180,6 +181,8 @@ LIBRARY_OBJECTS_LIST_1 = \
 	standardise.o \
 	rmele.o etrans.o \
 	van_der_waals.o \
+	count_atoms_in_smiles.o \
+	iwmfingerprint.o \
 	mpr.o \
 	$(C1) \
 	misc2.o \
@@ -206,7 +209,6 @@ $(LIBRARY_NAME_1): $(LIBRARY_OBJECTS_1) $(BUILD_DIR)/u3b.o
 	$(AR) r $@ $(LIBRARY_OBJECTS_1) $(BUILD_DIR)/u3b.o
 
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -222,14 +224,11 @@ make_include_dir:
 exe copy_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
 
-copy_include: make_include_dir
-	$(CP) $(SHARED_INC_FILES) $(NEW_INC_DIR)
-
 # Rule for making static library
 library: $(LIBRARY_NAME) $(LIBRARY_NAME_1)
 
 # Rule for installing static library
-copy_library: copy_include library
+copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBRARY_NAME_1) $(LIBDIR)
 	
 clean:

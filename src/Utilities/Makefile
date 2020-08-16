@@ -21,7 +21,6 @@ prefix = $(IWPROGRAMMES)
 exec_prefix = $(prefix)
 
 libdir = ${exec_prefix}/lib/$(UNAME)
-includedir = ${prefix}/include
 bindir = ${exec_prefix}/bin/$(UNAME)
 
 CP=cp -p
@@ -30,7 +29,6 @@ SUBDIRS := $(wildcard */.)
 
 .PHONY : $(SUBDIRS)
 .PHONY : $(DO_X)
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -41,7 +39,6 @@ SUBDIRS := $(wildcard */.)
 
 DO_X = do-clean\
 	do-veryclean\
-	do-copy_include\
 	do-library\
 	do-copy_library\
 	do-exe\
@@ -75,18 +72,9 @@ $(DO_X):
 		cd ..;\
 	done;
 
-include: includedir copy_include_files
-
-includedir:
-	echo "Making ${includedir}"
-	if [ ! -d ${includedir} ] ; then mkdir ${includedir} ; fi
-	cp -p include/* $(includedir)
-
 libdir: $(libdir)
 
 bindir: $(bindir)
-
-copy_include: do-copy_include
 
 veryclean: do-veryclean
 

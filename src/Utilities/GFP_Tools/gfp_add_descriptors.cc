@@ -2,11 +2,11 @@
   
 */
 
-#include <stdlib.h>
+#include <ostream>
 
-#include "cmdline.h"
-#include "iw_stl_hash_map.h"
-#include "iwstring_data_source.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 using std::cerr;
 using std::cout;

@@ -174,7 +174,7 @@ TEST_IWUUENCODE_OBJECTS = $(BUILD_DIR)/test_iwuuencode.o $(BUILD_DIR)/iwuuencode
 $(BUILD_DIR)/test_iwuuencode.o: test_iwuuencode.cc misc.h
 	$(CXX) -c -o $@ $< $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES)
 $(BUILD_DIR)/test_iwuuencode: $(TEST_IWUUENCODE_OBJECTS)
-	$(LD) -o $@ $(TEST_IWUUENCODE_OBJECTS) $(LIB) -liwstring_data_source -liwcrex -lcmdline -liwstring -liwaray
+	$(LD) -o $@ $(TEST_IWUUENCODE_OBJECTS) $(LIB) -liwstring_data_source -lcmdline -liwstring -liwaray
 #~ EXECUTABLES += $(TEST_IWUUENCODE_EXE)
 
 ################# Template for public executables ######################
@@ -183,7 +183,7 @@ TEST_IWUUDECODE_OBJECTS = $(BUILD_DIR)/test_iwuudecode.o $(BUILD_DIR)/iwuudecode
 $(BUILD_DIR)/test_iwuudecode.o: test_iwuudecode.cc misc.h
 	$(CXX) -c -o $@ $< $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES)
 $(BUILD_DIR)/test_iwuudecode: $(TEST_IWUUDECODE_OBJECTS)
-	$(LD) -o $@ $(TEST_IWUUDECODE_OBJECTS) $(LIB) -liwstring_data_source -liwcrex -lcmdline -liwstring -liwaray $(LIBZ)
+	$(LD) -o $@ $(TEST_IWUUDECODE_OBJECTS) $(LIB) -liwstring_data_source -lcmdline -liwstring -liwaray $(LIBZ)
 #~ EXECUTABLES += $(TEST_IWUUDECODE_EXE)
 
 ################# Template for public executables ######################
@@ -196,7 +196,6 @@ $(BUILD_DIR)/test_iwdigits: $(TEST_IWDIGITS_OBJECTS)
 #~ EXECUTABLES += $(TEST_IWDIGITS_EXE)
 
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -207,14 +206,11 @@ $(BUILD_DIR)/test_iwdigits: $(TEST_IWDIGITS_OBJECTS)
 exe copy_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
 	
-copy_include:
-	$(CP) $(SHARED_INC_FILES) $(INCDIR)
-
 # Rule for making static library
 library: $(LIBRARY_NAME) $(LIBRARY_NAME_2)
 
 # Rule for copying static library
-copy_library: copy_include library
+copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBDIR)
 	$(CP) $(LIBRARY_NAME_2) $(LIBDIR)
 	

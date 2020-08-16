@@ -8,7 +8,6 @@
 #include <assert.h>
 
 #include <iostream>
-using namespace std;
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #include "iwstring.h"

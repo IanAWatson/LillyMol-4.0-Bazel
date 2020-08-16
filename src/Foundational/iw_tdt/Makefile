@@ -29,9 +29,9 @@ PROJECT_NAME = iwtdt
 LIBRARY_OBJECTS_LIST = iw_tdt.o _iwaray_p_tdt.o _iw_tdt_iwstring.o \
 	_set_dataitem_value.o _add_dataitem.o _add_dataitem_float.o \
 	_iw_tdt_int.o _iw_tdt_double.o _iw_tdt_float.o \
-	iw_tdt_filter.o iw_tdt_string.o _resizable_array_filter.o
+	iw_tdt_string.o 
 
-SHARED_INC_FILES = iw_tdt.h  iw_tdt_filter.h
+SHARED_INC_FILES = iw_tdt.h
 
 LIBRARY_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIBRARY_OBJECTS_LIST))
 
@@ -48,7 +48,6 @@ $(LIBRARY_NAME): $(LIBRARY_OBJECTS)
 	$(AR) r $@ $(LIBRARY_OBJECTS)
 
 ###################### Template for build command ######################
-.PHONY: copy_include
 .PHONY: library
 .PHONY: copy_library
 .PHONY: exe
@@ -56,14 +55,11 @@ $(LIBRARY_NAME): $(LIBRARY_OBJECTS)
 .PHONY: clean
 .PHONY: veryclean
 
-copy_include:
-	$(CP) $(SHARED_INC_FILES) $(INCDIR)
-
 # Rule for making static library
 library: $(LIBRARY_NAME)
 
 # Rule for installing static library
-copy_library: copy_include library
+copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBDIR)
 	
 # Rule for making executables

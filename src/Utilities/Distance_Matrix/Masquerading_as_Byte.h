@@ -6,11 +6,9 @@
   floats as bytes. We need to know the range
 */
 
-#include "iwstring_data_source.h"
+#include "Foundational/data_source/iwstring_data_source.h"
 
 #include <iostream>
-using std::cerr;
-using std::endl;
 
 template <typename T>
 class Masquerading_as_Byte
@@ -67,7 +65,10 @@ class Masquerading_as_Byte
 
 #ifdef MASQUERADING_AS_BYTE_IMPLEMENTATION
 
-#include "misc.h"
+using std::cerr;
+using std::endl;
+
+#include "Foundational/iwmisc/misc.h"
 
 #include "Masquerading_as_Byte.h"
 

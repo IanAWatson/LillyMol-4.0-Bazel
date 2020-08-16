@@ -7,12 +7,12 @@
 
 //#include <pair.h>
 
-#include "cmdline_v2.h"
-#include "iwstring_data_source.h"
-#include "set_or_unset.h"
-#include "iw_tdt.h"
+#include "Foundational/cmdline_v2/cmdline_v2.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/set_or_unset.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
 #define IWQSORT_FO_IMPLEMENTATION
-#include "iwqsort.h"
+#include "Foundational/iwqsort/iwqsort.h"
 
 static int verbose = 0;
 
@@ -33,7 +33,7 @@ static int default_global_sort_order = 1;
 
 static int default_global_column_for_sort_key = 0;
 
-static IW_Regular_Expression sort_by_grepc;
+static std::unique_ptr<re2::RE2> sort_by_grepc;
 
 /*
   We are often called upon to sort things that look like 'D100' of 'A3'
@@ -656,7 +656,7 @@ template int read_the_tdts(iwstring_data_source &, Offset_Value_String *, int &)
 
 static int
 do_grepc(const IW_TDT & tdt,
-         IW_Regular_Expression & rx)
+         re2::RE2 & rx)
 {
   int n = tdt.number_elements();
 
@@ -667,7 +667,8 @@ do_grepc(const IW_TDT & tdt,
     const_IWSubstring s;
     tdt.item(i, s);
 
-    if (rx.matches(s))
+    re2::StringPiece string_piece(s.data(), s.length());
+    if (RE2::PartialMatch(string_piece, rx))
       rc++;
   }
 
@@ -685,7 +686,7 @@ read_the_tdts_grepc_version(iwstring_data_source & input,
   IW_TDT tdt;
   while (tdt.next(input))
   {
-    int c = do_grepc(tdt, sort_by_grepc);
+    int c = do_grepc(tdt, *sort_by_grepc);
     ov[ntdts].set_single_value(c);
     ov[ntdts].set_offset(offset);
 
@@ -781,7 +782,7 @@ tdt_sort (iwstring_data_source & input,
     return echo_the_tdts(input, ov, ntdts, output_fd);
   }
 
-  if (sort_by_grepc.active())
+  if (sort_by_grepc)
   {
     Offset_Value_Int * ov = new Offset_Value_Int[ntdts];
     if (nullptr == ov)
@@ -919,14 +920,16 @@ tdt_sort(int argc, char ** argv)
   {
     const_IWSubstring rx = cl.string_value("grepc");
 
-    if (! sort_by_grepc.set_pattern(rx))
+    const re2::StringPiece string_piece(rx.data(), rx.length());
+    sort_by_grepc = std::make_unique<re2::RE2>(string_piece);
+    if (! sort_by_grepc->ok())
     {
       cerr << "Invalid sort by count rx '" << rx << "'\n";
       return 4;
     }
 
     if (verbose)
-      cerr << "Will sort by number of matches to '" << sort_by_grepc.source() << "'\n";
+      cerr << "Will sort by number of matches to '" << sort_by_grepc->pattern() << "'\n";
   }
   else
   {

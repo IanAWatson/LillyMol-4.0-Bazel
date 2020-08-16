@@ -8,17 +8,17 @@
 using std::cerr;
 using std::endl;
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "misc.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/misc.h"
 
-#include "istream_and_type.h"
-#include "output.h"
-#include "molecule.h"
-#include "aromatic.h"
-#include "iwstandard.h"
-#include "substructure.h"
-#include "target.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/output.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/substructure.h"
+#include "Molecule_Lib/target.h"
 #include "spatially_common_matched_atoms.h"
 
 const char * prog_name = NULL;
@@ -424,12 +424,12 @@ remove_matched_atoms(data_source_and_type<Molecule> & input,
 }
 
 static int
-remove_matched_atoms(const char * fname, int input_type, 
+remove_matched_atoms(const char * fname, FileType input_type, 
                      Molecule_Output_Object & output)
 {
   assert (NULL != fname);
 
-  if (0 == input_type)
+  if (FILE_TYPE_INVALID == input_type)
   {
     input_type = discern_file_type_from_name(fname);
     assert (0 != input_type);
@@ -526,7 +526,7 @@ remove_matched_atoms (int argc, char ** argv)
     }
   }
 
-  int input_type = 0;
+  FileType input_type = FILE_TYPE_INVALID;
 
   if (cl.option_present('i'))
   {
@@ -673,7 +673,7 @@ remove_matched_atoms (int argc, char ** argv)
   Molecule_Output_Object output;
 
   if (! cl.option_present('o'))
-    output.add_output_type(SMI);
+    output.add_output_type(FILE_TYPE_SMI);
   else if (! output.determine_output_types(cl))
   {
     cerr << "Cannot determine output types\n";

@@ -5,7 +5,6 @@
 #endif
 #include <sys/types.h>
 #include <iostream>
-using namespace std;
 
 #include "iwstring.h"
 

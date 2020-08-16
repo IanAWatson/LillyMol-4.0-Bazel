@@ -1,5 +1,4 @@
 #include <iostream>
-using namespace std;
 
 #define MINMAXSPC_IMPLEMENTATION
 #define MINMAXSPC_OP_IMPLEMENTATION

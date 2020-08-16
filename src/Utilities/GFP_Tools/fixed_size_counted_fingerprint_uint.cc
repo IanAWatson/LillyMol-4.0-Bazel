@@ -2,8 +2,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "iwbits.h"
-#include "iwstring.h"
+#include "Foundational/iwbits/iwbits.h"
+#include "Foundational/iwstring/iwstring.h"
 
 #include "fixed_size_counted_fingerprint.h"
 

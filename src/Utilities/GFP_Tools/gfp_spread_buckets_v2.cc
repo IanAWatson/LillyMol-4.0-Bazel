@@ -18,20 +18,17 @@
   type, a uniform distribution from bucket numbers
 */
 
-#include <stdlib.h>
 #include <limits>
 
-//#define USE_IWMALLOC
-#ifdef USE_IWMALLOC
-#include "iwmalloc.h"
-#endif
+#include "re2/re2.h"
 
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "misc.h"
-#include "cmdline.h"
-#include "accumulator.h"
-#include "iwrandom.h"
+
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/mtrand/iwrandom.h"
 
 #include "spread_v2.h"
 
@@ -183,7 +180,7 @@ Bucket_Type::Bucket_Type () : _tag (bucket_tag)
   _lowest_occupied_bucket = -1;
   _highest_occupied_bucket = -1;
 
-  _bucket = nullptr.;
+  _bucket = nullptr;
 
   _bucket_column_in_tag = -1;
 }
@@ -195,7 +192,7 @@ Bucket_Type::~Bucket_Type ()
 
   _lowest_occupied_bucket = -85;
 
-  if (nullptr. != _bucket)
+  if (nullptr != _bucket)
     delete [] _bucket;
 
   return;
@@ -206,7 +203,7 @@ Bucket_Type::status (std::ostream & os) const
 {
   os << "Bucket type '" << _name << "', lowest occupied bucket " << _lowest_occupied_bucket << " highest occupied bucket " << _highest_occupied_bucket << endl;
 
-  if (nullptr. != _bucket)
+  if (nullptr != _bucket)
   {
     for (int i = _lowest_occupied_bucket; i <= _highest_occupied_bucket; i++)
     {
@@ -462,7 +459,7 @@ Bucket_Type::discern_bucket (const IW_TDT & tdt,
     return _discern_bucket_from_tag (tdt, b);
 }
 
-static Bucket_Type * bucket_type = nullptr.;
+static Bucket_Type * bucket_type = nullptr;
 
 class Bucket_Spread_Object: public Spread_Object
 {
@@ -566,7 +563,7 @@ static int already_selected_molecules_present = 0;
   Our pool is an array of FP objects
 */
 
-static Bucket_Spread_Object * pool = nullptr.;
+static Bucket_Spread_Object * pool = nullptr;
 
 static int pool_size = 0;
 
@@ -708,10 +705,10 @@ static int
 allocate_pool ()
 {
   assert (pool_size > 0);
-  assert (nullptr. == pool);
+  assert (nullptr == pool);
 
   pool = new Bucket_Spread_Object[pool_size];
-  if (nullptr. == pool)
+  if (nullptr == pool)
   {
     cerr << "Yipes, could not allocate pool of size " << pool_size << endl;
     return 62;
@@ -735,13 +732,13 @@ build_pool (const char * fname)
 
   if (0 == pool_size)
   {
-    IW_Regular_Expression pcn_rx ("^PCN<");   // should use identifier-tag
+    re2::RE2 pcn_rx("^PCN<");   // Should use identifier-tag
 
-    pool_size = input.grep (pcn_rx);
+    pool_size = input.grep(pcn_rx);
 
     if (0 == pool_size)
     {
-      cerr << "Zero occurrences of '" << pcn_rx.source () << "' in '" << fname << "'\n";
+      cerr << "Zero occurrences of '" << pcn_rx.pattern() << "' in '" << fname << "'\n";
       return 0;
     }
 
@@ -749,13 +746,13 @@ build_pool (const char * fname)
       return 0;
   }
 
-  return build_pool (input);
+  return build_pool(input);
 }
 
 template <typename T>
 void
-compare_against_whole_pool (T & fp,
-                            int ntdt)
+compare_against_whole_pool(T & fp,
+                           int ntdt)
 {
   for (int i = 0; i < pool_size; i++)
   {

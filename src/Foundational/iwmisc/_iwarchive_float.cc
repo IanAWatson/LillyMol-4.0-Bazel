@@ -1,5 +1,4 @@
 #include <iostream>
-using namespace std;
 
 #define IWARCHIVE_IMPLEMENTATION
 #define IWARCHIVE_OP_IMPLEMENTATION

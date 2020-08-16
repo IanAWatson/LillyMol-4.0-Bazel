@@ -2,8 +2,6 @@
 #include <iostream>
 #include <stdint.h>
 
-//using namespace std;
-
 using std::cerr;
 using std::endl;
 
@@ -11,12 +9,12 @@ using std::endl;
 #include <math.h>
 #include <assert.h>
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "iwstring_data_source.h"
-#include "misc.h"
-#include "minmaxspc.h"
-#include "iw_stl_hash_map.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/minmaxspc.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 const char * prog_name = NULL;
 

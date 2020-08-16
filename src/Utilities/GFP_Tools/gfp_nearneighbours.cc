@@ -4,18 +4,17 @@
 
 #include <stdlib.h>
 
-#include "cmdline.h"
-#include "accumulator.h"
-#include "iwstring_data_source.h"
-#include "iw_tdt.h"
-#include "iwhistogram.h"
+#include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/histogram/iwhistogram.h"
 
 #include "gfp.h"
 #include "sparse_collection.h"
 
 #include "tversky.h"
 
-#include "iw_tdt_filter.h"
 /*
   gfp_nearneighbours.cc,v 1.3 2002/06/21 19:05:32 
 */
@@ -62,11 +61,6 @@ static int neighbours_to_find = 1;
 */
 
 static IWString neighbours_to_find_tag;
-
-/*
-  If we have a filter active, we may not get enough neighbours. We can rescan the
-  pool with all the exclusions turned off
-*/
 
 static int rescan_if_not_enough_neighbours = 0;
 
@@ -155,8 +149,7 @@ static int do_not_compare_molecules_with_themselves = 0;
 static iwstring_data_source pool_data_source;
 
 static int
-build_pool (iwstring_data_source & input,
-            IW_TDT_Filter & filter)
+build_pool (iwstring_data_source & input)
 {
   off_t offset = input.tellg ();
 
@@ -168,16 +161,6 @@ build_pool (iwstring_data_source & input,
   while (tdt.next (input))
   {
     tdts_read++;
-
-    if (filter.active ())
-    {
-      if (! filter.matches (tdt))
-      {
-        cerr << "failed filter\n";
-        offset = input.tellg ();
-        continue;
-      }
-    }
 
     int fatal;
     if (! pool[items_in_pool].construct_from_tdt (tdt, fatal))
@@ -216,8 +199,7 @@ build_pool (iwstring_data_source & input,
 }
 
 static int
-build_pool (const const_IWSubstring & fname, 
-            IW_TDT_Filter & filter)
+build_pool (const const_IWSubstring & fname)
 {
   IWString tmp (fname);
 
@@ -248,7 +230,7 @@ build_pool (const const_IWSubstring & fname,
       cerr << "Pool automatically sized to " << pool_size << endl;
   }
 
-  return build_pool(pool_data_source, filter);
+  return build_pool(pool_data_source);
 }
 
 static int
@@ -781,7 +763,6 @@ usage (int rc)
 //cerr << " -E <dataitem>    pool object dataitems to be echo'd (default $SMI and PCN)\n";
 //cerr << " -E ALL           echo all dataitems from the pool file\n";
   cerr << " -A <TAG>         write average neighbour distance to <TAG>\n";
-//cerr << " -O <qualifier>   options for TDT filter (enter -O help for details)\n";
   cerr << " -X <distance>    abandon distance computation if any component > distance\n";
   cerr << " -r <number>      ensure all molecules have at least <number> neighbours\n";
   cerr << " -h               discard nbrs with at dist and same ID as target\n";
@@ -918,31 +899,10 @@ nearneighbours(int argc, char ** argv)
 
   if (cl.option_present('p'))
   {
-    IW_TDT_Filter filter;
-
-    if (cl.option_present('O'))
-    {
-      const_IWSubstring o = cl.string_value('O');
-      if ("help" == o)
-      {
-        display_tdt_filter_syntax(cerr);
-        return 2;
-      }
-
-      if (! filter.build_from_string(o))
-      {
-        cerr << "Cannot parse the -O qualifier '" << o << "'\n";
-        usage(21);
-      }
-
-      if (verbose)
-        cerr << "Will filter pool TDT's according to filter\n";
-    }
-
     const_IWSubstring fname;
     cl.value('p', fname);
 
-    if (! build_pool(fname, filter))
+    if (! build_pool(fname))
     {
       cerr << "Cannot build pool from '" << fname << "'\n";
       return 76;
@@ -953,9 +913,6 @@ nearneighbours(int argc, char ** argv)
       cerr << "Yipes, pool is empty\n";
       return 12;
     }
-
-    if (verbose && filter.active())
-      filter.report(cerr);
   }
 
   if (cl.option_present('K'))
