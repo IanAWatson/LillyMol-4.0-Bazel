@@ -16,7 +16,7 @@
 
 #include "molecule.h"
 #include "aromatic.h"
-#include "iwstandard.h"
+#include "standardise.h"
 #include "path.h"
 #include "toggle_kekule_form.h"
 #include "smiles.h"
@@ -343,6 +343,7 @@ Chemical_Standardisation::activate_all()
   _transform_aromatic_guanidine_ring.activate();
   _transform_pyrazolone.activate();
   _transform_amino_thiazole.activate();
+  _transform_enol_to_keto.activate();
 
   _active = 1;
 
@@ -384,6 +385,7 @@ display_all_chemical_standardisation_options(std::ostream & os, char zoption)
   os << "  -" << zoption << ' ' << CS_ARGUAN << "       aromatic \"gauanidines\" - adjacent to =O, better name needed\n";
   os << "  -" << zoption << ' ' << CS_PYRAZOLONE << "       convert pyrazolone to keto form\n";
   os << "  -" << zoption << ' ' << CS_AMINO_THIAZOLE << "     convert -N=c1scc[nH]1 to -[NH]c1sccn1\n";
+  os << "  -" << zoption << ' ' << CS_KETO_ENOL << "     convert enol to keto forms (no adjacent heteroatoms)\n";
   os << "  -" << zoption << ' ' << CS_ALL << "         ALL the above standardistions\n";
   os << "  -" << zoption << ' ' << CS_REVERSE_NITRO << "     convert O=N=O nitro groups to charge separated\n";
   os << "  -" << zoption << ' ' << CS_REVERSE_NV5 << "       convert all 5 valent N atoms to charge separated\n";
@@ -607,6 +609,10 @@ Chemical_Standardisation::Activate(const IWString& directive,
   else if (CS_REVERSE_NV5 == tmp)
   {
     _transform_nv5_to_charge_separated.activate();
+  }
+  else if (CS_KETO_ENOL == tmp)
+  {
+    _transform_enol_to_keto.activate();
   }
   else
   {
@@ -2555,7 +2561,7 @@ compute_guanidine_bond_acceptance_desirability (Molecule & m,
 }
 #endif
 
-#define DEBUG_RING_GUANIDINE_STANDARDISE
+//#define DEBUG_RING_GUANIDINE_STANDARDISE
 
 /*
   We have something like
@@ -3154,6 +3160,9 @@ Chemical_Standardisation::_process (Molecule & m,
   if (_transform_amino_thiazole.active())
     rc += _do_amino_thiazole(m, atom_already_changed, current_molecule_data);
 
+  if (_transform_enol_to_keto.active())
+    rc += _do_enol_to_keto(m, current_molecule_data);
+
   assert (current_molecule_data.npos() >= 0);
   assert (current_molecule_data.nneg() >= 0);
   assert (current_molecule_data.nplus() >= 0);
@@ -3472,6 +3481,11 @@ Chemical_Standardisation::report(std::ostream & os) const
   {
     os << "  amino thiazole ";
     _transform_amino_thiazole.report(os);
+  }
+
+  if (_transform_enol_to_keto.active()) {
+    os << "  enol to keto ";
+    _transform_enol_to_keto.report(os);
   }
 
   return os.good();
@@ -4958,10 +4972,10 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
     _transform_charged_imidazole.extra(rc);
 
     if (_verbose)
-      cerr << "Transformed " << rc << " charged imidazole groups\n";
+      cerr << "Transformed " << rc << " charged imidazole/pyrazole groups\n";
 
     if (_append_string_depending_on_what_changed)
-      _append_to_changed_molecules << " STD:charged_imidazole";
+      _append_to_changed_molecules << " STD:charged_imidazole/pyrazole";
   }
 
   return rc;
@@ -5244,18 +5258,23 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
   if (current_molecule_data.ring_membership()[r[nd3]] != 1)
     return 0;
 
+  // We may have either an imidazole or a pyrazole. Pyrazole is harder
+  // so handle separately.
   // Make sure a 2 connected carbon between them, or should we bother?
   int c1;
   if ((nplus + 2) % 5 == nd3)
     c1 = r.next_index_after_wrap(nplus, +1);
+  else if ((nd3 + 2) % 5 == nplus)
+    c1 = r.next_index_after_wrap(nd3, +1);
   else
-    c1 = r.next_index_after_wrap(nplus, -1);
+    c1 = INVALID_ATOM_NUMBER;  // pyrazole
 
-  // Do we really need this check?
-  if (z[c1] != 6 || ncon[c1] != 2)
+  // Do we really need to check the connectivity or c1
+  if (c1 == INVALID_ATOM_NUMBER)
+    ;
+  else if (z[c1] != 6 || ncon[c1] != 2)
     return 0;
-
-  if (current_molecule_data.ring_membership()[r[c1]] != 1)
+  else if (current_molecule_data.ring_membership()[r[c1]] != 1)
     return 0;
 
   // Now that we have identified the two nitrogen atoms, need to canonicalize the charge.
@@ -5294,7 +5313,14 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
       return 0;
     else if (e1 < e2)
     {
-      _swap_imidazole(m, r[nd3], r[c1], r[nplus]);
+      if (c1 == INVALID_ATOM_NUMBER)
+      {
+        if (! _swap_charged_pyrazole(m, ring_number, current_molecule_data, nplus, nd3))
+          return 0;
+      }
+      else 
+        _swap_imidazole(m, r[nd3], r[c1], r[nplus]);
+
       m.set_formal_charge(r[nplus], 0);
       m.set_formal_charge(r[nd3], 1);
       m.set_implicit_hydrogens_known(r[nd3], 0);
@@ -5309,7 +5335,60 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
   }
 
   return 0;   // Should never get here.
-  return 0;
+}
+
+//#define DEBUG_SWAP_CHARGED_PYRAZOLE
+// For example
+// [Cl-].[N+]1(=C(C)C=CN1CC1OC(=O)C(C1)(C1=CC=CC=C1)C1=CC=CC=C1)CC CHEMBL140300
+// thought about using the existing pyrazole swap, but seems more straightforward
+// to do a separate implemtation.
+// Parameters n1 and n2 are the indices ot the n+ and other nitrogen atoms.
+int
+Chemical_Standardisation::_swap_charged_pyrazole(Molecule& m, const int ring_number,
+                                        IWStandard_Current_Molecule & current_molecule_data,
+                                        const int n1, const int n2)
+{
+#ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
+  cerr << "_swap_charged_pyrazole ring " << ring_number << ' ' << *(current_molecule_data.ringi(ring_number)) << endl;
+#endif
+
+  if (current_molecule_data.ring_is_fused()[ring_number])  // Too hard, too rare.
+    return 0;
+
+  const Set_of_Atoms & r = *(current_molecule_data.ringi(ring_number));
+  assert(r.number_elements() == 5);
+  assert(m.formal_charge(n1) == 1);
+#ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
+  cerr << "_swap_charged_pyrazole: " << n1 << " (atom " << r[n1] << ") and " << n2 << " (atom " << r[n2] << ")\n";
+#endif
+
+  Set_of_Atoms in_order(5);
+  in_order.add(n1);
+  in_order.add(n2);
+  in_order.add((n2 + 1) % 5);
+  in_order.add((n2 + 2) % 5);
+  in_order.add((n2 + 3) % 5);
+#ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
+  cerr << in_order << " in order\n";
+#endif
+
+  for (int i = 0; i < 5; ++i) {
+    in_order[i] = r[in_order[i]];
+  }
+#ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
+  cerr << "In ring order " << in_order << endl;
+#endif
+
+  m.set_formal_charge(n1, 0);
+  m.set_formal_charge(n2, 1);
+  m.set_bond_type_between_atoms(in_order[1], in_order[2], DOUBLE_BOND);
+  m.set_bond_type_between_atoms(in_order[2], in_order[3], SINGLE_BOND);
+  m.set_bond_type_between_atoms(in_order[3], in_order[4], DOUBLE_BOND);
+  m.set_bond_type_between_atoms(in_order[4], in_order[0], SINGLE_BOND);
+#ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
+  cerr << "Structure updated to " << m.smiles() << endl;
+#endif
+  return 1;
 }
 
 
@@ -5353,7 +5432,7 @@ Chemical_Standardisation::_do_pyrazole(Molecule & m,
 #ifdef DEBUG_DO_PYRAZOLE
   if (rc)
   {
-    write_numbered_smiles(m, cerr);
+    write_isotopically_labelled_smiles(m, false, cerr);
     cerr << " pyrazole\n";
   }
   else
@@ -5566,17 +5645,17 @@ switch_fused_pyrazole (Molecule & m,
 }
 
 int
-Chemical_Standardisation::_do_pyrazole (Molecule & m,
-                                        int * atom_already_done,
-                                        const int ring_number,
-                                        IWStandard_Current_Molecule & current_molecule_data)
+Chemical_Standardisation::_do_pyrazole(Molecule & m,
+                                       int * atom_already_done,
+                                       const int ring_number,
+                                       IWStandard_Current_Molecule & current_molecule_data)
 {
   const Set_of_Atoms & r = *(current_molecule_data.ringi(ring_number));
 
   assert (5 == r.number_elements());
 
 #ifdef DEBUG_DO_PYRAZOLE
-  write_numbered_smiles(m, cerr);
+  write_isotopically_labelled_smiles(m, false, cerr);
   cerr << " pyrazole atoms " << r << endl;
 #endif
 
@@ -5605,18 +5684,15 @@ Chemical_Standardisation::_do_pyrazole (Molecule & m,
       return 0;
   }
 
-//cerr << "_do_pyrazole: indices " << n1_index_in_ring << " and " << n2_index_in_ring << endl;
+#ifdef DEBUG_DO_PYRAZOLE
+  cerr << "_do_pyrazole: indices " << n1_index_in_ring << " and " << n2_index_in_ring << endl;
+#endif
 
   if (n2_index_in_ring < 0)
     return 0;
 
   if (n1_index_in_ring > n2_index_in_ring)
-  {
-    int tmp = n1_index_in_ring;
-    n1_index_in_ring = n2_index_in_ring;
-    n2_index_in_ring = tmp;
-  }
-//  std::swap(n1_index_in_ring, n2_index_in_ring);
+    std::swap(n1_index_in_ring, n2_index_in_ring);
 
 #ifdef DEBUG_DO_PYRAZOLE
   cerr << "Got two nitrogens, n1 " << n1_index_in_ring << " and n2 " << n2_index_in_ring << endl;
@@ -6073,7 +6149,6 @@ Chemical_Standardisation::_do_transform_misdrawn_sulfonamide(Molecule & m,
       continue;
 
     rc += _do_transform_misdrawn_sulfonamide(m, i, current_molecule_data);
-    cerr << "After atom " << i << " rc " << rc << endl;
   }
 
 
@@ -7635,7 +7710,7 @@ possible_lactam_comparator (const Possible_Lactim_Lactam * pll1, const Possible_
 
 
 int
-IWStandard_Current_Molecule::initialise (Molecule & m)
+IWStandard_Current_Molecule::initialise(Molecule & m)
 {
   _matoms = m.natoms();
 
@@ -7983,8 +8058,8 @@ Chemical_Standardisation::_processing_needed (const IWStandard_Current_Molecule 
       current_molecule_data.possible_lactam().number_elements() > 0 ||
       current_molecule_data.possible_valence_errors() ||
       (current_molecule_data.nitrogens() && current_molecule_data.oxygens() && _transform_isoxazole.active()) ||
-      (current_molecule_data.sulphur() && (_transform_amino_thiazole.active() || _transform_misdrawn_sulfonamide.active())))
-
+      (current_molecule_data.sulphur() && (_transform_amino_thiazole.active() || _transform_misdrawn_sulfonamide.active())) ||
+      (current_molecule_data.oxygens() && _transform_enol_to_keto.active()))
     return 1;
 
   return 0;
@@ -8190,6 +8265,409 @@ Chemical_Standardisation::_do_amino_thiazole (Molecule & m,
 
   return 1;
 }
+
+/*
+  Transform CC(=O)CC(=O)C to the enol form CC(O)CC(O)C
+*/
+#ifdef KETO_ENOL_READY
+int
+Chemical_Standardisation::_do_transform_diketo_to_enol(Molecule & m,
+                        IWStandard_Current_Molecule& current_molecule_data,
+                        int * diketone13) 
+{
+  const int matoms = m.natoms();
+
+  const atomic_number_t * z = current_molecule_data.atomic_number();
+  const int * ncon = current_molecule_data.ncon();
+  const int * ring_membership = current_molecule_data.ring_membership();
+  const Atom * const * atoms = current_molecule_data.atoms();
+
+  for (int o1 = 0; o1 < matoms; ++o1)
+  {
+    if (z[o1] != 8)
+      continue;
+
+    if (ncon[o1] != 1)
+      continue;
+
+    const Bond * b = atoms[o1]->item(0);
+
+    if (! b->is_double_bond())
+      continue;
+  }
+
+  return 0;
+}
+#endif
+
+// current_keto_form has been loaded with keto forms in order
+// o c1 c2 c3 ...
+// We need to check, for each keto form present, is `c` either 
+// c2 or c3.
+static int
+is_part_part_of_keto_form(const atom_number_t c,
+                          const Set_of_Atoms& current_keto_form)
+{
+  for (int i = 0; i < current_keto_form.number_elements(); i+= 4) {
+    if (c == current_keto_form[i + 2] || c == current_keto_form[i + 3])
+      return 1;
+  }
+
+  return 0;
+}
+
+// Very conservative approach to keto/enol tautomers.
+// Only process isolated groups.
+int
+Chemical_Standardisation::_do_enol_to_keto(Molecule & m, IWStandard_Current_Molecule & current_molecule_data) {
+  if (current_molecule_data.oxygens() == 0)
+    return 0;
+
+  Set_of_Atoms current_enol_form, current_keto_form;
+  _identify_current_keto_and_enol_forms(m, current_molecule_data, current_keto_form, current_enol_form);
+
+  // Maybe sometime in the future we might want to switch back some keto forms.
+  // Not now...
+  if (current_enol_form.empty())
+    return 0;
+
+  // We can switch any current enol form where the =c carbon atom is NOT part
+  // of a current keto form.
+  int rc = 0;
+
+  for (int i = 0; i < current_enol_form.number_elements(); i += 4) {
+    const atom_number_t o = current_enol_form[i];
+    const atom_number_t c1 = current_enol_form[i + 1];
+    const atom_number_t doubly_bonded_carbon = current_enol_form[i + 2];
+    const atom_number_t singly_bonded_carbon = current_enol_form[i + 3];
+    if (is_part_part_of_keto_form(doubly_bonded_carbon, current_keto_form))
+      continue;
+    if (is_part_part_of_keto_form(singly_bonded_carbon, current_keto_form))
+      continue;
+
+//  cerr << "Atoms " << o << " c1 " << c1 << " and doubly_bonded_carbon " << doubly_bonded_carbon << " mol has " << m.natoms() << " atoms\n";
+
+    if (m.attached_heteroatom_count(doubly_bonded_carbon))  // SHould we also check singly_bonded_carbon
+      continue;
+    if (m.ncon(singly_bonded_carbon) < m.nbonds(singly_bonded_carbon))
+      continue;
+    m.set_bond_type_between_atoms(c1, o, DOUBLE_BOND);
+    m.set_bond_type_between_atoms(c1, doubly_bonded_carbon, SINGLE_BOND);
+    rc++;
+  }
+
+  if (rc)
+  {
+    _transform_enol_to_keto.extra(rc);
+
+    if (_verbose) 
+      cerr << "Transformed " << rc << " enol forms to keto form\n";
+
+    if (_append_string_depending_on_what_changed)
+      _append_to_changed_molecules << " STD:Enol2Keto";
+  }
+
+  return rc;
+}
+
+// We have identified a double bond o=c. Are there two carbons attached to `c` that
+// form a keto group? Add all 4 atoms to current_keto_form if successful.
+int
+accumulate_possible_keto_form(const Molecule & m,
+                              IWStandard_Current_Molecule& current_molecule_data,
+                              atom_number_t o,
+                              atom_number_t c,
+                              Set_of_Atoms& current_keto_form)
+{
+  const atomic_number_t * z = current_molecule_data.atomic_number();
+  const int * ring_membership = current_molecule_data.ring_membership();
+
+  const Atom * carbon = m.atomi(c);
+  assert(carbon->ncon() == 3);
+
+  Set_of_Atoms attached_carbons(2);
+  for (int i = 0; i < 3; ++i) {
+    const Bond * b = carbon->item(i);
+    if (b->is_double_bond())   // Bond back to 'o`.
+      continue;
+    const atom_number_t j = b->other(c);
+    if (z[j] != 6)  // All attachments must be carbon.
+      return 0;
+    if (ring_membership[j] > 0)
+      return 0;
+
+    attached_carbons.add(j);
+  }
+
+  current_keto_form.add(o);
+  current_keto_form.add(c);
+  current_keto_form += attached_carbons;
+  return 1;
+}
+
+// zatom might be the doubly bonded carbon atom in an enol. But if it
+// has unsaturated neighbors, we do not want to purturb that network.
+// Return the number if unsaturated neighbours.
+static int 
+unsaturated_neighbors(const Molecule& m, const atom_number_t zatom)
+{
+  const Atom * a = m.atomi(zatom);
+
+  const int acon = a->ncon();
+
+  int rc = 0;
+
+  for (int i = 0; i < acon; ++i)
+  {
+    const Bond * b = a->item(i);
+    if (b->is_double_bond()) {
+      continue;
+    }
+
+    const atom_number_t j = b->other(zatom);
+    if (m.ncon(j) < m.nbonds(j))  // Since any unsaturated neighbor stops the conversion, we could return here.
+      rc++;
+  }
+
+  return rc;
+}
+
+
+// We have identified a single bond o-c. Is there a doubly bonded carbon attached
+// to `c` that is an enol. Add all atoms in the o-c=c group to current_keto_form.
+int
+accumulate_possible_enol_form(const Molecule & m,
+                              IWStandard_Current_Molecule& current_molecule_data,
+                              atom_number_t o,
+                              atom_number_t c,
+                              Set_of_Atoms& current_enol_form)
+{
+  const atomic_number_t * z = current_molecule_data.atomic_number();
+  const int * ring_membership = current_molecule_data.ring_membership();
+
+  const Atom * carbon = m.atomi(c);
+  assert(carbon->ncon() == 3);
+
+  atom_number_t singly_bonded_carbon = INVALID_ATOM_NUMBER;
+  atom_number_t doubly_bonded_carbon = INVALID_ATOM_NUMBER;
+  Set_of_Atoms attached_carbons(2);
+  for (int i = 0; i < 3; ++i) {
+    const Bond * b = carbon->item(i);
+    const atom_number_t j = b->other(c);
+    if (j == o)
+      continue;
+
+    if (z[j] != 6)  // All attachments must be carbon.
+      return 0;
+    if (ring_membership[j] > 0)
+      return 0;
+
+    if (b->is_double_bond())
+      doubly_bonded_carbon = j;
+    else
+      singly_bonded_carbon = j;
+  }
+
+  if (INVALID_ATOM_NUMBER == doubly_bonded_carbon || 
+      INVALID_ATOM_NUMBER == singly_bonded_carbon)
+    return 0;
+
+  if (unsaturated_neighbors(m, doubly_bonded_carbon))
+    return 0;
+
+  current_enol_form.add(o);
+  current_enol_form.add(c);
+  current_enol_form.add(doubly_bonded_carbon);
+  current_enol_form.add(singly_bonded_carbon);
+  return 1;
+}
+
+// Fill the current_keto_form and current_enol_form vectors.
+// Each enol form gets 3 atoms: the Oxygen, the Carbon and the doubly
+// bonded carbon.
+// Eath keto for gets 4 atoms: the Oxygen, the Carbon, and the two
+// carbons attached to that one.
+int
+Chemical_Standardisation::_identify_current_keto_and_enol_forms(Molecule & m,
+                        IWStandard_Current_Molecule& current_molecule_data,
+                        Set_of_Atoms& current_keto_form,
+                        Set_of_Atoms& current_enol_form) const
+{
+  const atomic_number_t * z = current_molecule_data.atomic_number();
+  const int * ncon = current_molecule_data.ncon();
+  const int * ring_membership = current_molecule_data.ring_membership();
+  const Atom * const * atoms = current_molecule_data.atoms();
+
+  int rc = 0;
+
+  const int matoms = m.natoms();
+  for (int o = 0; o < matoms; ++o) {
+    if (z[o] != 8)
+      continue;
+
+    if (ncon[o] != 1)
+      continue;
+
+    const Bond * b = atoms[o]->item(0);
+
+    const atom_number_t c = b->other(o);
+
+    if (z[c] != 6)
+      continue;
+
+    if (ncon[c] != 3)
+      continue;
+
+    if (ring_membership[c])  // too hard.
+      continue;
+
+    if (b->is_double_bond())
+      rc += accumulate_possible_keto_form(m, current_molecule_data, o, c, current_keto_form);
+    else
+      rc += accumulate_possible_enol_form(m, current_molecule_data, o, c, current_enol_form);
+  }
+
+  return rc;
+}
+
+#ifdef KETO_ENOL_READY
+// transforming diketones to enol form is hard. The problem is that the Hydrogen
+// is actually shared, and we have no means of representing that. So, we assign
+// the Hydrogen to one of the Oxygens in a canonical way.
+// But this is further complicated by the possibility of adjacent groups
+int
+Chemical_Standardisation::_do_transform_diketo_to_enol(Molecule & m,
+                        IWStandard_Current_Molecule& current_molecule_data,
+                        int * diketone13)
+{
+  const atomic_number_t * z = current_molecule_data.atomic_number();
+  const int * ncon = current_molecule_data.ncon();
+
+  // First identify all the keto groups.
+  for (int o = 0; o < matoms; ++o) {
+    if (z[o] != 8)
+      continue;
+
+    if (ncon[o] != 1)
+      continue;
+
+    const Bond * b = atoms[o]->item(0);
+
+    if (! b->is_double_bond())
+      continue;
+
+    const atom_number_t c = b->other(o);
+
+    if (z[c] != 6)
+      continue;
+
+    if (ncon[c] != 3)
+      continue;
+
+    if (m.attached_heteroatom_count(c) != 1)
+      continue;
+  }
+}
+
+int
+Chemical_Standardisation::_identify_adjacent_keto_enol_groups(Molecule & m,
+                                IWStandard_Current_Molecule & current_molecule_data) {
+  const atomic_number_t * z = current_molecule_data.atomic_number();
+  const int * ncon = current_molecule_data.ncon();
+  const int * ring_membership = current_molecule_data.ring_membership();
+
+  const int matoms = m.natoms();
+  int * part_of_keto_or_enol = new_int(matoms, -1);
+  std::unique_ptr<int[]> free_part_of_keto_or_enol(part_of_keto_or_enol);
+
+  // First identify all singly connected Oxygens bonded to an unsaturated carbon.
+  int unique_id = 1;
+  for (int o1 = 0; o1 < matoms; ++o1) 
+  {
+    if (part_of_keto_or_enol[o1] >= 0)  // already covered.
+      continue;
+
+    if (z[o1] != 8)
+      continue;
+
+    if (ncon[o1] != 1)
+      continue;
+
+    const Bond * b = m.atomi(o1)->item(0);
+    const atom_number_t c1 = b->other(o1);
+    if (z[c1] != 6)
+      continue;
+
+    if (ring_membership[c1])  // Too hard.
+      continue;
+
+
+    const Atom * ac1 = m.atomi(c1);
+    if (ac1->nbonds() == ncon[c1]) {  // Must be some unsaturation
+	continue;
+    }
+
+    // Must be no other attached heteroatoms, identify the adjacent C atom(s).
+    bool too_many_heteroatoms = false;
+    for int i = 0; i < ncon[c1]; ++i) {
+      const Bond * b2 = ac1->item(i);
+      const atom_number_t j = b2->other(c1);
+      if (j == o1)
+        continue;
+
+      if (z[j] != 6) {
+        too_many_heteroatoms = true;
+        break;
+      }
+    }
+
+    if (too_many_heteroatoms)
+      continue;
+
+    part_of_keto_or_enol[o1] = unique_id;
+    part_of_keto_or_enol[c1] = unique_id;
+    unique_id += 1;
+  }
+
+  if (unique_id == 2)  // Only one group found.
+    return;
+
+  // There are multiple keto/enol forms possible. Look for any that
+  // might be adjacent.
+
+  for (int c = 0; c < matoms; ++c) {
+    if (part_of_keto_or_enol[c])
+      continue;
+
+    if (z[c] != 6)
+      continue;
+
+    if (ring_membership[c])
+      continue;
+
+    if (ncon[c] < 2)
+      continue;
+
+    const Atom * ac = m.atomi(c);
+
+    Set_of_Atoms connections_to_oh;
+    for (int i = 0; i < ncon[c]; ++i) {
+      const atom_number_t j = ac->other(c, i);
+      if (part_of_keto_or_enol[j])
+        connections_to_oh.add(j)
+    }
+
+    if (connections_to_oh.empty())  // No connections to other keto/enol groups.
+      continue;
+
+    if (connections_to_oh.number_elements() == 1) {
+      part_of_keto_or_enol[c] = part_of_keto_or_enol[connections_to_oh[0]];
+      continue;
+    }
+  }
+
+}
+#endif
 
 template resizable_array_base<Possible_Lactim_Lactam*>::~resizable_array_base();
 template resizable_array<Possible_Lactim_Lactam*>::resizable_array();

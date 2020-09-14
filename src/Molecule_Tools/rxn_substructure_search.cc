@@ -20,7 +20,7 @@ using std::ofstream;
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/mdl.h"
 #include "Molecule_Lib/misc2.h"
 #include "Molecule_Lib/molecule.h"

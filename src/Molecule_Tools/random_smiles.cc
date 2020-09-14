@@ -15,7 +15,7 @@
 #include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/element.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/misc2.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"

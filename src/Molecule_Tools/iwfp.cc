@@ -17,7 +17,7 @@ using std::endl;
 #include "Molecule_Lib/charge_assigner.h"
 #include "Molecule_Lib/etrans.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/iwmfingerprint.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"

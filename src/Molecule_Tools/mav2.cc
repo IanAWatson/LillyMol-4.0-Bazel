@@ -12,7 +12,7 @@ using std::endl;
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/iwmfingerprint.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
 

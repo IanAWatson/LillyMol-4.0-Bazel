@@ -26,7 +26,7 @@ static int molecules_with_too_many_atoms = 0;
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/path.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 
 #include "Molecule_Lib/mpr.h"
 

@@ -16,7 +16,7 @@ using std::endl;
 #define ISTREAM_AND_TYPE_IMPLEMENTATION
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/path.h"

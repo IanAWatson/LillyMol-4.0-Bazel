@@ -16,7 +16,7 @@ using std::endl;
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/rotbond_common.h"
 
 const char * prog_name = NULL;

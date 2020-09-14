@@ -14,7 +14,7 @@
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/atom_typing.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule_to_query.h"
 #include "Molecule_Lib/rxn_file.h"
 

@@ -175,7 +175,7 @@ cc_library(
         "iwmtypes.h",
         "iwrcb.h",
         "iwrnm.h",
-        "iwstandard.h",
+        "standardise.h",
         "marvin.h",
         "mdl.h",
         "mdl_atom_record.h",

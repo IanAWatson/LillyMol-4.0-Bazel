@@ -28,7 +28,7 @@ using std::endl;
 #include "Molecule_Lib/chiral_centre.h"
 #include "Molecule_Lib/smiles.h"
 #include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/charge_assigner.h"
 #include "Molecule_Lib/donor_acceptor.h"
 #include "Molecule_Lib/target.h"

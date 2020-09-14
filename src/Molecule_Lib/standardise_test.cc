@@ -3,7 +3,7 @@
 #include "googletest/include/gtest/gtest.h"
 
 #include "aromatic.h"
-#include "iwstandard.h"
+#include "standardise.h"
 #include "molecule.h"
 
 namespace {
@@ -99,6 +99,84 @@ TEST_F(TestStandardisation, TestMisdrawnSulfonamideChanges)
   _chemical_standardisation.Activate(CS_MSDSA, /*verbose*/ false);
   EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
   EXPECT_EQ(_m1.unique_smiles(), "CNS(=O)(=O)CC");
+}
+
+TEST_F(TestStandardisation, TestEnoltoKetoYes)
+{
+  _smiles = "CC(O)=C";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_KETO_ENOL, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
+  EXPECT_EQ(_m1.unique_smiles(), "O=C(C)C");
+}
+
+TEST_F(TestStandardisation, TestEnoltKetoNoBecauseRing)
+{
+  _smiles = "C1C(O)=CC1";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_KETO_ENOL, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
+TEST_F(TestStandardisation, TestEnoltKetoNoBecauseAdjacentKeto)
+{
+  _smiles = "CC(O)=CC(=O)C";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_KETO_ENOL, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
+TEST_F(TestStandardisation, TestEnoltKetoNoBecauseAdjacentUnsaturation)
+{
+  _smiles = "C(=O)(O)C(=CC(=O)C1=CC=CC=C1OC)O";   //  CHEMBL4171775
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
+TEST_F(TestStandardisation, TestEnoltKetoNoBecauseComplexInterdependency)
+{
+  _smiles = "C1=CC(=CC(=C1O)C(=O)CC(=O)C=CC1=CC=C(O)C=C1)Cl"; // CHEMBL4208282
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
+TEST_F(TestStandardisation, TestEnoltKetoNoBecauseAdjacentUnsaturationDoubleBond)
+{
+  _smiles = "S(C1=NC2=CC(=CC=C2N1)C)CC(O)=C(C(=N)C)C#N"; // CHEMBL3197234
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
+TEST_F(TestStandardisation, TestChargedPyrazole)
+{
+  _smiles = "[N+]1(=C(C)C=CN1CC1OC(=O)C(C1)(C1=CC=CC=C1)C1=CC=CC=C1)CC";  // CHEMBL140300
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
+
+  EXPECT_EQ(_m1.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[N+]1=CC=[C+](N1CC)C");
+
+  _m1.invalidate_smiles();
+
+  // Some random runs to make sure things do not crash.
+
+  for (int i = 0; i < 9; ++i) {
+    const IWString & smiles = _m1.random_smiles();
+    Molecule m;
+    ASSERT_TRUE(m.build_from_smiles(smiles));
+    _chemical_standardisation.process(m);
+    EXPECT_EQ(m.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[N+]1=CC=[C+](N1CC)C");
+  }
 }
 
 }  // namespace

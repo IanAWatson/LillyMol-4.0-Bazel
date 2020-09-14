@@ -13,7 +13,7 @@
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 
 const char * prog_name = NULL;
 
