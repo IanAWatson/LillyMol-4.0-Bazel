@@ -204,6 +204,22 @@ $(LIBRARY_OBJECTS_1):
 $(BUILD_DIR)/u3b.o: u3b.f
 	$(FC) -c -o $@ $< $(FFLAGS)
 	
+# Make proto files
+substructure.pb.cc substructure.pb.h: substructure.proto
+	cd .. && protoc -I . -I $(dir $@) --cpp_out=$(dir $@) Molecule_Lib/$<
+toggle_kekule_form.pb.cc toggle_kekule_form.pb.h: toggle_kekule_form.proto
+	cd .. && protoc -I . -I $(dir $@) --cpp_out=$(dir $@) Molecule_Lib/$<
+reaction.pb.cc reaction.pb.h: reaction.proto substructure.proto toggle_kekule_form.proto
+	cd .. && protoc -I . -I $(dir $@) --cpp_out=$(dir $@) Molecule_Lib/$<
+
+# Compile protos
+$(BUILD_DIR)/substructure.pb.o: substructure.pb.cc substructure.pb.h
+	$(CXX) -c $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES) $(PROTOC_INCLUDES) -o $@ $(basename $(notdir $@)).cc
+$(BUILD_DIR)/reaction.pb.o: reaction.pb.cc reaction.pb.h
+	$(CXX) -c $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES) $(PROTOC_INCLUDES) -o $@ $(basename $(notdir $@)).cc
+$(BUILD_DIR)/toggle_kekule_form.pb.o: toggle_kekule_form.pb.cc toggle_kekule_form.pb.h
+	$(CXX) -c $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES) $(PROTOC_INCLUDES) -o $@ $(basename $(notdir $@)).cc
+
 # Rule for making library
 $(LIBRARY_NAME_1): $(LIBRARY_OBJECTS_1) $(BUILD_DIR)/u3b.o
 	$(AR) r $@ $(LIBRARY_OBJECTS_1) $(BUILD_DIR)/u3b.o

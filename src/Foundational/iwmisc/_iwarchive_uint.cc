@@ -6,4 +6,4 @@
 
 template class iwarchive<unsigned int>;
 
-template ostream & operator << (ostream &, const iwarchive<unsigned int> &);
+template std::ostream & operator << (std::ostream &, const iwarchive<unsigned int> &);

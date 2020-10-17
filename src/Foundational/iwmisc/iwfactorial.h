@@ -97,7 +97,7 @@ IW_Factorial<T>::resize (int new_size)
 
   if (NULL == _f)
   {
-    cerr << "IW_Factorial::resize: cannot allocate " << new_size << " items\n";
+    std::cerr << "IW_Factorial::resize: cannot allocate " << new_size << " items\n";
     return 0;
   }
 

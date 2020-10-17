@@ -6,4 +6,4 @@
 
 template class iwarchive<double>;
 
-template ostream & operator << (ostream &, const iwarchive<double> &);
+template std::ostream & operator << (std::ostream &, const iwarchive<double> &);

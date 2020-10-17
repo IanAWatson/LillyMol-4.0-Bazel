@@ -5,4 +5,4 @@
 #include "minmaxspc.h"
 
 template class Min_Max_Specifier<int>;
-template ostream & operator << (ostream &, const Min_Max_Specifier<int> &);
+template std::ostream & operator << (std::ostream &, const Min_Max_Specifier<int> &);

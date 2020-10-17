@@ -39,8 +39,11 @@ else
     LIBZ = -L$(ZLIB) -lz
 endif
 
+# If you have a non-default protoc installation.
+PROTOC_INCLUDES=-I /home/ian/pub/include
+PROTOLIB=-L/home/ian/pub/lib -lprotobuf
+
 RE2LIB=-lre2
-PROTOLIB=-lprotobuf
 
 USRLIB=
 
@@ -52,7 +55,7 @@ COMPILER = -msse -mfpmath=sse
 
 CPP_STD = -std=c++17
 
-FLAGS = $(PROF) $(DEBUG) $(COMPILER) $(CPU) $(OPT) $(CPP_STD) $(PROJ) $(INC) -Wl,--no-warn-search-mismatch 
+FLAGS = $(PROF) $(DEBUG) $(COMPILER) $(CPU) $(OPT) $(CPP_STD) $(PROJ) $(INC) -Wl,--no-warn-search-mismatch $(PROTOC_INCLUDES)
 
 CFLAGS  =  $(FLAGS)
 CXXFLAGS = $(FLAGS)
@@ -66,7 +69,7 @@ CPPFLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DNEED_EXTERN_OPT
 
 # Some programmes want implicit templates
 
-CXX_FLAGS_WITH_IMPLICIT_TEMPLATES = $(CPPFLAGS) $(COMPILER) $(PROF) $(DEBUG) $(CPU) $(OPT) $(PROJ) $(INC) $(CPP_STD)
+CXX_FLAGS_WITH_IMPLICIT_TEMPLATES = $(CPPFLAGS) $(COMPILER) $(PROF) $(DEBUG) $(CPU) $(OPT) $(PROJ) $(INC) $(CPP_STD) $(PROTOC_INCLUDES)
 
 
 LD = $(CXX) $(PROF) 

@@ -7,5 +7,5 @@
 
 template class iwarchive<float>;
 
-template ostream & operator << (ostream &, const iwarchive<float> &);
+template std::ostream & operator << (std::ostream &, const iwarchive<float> &);
 
