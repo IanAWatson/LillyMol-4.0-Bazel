@@ -1656,7 +1656,7 @@ Molecule::_build_from_smiles (const char * smiles,
       previous_bond_type = PERMANENT_AROMATIC_BOND;
       previous_token_was = PREVIOUS_TOKEN_BOND_SPECIFIER;
     }
-    else if (' ' == *s || '\t' == *s)
+    else if (' ' == *s || '\t' == *s || ',' == *s)
     {
       if (0 != paren_level)
       {
