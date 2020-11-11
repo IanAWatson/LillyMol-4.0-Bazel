@@ -539,7 +539,7 @@ fingerprints_to_descriptors(iwstring_data_source& input,
     ncols = col.size();
 
   IWString pcn;
-  int nbits;
+  int nbits = 0;
 
   while (input.next_record(input_buffer))
   {

@@ -202,6 +202,12 @@ include_atom_map_with_smiles()
   return _include_atom_map_with_smiles;
 }
 
+static int _write_formal_charge_as_consecutive_signs = 1;
+
+void set_write_formal_charge_as_consecutive_signs(int s) {
+  _write_formal_charge_as_consecutive_signs = s;
+}
+
 /*
   Sept 2003. Ran into ring openings and closings from ChemDraw that
   went over 100!
@@ -253,6 +259,7 @@ display_all_smiles_options (char flag, std::ostream & os)
   os << "  -" << flag << " rcsbd       include directionality in ring closure single bonds\n";
   os << "  -" << flag << " usv2        use faster, but incompatible unique smiles determination\n";
   os << "  -" << flag << " nd4h        four connected neutral Nitrogen atoms have a Hydrogen\n";
+  os << "  -" << flag << " fcnum       write formal charges as +[number] rather than ++\n";
 
   return 1;
 }
@@ -479,10 +486,10 @@ do_append_coordinates (IWString & smiles, const Atom * a)
 }
 
 static void
-finish_smiles_atom (IWString & smiles,
-                    atomic_number_t z,
-                    int hcount,
-                    formal_charge_t fc)
+finish_smiles_atom(IWString & smiles,
+                   atomic_number_t z,
+                   int hcount,
+                   formal_charge_t fc)
 {
 //cerr << "finish_smiles_atom atomic number " << z << " with hcount " << hcount << endl;
 
@@ -490,21 +497,37 @@ finish_smiles_atom (IWString & smiles,
   {
      smiles += 'H';
      if (hcount > 1)
-       append_digit(smiles, hcount);
+       smiles += hcount;
   }
-  if (fc > 0)
-  {
-    for (int i = 0; i < fc; i++)
-    {
+
+  if (fc == 0)
+    ;
+  else if (fc == 1)
+    smiles += '+';
+  else if (fc == -1)
+    smiles += '-';
+  else if (fc > 0) {
+    if (_write_formal_charge_as_consecutive_signs) {
+      for (int i = 0; i < fc; i++)
+      {
+        smiles += '+';
+      }
+    } else {
       smiles += '+';
+      smiles += fc;
     }
-  }
-  else if (fc < 0)
-  {
-    for (int i = 0; i < -fc; i++)
-    {
+  } else if (fc < 0) {
+    if (_write_formal_charge_as_consecutive_signs) {
+      for (int i = 0; i < -fc; i++)
+      {
+        smiles += '-';
+      }
+    } else {
       smiles += '-';
+      smiles += -fc;
     }
+  } else {
+    cerr << "How did we get here: formal_charge " << fc << endl;
   }
 
   return;

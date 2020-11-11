@@ -463,6 +463,7 @@ Sparse_Fingerprint::is_set (unsigned int b) const
   return 0;
 }
 
+#ifdef SLOWER_VERSION_AA
 similarity_type_t
 Sparse_Fingerprint::_tanimoto_with_counts(const Sparse_Fingerprint & rhs) const
 {
@@ -479,7 +480,90 @@ Sparse_Fingerprint::_tanimoto_with_counts(const Sparse_Fingerprint & rhs) const
 
 //#define DEBUG_SPARSE_TANIMOTO_COUNT
 #ifdef DEBUG_SPARSE_TANIMOTO_COUNT
-  cerr << "Comparing non colliding counted fingerprint with " << _nbits << " bits " << _nset << " set\n";
+  cerr << "Comparing non colliding counted fingerprint with " << _nbits << " bits " << _nset << " set. RHS " << rhs._nbits << ' ' << rhs._nset << '\n';
+  int bic = 0;
+  for (int i = 0; i < _nbits; i++)
+  {
+    unsigned int b = _bit[i];
+    cerr << ' ' << i << " bit " << b << " set " << _count[i] << " times";
+    if (rhs.is_set(b))
+    {
+      bic++;
+      cerr << " *";
+    }
+    cerr << endl;
+  }
+  cerr << bic << " bits in common, and       " << rhs;
+#endif
+
+  const unsigned int * b1;
+  const int * c1;
+  int n1;
+  const unsigned int * b2;
+  const int * c2;
+
+// Make sure the last item in b2 is greater than the last item in b1
+
+  if (_bit[_nbits - 1] < rhs._bit[rhs._nbits - 1])
+  {
+    n1 = _nbits;
+    c1 = _count;
+    b1 = _bit;
+    c2 = rhs._count;
+    b2 = rhs._bit;
+  }
+  else
+  {
+    n1 = rhs._nbits;
+    c1 = rhs._count;
+    b1 = rhs._bit;
+    c2 = _count;
+    b2 = _bit;
+  }
+
+  int bits_in_common = 0;
+
+  unsigned int b;
+  for (int i = 0, j = 0; i < n1;)
+  {
+    if (b1[i] < b2[j])
+      i++;
+    else if (b1[i] > b2[j])
+      j++;
+    else {
+      bits_in_common += std::min(c1[i], c2[j]);
+      i++;
+      j++;
+    }
+  }
+
+  similarity_type_t rc = static_cast<similarity_type_t>(bits_in_common) / static_cast<similarity_type_t>(_nset + rhs._nset - bits_in_common);
+
+#ifdef DEBUG_SPARSE_TANIMOTO_COUNT
+  cerr << _nset << " bits and " << rhs._nset << " bits, " << bits_in_common << " bits_in_common, similarity " << rc << endl;
+#endif
+
+  return rc;
+}
+#endif
+
+similarity_type_t
+Sparse_Fingerprint::_tanimoto_with_counts(const Sparse_Fingerprint & rhs) const
+{
+  if (0 == _nbits || 0 == rhs._nbits)
+  {
+    if (0 == _nbits && 0 == rhs._nbits)
+      return static_cast<similarity_type_t>(1.0);
+
+    return static_cast<similarity_type_t>(0.0);
+  }
+
+  assert (nullptr != _count);
+  assert (_nset > 0 && rhs._nset > 0);
+
+//#define DEBUG_SPARSE_TANIMOTO_COUNT
+#ifdef DEBUG_SPARSE_TANIMOTO_COUNT
+  cerr << "Comparing non colliding counted fingerprint with " << _nbits << " bits " << _nset << " set. RHS " << rhs._nbits << ' ' << rhs._nset << '\n';
   int bic = 0;
   for (int i = 0; i < _nbits; i++)
   {
@@ -533,11 +617,12 @@ Sparse_Fingerprint::_tanimoto_with_counts(const Sparse_Fingerprint & rhs) const
 
     if (b2[j] == b)
     {
-      bits_in_common += bic_table[c1[i] * 256 + c2[j]];
-/*    if (c1[i] <= c2[j])
+//    bits_in_common += bic_table[c1[i] * 256 + c2[j]];
+//    cerr << " BIT IN COMMON " << b << " counts " << c1[i] << ' ' << c2[j] << '\n';
+      if (c1[i] <= c2[j])
         bits_in_common += c1[i];
       else 
-        bits_in_common += c2[j];*/
+        bits_in_common += c2[j];
 
       j++;
     }

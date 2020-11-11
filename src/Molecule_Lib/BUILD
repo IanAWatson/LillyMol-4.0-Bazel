@@ -398,6 +398,23 @@ cc_test(
 )
 
 cc_test(
+    name = "smiles_test",
+    srcs = [
+        "smiles_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        ":substructure_cc_proto",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ]
+)
+
+cc_test(
     name = "substructure_test",
     srcs = ["substructure_test.cc"],
     timeout="short",

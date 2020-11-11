@@ -404,8 +404,8 @@ process_hcount (const char * smiles, int & hcount, int & nchars)
 */
 
 static int
-process_charge_specifier (const char * smiles, int sign, formal_charge_t & fc, 
-                          int & nchars)
+process_charge_specifier(const char * smiles, int sign, formal_charge_t & fc, 
+                         int & nchars)
 {
   nchars = 1;
   smiles++;
@@ -464,7 +464,7 @@ process_charge_specifier (const char * smiles, int sign, formal_charge_t & fc,
 }
 
 static int
-process_chirality_specifier (const char * smiles, int & chiral_count, int & nchars)
+process_chirality_specifier(const char * smiles, int & chiral_count, int & nchars)
 {
   nchars = 1;
   chiral_count = 1;
@@ -480,7 +480,7 @@ process_chirality_specifier (const char * smiles, int & chiral_count, int & ncha
 }
 
 static const Element *
-fetch_or_create_R_element (const IWString & r)
+fetch_or_create_R_element(const IWString & r)
 {
   const Element * e = get_element_from_symbol_no_case_conversion(r);
   if (NULL != e)

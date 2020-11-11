@@ -203,6 +203,8 @@ extern void reset_smiles_support_file_scope_variables ();
 extern void set_include_atom_map_with_smiles(const int s);
 extern int  include_atom_map_with_smiles();
 
+extern void set_write_formal_charge_as_consecutive_signs(int s);
+
 /*
   Used for parsing leading numeric qualifiers
 */

@@ -171,6 +171,26 @@ cc_binary(
 )
 
 cc_binary(
+    name = "test_sparse_bitvector_performance",
+    srcs = [
+        "test_sparse_bitvector_performance.cc",
+    ],
+    deps = [
+        ":build_pool",
+        ":gfp",
+        ":sparse_collection",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iw_tdt:iw_tdt",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+
+cc_binary(
     name = "iwstats",
     srcs = [
         "iwstats.cc",

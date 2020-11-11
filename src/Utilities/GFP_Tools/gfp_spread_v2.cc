@@ -1388,9 +1388,5 @@ main (int argc, char ** argv)
 {
   int rc = fpobj_spread(argc, argv);
 
-#ifdef USE_IWMALLOC
-  terse_malloc_status(stderr);
-#endif
-
   return rc;
 }
