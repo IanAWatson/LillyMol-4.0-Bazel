@@ -96,6 +96,7 @@ usage(int rc)
   cerr << " -w <n>         interpret fixed width fp's as numbers of width <n> bytes\n";
   cerr << " -u             gsub space to _ in multi-token names\n";
   cerr << " -d <nbits>     fold sparse fingerprints to constant width <nbits>\n";
+  cerr << " -p             add a decimal point to all values written (remove sometime)\n";
   cerr << " -q             if a bit is absent write as -1 rather than 0\n";
   cerr << " -v             verbose output\n";
 
@@ -972,7 +973,7 @@ fingerprints_to_descriptors(const char* fname, IWString_and_File_Descriptor& out
 static int
 fingerprints_to_descriptors(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "vF:fhx:X:P:sbmy:Y:un:N:kw:d:q");
+  Command_Line cl(argc, argv, "vF:fhx:X:P:sbmy:Y:un:N:kw:d:qp");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -1227,6 +1228,12 @@ fingerprints_to_descriptors(int argc, char** argv)
 
   iwdigits.set_include_leading_space(1);
   iwdigits.initialise(100);
+  if (cl.option_present('p'))
+  {
+    iwdigits.append_to_each_stored_string(".");
+    if (verbose)
+      cerr << "Decimal point added to all numbers\n";
+  }
 
   if (0 == cl.number_elements())
   {
