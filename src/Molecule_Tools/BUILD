@@ -881,6 +881,20 @@ cc_binary(
 )
 
 cc_library(
+    name = "extended_pi",
+    srcs = [
+        "extended_pi.cc",
+    ],
+    hdrs = [
+        "extended_pi.h",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+
+cc_library(
     name = "linear_path_fingerprint",
     srcs = [
         "linear_path_fingerprint.cc",
@@ -946,6 +960,19 @@ cc_library(
     ],
     deps = [
         "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_test(
+    name = "extended_pi_test",
+    srcs = [
+        "extended_pi_test.cc",
+    ],
+    deps = [
+        ":extended_pi",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
     ],
 )
 
