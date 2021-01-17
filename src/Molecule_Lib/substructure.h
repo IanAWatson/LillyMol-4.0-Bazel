@@ -465,6 +465,7 @@ class Substructure_Bond
 
   public:
     Substructure_Bond ();
+    ~Substructure_Bond ();
 
     int ok () const;
     int debug_print (std::ostream &, const IWString &) const;

@@ -3252,7 +3252,7 @@ Chemical_Standardisation::_process(Molecule & m)
   }
 
   if (! _processing_needed(current_molecule_data))
-    return 0;
+    return rc;
 
   rc += _process(m, current_molecule_data);
 

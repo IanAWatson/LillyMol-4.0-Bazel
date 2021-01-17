@@ -179,4 +179,13 @@ TEST_F(TestStandardisation, TestChargedPyrazole)
   }
 }
 
+TEST_F(TestStandardisation, TestHRemoval) {
+  _smiles = "CC";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _m1.make_implicit_hydrogens_explicit();
+  _chemical_standardisation.Activate(CS_XH, /*verbose*/ false);
+  EXPECT_GT(_chemical_standardisation.process(_m1), 0);
+}
+
 }  // namespace

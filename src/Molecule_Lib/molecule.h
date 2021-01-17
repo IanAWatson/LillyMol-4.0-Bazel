@@ -1,6 +1,8 @@
 #ifndef IW_MOLECULE_H
 #define IW_MOLECULE_H 1
 
+#include <string>
+
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
 #include "tbb/scalable_allocator.h"
 #endif
@@ -754,6 +756,7 @@ class Molecule : private resizable_array_p<Atom>
 
     int  ok () const;          // quick audit function
     int  debug_print (std::ostream &) const;
+    std::string debug_string() const;
 
     int  check_bonding   () const;     // detailed audit function
     int  check_ring_info () const;     // checks rings for compatibility w/ this
@@ -1016,6 +1019,7 @@ class Molecule : private resizable_array_p<Atom>
     void set_name (const char *);
     void set_name (const char *, int);
     void set_name (const IWString &);
+    void set_name (const std::string &);
 
     void append_to_name (const IWString &);
 
@@ -1095,6 +1099,7 @@ class Molecule : private resizable_array_p<Atom>
     int build_from_smiles     (const char *, int);
     int build_from_smiles     (const IWString &);
     int build_from_smiles     (const const_IWSubstring &);
+    int build_from_smiles     (const std::string&);
 
     int build_from_inchi      (const const_IWSubstring &);
 

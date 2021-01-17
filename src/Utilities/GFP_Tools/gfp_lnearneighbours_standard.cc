@@ -26,20 +26,22 @@
 #include "Foundational/iwqsort/iwqsort.h"
 
 #include "gfp_standard.h"
+
+// Must be defined before neighbour_list.h
+static IWString identifier_tag("PCN<");
+static IWString distance_tag("DIST<");
+static IWString smiles_tag("$SMI<");
+
+#define NEIGHBOUR_LIST_IMPLEMENTATION
+#include "neighbour_list.h"
+
 #include "tversky.h"
+
+template class Neighbour_List<float, FP_and_Smiles, FP_and_Smiles>;
 
 static int fingerprints_processed = 0;
 
 static Tversky tversky_parameters;
-
-//GH static IWString identifier_tag("PCN<");
-
-//GH static IWString distance_tag("DIST<");
-
-//GH static IWString smiles_tag("$SMI<");
-
-//GH #include "neighbour_list.h"
-#include "_neighbour_list_fp_and_smiles.cc"
 
 static int min_number_neighbours = 0;
 
@@ -61,9 +63,6 @@ static similarity_type_t upper_distance_threshold =  2.0;
 static similarity_type_t lower_distance_threshold = -1.0;
 
 static int equal_weight_tanimoto_distance_measure = 0;
-
-
-static similarity_type_t zero_distance = static_cast<similarity_type_t>(0.0);
 
 /*
   Nov 2001, I'm getting NaN's occasionally. Don't yet know why, so let's have the ability to
@@ -492,7 +491,7 @@ nearneighbours (int argc, char ** argv)
 
   verbose = cl.option_count('v');
 
-  initialise_string_distances();
+//initialise_string_distances();
 
   initialise_properties_ratios();
 

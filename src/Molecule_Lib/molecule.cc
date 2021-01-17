@@ -1,7 +1,8 @@
 #include <iostream>
 #include <iomanip>
-#include <utility>
 #include <memory>
+#include <strstream>
+#include <utility>
 using std::cerr;
 using std::endl;
 
@@ -462,6 +463,13 @@ Molecule::debug_print(std::ostream & os) const
   print_ring_info(os);
 
   return 1;
+}
+
+std::string
+Molecule::debug_string() const {
+  std::strstream buffer;
+  debug_print(buffer);
+  return buffer.str();
 }
 
 int
@@ -1881,7 +1889,6 @@ Molecule::set_name(const char *new_name)
   }
 
   _molecule_name = new_name;
-
   _standardise_name();
 
   return;
@@ -1891,7 +1898,6 @@ void
 Molecule::set_name(const char * new_name, int lens)
 {
   _molecule_name.set(new_name, lens);
-
   _standardise_name();
 
   return;
@@ -1901,26 +1907,30 @@ void
 Molecule::set_name(const IWString & new_name)
 {
   _molecule_name = new_name;
-
   _standardise_name();
 
   return;
 }
 
 void
+Molecule::set_name(const std::string& new_name) {
+  _molecule_name.set(new_name.data(), new_name.size());
+  _standardise_name();
+}
+
+void
 Molecule::append_to_name(const IWString & zextra)
 {
   _molecule_name += zextra;
-
   _standardise_name();
 
   return;
 }
 
 static void
-append_formula_symbol (IWString & formula,
-                       const const_IWSubstring & symbol,
-                       int count)
+append_formula_symbol(IWString & formula,
+                      const const_IWSubstring & symbol,
+                      int count)
 {
   formula += symbol;
   if (count > 1)

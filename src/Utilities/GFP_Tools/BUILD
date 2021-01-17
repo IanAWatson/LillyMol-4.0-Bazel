@@ -106,6 +106,23 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_lnearneighbours_standard",
+    srcs = [
+        "gfp_lnearneighbours_standard.cc",
+        "fp_and_smiles.cc",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_standard",
+        ":neighbour_list",
+        ":sparse_collection",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "gfp_profile_activity_by_bits",
     srcs = [
         "gfp_profile_activity_by_bits.cc",

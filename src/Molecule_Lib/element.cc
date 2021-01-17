@@ -184,7 +184,7 @@ print_element_hash_table(std::ostream & os)
   {
     const Element * e = ehash[i];
 
-    if (NULL == e)
+    if (nullptr == e)
       continue;
 
     os << "Element hash " << i << " element '" << e->symbol() << "' hash value " << e->atomic_symbol_hash_value() << endl;
@@ -282,7 +282,7 @@ init_elements (void)
 
   for (int i = 0; i < SIZE_OF_ELEMENT_HASH_TABLE; i++)
   {
-    ehash[i] = NULL;
+    ehash[i] = nullptr;
   }
 
   elements.resize(HIGHEST_ATOMIC_NUMBER + 20);
@@ -312,7 +312,7 @@ check_valid_element_via_hash (const char * s, int nchars,
   cerr << "' hash " << hash;
   if (hash < 0 || hash >= SIZE_OF_ELEMENT_HASH_TABLE)
     cerr << " out of range\n";
-  else if (NULL == ehash[hash])
+  else if (nullptr == ehash[hash])
     cerr << " no element\n";
   else
     cerr << " element " << ehash[hash]->symbol() << endl;
@@ -324,7 +324,7 @@ check_valid_element_via_hash (const char * s, int nchars,
   if (hash >= SIZE_OF_ELEMENT_HASH_TABLE)
     return 0;
 
-  if (NULL == ehash[hash])
+  if (nullptr == ehash[hash])
     return 0;
 
   result = ehash[hash];
@@ -1297,7 +1297,7 @@ Element::_default_values (atomic_number_t i)
 
 // Only write the hash once
 
-  if (NULL == ehash[_atomic_symbol_hash_value])
+  if (nullptr == ehash[_atomic_symbol_hash_value])
     ehash[_atomic_symbol_hash_value] = this;
 
   return;
@@ -1336,7 +1336,7 @@ Element::_set_symbol (const char * symbol, int nchars)
 
 //  cerr << "In set_symbol for '" << _symbol << "' myhashvalue " << _atomic_symbol_hash_value " existing value " << ehash[h] << endl;
 
-    if (NULL == ehash[_atomic_symbol_hash_value])
+    if (nullptr == ehash[_atomic_symbol_hash_value])
       ehash[_atomic_symbol_hash_value] = this;
 
     return;
@@ -1561,7 +1561,7 @@ get_element_from_symbol_no_case_conversion(const char * s,
 
 #ifdef DEBUG_GET_ELEMENT_FROM_SYMBOL
     cerr << "Hash value " << hash;
-    if (NULL == ehash[hash])
+    if (nullptr == ehash[hash])
       cerr << ", no element defined\n";
     else
       cerr << " element '" << ehash[hash]->symbol() << endl;
@@ -1856,7 +1856,7 @@ element_from_smarts_string (const char * smiles, int characters_to_process,
 
 //cerr << "Hash value is " << hash << " ehash " << ehash[hash] << endl;
 
-  if (NULL == ehash[hash])      // no element of that kind yet
+  if (nullptr == ehash[hash])      // no element of that kind yet
     return 0;
 
   result = ehash[hash];
@@ -2470,10 +2470,10 @@ reset_element_file_scope_variables ()
   for (int i = HIGHEST_ATOMIC_NUMBER+1; i < elements.number_elements(); i++)
   {
     int h = elements[i]->atomic_symbol_hash_value();
-    if (h >= 0 && NULL != ehash[h])
+    if (h >= 0 && h <= SIZE_OF_ELEMENT_HASH_TABLE && nullptr != ehash[h])
     {
 //    cerr << "Deleting hash for '" << elements[i]->symbol() << "'\n";
-      ehash[h] = NULL;
+      ehash[h] = nullptr;
     }
   }
 

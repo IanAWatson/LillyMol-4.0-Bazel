@@ -666,7 +666,7 @@ nearneighbours (int argc, char ** argv)
       cerr << "Will chop DOS carriage returns\n";
   }
 
-  initialise_string_distances();
+//initialise_string_distances();
 
   if (need_to_call_initialise_fingerprints(cl))
   {

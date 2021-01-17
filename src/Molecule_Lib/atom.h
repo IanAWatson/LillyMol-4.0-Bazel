@@ -7,6 +7,7 @@
 #define IW_ATOM_H 1
 
 #include <iostream>
+#include <string>
 
 #include "iwmtypes.h"
 #include "element.h"
@@ -60,6 +61,7 @@ class Atom : public resizable_array <Bond *>, public Coordinates
     ~Atom ();
 
     int  debug_print (std::ostream &) const;
+    std::string  debug_string () const;
 
     int ok () const { return NULL != _element;}
 

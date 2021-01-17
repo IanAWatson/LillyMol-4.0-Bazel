@@ -33,3 +33,14 @@ cc_library(
         "//Foundational/iwmisc:iwconfig",
     ],
 )
+
+cc_test(
+    name = "iwaray_test",
+    srcs = [
+        "iwaray_test.cc",
+    ],
+    deps = [
+        ":iwaray",
+        "@googletest//:gtest_main",
+    ],
+)

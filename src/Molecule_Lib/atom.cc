@@ -5,6 +5,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <strstream>
 
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
 #include "tbb/scalable_allocator.h"
@@ -260,6 +261,14 @@ Atom::debug_print(std::ostream & os) const
   os << "Coordinates (" << _x << "," << _y << "," << _z << ")\n";
 
   return 1;
+}
+
+std::string
+Atom::debug_string() const
+{
+  std::strstream buffer;
+  debug_print(buffer);
+  return buffer.str();
 }
 
 /*

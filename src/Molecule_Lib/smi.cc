@@ -2094,6 +2094,11 @@ Molecule::build_from_smiles (const IWString & smiles)
   return _build_from_smiles(smiles.rawchars(), smiles.nchars());
 }
 
+int
+Molecule::build_from_smiles(const std::string& smiles) {
+  return _build_from_smiles(smiles.data(), smiles.size());
+}
+
 /*
   We need to be able to specify the datatype name used when writing
   structures.
@@ -2319,16 +2324,16 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
       cerr << "Is ring number " << ring_number << endl;
 #endif
 
-      Substructure_Bond * b;
+      std::unique_ptr<Substructure_Bond> b;
       bond_type_t bt = SINGLE_BOND; 
       if (PREVIOUS_TOKEN_WAS_BOND == previous_token_was)
       {
-        b = previous_bond.release();
+        b.reset(previous_bond.release());
         bt = b->types_matched();
       }
       else
       {
-        b = new Substructure_Bond;
+        b.reset(new Substructure_Bond);
         b->make_single_or_aromatic();
         bt = NOT_A_BOND;
       }
@@ -2350,7 +2355,7 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
 
         b->set_atom(completed[other_end]);
         b->set_type(bt);
-        previous_atom->_add_bond(b);
+        previous_atom->_add_bond(b.release());
       }
 
       characters_processed += nchars;

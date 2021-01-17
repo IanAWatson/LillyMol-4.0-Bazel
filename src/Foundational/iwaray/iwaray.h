@@ -65,6 +65,7 @@ class resizable_array_base
     inline int number_elements  () const { return _number_elements; }
     inline unsigned int size    () const { return _number_elements; }
     inline int elements_allocated () const { return _elements_allocated;}
+    inline int capacity () const { return _elements_allocated;}
 
     bool empty() const { return 0 == _number_elements;}
 
@@ -77,9 +78,12 @@ class resizable_array_base
 //  tell the resizable_array_base to resize itself to allow that number of extra items
 
     int  make_room_for_extra_items (int);
+    // Same as std::vector.
+    void reserve(int new_capacity);
 
+    // Unlike std::vector, resize() does not change size();
     int  resize                 (int);
-    int  add                    (T);
+    int  add                    (T);  // Same as std::vector::push_back
     void  add_no_check_space     (T extra) { _things[_number_elements] = extra; _number_elements++;}
     void operator +=            (T);
     void operator +=            (const resizable_array_base<T> &);
@@ -152,6 +156,7 @@ class resizable_array_p : public resizable_array_base<T *>
     resizable_array_p            ();
     resizable_array_p            (int);
     resizable_array_p            (T *);
+    resizable_array_p            (resizable_array_p<T>&&);
     ~resizable_array_p           ();
  
     int  resize                   (int);
@@ -224,7 +229,8 @@ class resizable_array: public resizable_array_base <T>
     template <typename O>
     int  remove_items_fn     (O op);          // remove all items for which op evaluates as true
 
-    int add_non_duplicated_elements (const resizable_array<T> &);
+    // Duplicates in `rhs` are eliminated.
+    int add_non_duplicated_elements (const resizable_array<T> & rhs);
 
     template <typename F> void each (F &);
     template <typename F> void each (const F &);
@@ -364,6 +370,19 @@ template <typename T>
 resizable_array_p<T>::resizable_array_p (T * item)
 {
   this->add(item);
+
+  return;
+}
+
+template <typename T>
+resizable_array_p<T>::resizable_array_p(resizable_array_p<T>&& rhs) {
+  _things = rhs._things;
+  _number_elements = rhs._number_elements;
+  _elements_allocated = rhs._elements_allocated;
+
+  rhs._things = NULL;
+  rhs._number_elements = 0;
+  rhs._elements_allocated = 0;
 
   return;
 }
@@ -1527,14 +1546,14 @@ resizable_array_base<T>::swap_elements (int i1, int i2)
 
 template <typename T>
 int
-resizable_array<T>::add_non_duplicated_elements (const resizable_array<T> & qq)
+resizable_array<T>::add_non_duplicated_elements (const resizable_array<T> & rhs)
 {
   int rc = 0;
 
-  int nq = qq._number_elements;
-  for (int i = 0; i < nq; i++)
+  int nrhs = rhs._number_elements;
+  for (int i = 0; i < nrhs; i++)
   {
-    T qi = qq._things[i];
+    T qi = rhs._things[i];
     int foundqi = 0;
     for (int j = 0; j < _number_elements && 0 == foundqi; j++)    // do we already have it?
     {
@@ -1909,6 +1928,16 @@ resizable_array_base<T>::make_room_for_extra_items (int e)
   _number_elements = save_number_elements;
 
   return rc;
+}
+
+template <typename T>
+void
+resizable_array_base<T>::reserve(int new_capacity) {
+  if (_elements_allocated >= new_capacity) {
+    return;
+  }
+
+  resize(new_capacity);
 }
 
 template <typename T>
