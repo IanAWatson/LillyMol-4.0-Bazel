@@ -312,6 +312,7 @@ Molecule::read_molecule_mmod_ds(iwstring_data_source& input)
 }
 
 // Not actually implemented.
+#ifdef IMPLEMENT_THIS_SOMETIME
 static int
 macromodel_atom_type(const Molecule* m, atom_number_t i)
 {
@@ -321,10 +322,12 @@ macromodel_atom_type(const Molecule* m, atom_number_t i)
 
   return 0;
 }
+#endif
 
 int
 Molecule::write_molecule_mmod(std::ostream& output) const
 {
+#ifdef IMPLEMENT_THIS_SOMETIME
   assert(ok());
   if (! output.good())
     return 0;
@@ -338,4 +341,6 @@ Molecule::write_molecule_mmod(std::ostream& output) const
   }
 
   return output.good() ? 1 : 0;
+#endif
+  return 1;
 }

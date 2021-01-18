@@ -92,10 +92,6 @@ class Atom : public resizable_array <Bond *>, public Coordinates
     const Bond * bond_to_atom (atom_number_t) const;
     const Bond * bond_to_atom (atom_number_t myAtomId,atom_number_t otherAtomId) const;
 
-//  int is_hydrogen () const;
-//  int is_carbon () const;
-//  int is_asterisk () const;
-//  int is_hydrogen_or_asterisk () const;
     int is_halogen () const;
 
     const IWString & atomic_symbol () const;
@@ -223,7 +219,7 @@ extern angle_t angle_between_atoms (const Atom &, const Atom &, const Atom &, co
 
 extern int how_many_atoms ();
 
-extern Coordinates & form_unit_vector (const Atom &, const Atom &);
+extern Coordinates form_unit_vector (const Atom &, const Atom &);
 
 extern void set_display_abnormal_valence_messages (int);
 extern int  display_abnormal_valence_messages ();

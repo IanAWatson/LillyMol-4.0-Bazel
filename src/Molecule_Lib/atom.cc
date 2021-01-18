@@ -5,7 +5,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
-#include <strstream>
+#include <sstream>
 
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
 #include "tbb/scalable_allocator.h"
@@ -217,6 +217,9 @@ Atom::Atom(const Atom & other_atom)
 {
   _constructor_copy_atom_attributes(other_atom);
 
+  resizable_array<Bond*> &me = *this;
+  me = other_atom;
+
   return;
 }
 
@@ -266,7 +269,7 @@ Atom::debug_print(std::ostream & os) const
 std::string
 Atom::debug_string() const
 {
-  std::strstream buffer;
+  std::ostringstream buffer;
   debug_print(buffer);
   return buffer.str();
 }
@@ -284,41 +287,6 @@ Atom::add(Bond * b)
 
   return 1;
 }
-
-/*int
-Atom::is_hydrogen() const
-{
-  assert (ok());
-
-  return (1 == _element->atomic_number());
-}*/
-
-/*int
-Atom::is_carbon() const
-{
-  assert (ok());
-
-  return (6 == _element->atomic_number());
-}*/
-
-/*int
-Atom::is_asterisk() const
-{
-  assert (ok());
-
-  return (0 == _element->atomic_number());
-}*/
-
-/*int
-Atom::is_hydrogen_or_asterisk() const
-{
-  assert (ok());
-
-  if (is_hydrogen())
-    return 1;
-
-  return is_asterisk();
-}*/
 
 int
 Atom::nbonds()
@@ -439,22 +407,6 @@ Atom::exact_mass(exact_mass_t & zresult) const
 
   return 1;
 }
-
-/*const Element *
-Atom::element() const
-{
-  assert (ok());
-
-  return _element;
-}*/
-
-/*const Element &
-Atom::elementq() const
-{
-  assert (ok());
-
-  return *_element;
-}*/
 
 void
 Atom::set_element(const Element * new_element)
@@ -781,22 +733,22 @@ Atom::bond_types(bond_type_t * bt) const
   return _number_elements;
 }
 
-Coordinates &
+Coordinates 
 form_unit_vector(const Atom & a1, const Atom & a2)
 {
-  Coordinates * rc = new Coordinates(a1.x() - a2.x(), a1.y() - a2.y(), a1.z() - a2.z());
-  rc->normalise();
+  Coordinates rc(a1.x() - a2.x(), a1.y() - a2.y(), a1.z() - a2.z());
+  rc.normalise();
 
-  return *rc;
+  return rc;
 }
 
-Coordinates &
+Coordinates
 form_vector(const Atom * a)
 {
   assert(OK_ATOM(a));
-  Coordinates * result = new Coordinates(a->x(), a->y(), a->z());
+  Coordinates result(a->x(), a->y(), a->z());
 
-  return *result;
+  return result;
 }
 
 /*

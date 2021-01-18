@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
-#include <strstream>
+#include <sstream>
 #include <utility>
 using std::cerr;
 using std::endl;
@@ -133,7 +133,7 @@ Molecule::_default_values(int atoms_in_new_molecule)
 
   _magic   = MOLECULE_MAGIC_NUMBER;
 
-  _charges = NULL;
+  _charges = nullptr;
   _atom_type = NULL;
 
   _distance_matrix = NULL;
@@ -467,7 +467,7 @@ Molecule::debug_print(std::ostream & os) const
 
 std::string
 Molecule::debug_string() const {
-  std::strstream buffer;
+  std::ostringstream buffer;
   debug_print(buffer);
   return buffer.str();
 }
@@ -704,6 +704,10 @@ Molecule::multiple_bond_to_heteroatom(atom_number_t zatom,
 
   int acon = a->ncon();
 
+  if (acon == a->nbonds()) {
+    return 0;
+  }
+
   for (int i = 0; i < acon; i++)
   {
     const Bond * b = a->item(i);
@@ -739,6 +743,10 @@ Molecule::multiple_bond_to_heteroatom(atom_number_t zatom,
   assert(ok_atom_number(zatom));
 
   const Atom * a = _things[zatom];
+
+  if (a->ncon() == a->nbonds()) {
+    return 0;
+  }
 
   int rc = 0;
   for (const Bond * b : *a)
@@ -796,11 +804,11 @@ void
 Molecule::allocate_charges()
 {
   assert(ok());
-  assert(NULL == _charges);
+  assert(nullptr == _charges);
 
   _charges = new Set_of_Charges;
 
-  assert(NULL != _charges);
+  assert(nullptr != _charges);
 
   if (_number_elements > 0)
     _charges->extend(_number_elements, static_cast<charge_t>(0.0));
@@ -819,7 +827,7 @@ Molecule::set_charge(atom_number_t i, charge_t qq)
     return 0;
   }
 
-  if (NULL == _charges)
+  if (nullptr == _charges)
     allocate_charges();
 
   _charges->seti(i, qq);
@@ -832,7 +840,7 @@ Molecule::set_charges(const charge_t q [], const const_IWSubstring & qt)
 {
   assert(ok());
 
-  if (NULL == _charges)
+  if (nullptr == _charges)
     allocate_charges();
 
   for (int i = 0; i < _number_elements; i++)
@@ -848,7 +856,7 @@ Molecule::set_charges(const charge_t q [], const const_IWSubstring & qt)
 void
 Molecule::_set_partial_charge_type(const const_IWSubstring & qtype)
 {
-  if (NULL == _charges)
+  if (nullptr == _charges)
     allocate_charges();
 
   _charges->set_type(qtype);
@@ -861,7 +869,7 @@ static IWString empty_string;
 const IWString &
 Molecule::partial_charge_type() const 
 {
-  if (NULL == _charges)
+  if (nullptr == _charges)
     return empty_string;
 
   return _charges->ztype();
@@ -945,7 +953,7 @@ Molecule::resize(int new_size)
   {
     resizable_array_p<Atom>::resize(new_size);
 
-    if (NULL != _charges)
+    if (nullptr != _charges)
       _charges->resize(new_size);
 
     if (NULL != _atom_type)
@@ -958,7 +966,7 @@ Molecule::resize(int new_size)
 
   resizable_array_p<Atom>::resize(new_size);
 
-  if (NULL != _charges)
+  if (nullptr != _charges)
     _charges->resize(new_size);
 
   if (NULL != _atom_type)
@@ -1003,7 +1011,7 @@ Molecule::_resize(int new_size)
 
   resizable_array_p<Atom>::resize(new_size);
 
-  if (NULL != _charges)
+  if (nullptr != _charges)
     _charges->resize(new_size);
 
   if (NULL != _atom_type)
@@ -1045,7 +1053,7 @@ Molecule::ok() const
 #endif
     return 0;
   }
-  if (NULL == _charges)
+  if (nullptr == _charges)
     ;
   else if (_charges->number_elements() > 0 &&
            _number_elements != _charges->number_elements())
@@ -1123,7 +1131,7 @@ Molecule::has_charges() const
 {
   assert(ok());
 
-  return (NULL != _charges);
+  return (nullptr != _charges);
 }
 
 
@@ -1836,10 +1844,10 @@ Molecule::copy_charges(const Molecule & m2)
 void
 Molecule::invalidate_charges()
 {
-  if (NULL != _charges)
+  if (nullptr != _charges)
   {
     delete _charges;
-    _charges = NULL;
+    _charges = nullptr;
   }
 
   return;
@@ -2778,7 +2786,7 @@ int_comparitor_shorter(const int * p1, const int * p2)
 void
 Molecule::remove_atom_from_charge_arrays(const atom_number_t atom_to_remove)
 {
-  if (NULL != _charges)
+  if (nullptr != _charges)
     _charges->remove_item(atom_to_remove);
 
   if (_atom_type)
@@ -2956,7 +2964,7 @@ Molecule::remove_many_atoms(const int * to_remove)
   if (NULL != _atom_type)
     _atom_type->remove_items(to_remove);
 
-  if (NULL != _charges)
+  if (nullptr != _charges)
     _charges->remove_items(to_remove);
 
   resizable_array_p<Atom>::remove_items(to_remove);
@@ -4397,7 +4405,7 @@ Molecule::swap_atoms(int i1, int i2,
   _things[i1] = a2;
   _things[i2] = a1;
 
-  if (NULL != _charges)
+  if (nullptr != _charges)
     _charges->swap_elements(i1, i2);
 
   if (NULL != _atom_type)
