@@ -128,6 +128,11 @@ class Bond: public Connection
       return _a1;
     }
 
+    // Enable structured bindings.
+    std::tuple<atom_number_t, atom_number_t> atoms() const {
+      return {_a1, _a2};
+    }
+
 //  If both bonds aromatic they are the same, else compare by bond type
 
     int same_bond_type (const Bond & b) const;

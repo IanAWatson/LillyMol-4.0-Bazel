@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwre2.h"
 
 #include "ematch.h"
 
@@ -180,10 +181,7 @@ Element_Matcher::construct_from_string (const const_IWSubstring & directive)
   if (s.starts_with("RX="))
   {
     s += 3;
-    re2::StringPiece tmp(s.data(), s.length());
-    _symbol_rx.reset(new RE2(tmp));
-    if (! _symbol_rx->ok())
-    {
+    if (! iwre2::RE2Reset(_symbol_rx, s)) {
       cerr << "Element_Matcher::construct_from_string:invalid symbol regular expression '" << s << "'\n";
       return 0;
     }
@@ -336,9 +334,8 @@ Element_Matcher::matches (const Element * e, int iso)
   if (_match_non_periodic_only)
     return ! e->is_in_periodic_table();
 
-  if (_symbol_rx.get() != nullptr) {
-    re2::StringPiece tmp(e->symbol().data(), e->symbol().length());
-    return RE2::FullMatch(tmp, *_symbol_rx.get());
+  if (_symbol_rx) {
+    return iwre2::RE2FullMatch(e->symbol(), *_symbol_rx);
   }
 
   return isotope_matched;

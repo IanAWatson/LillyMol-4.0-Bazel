@@ -1,4 +1,23 @@
 cc_binary(
+    name = "average",
+    srcs = [
+        "average.cc",
+        "iwtokeniser.cc",
+        "iwtokeniser.h",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:iwre2",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "concat_files",
     srcs = [
         "concat_files.cc",

@@ -15,6 +15,7 @@
 
 #include <iostream>
 
+#include "Foundational/iwmisc/iwre2.h"
 #include "iwstring_data_source.h"
 
 static int
@@ -351,9 +352,7 @@ iwstring_data_source::push_record()
 int
 iwstring_data_source::set_ignore_pattern(const const_IWSubstring & pattern)
 {
-  _ignore_pattern.release();
-  re2::StringPiece tmp(pattern.data(), pattern.length());
-  _ignore_pattern.reset(new RE2(tmp));
+  return iwre2::RE2Reset(_ignore_pattern, pattern);
 
   return _ignore_pattern->ok();
 }
@@ -361,11 +360,7 @@ iwstring_data_source::set_ignore_pattern(const const_IWSubstring & pattern)
 int
 iwstring_data_source::set_filter_pattern(const const_IWSubstring & pattern)
 {
-  _filter_pattern.release();
-  re2::StringPiece tmp(pattern.data(), pattern.length());
-  _filter_pattern.reset(new RE2(tmp));
-
-  return _filter_pattern->ok();
+  return iwre2::RE2Reset(_filter_pattern, pattern);
 }
 
 /*
@@ -428,21 +423,19 @@ iwstring_data_source::_apply_all_filters()
 int
 iwstring_data_source::_matches_ignore_pattern(const const_IWSubstring& buffer) const
 {
-  if (_ignore_pattern.get() == nullptr)
+  if (! _ignore_pattern)
     return 0;
 
-  re2::StringPiece tmp(buffer.data(), buffer.length());
-  return RE2::PartialMatch(tmp, *_ignore_pattern);
+  return iwre2::RE2PartialMatch(buffer, *_ignore_pattern);
 }
 
 int
 iwstring_data_source::_matches_filter_pattern(const const_IWSubstring& buffer) const
 {
-  if (_filter_pattern.get() == nullptr)   // Nothing specified, so anything matches
+  if (!_filter_pattern)   // Nothing specified, so anything matches
     return 1;
 
-  re2::StringPiece tmp(buffer.data(), buffer.length());
-  return RE2::PartialMatch(tmp, *_filter_pattern);
+  return iwre2::RE2PartialMatch(buffer, *_filter_pattern);
 }
 
 /*
@@ -1238,8 +1231,7 @@ iwstring_data_source::grep (RE2 & rx)
         int rc = 0;
         while (_fetch_record())
         {
-          re2::StringPiece tmp(_buffer.data(), _buffer.length());
-          if (RE2::PartialMatch(tmp, rx))
+          if (iwre2::RE2PartialMatch(_buffer, rx))
             rc++;
         }
 
@@ -1578,8 +1570,7 @@ iwstring_data_source::skip_records(RE2 & rx, int nskip)
                         return 0;
                 }
 
-                const re2::StringPiece tmp(buffer.data(), buffer.length());
-                if (RE2::PartialMatch(tmp, rx))
+                if (iwre2::RE2PartialMatch(buffer, rx))
                 {
                         nfound++;
                         if (nfound >= nskip)

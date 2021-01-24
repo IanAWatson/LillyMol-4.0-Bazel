@@ -95,3 +95,32 @@ cc_library(
         "//Foundational/iwbits:iwbits",
     ],
 )
+
+cc_library(
+    name = "iwre2",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "iwre2.cc",
+    ],
+    hdrs = [
+        "iwre2.h",
+    ],
+    deps = [
+      "@re2//:re2",
+      "//Foundational/iwstring:iwstring",
+    ],
+)
+
+cc_test  (
+    name = "iwre2_test",
+    srcs = [
+        "iwre2_test.cc",
+    ],
+    deps = [
+        ":iwre2",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)

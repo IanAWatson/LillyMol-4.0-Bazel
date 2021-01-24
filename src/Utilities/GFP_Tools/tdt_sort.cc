@@ -8,9 +8,10 @@
 //#include <pair.h>
 
 #include "Foundational/cmdline_v2/cmdline_v2.h"
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/data_source/iwstring_data_source.h"
-#include "Foundational/iwmisc/set_or_unset.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/set_or_unset.h"
 #define IWQSORT_FO_IMPLEMENTATION
 #include "Foundational/iwqsort/iwqsort.h"
 
@@ -667,8 +668,7 @@ do_grepc(const IW_TDT & tdt,
     const_IWSubstring s;
     tdt.item(i, s);
 
-    re2::StringPiece string_piece(s.data(), s.length());
-    if (RE2::PartialMatch(string_piece, rx))
+    if (iwre2::RE2PartialMatch(s, rx))
       rc++;
   }
 
@@ -777,7 +777,8 @@ tdt_sort (iwstring_data_source & input,
 
     TDT_Comparitor_NRecs tdtcnr;
 
-    iwqsort(ov, ntdts, tdtcnr);
+    std::sort(ov, ov + ntdts, tdtcnr);
+//  iwqsort(ov, ntdts, tdtcnr);
 
     return echo_the_tdts(input, ov, ntdts, output_fd);
   }
@@ -799,7 +800,8 @@ tdt_sort (iwstring_data_source & input,
 
     TDT_Comparitor_int tdtcnr;
 
-    iwqsort(ov, ntdts, tdtcnr);
+    std::sort(ov, ov + ntdts, tdtcnr);
+//  iwqsort(ov, ntdts, tdtcnr);
 
     return echo_the_tdts(input, ov, ntdts, output_fd);
   }
@@ -822,7 +824,8 @@ tdt_sort (iwstring_data_source & input,
 
     TDT_Comparitor_Float tdtcf;
 
-    iwqsort(ov, ntdts, tdtcf);
+    std::sort(ov, ov + ntdts, tdtcf);
+//  iwqsort(ov, ntdts, tdtcf);
 
     return echo_the_tdts(input, ov, ntdts, output_fd);
   }
@@ -844,7 +847,8 @@ tdt_sort (iwstring_data_source & input,
 
     TDT_Comparitor_String tdtcs;
 
-    iwqsort(ov, ntdts, tdtcs);
+    std::sort(ov, ov + ntdts, tdtcs);
+//  iwqsort(ov, ntdts, tdtcs);
 
     return echo_the_tdts(input, ov, ntdts, output_fd);
   }
@@ -918,13 +922,11 @@ tdt_sort(int argc, char ** argv)
   }
   else if (cl.option_present("grepc"))
   {
-    const_IWSubstring rx = cl.string_value("grepc");
+    const_IWSubstring pattern = cl.string_value("grepc");
 
-    const re2::StringPiece string_piece(rx.data(), rx.length());
-    sort_by_grepc = std::make_unique<re2::RE2>(string_piece);
-    if (! sort_by_grepc->ok())
+    if (! iwre2::RE2Reset(sort_by_grepc, pattern))
     {
-      cerr << "Invalid sort by count rx '" << rx << "'\n";
+      cerr << "Invalid sort by count rx '" << pattern << "'\n";
       return 4;
     }
 

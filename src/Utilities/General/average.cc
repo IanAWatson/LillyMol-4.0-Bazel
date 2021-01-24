@@ -12,6 +12,7 @@
 
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/set_or_unset.h"
 
@@ -427,8 +428,7 @@ average(const const_IWSubstring & buffer)
   {
     if (column_rx)
     {
-      re2::StringPiece tmp(token.data(), token.length());
-      if (RE2::PartialMatch(tmp, *column_rx))
+      if (iwre2::RE2PartialMatch(token, *column_rx))
       {
         if (get_next_token(buffer, token, i))
         {
@@ -505,8 +505,7 @@ determine_descriptors_to_process (const const_IWSubstring & buffer)
 
   while (iwtokeniser.next_token(token))
   {
-    re2::StringPiece tmp(token.data(), token.length());
-    if (RE2::PartialMatch(tmp, *descriptor_rx))
+    if (iwre2::RE2PartialMatch(token, *descriptor_rx))
 //  cerr << "Examining header token '" << token << "'\n";
     {
       columns_to_process[col] = 1;
@@ -969,9 +968,7 @@ average (int argc, char ** argv)
   {
     const_IWSubstring r = cl.string_value('R');
 
-    re2::StringPiece tmp(r.data(), r.length());
-    column_rx = std::make_unique<re2::RE2>(tmp);
-    if (! column_rx->ok())
+    if (! iwre2::RE2Reset(column_rx, r))
     {
       cerr << "Invalid column regexp '" << r << "'\n";
       return 6;

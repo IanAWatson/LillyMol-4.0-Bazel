@@ -21,6 +21,7 @@ using std::endl;
 #include "Foundational/iwstring/iwstring.h"
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwqsort/iwqsort.h"
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/molecule.h"
@@ -3503,12 +3504,10 @@ do_debug_print (Molecule & m,
 static int
 name_matches_name_rx(const IWString& mname)
 {
-  if (name_rx.get() == nullptr)  // not active, always matches.
+  if (!name_rx)  // not active, always matches.
     return 1;
 
-  re2::StringPiece tmp(mname.data(), mname.length());
-
-  return RE2::PartialMatch(tmp, *name_rx);
+  return iwre2::RE2PartialMatch(mname, *name_rx);
 }
 
 static int

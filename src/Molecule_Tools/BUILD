@@ -414,6 +414,27 @@ cc_binary(
 )
 
 cc_binary(
+    name = "remove_and_label",
+    srcs = [
+        "remove_and_label.cc"
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iw_tdt:iw_tdt",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:iwreaction",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "retrosynthesis",
     srcs = [
         "retrosynthesis.cc"

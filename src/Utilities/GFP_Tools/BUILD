@@ -226,6 +226,25 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "tdt_sort",
+    srcs = [
+        "tdt_sort.cc",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwre2",
+        "//Foundational/iwqsort:iwqsort",
+        "//Foundational/mtrand:iwrandom",
+        "//Foundational/iw_tdt:iw_tdt",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
 cc_library(
     name = "spread_v2",
     srcs = [

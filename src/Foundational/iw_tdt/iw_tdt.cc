@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include "Foundational/iwmisc/iwre2.h"
 #include "iw_tdt.h"
 
 IW_TDT::IW_TDT()
@@ -317,8 +318,7 @@ IW_TDT::remove_all(RE2 & rx)
   {
 //  cerr << "Does '" << token << "' match '" << rx.source() << "'\n";
 
-    re2::StringPiece tmp(token.data(), token.length());
-    if (! RE2::PartialMatch(tmp, rx))    // we remove all the ones that match rx
+    if (! iwre2::RE2PartialMatch(token, rx))  // we remove all the ones that match rx
     {
       if (new_data.length())
         new_end.add(new_data.length());
@@ -399,8 +399,7 @@ IW_TDT::dataitem_value (RE2 & rx,
     cerr << "Does '" << rx.source() << "' match '" << tag << "'\n";
 #endif
 
-    re2::StringPiece tmp(tag.data(), tag.length());
-    if (! RE2::PartialMatch(tmp, rx))
+    if (iwre2::RE2PartialMatch(tag, rx))
       continue;
 
     if (nfound == which_to_return)
@@ -646,8 +645,7 @@ IW_TDT::count_dataitems(RE2 & rx) const
   int rc = 0;
   while (next_dataitem(token, i))
   {
-    re2::StringPiece tmp(token.data(), token.length());
-    if (RE2::PartialMatch(tmp, rx))
+    if (iwre2::RE2PartialMatch(token, rx))
       rc++;
   }
 

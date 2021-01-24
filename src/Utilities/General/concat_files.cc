@@ -15,6 +15,7 @@ using std::endl;
 #include "Foundational/iwstring/iw_stl_hash_set.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/iwre2.h"
 
 #include "iwtokeniser.h"
 
@@ -1228,9 +1229,7 @@ concat_files (int argc, char ** argv)
     }
     else
     {
-      re2::StringPiece tmp(x.data(), x.length());
-      suffix_exclusion_list.reset(new RE2(tmp));
-      if (! suffix_exclusion_list->ok())
+      if (!iwre2::RE2Reset(suffix_exclusion_list, x))
       {
         cerr << "Invalid suffix exclusion regular expression '" << x << "'\n";
         return 4;

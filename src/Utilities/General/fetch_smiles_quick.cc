@@ -5,10 +5,9 @@
 #include <stdlib.h>
 #include <fstream>
 
-#include "re2/re2.h"
-
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 #include "Foundational/iwstring/iw_stl_hash_set.h"
 
@@ -331,8 +330,7 @@ fetch_smiles_quick (const const_IWSubstring & buffer,
     int col = 0;
     while (buffer.nextword(token, i))
     {
-      re2::StringPiece tmp(token.data(), token.length());
-      if (! RE2::PartialMatch(tmp, *identifier_regexp_in_smiles_file))
+      if (! iwre2::RE2PartialMatch(token, *identifier_regexp_in_smiles_file))
         continue;
 
       if (! identifiers_to_fetch.contains(token))
@@ -745,9 +743,7 @@ fetch_smiles_quick (int argc, char ** argv)
     if (c.starts_with("RX="))
     {
       c.remove_leading_chars(3);
-      re2::StringPiece tmp(c.data(), c.length());
-      identifier_regexp_in_smiles_file.reset(new RE2(tmp));
-      if (! identifier_regexp_in_smiles_file->ok())
+      if (! iwre2::RE2Reset(identifier_regexp_in_smiles_file, c))
       {
         cerr << "Invalid smiles file identifier regexp '" << c << "'\n";
         return 5;

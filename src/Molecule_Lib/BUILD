@@ -227,6 +227,7 @@ cc_library(
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwmisc:iwconfig",
         "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:iwre2",
         "//Foundational/iwbits:iwbits",
         "//Foundational/iwqsort:iwqsort",
         "//Foundational/iwstring:iwstring",

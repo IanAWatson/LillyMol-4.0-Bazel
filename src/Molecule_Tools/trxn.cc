@@ -8,6 +8,7 @@
 #include "re2/re2.h"
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwstring/iw_stl_hash_set.h"
@@ -1155,9 +1156,7 @@ OkWithOnlyReact(std::unique_ptr<RE2>& only_react,
   if (!only_react)  // Not specified, OK by definition.
     return 1;
 
-  const re2::StringPiece tmp(name.data(), name.length());
-
-  return RE2::PartialMatch(tmp, *only_react);
+  return iwre2::RE2PartialMatch(name, *only_react);
 }
 
 static int
@@ -1474,9 +1473,7 @@ trxn (int argc, char ** argv)
       {
         IWString tmp = j;
         tmp.remove_up_to_first('=');
-        re2::StringPiece tmp_string_piece(tmp.data(), tmp.length());
-        only_react.reset(new RE2(tmp_string_piece));
-        if (!only_react->ok())
+        if (! iwre2::RE2Reset(only_react, tmp))
         {
           cerr << "Cannot initialise only react regular expression from '" << tmp << "'\n";
           return 9;

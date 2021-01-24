@@ -17,6 +17,7 @@ using std::endl;
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/iwre2.h"
 
 static void
 usage(int rc)
@@ -573,8 +574,7 @@ iwcut_token_regexp(const const_IWSubstring & buffer,
     if (columns_requested.contains(col))
       m = 1;
 //  else if (token_regexp.matches(token))
-    else if (re2::StringPiece tmp(token.data(), token.length());
-        RE2::PartialMatch(tmp, *token_regexp))
+    else if (iwre2::RE2PartialMatch(token, *token_regexp))
       m = 1;
     else
       m = 0;
@@ -981,8 +981,7 @@ identify_column (const IWString & descriptor,
 
 //  cerr << "Comparing '" << descriptor << "' with '" << d << "'\n";
 
-    const re2::StringPiece tmp(d.data(), d.length());
-    if (RE2::PartialMatch(tmp, rx))
+    if (iwre2::RE2PartialMatch(d, rx))
     {
       columns_requested.add_if_not_already_present(i);
       rc++;
@@ -1487,9 +1486,7 @@ iwcut (int argc, char ** argv)
 
     const_IWSubstring r = cl.string_value('R');
 
-    re2::StringPiece tmp(r.data(), r.length());
-    token_regexp.reset(new RE2(tmp));
-    if (! token_regexp->ok())
+    if (! iwre2::RE2Reset(token_regexp, r))
     {
       cerr << "Invalid token regular expression '" << r << "'\n";
       return 3;

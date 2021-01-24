@@ -15,6 +15,7 @@ using std::cerr;
 using std::endl;
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/istream_and_type.h"
@@ -24,7 +25,7 @@ using std::endl;
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/molecule_to_query.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 
 const char * prog_name = NULL;
 
@@ -383,8 +384,7 @@ remove_and_label (MDL_Molecule & m)
 
       if (rx_for_allowable_non_organics)  // no checking to be done
         ;
-      else if (const re2::StringPiece string_piece(e->symbol().data(), e->symbol().length());
-      	RE2::PartialMatch(string_piece, *rx_for_allowable_non_organics)) // great, OK match.
+      else if (iwre2::RE2PartialMatch(e->symbol(), *rx_for_allowable_non_organics))  // great, OK match.
         ;
       else
       {
@@ -716,10 +716,8 @@ remove_and_label (int argc, char ** argv)
   if (cl.option_present('H'))
   {
     const_IWSubstring h = cl.string_value('H');
-    const re2::StringPiece string_piece(h.data(), h.length());
 
-    rx_for_allowable_non_organics = std::make_unique<re2::RE2>(string_piece);
-    if (! rx_for_allowable_non_organics->ok())
+    if (! iwre2::RE2Reset(rx_for_allowable_non_organics, h))
     {
       cerr << "Cannot initialise regular expression for allowable non-organics '" << h << "'\n";
       return 3;

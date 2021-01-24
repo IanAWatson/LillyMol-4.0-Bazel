@@ -4,10 +4,9 @@
 
 //#include "tbb/scalable_allocator.h"
 
-#include "re2/re2.h"
-
-#include "Foundational/iw_tdt/iw_tdt.h"
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwre2.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
 
 #include "gfp.h"
 #include "tversky.h"
@@ -543,15 +542,12 @@ set_property_weight_integer (double w)
 }
 
 int
-set_fingerprint_regular_expression(const const_IWSubstring & rx)
+set_fingerprint_regular_expression(const const_IWSubstring & pattern)
 {
-  if (! rx.starts_with('^'))
-    cerr << "set_fingerprint_regular_expression: WARNING, rx does not start with '^' :" << rx << endl;
+  if (! pattern.starts_with('^'))
+    cerr << "set_fingerprint_regular_expression: WARNING, rx does not start with '^' :" << pattern << endl;
 
-  re2::StringPiece tmp(rx.data(), rx.length());
-  fingerprint_rx.reset(new RE2(tmp));
-
-  return fingerprint_rx->ok();
+  return iwre2::RE2Reset(fingerprint_rx, pattern);
 }
 
 static int
@@ -1715,8 +1711,7 @@ IW_General_Fingerprint::initialise (const IW_TDT & tdt)
       continue;
     }
 
-    re2::StringPiece tmp(dataitem.data(), dataitem.length());
-    if (! RE2::PartialMatch(tmp, *fingerprint_rx))
+    if (! iwre2::RE2PartialMatch(dataitem, *fingerprint_rx))
       continue;
 
     if (dataitem.starts_with("NC"))
@@ -1772,8 +1767,7 @@ IW_General_Fingerprint::initialise (const IW_TDT & tdt)
   const_IWSubstring tag;
   while (tdt.next_dataitem(tag, i))
   {
-    re2::StringPiece tmp(tag.data(), tag.length());
-    if (! RE2::PartialMatch(tmp, *fingerprint_rx))
+    if (! iwre2::RE2PartialMatch(tag, *fingerprint_rx))
       continue;
 
     tag.truncate_at_first('<');     // just the tag part of the record

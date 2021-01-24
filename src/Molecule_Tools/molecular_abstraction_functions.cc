@@ -5,6 +5,7 @@
 #include "re2/re2.h"
 
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/iwre2.h"
 
 #include "Molecule_Lib/is_actually_chiral.h"
 #include "Molecule_Lib/iwmfingerprint.h"
@@ -2889,8 +2890,7 @@ Molecular_Abstraction_Place_Isotope::build(const Molecular_Abstraction_Directive
       continue;
     }
 
-    re2::StringPiece tmp(token.data(), token.length());
-    if (RE2::PartialMatch(tmp, number_equals_number))
+    if (iwre2::RE2PartialMatch(token, number_equals_number))
     {
       const_IWSubstring sndx, siso;
       token.split(sndx, '=', siso);
@@ -3047,8 +3047,7 @@ Molecular_Abstraction_Place_Charge::build(const Molecular_Abstraction_Directives
       continue;
     }
 
-    re2::StringPiece tmp(token.data(), token.length());
-    if (RE2::PartialMatch(tmp, number_equals_number))
+    if (iwre2::RE2PartialMatch(token, number_equals_number))
     {
       const_IWSubstring sndx, siso;
       token.split(sndx, '=', siso);

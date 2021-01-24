@@ -4,8 +4,7 @@
 #include<algorithm>
 #include<memory>
 
-#include "re2/re2.h"
-
+#include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwstring/iwstring.h"
 
 class IW_MMapd_File
@@ -327,10 +326,7 @@ template <typename T>
 int
 IW_Storage_Reader<T>::set_ignore_pattern (const const_IWSubstring & s)
 {
-  _ignore_pattern.release();
-  re2::StringPiece tmp(s.data(), s.length());
-  _ignore_pattern.reset(new RE2(tmp));
-  return _ignore_pattern->ok();
+  return iwre2::RE2Reset(_ignore_pattern, s);
 }
 
 template <typename T>
@@ -371,11 +367,10 @@ IW_Storage_Reader<T>::_next_record (const_IWSubstring & buffer)
 template <typename T>
 int
 IW_Storage_Reader<T>::_skip_for_ignore_pattern(const const_IWSubstring& buffer) const {
-  if (_ignore_pattern->pattern().empty())
+  if (!_ignore_pattern)
     return 0;
 
-  re2::StringPiece tmp(buffer.data(), buffer.length());
-  return RE2::PartialMatch(tmp, *_ignore_pattern);
+  return iwre2::RE2PartialMatch(buffer, *_ignore_pattern);
 }
 
 template <typename T>
@@ -649,8 +644,7 @@ IW_Storage_Reader<T>::grep (RE2 & rx)
   int rc = 0;
   while (_next_record(buffer))
   {
-    re2::StringPiece tmp(buffer.data(), buffer.length());
-    if (RE2::PartialMatch(tmp, rx))
+    if (iwre2::RE2PartialMatch(buffer, rx))
       rc++;
   }
 
@@ -691,8 +685,7 @@ IW_Storage_Reader<T>::skip_records (RE2 & rx, const int nskip)
 
   while (_next_record(buffer))
   {
-    re2::StringPiece tmp(buffer.data(), buffer.length());
-    if (RE2::PartialMatch(tmp, rx))
+    if (iwre2::RE2PartialMatch(buffer, rx))
       continue;
 
     rc++;
@@ -725,9 +718,7 @@ IW_Storage_Reader<T>::skip_past(const char * pattern)
       return 0;
     _record_buffered = 0;
 
-    const re2::StringPiece tmp(buffer.data(), buffer.length());
-
-    if (RE2::PartialMatch(tmp, regexp))
+    if (iwre2::RE2PartialMatch(buffer, regexp))
       return 1;
   }
 
@@ -738,8 +729,7 @@ IW_Storage_Reader<T>::skip_past(const char * pattern)
   while (_next_record(buffer))
   {
     rc++;
-    re2::StringPiece tmp(buffer.data(), buffer.length());
-    if (RE2::PartialMatch(tmp, regexp))
+    if (iwre2::RE2PartialMatch(buffer, regexp))
       return rc;
   }
 
