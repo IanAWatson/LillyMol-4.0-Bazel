@@ -19,7 +19,7 @@ UNAME ?= Linux-gcc-6.2.0
 include $(IWPROGRAMMES)/makefile.public.$(UNAME)
 
 ########################## Shared variables ############################
-LIBS = $(LIB) -lgfp -liwmolecule -liwstring_data_source -liwtemplate -liwstring -lsparsefp -laccumulator -lcmdline  -liwhistogram -liwbits -liwaray -liwtdt -liwstring -liwmisc -liwrandom $(RE2LIB)  -lxmlParser  $(LIBZ) $(USRLIB) $(SYSTEM_LIBS)
+LIBS = $(LIB) -lgfp -liwmolecule -liwstring_data_source -liwtemplate -liwstring -lsparsefp -laccumulator -lcmdline  -liwhistogram -liwbits -liwaray -liwtdt -liwstring -liwmisc -liwrandom -liwre2 $(RE2LIB)  -lxmlParser  $(LIBZ) $(USRLIB) $(SYSTEM_LIBS)
 
 LIBTEMPLATE = -liwtemplate
  

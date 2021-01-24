@@ -22,12 +22,12 @@ include $(IWPROGRAMMES)/makefile.public.$(UNAME)
 ########################## Shared variables ############################
 LIBS =  $(LIB) -lcmdline -liwrandom -laccumulator\
 	-liwstring_data_source $(RE2LIB) -liwstring \
-	-liwbits $(LIBZ) -liwaray
+	-liwbits -liwre2 $(LIBZ) -liwaray
 
 # If we are using the new command line object
 NCLIBS =  $(LIB) -lcmdline_v2 -liwmisc -liwrandom -laccumulator\
 	-liwstring_data_source $(RE2LIB) -liwstring \
-	-liwbits -liwaray\
+	-liwbits -liwre2 -liwaray\
 	$(LIBZ) $(USRLIB) 
 
 $(BUILD_DIR)/%.o : %.cc

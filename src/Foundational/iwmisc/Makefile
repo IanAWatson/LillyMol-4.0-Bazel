@@ -115,6 +115,8 @@ LIBRARY_OBJECTS_LIST = new_int.o\
 	_iwmaxid_double_iwstring.o\
 	_iwmaxid_float_iwstring.o
 
+LIBRARY_IWRE2_OBJECTS_LIST=iwre2.o
+
 SHARED_INC_FILES = iwconfig.h misc.h iw_time.h primes.h sparse_fp_creator.h \
 	numeric_data_from_file.h iw_auto_array.h msi_object.h logical_expression.h \
 	iwdigits.h report_progress.h iwarchive.h set_or_unset.h normalisation.h \
@@ -122,7 +124,7 @@ SHARED_INC_FILES = iwconfig.h misc.h iw_time.h primes.h sparse_fp_creator.h \
 
 LIBRARY_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIBRARY_OBJECTS_LIST))
 LIBRARY_C_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIBRARY_C_OBJECTS_LIST))
-
+LIBRARY_IWRE2_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIBRARY_IWRE2_OBJECTS_LIST))
 
 LIBRARY_STEM = lib$(PROJECT_NAME)
 
@@ -134,11 +136,17 @@ $(LIBRARY_OBJECTS):
 
 $(LIBRARY_C_OBJECTS):
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $(basename $(notdir $@)).c -o $@ $<
+
+$(LIBRARY_IWRE2_OBJECTS):
+	$(CXX) -c $(CXX_FLAGS_WITH_IMPLICIT_TEMPLATES) $(basename $(notdir $@)).cc -o $@
 	 
 # Rule for making library
 $(LIBRARY_NAME): $(LIBRARY_OBJECTS) $(LIBRARY_C_OBJECTS)
 	$(AR) r $@ $(LIBRARY_OBJECTS) $(LIBRARY_C_OBJECTS)
 	
+LIBRARY_NAME_IWRE2 = $(BUILD_DIR)/libiwre2.a
+$(LIBRARY_NAME_IWRE2): $(LIBRARY_IWRE2_OBJECTS)
+	$(AR) r $@ $(LIBRARY_IWRE2_OBJECTS)
 ########################## Template for libary #########################
 # Change the project name
 PROJECT_NAME_2 = sparsefp
@@ -207,12 +215,13 @@ exe copy_exe:
 	@echo "Nothing to do for $(PROJECT_NAME) target $@"
 	
 # Rule for making static library
-library: $(LIBRARY_NAME) $(LIBRARY_NAME_2)
+library: $(LIBRARY_NAME) $(LIBRARY_NAME_2) $(LIBRARY_NAME_IWRE2)
 
 # Rule for copying static library
 copy_library: library
 	$(CP) $(LIBRARY_NAME) $(LIBDIR)
 	$(CP) $(LIBRARY_NAME_2) $(LIBDIR)
+	$(CP) $(LIBRARY_NAME_IWRE2) $(LIBDIR)
 	
 # Rule for making executables
 #exe: $(EXECUTABLES)

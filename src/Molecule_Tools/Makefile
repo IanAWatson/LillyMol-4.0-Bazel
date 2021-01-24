@@ -22,7 +22,7 @@ include $(IWPROGRAMMES)/makefile.public.$(UNAME)
 ML = $(INCDIR)/mol
 
 LIBS = $(LIB) -liwmolecule -liwtemplate -liwrandom -liwstring_data_source -laccumulator\
-	-liwbits -liwmisc -lcmdline -liwstring -liwaray $(RE2LIB) $(PROTOLIB) -lxmlParser $(LIBZ)
+	-liwbits -liwmisc -liwre2 -lcmdline -liwstring -liwaray $(RE2LIB) $(PROTOLIB) -lxmlParser $(LIBZ)
 GFPLIB = -lgfp -liwmolecule -lsparsefp -liwtdt
 MOLECULE_H = $(ML)/molecule.h $(ML)/element.h $(ML)/atom.h $(ML)/bond.h $(ML)/path.h $(ML)/iwrcb.h $(ML)/coordinates.h $(ML)/set_of_atoms.h
 
