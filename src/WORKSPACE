@@ -60,6 +60,11 @@ local_repository(
 )
 
 local_repository(
+    name = 'benchmark',
+    path = "/home/ian/pub/benchmark",
+)
+
+local_repository(
     name = "ord_schema",
     path = "/home/ian/ord_schema",
 )

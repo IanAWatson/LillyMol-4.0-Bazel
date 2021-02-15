@@ -3989,6 +3989,12 @@ Molecule::setxyz(const Coordinates * ca)
   return;
 }
 
+void
+Molecule::setxyz(atom_number_t a, const Coordinates& c) {
+  assert(ok_atom_number(a));
+  _things[a]->setxyz(c.x(), c.y(), c.z());
+}
+
 distance_t
 Molecule::bond_length(atom_number_t a1, atom_number_t a2, int not_bonded_ok) const
 {

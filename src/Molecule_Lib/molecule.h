@@ -1238,6 +1238,7 @@ class Molecule : private resizable_array_p<Atom>
     int    remove_bond (int);
     int    remove_bond_between_atoms (atom_number_t, atom_number_t);
     int    remove_all_bonds();
+    int    remove_all_bonds_keep_storage();
     int    remove_bonds_involving_these_atoms (const int *, int check_chirality = 1);
 
     molecular_weight_t molecular_weight () const;
@@ -1257,6 +1258,7 @@ class Molecule : private resizable_array_p<Atom>
     void setxyz (atom_number_t, coord_t, coord_t, coord_t);
     void setxyz (atom_number_t, const coord_t *);
     void setxyz (const Coordinates *);
+    void setxyz (atom_number_t, const Coordinates &);
 
     void spatial_extremeties (coord_t & xmin, coord_t & xmax, coord_t & ymin, coord_t & ymax) const;
     void spatial_extremeties (coord_t & xmin, coord_t & xmax, coord_t & ymin, coord_t & ymax, coord_t & zmin, coord_t & zmax) const;

@@ -1383,6 +1383,24 @@ Molecule::remove_all_bonds()
 }
 
 int
+Molecule::remove_all_bonds_keep_storage()
+{
+  _set_modified();
+
+  _bond_list.resize_keep_storage(0);
+
+  _chiral_centres.resize_keep_storage(0);
+
+  for (int i = 0; i < _number_elements; i++)
+  {
+    _things[i]->resize_keep_storage(0);
+    _things[i]->set_modified();
+  }
+
+  return 1;
+}
+
+int
 Molecule::get_bond_types(bond_type_t * bt) const
 {
   int nb = _bond_list.number_elements();
