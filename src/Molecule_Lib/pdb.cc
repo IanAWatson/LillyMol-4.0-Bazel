@@ -569,58 +569,6 @@ append_fixed_width_left_justified(const IWString& s, const int len, std::ostream
 }
 
 static int
-write_pdb_atom_common(const Atom* a, const int atom_number, const int fragment_number,
-                      const PDB_Stored_Atom_Information* pdbsai, std::ostream& output)
-{
-  output << "HETATM" << std::setw(5) << atom_number << ' ';
-
-  if (NULL != pdbsai && pdbsai->atom_name().length() > 0)
-    append_fixed_width_left_justified(pdbsai->atom_name(), 4, output);
-  else
-    append_fixed_width_left_justified(a->atomic_symbol(), 4, output);
-
-  if (NULL != pdbsai && pdbsai->residue_name().length() > 0)
-    append_fixed_width_right_justified(pdbsai->residue_name(), 4, output);
-  else
-    output << " UNK";
-
-  output << " A";
-
-  output << std::setw(4) << fragment_number;
-
-  output << "    ";
-
-  //output_buffer << " UNK W   " << fragment_number << "    ";
-
-  char buffer[32];
-
-  IW_SPRINTF(buffer, "%8.3f", a->x());
-  output << buffer;
-  IW_SPRINTF(buffer, "%8.3f", a->y());
-  output << buffer;
-  IW_SPRINTF(buffer, "%8.3f", a->z());
-  output << buffer;
-
-  if (NULL != pdbsai && pdbsai->occupancy_factor().length())
-    append_fixed_width_right_justified(pdbsai->occupancy_factor(), 6, output);
-  else
-    output << "  1.00";
-
-  if (NULL != pdbsai && pdbsai->temperature_factor().length())
-    append_fixed_width_right_justified(pdbsai->temperature_factor(), 6, output);
-  else
-    output << " 20.00";
-
-  output << "          ";
-
-  append_fixed_width_right_justified(a->atomic_symbol(), 2, output);
-
-  output << '\n';
-
-  return output.good();
-}
-
-static int
 write_pdb_atom(const Atom* a, int atom_number, const PDB_Stored_Atom_Information* pdbsai,
                int fragment_number, std::ostream& output)
 {

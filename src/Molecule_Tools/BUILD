@@ -1,3 +1,21 @@
+
+proto_library(
+    name = "molecule_database_options_proto",
+    srcs = [
+        "molecule_database_options.proto",
+    ],
+    deps = [
+        "//Molecule_Lib:mol2graph_proto",
+    ]
+)
+
+cc_proto_library(
+    name = "molecule_database_options_cc_proto",
+    deps = [
+        ":molecule_database_options_proto",
+    ],
+)
+
 cc_binary(
     name = "activity_consistency",
     srcs = [
@@ -29,6 +47,24 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "buildsmidb_leveldb",
+    srcs = [
+        "buildsmidb_leveldb.cc",
+    ],
+    deps = [
+        ":molecule_database_options",
+        ":molecule_database_options_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+        "-lleveldb",
     ],
 )
 
@@ -146,6 +182,25 @@ cc_binary(
     ],
     linkopts = [
         "-lz"
+    ],
+)
+
+
+cc_binary(
+    name = "in_database_leveldb",
+    srcs = [
+        "in_database_leveldb.cc",
+    ],
+    deps = [
+        ":molecule_database_options",
+        ":molecule_database_options_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+        "-lleveldb",
     ],
 )
 
@@ -942,6 +997,21 @@ cc_library(
     deps = [
         "//Molecule_Lib:iwmolecule",
         "//Foundational/iwmisc:sparse_fp_creator",
+    ],
+)
+
+cc_library(
+    name = "molecule_database_options",
+    srcs = [
+        "molecule_database_options.cc",
+    ],
+    hdrs = [
+        "molecule_database_options.h",
+    ],
+    deps = [
+        ":molecule_database_options_cc_proto",
+        "//Foundational/iwstring:iwstring",
+        "//Molecule_Lib:iwmolecule",
     ],
 )
 

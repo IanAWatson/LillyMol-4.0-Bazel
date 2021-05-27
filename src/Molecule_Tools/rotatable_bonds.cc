@@ -742,13 +742,13 @@ rotatable_bonds (data_source_and_type<Molecule> & input)
 static int
 rotatable_bonds (const char * fname, FileType input_type)
 {
-  data_source_and_type<Molecule> input(input_type, fname);
-
   if (FILE_TYPE_INVALID == input_type)
   {
     input_type = discern_file_type_from_name(fname);
     assert (FILE_TYPE_INVALID != input_type);
   }
+
+  data_source_and_type<Molecule> input(input_type, fname);
 
   if (! input.ok())
   {

@@ -10,6 +10,20 @@ package(default_visibility = ["//visibility:public"])
 #)
 
 proto_library(
+    name = "mol2graph_proto",
+    srcs = [
+        "mol2graph.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "mol2graph_cc_proto",
+    deps = [
+        ":mol2graph_proto",
+    ],
+)
+
+proto_library(
     name = "substructure_proto",
     srcs = [
         "substructure.proto"
@@ -99,6 +113,8 @@ cc_library(
         "mdl_molecule.cc",
         "mdl_v30.cc",
         "misc2.cc",
+        "mol2graph.cc",
+        "mol2graph_proto.cc",
         "molecule.cc",
         "molecule_to_query.cc",
         "moleculeb.cc",
@@ -155,7 +171,6 @@ cc_library(
         "atom_typing.h",
         "bond.h",
         "bond_list.h",
-        "careful_frag.h",
         "charge_assigner.h",
         "charge_calculation.h",
         "cis_trans_bond.h",
@@ -179,20 +194,14 @@ cc_library(
         "mdl_file_data.h",
         "mdl_molecule.h",
         "misc2.h",
+        "mol2graph.h",
+        "mol2graph_proto.h",
         "molecule.h",
         "molecule_to_query.h",
-        "molecule_tripos.h",
-        "moleculed.h",
-        "moleculeh.h",
         "moleculej.h",
         "molecule_arom.h",
-        "molecule_cif.h",
-        "molecule_ctb.h",
-        "molecule_main.h",
-        "molecule_marvin.h",
         "molecule_mdl.h",
         "molecule_smi.h",
-        "molecule_smarts.h",
         "mpr.h",
         "numass.h",
         "ostream_and_type.h",
@@ -220,6 +229,7 @@ cc_library(
         "tokenise_atomic_smarts.h",
     ],
     deps = [
+        ":mol2graph_cc_proto",
         ":substructure_cc_proto",
         ":toggle_kekule_form_cc_proto",
         "//Foundational/accumulator:accumulator",

@@ -69,6 +69,11 @@ local_repository(
     path = "/home/ian/ord_schema",
 )
 
+local_repository(
+  name = "leveldb",
+  path = "/home/ian/pub/leveldb",
+)
+
 #http_archive(
 #    name = "com_google_protobuf",
 #    sha256 = "e28570de66bd308d8d06ba24df8fd375f6c584331003be98a34dade2215f9291",
@@ -107,7 +112,7 @@ load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
 
 llvm_toolchain(
     name = "llvm_toolchain",
-    llvm_version = "10.0.0",
+    llvm_version = "11.0.0",
 )
 
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")

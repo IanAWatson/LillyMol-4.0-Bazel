@@ -84,7 +84,7 @@ class Command_Line : public resizable_array<const char *>
     int value (const char, char *, int = 0) const;
 
 //#ifdef IW_STD_STRING_DEFINED
-    int value (const char, std::string &, int = 0) const;
+    int value_as_std_string (const char, std::string &, int = 0) const;
     std::string std_string_value(const char, int = 0) const;
 //#endif
 

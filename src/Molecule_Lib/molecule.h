@@ -19,6 +19,8 @@ struct XMLNode;
 #include "iwmtypes.h"
 class iwstring_data_source;
 
+#include "mol2graph.h"
+
 // forward declaration
 
 class Molecule;
@@ -63,49 +65,6 @@ using atom_type_t = std::uint32_t;
 
 class Atom_Types : public Collection_Template <atom_type_t>
 {
-};
-
-/*
-  There are lots of choices when we produce a molecular graph
-*/
-
-class Mol2Graph
-{
-  private:
-    int _exclude_triple_bonds_from_graph_reduction;
-    int _revert_all_directional_bonds_to_non_directional;
-    int _preserve_cc_double_bonds_saturated;
-    int _preserve_cc_double_bonds_no_heteroatoms;
-    int _remove_chiral_centres;
-    
-    int _append_molecular_formula;
-
-    int _aromatic_distinguishing_formula;
-
-  public:
-    Mol2Graph();
-
-    int construct (Command_Line & cl, const char flag, const int verbose);
-
-    int debug_print (std::ostream &) const;
-
-    int exclude_triple_bonds_from_graph_reduction () const { return _exclude_triple_bonds_from_graph_reduction;}
-    int revert_all_directional_bonds_to_non_directional() const { return _revert_all_directional_bonds_to_non_directional;}
-    int preserve_cc_double_bonds_saturated () const { return _preserve_cc_double_bonds_saturated;}
-    int preserve_cc_double_bonds_no_heteroatoms () const { return _preserve_cc_double_bonds_no_heteroatoms;}
-    int append_molecular_formula () const { return _append_molecular_formula;}
-    int aromatic_distinguishing_formula () const {return _aromatic_distinguishing_formula;}
-    int remove_chiral_centres () const { return _remove_chiral_centres;}
-
-    int some_kind_of_double_bond_preservation_active () const { return _preserve_cc_double_bonds_saturated + _preserve_cc_double_bonds_no_heteroatoms;}
-
-    void set_exclude_triple_bonds_from_graph_reduction(int s) { _exclude_triple_bonds_from_graph_reduction = s;}
-    void set_revert_all_directional_bonds_to_non_directional(int s) { _revert_all_directional_bonds_to_non_directional = s;}
-    void set_preserve_cc_double_bonds_no_heteroatoms (int s) { _preserve_cc_double_bonds_no_heteroatoms = s;}
-    void set_preserve_cc_double_bonds_saturated (int s) { _preserve_cc_double_bonds_saturated = s;}
-    void set_append_molecular_formula (int s) { _append_molecular_formula = s;}
-    void set_aromatic_distinguishing_formula(int s) { _aromatic_distinguishing_formula = s;}
-    void set_remove_chiral_centres (int s) { _remove_chiral_centres = s;}
 };
 
 /*
@@ -578,18 +537,6 @@ class Molecule : private resizable_array_p<Atom>
 #include "molecule_mdl.h"
 #endif
 
-#ifdef COMPILING_CAREFUL_FRAG
-#include "careful_frag.h"
-#endif
-
-#ifdef COMPILING_MOLECULE_SMARTS
-#include "molecule_smarts.h"        
-#endif
-
-#ifdef COMPILING_MOLECULE_CIF
-#include "molecule_cif.h"        
-#endif
-
 //  Stuff needed for finding kekule forms:
 
     int  _find_kekule_form (resizable_array<Bond *> &);
@@ -606,30 +553,8 @@ class Molecule : private resizable_array_p<Atom>
 #include "tmpsssr.h"
 #endif
 
-#ifdef COMPILING_MOLECULE_MAIN
-#include "molecule_main.h"
-#endif
-
-#ifdef COMPILING_MOLECULE_B
-#include "moleculeb.h"
-#endif
-
 #ifdef COMPILING_SMILES_CC
 #include "molecule_smi.h"
-#endif
-
-//  New distance matrix stuff
-
-#ifdef COMPILING_MOLECULED
-#include "moleculed.h"
-#endif
-
-#ifdef COMPILING_TRIPOS_CC
-#include "molecule_tripos.h"
-#endif
-
-#ifdef COMPILING_MARVIN_CC
-#include "molecule_marvin.h"
 #endif
 
     int  _build_from_smiles     (const char *, int, Smiles_Ring_Status &, int *);
@@ -1516,10 +1441,6 @@ class Molecule : private resizable_array_p<Atom>
 
     int discern_chirality_from_wedge_bonds ();
 
-#ifdef COMPILING_CTB
-#include "molecule_ctb.h"
-#endif
-
     int number_records_text_info () const { return _text_info.number_elements ();}
     const IWString & text_info(int i) const { return *(_text_info.item(i));}
     IWString & text_info(int i) { return *(_text_info.item(i));}
@@ -1543,10 +1464,6 @@ class Molecule : private resizable_array_p<Atom>
                         atom_number_t a3,
                         atom_number_t a4,
                         angle_t theta = -1.0) const;
-
-#ifdef COMPILING_MOLECULEH_H
-#include "moleculeh.h"
-#endif
 
 //  This should be a template function, but the implementation goes through
 //  qsort, and that seems to make it impossible to use templates. Therefore
@@ -1616,6 +1533,172 @@ class Molecule : private resizable_array_p<Atom>
     const Ring * const * cendRing();
     const Chiral_Centre * const * cbeginChiral() const { return _chiral_centres.cbegin();}
     const Chiral_Centre * const * cendChiral() const { return _chiral_centres.cend();}
+
+// What follows are various private functions that are only used by certain library functions.
+// They are selectively exposed to avoid lenghty compile times.
+
+#ifdef COMPILING_CAREFUL_FRAG
+  private:
+    int _reduce_to_largest_fragment_carefully (Fragment_Data * fc, int * already_counted);
+    int _is_nitro (atom_number_t, int *) const;
+    int _is_sulphate_like (atom_number_t, int *) const;
+    int _identify_fragment_undesirable_groups (int * exclude) const;
+#endif
+
+#ifdef COMPILING_MOLECULED
+  private:
+    void _compute_distance_matrix ();
+    int _initialise_distance_matrix ();
+    int _bonds_between (atom_number_t, atom_number_t);
+    int _recompute_distance_matrix (int (Molecule::*identify_first_atom) (const int *, atom_number_t &),
+               int (Molecule::*identify_next_atom) (const int *, atom_number_t, atom_number_t &));
+    void _compute_row_of_distance_matrix (int * row_of_distance_matrix,
+                                 atom_number_t current_atom,
+                                 int distance);
+    void _compute_row_of_distance_matrix (CRDM_args & crdm,
+               int (Molecule::*identify_next_atom) (const int *, atom_number_t, atom_number_t &));
+    void _compute_row_of_distance_matrix (int * row_of_distance_matrix,
+                                 int & distance,
+                                 int * atom_stack,
+                                 int stack_ptr,
+                                 int * ring_atom);
+
+    int _atoms_between (atom_number_t a1,
+                          atom_number_t a2,
+                          int d,
+                          Set_of_Atoms & s);
+
+#endif  // COMPILING_MOLECULED
+#ifdef COMPILING_MOLECULEH_H
+  private:
+    int _place_1_hydrogen  (const Make_Implicit_Hydrogens_Explicit &);
+    int _place_2_hydrogens (const Make_Implicit_Hydrogens_Explicit &);
+    int _place_3_hydrogens (const Make_Implicit_Hydrogens_Explicit &);
+    int _place_4_hydrogens (const Make_Implicit_Hydrogens_Explicit &);
+    int _place_lots_of_hydrogens (const Make_Implicit_Hydrogens_Explicit &, int);
+    int _place_chiral_h_atom (Chiral_Centre *, Atom *, atom_number_t);
+#endif  // COMPILING_MOLECULEH_H
+#ifdef COMPILING_TRIPOS_CC
+  private:
+    int _read_molecule_mol2_ds (iwstring_data_source & input);
+    int _read_molecule_mol2_ds (iwstring_data_source & input, int na, int nb, int * aromatic_atom, int * aromatic_bonds, Tripos_Residue_Information * tri);
+    int _parse_tripos_atom_record (const const_IWSubstring & buffer, atom_number_t, int &, Tripos_Residue_Information * tri);
+    int _parse_tripos_bond_record (const const_IWSubstring & buffer, int * aromatic_atoms, int, int * aromatic_bond);
+    int _mol2_assign_default_formal_charges ();
+    int _doubly_bonded_to_oxygen (atom_number_t zatom) const;
+    int _tripos_atom_type_from_string (atom_number_t, const const_IWSubstring &);
+    int _place_formal_charges_on_quat_n_from_mol2 ();
+#endif  // COMPILING_TRIPOS_CC
+#ifdef COMPILING_MOLECULE_CIF
+  private:
+    int _cif_bond_list(const CIF_Loop & cifloop, const IW_STL_Hash_Map_int &);
+    int _cif_chirality(const CIF_Loop & cifloop, const IW_STL_Hash_Map_int &);
+#endif  // COMPILING_MOLECULE_CIF
+#ifdef COMPILING_MARVIN_CC
+  private:
+    int _write_molecule_mrv (std::ostream & os) const;
+    int _write_atoms_mrv (std::ostream & os) const;
+    int _write_bonds_mrv (std::ostream & os) const;
+
+    int read_molecule_mrv_mchemical (XMLNode & cml);
+    int _read_atom_array_mrv (XMLNode & cml);
+    int _read_bond_array_mrv (XMLNode & cml, int *);
+    int _read_atom_array_mrv_individual_attributes (const XMLNode & xml);
+#endif  // COMPILING_MARVIN_CC
+#ifdef COMPILING_MOL2GRAPH_CC
+  private:
+    int _all_connections_saturated (const atom_number_t zatom, const atom_number_t ignore) const;
+    int _double_bond_needs_changing_for_graph_form (const Bond & b, const Mol2Graph & mol2graph) const;
+#endif // COMPILING_MOL2GRAPH_CC
+
+#ifdef COMPILING_MOLECULE_SMARTS
+  private:
+    int _smarts (atom_number_t astart,
+                   int * include_atom,
+                   int flag,
+                   IWString & s);
+    void _compute_ncon_and_explicit_hydrogens (atom_number_t zatom,
+                                                int & ncon,
+                                                int & eh,
+                                                const int * include_atom) const;
+    void _append_isotope_and_atomic_symbol (atom_number_t zatom,
+                                             IWString & smiles);
+    int _append_smarts_equivalent_for_atom (atom_number_t zatom,
+                                              int ncon,
+                                              int rm,
+                                              IWString & s) const;
+#endif  // COMPILING_MOLECULE_SMARTS
+
+#ifdef COMPILING_MOLECULE_MAIN
+  private:
+    int _convert_set_of_atoms_to_bond_numbers (const Set_of_Atoms & s, int * barray) const;
+    int  _ok_ring_info () const;
+    int  _invalidate_ring_info ();
+    int  _invalidate_ring_aromaticity_info ();
+    void _compute_element_count (int * element_count, int & highest_atomic_number, int & isotopes_present, int & non_periodic_table_elements_present) const;
+    void _compute_element_count (int * element_count, const int * include_atom, int & highest_atomic_number, int & isotopes_present, int & non_periodic_table_elements_present) const;
+    void _compute_element_count (int * element_count, const int * atom_flag, int flag, int & highest_atomic_number, int & isotopes_present, int & non_periodic_table_elements_present) const;
+    int  _remove_atom (atom_number_t);
+    void remove_atom_from_charge_arrays (const atom_number_t atom_to_remove);
+    int _invalidate_for_changed_isotope ();
+    int _exact_mass (const int * element_count, int highest_atomic_number,
+                     int non_periodic_table_elements_present,
+                     exact_mass_t & result) const;
+    int _set_bond_length (atom_number_t a1, atom_number_t a2,
+                            distance_t d, int * either_side);
+    int _set_isotope_zero(atom_number_t zatom);
+#endif  // COMPILING_MOLECULE_MAIN
+#ifdef COMPILING_CTB
+  private:
+    int _check_all_cis_trans_bonds () const;
+    int _process_directional_bond_for_smiles (IWString & smiles, const Bond *, atom_number_t anchor);
+    int _adjacent_directional_bonds_ok (const Bond &) const;
+    int _adjacent_directional_bonds_ok (atom_number_t) const;
+    int _adjacent_directional_bonds_mutually_consistent (atom_number_t zatom);
+    int _can_be_end_of_directional_bond (atom_number_t zatom) const;
+    int _mark_adjacent_double_bond_with_directional_atoms_at_other_end (atom_number_t a3, int *);
+    int _unset_directional_bonds_not_adjacent_to_a_double_bond();;
+    int _check_for_cis_trans_bond (atom_number_t previous_atom);
+    int _smiles_write_directional_bond (atom_number_t a, atom_number_t anchor, IWString & smiles);
+    int _discern_cis_trans_bond_from_depiction (Bond * b);
+    int _extend_cis_trans_system (atom_number_t zatom);
+    int _discern_cis_trans_bond_from_depiction (atom_number_t zatom);
+    int _invalidate_directional_bonds_involving (atom_number_t zatom);
+    int _atom_being_unbonded_check_directional_bonds (atom_number_t, int preserve_chirality = 0);
+    int _finished_reading_smiles_assign_and_check_directional_bonds ();
+    int __finished_reading_smiles_assign_and_check_directional_bonds ();
+    int _invalidate_directional_double_bond (Bond &);
+    int _invalidate_directional_bonds_at_end_of_double_bond (atom_number_t zatom);
+    int _find_atoms_attached_to_root (atom_number_t root,
+                                        atom_number_t & down_atom,
+                                        atom_number_t & up_atom,
+                                        atom_number_t & doubly_bonded) const;
+    int _append_bad_cis_trans_input_text_to_name ();
+    int _cis_trans_bond_has_been_invalidated (atom_number_t zatom);
+    int _adjust_cis_trans_bonds_to_canonical_form(const int *);
+    const Bond * _identify_double_bond (atom_number_t zatom) const;
+    int _identify_linked_cis_trans_bonds(resizable_array<const Bond *> & bonds_to_be_flipped,
+                                           const Bond * current_bond,
+                                           int * bond_already_done) const;
+    int _identify_linked_cis_trans_bonds(resizable_array<const Bond *> & bonds_to_be_flipped,
+                                         atom_number_t previous_atom,
+                                         atom_number_t zatom,
+                                         int * bond_already_done) const;
+    int _canonicalise_linked_group_of_cis_trans_bonds(const resizable_array<const Bond *> &bonds_in_grouping,
+                                        const int * canonical_rank);
+    int _bond_is_no_longer_directional (const Bond * b);
+    int _remove_directional_bonding_associated_with_bond (const Bond * b);
+    int _process_directional_system (atom_number_t lhs1, atom_number_t db1, int & valid_cis_trans_form_found);
+    int _identify_directional_bonds_across_double_bonds (const Bond * b,
+                                resizable_array<const Bond *> & coupled) const;
+    int _identify_directional_bonds_across_double_bonds (atom_number_t zatom,
+                                                         resizable_array<const Bond *> & coupled) const;
+    int _set_any_unambiguous_unset_directional_bonds(resizable_array<const Bond *> & directional_bonds);
+    int _get_single_bonds (atom_number_t zatom, resizable_array<const Bond *> & sb) const;
+    int _fill_in_missing_directional_bond_specification (atom_number_t zatom,
+                                        resizable_array<const Bond *> & directional_bonds);
+#endif  // COMPILING_CTB
+
 };
 
 /*
@@ -2014,8 +2097,6 @@ extern void reset_chiral_centre_file_scope_variables();
 
 extern void set_copy_user_specified_atom_void_ptrs_during_create_subset (int);
 extern void set_copy_atom_based_user_specified_void_pointers_during_add_molecle (int);
-
-extern void set_exclude_triple_bonds_from_graph_reduction (int);
 
 /*
   Forces a double bond to be placed at all ring fusion points - helps when pulling

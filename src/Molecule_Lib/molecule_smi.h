@@ -51,22 +51,6 @@
                                   const int * include_atom,
                                   Smiles_Information & smi_info);
 
-#ifdef OLD_WAY_WITH_POINTER_TO_MEMBER_FUNCTION
-    int _build_smiles_ordering (int (Molecule::*identify_next_atom) (const int * zorder, atom_number_t, atom_number_t &, const int *),
-                                const atom_number_t previous_atom,
-                                const atom_number_t a,
-                                int & icounter,
-                                const int * include_atom,
-                                Smiles_Information & smi_info);
-    int _build_smiles_ordering (Smiles_First_Atom &,
-                                int (Molecule::* identify_next_atom) (const int * zorder, atom_number_t, atom_number_t &, const int *),
-                                const int * include_atom,
-                                Smiles_Information & smi_info);
-    int _include_atom_in_smiles (atom_number_t) const;
-
-    int _mark_atoms_not_in_smiles (int * zorder);
-    void _find_smiles_start_atoms (const int * zorder, resizable_array<int> & start_atom) const;
-#endif
     int _build_smiles_ordering (Smiles_Information & smi_info, const int * include_atom);
 
 

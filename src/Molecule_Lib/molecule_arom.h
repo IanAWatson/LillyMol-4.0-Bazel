@@ -234,5 +234,3 @@
     int _both_double_bonds_in_set(const Set_of_Atoms & p, const atom_number_t zatom) const;
 
     int _has_kekule_forms(const Set_of_Atoms & r) const;
-
-/* arch-tag: 37e305b3-dfa5-44ea-8f3c-c036cab21fa5 */

@@ -70,7 +70,7 @@ class Molecule_Output_Object : public resizable_array_p<ofstream_and_type>
 
     int good () const;
 
-    int set_verbose (int i) { return _verbose = i;}
+    void set_verbose (int i) { _verbose = i;}
 
     int set_molecules_per_file (int);
     int molecules_per_file () const { return _molecules_per_file;}
@@ -80,7 +80,7 @@ class Molecule_Output_Object : public resizable_array_p<ofstream_and_type>
 
     int molecules_written () const { return _molecules_written;}
 
-    int new_stem (const const_IWSubstring &, int = 0);
+    int new_stem (const const_IWSubstring &, int keep_suffix = 0);
     const IWString & stem () const {return _stem;}
 
     int would_use_name (const char *) const;

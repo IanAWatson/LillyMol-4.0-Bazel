@@ -1806,8 +1806,6 @@ element_from_smiles_string (const char * smiles,
     
   result = create_element_with_symbol(ele);
 
-//cerr << "Created element from '" << ele << "'\n";
-
   return nc;
 }
 
@@ -1822,8 +1820,8 @@ element_from_smiles_string (const char * smiles,
 */
 
 int
-element_from_smarts_string (const char * smiles, int characters_to_process,
-                            const Element * & result)
+element_from_smarts_string(const char * smiles, int characters_to_process,
+                           const Element * & result)
 {
 
 // Try two character match on natural elements. 2nd char must be lowercase

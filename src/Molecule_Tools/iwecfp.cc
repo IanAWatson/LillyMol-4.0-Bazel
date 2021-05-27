@@ -18,7 +18,7 @@
 #include "Foundational/iwmisc/iwdigits.h"
 
 #include "Molecule_Lib/molecule.h"
-#include "Molecule_Lib/iwstandard.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/atom_typing.h"
