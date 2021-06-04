@@ -351,6 +351,8 @@ determine_atom_type (const IWString & s)
 
   if ('z' == mys)
     return IWATTYPE_Z;
+  else if ('y' == mys)
+    return IWATTYPE_USP_Y;
   else if ('c' == mys || "complex" == s)
     return IWATTYPE_COMPLEX;
   else if ("tt" == mys)

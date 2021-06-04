@@ -321,7 +321,7 @@ DoAtomPairFingerprint(int argc, char ** argv)
       return 1;
     }
   } else {
-    atom_typing.build("Y");
+    atom_typing.build("UST:Y");
     if (verbose)
       cerr << "Default compressed atomic number atom typing\n";
   }
