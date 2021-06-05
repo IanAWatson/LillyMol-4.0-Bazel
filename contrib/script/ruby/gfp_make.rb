@@ -4,8 +4,9 @@
 
 # Fingerprint generator
 
-require_relative 'lib/group_args'
 require_relative 'lib/fp_config_files'
+require_relative 'lib/group_args'
+require_relative 'lib/mkmk2'
 require 'google/protobuf'
 
 def usage(retcode)
@@ -82,11 +83,16 @@ unless fp_args
   exit(1)
 end
 
+# There is one piece of Magic needed. If -MK and -MK2 are specified,
+# combine them.
+
+fp_args = consoliate_mkmk2(fp_args)
+
 #$stderr << "Files #{files}\n"
 #$stderr << "remaining_args #{remaining_args}\n"
 #$stderr << "fp_args #{fp_args}\n"
 
-# Suppress any duplicates
+# Detect any duplicates
 
 unique_fps = GfpMakeSupport.all_options_unique(fp_args)
 unless unique_fps
@@ -94,22 +100,10 @@ unless unique_fps
   exit(1)
 end
 
-# There is one piece of Magic needed. If -MK and -MK2 are specified,
-# combine them.
-
-#$stderr << unique_fps << "\n"
-
-if unique_fps.key?('MK') && unique_fps.key?('MK2') &&
-   !unique_fps['MK'] && !unique_fps['MK2']
-  unique_fps['MK'] = OptionValue.new('MK', '-J FPMK -J LEVEL2=FPMK2')
-  unique_fps.delete('MK2')
-end
-
 #$stderr << "After MK/MK2 consolidation\n"
 #$stderr << unique_fps << "\n"
 
 # Keep track of the recognized fingerprints.
-# The class name will be the uppercased file name.
 # A mapping from fingerprint name to an object that
 # can process that kind of fingerprint.
 fps = config_fingerprints(config_dir, verbose)
@@ -118,22 +112,23 @@ fps = config_fingerprints(config_dir, verbose)
 # generate that command line component.
 fp_option_to_known_fp = {}
 
-unique_fps.each_key do |fp_option|
+fp_args.each do |fp_option|
   matched = 0
-  fps.each_value do |v|
-    if v.match?(fp_option)
-      fp_option_to_known_fp[fp_option] = v
+  opt = fp_option.option
+  fps.each_value do |fp_generator|
+    if fp_generator.match?(opt)
+      fp_option_to_known_fp[opt] = fp_generator
       matched += 1
     end
   end
   if matched.zero?
-    $stderr << "Unrecognized fingerprint #{fp_option}\n"
+    $stderr << "Unrecognized fingerprint #{opt}\n"
     exit(1)
   elsif matched > 1
-    $stderr << "#{matched} known fingerprints match #{fp_option}\n"
+    $stderr << "#{matched} known fingerprints match #{opt}\n"
     exit(1)
   elsif verbose.positive?
-    $stderr << "Recognized #{fp_option} as #{fp_option_to_known_fp[fp_option]}\n"
+    $stderr << "Recognized #{opt} as #{fp_option_to_known_fp[opt]}\n"
   end
 end
 
@@ -143,12 +138,12 @@ end
 cmdline = []
 first_token = true
 first_token = false if is_filter
-
 files = files.join(' ')
-unique_fps.each do |fp_option, qualifiers|
-  cmdline.push(fp_option_to_known_fp[fp_option].expand(fp_option,
+
+fp_args.each do |fp_option|
+  cmdline.push(fp_option_to_known_fp[fp_option.option].expand(fp_option.option,
                                                        first_in_pipeline: first_token,
-                                                       extra_qualifiers: qualifiers))
+                                                       extra_qualifiers: fp_option.value))
   if first_token
     first_token = false
     cmdline[-1] << " #{files}"
@@ -156,7 +151,6 @@ unique_fps.each do |fp_option, qualifiers|
     cmdline[-1] << ' -'
   end
 end
-
 $stderr << cmdline.join('|') if verbose.positive?
 
 system(cmdline.join('|'))

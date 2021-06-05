@@ -13,7 +13,7 @@ def initial_command_stem(executable, first_in_pipeline:, extra_qualifiers:)
   end
 
   if extra_qualifiers
-    cmd << " #{extra_qualifiers.value}"
+    cmd << " #{extra_qualifiers}"
   end
 
   cmd
