@@ -2,29 +2,28 @@
 
 # IWFP class for gfp_make
 
-require_relative "lib/fp_common.rb"
+require_relative 'lib/fp_common'
 
+# Atom pair class.
 class AP
-  @@rx = Regexp.new("^MAP")
-  @@description = "atom pair fingerprints"
-  @@executable = "atom_pair_fingerprint"
+  attr_reader :description
 
-  def description
-    return @@description
+  def initialize
+    @rx = Regexp.new('^M*AP')
+    @description = 'atom pair fingerprints'
+    @executable = 'atom_pair_fingerprint'
   end
 
-  def match?(fp)
-    return @@rx.match?(fp)
+  def match?(fp) # rubocop:disable Naming/MethodParameterName
+    @rx.match?(fp)
   end
 
-  def expand(fp, first_in_pipeline:, extra_qualifiers:)
-    m = /^MAP(\d+)*/.match(fp)
-    if not m
-      raise "Unrecognized IW fp form '#{fp}'"
-    end
+  def expand(fp, first_in_pipeline:, extra_qualifiers:) # rubocop:disable Naming/MethodParameterName
+    m = /^M*AP(\d+)*/.match(fp)
+    raise "Unrecognized IW fp form '#{fp}'" unless m
 
-    cmd = FpCommon.initial_command_stem(@@executable, first_in_pipeline:first_in_pipeline,
-                extra_qualifiers:extra_qualifiers)
+    cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
+                                                     extra_qualifiers: extra_qualifiers)
     path_length, atype = FpCommon.parse_fp_token(fp[3..])
 
     cmd << ' -J NCAP'
@@ -32,5 +31,4 @@ class AP
     cmd << " -P #{atype}" if atype
     cmd
   end
-  
 end

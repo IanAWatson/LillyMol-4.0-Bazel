@@ -2,38 +2,38 @@
 
 # EC fingerprint module for gfp_make
 
-require_relative "lib/fp_common.rb"
+require_relative 'lib/fp_common'
 
+# EC fingerprint.
 class EC
-  @@rx = Regexp.new("^EC")
-  @@description = "Circular fingerprints"
-  @@executable = "iwecfp"
+  attr_reader :description
 
-  def match?(fp)
-    return @@rx.match?(fp)
+  def initialize
+    @rx = Regexp.new('^EC')
+    @description = 'Circular fingerprints'
+    @executable = 'iwecfp'
   end
 
-  def description
-    return @@description
+  def match?(fp) # rubocop:disable Naming/MethodParameterName
+    @rx.match?(fp)
   end
 
-  def expand(fp, first_in_pipeline:, extra_qualifiers:)
-    m = /^EC([A-Z]*)(\d+)*:*(\S+)/.match(fp)
-    if not m
-      raise "Unrecognized EC fp form '#{fp}'"
-    end
-    cmd = FpCommon.initial_command_stem(@@executable, first_in_pipeline:first_in_pipeline,
-                extra_qualifiers:extra_qualifiers)
+  def expand(fp, first_in_pipeline:, extra_qualifiers:) # rubocop:disable Naming/MethodParameterName
+    m = /^EC([A-Z]*)(\d+)*:*(\S+)*/.match(fp)
+    raise "Unrecognized EC fp form '#{fp}'" unless m
+
+    cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
+                                                     extra_qualifiers: extra_qualifiers)
     radius, atype = FpCommon.parse_fp_token(fp[2..])
-#   $stderr << "Radius #{radius} predefined '#{predefined}' ust_atype #{ust_atype}\n"
+    # $stderr << "Radius #{radius} predefined '#{predefined}' ust_atype #{ust_atype}\n"
 
-    radius = '3' unless radius
+    radius ||= '3'
 
     cmd << " -J NCEC#{radius} -R #{radius}"
 
-    cmd << " -P #{atype}" if atype
+    atype ||= 'UST:Y'
+    cmd << " -P #{atype}"
 
     cmd
   end
-  
 end

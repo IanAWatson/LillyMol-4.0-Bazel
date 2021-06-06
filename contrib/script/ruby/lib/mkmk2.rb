@@ -19,7 +19,7 @@ def consoliate_mkmk2(args) # rubocop:disable Metrics/CyclomaticComplexity, Metri
     end
   end
 
-  return if mk_index.negative? || mk2_index.negative?
+  return args if mk_index.negative? || mk2_index.negative?
 
   args[mk_index] = OptionValue.new('MK', '-J LEVEL2=FPMK2')
   args.delete_at(mk2_index)

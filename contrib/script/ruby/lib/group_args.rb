@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'google/protobuf'
-
 OptionValue = Struct.new(:option, :value) do
 end
 

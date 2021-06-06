@@ -2,30 +2,30 @@
 
 # iwdescr fingerprint class for gfp_make
 
-require_relative "lib/fp_common.rb"
+require_relative 'lib/fp_common'
 
+# Class for descriptor based fingerprints.
 class DSC
-  @@rx = Regexp.new("^DSC")
-  @@description = "descriptor based fingerprint"
-  @@executable = "iwdescr"
+  attr_reader :description
 
-  def description
-    return @@description
+  def initialize
+    @rx = Regexp.new('^DSC')
+    @description = 'descriptor based fingerprint'
+    @executable = 'iwdescr'
   end
 
-  def match?(fp)
-    return @@rx.match?(fp)
+  def match?(fp) # rubocop:disable Naming/MethodParameterName
+    @rx.match?(fp)
   end
 
-  def expand(fp, first_in_pipeline:, extra_qualifiers:)
+  def expand(fp, first_in_pipeline:, extra_qualifiers:) # rubocop:disable Naming/MethodParameterName
     m = /^DSC(\d+)*/.match(fp)
-    if not m
-      raise "Unrecognized DSC fp form '#{fp}'"
-    end
+    raise "Unrecognized DSC fp form '#{fp}'" unless m
 
-    cmd = FpCommon.initial_command_stem(@@executable, first_in_pipeline:first_in_pipeline,
-                extra_qualifiers:extra_qualifiers)
+    cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
+                                                     extra_qualifiers: extra_qualifiers)
+    # iwdescr does not have a -f option. Should change that.
+    cmd = cmd.gsub(/-f/, '-G FILTER') unless first_in_pipeline
     cmd
   end
-  
 end
