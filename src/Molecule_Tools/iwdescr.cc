@@ -3300,10 +3300,11 @@ atoms_not_already_marked (const Ring & r,
   return rc;
 }
 
+#ifdef OLD_VERSION_NO_LONGER_USED
 static int
-compute_exocyclic_bonds (Molecule & m,
-                         const Ring & r,
-                         const int *ncon)
+compute_exocyclic_bonds(Molecule & m,
+                        const Ring & r,
+                        const int *ncon)
 {
   int rc = 0;
 
@@ -3329,16 +3330,17 @@ compute_exocyclic_bonds (Molecule & m,
 
   return rc;
 }
+#endif
 
 static int
-compute_exocyclic_bonds (Molecule & m,
-                         const atomic_number_t * z,
-                         const Ring & r,
-                         const int *ncon,
-                         int & double_bond_attachments,
-                         int & singly_connected_attachments,
-                         int & singly_connected_heteroatoms,
-                         int & singly_connected_donors)
+compute_exocyclic_bonds(Molecule & m,
+                        const atomic_number_t * z,
+                        const Ring & r,
+                        const int *ncon,
+                        int & double_bond_attachments,
+                        int & singly_connected_attachments,
+                        int & singly_connected_heteroatoms,
+                        int & singly_connected_donors)
 {
   int rc = 0;
 
@@ -7932,7 +7934,7 @@ parse_replicates_specification (const_IWSubstring & dname,
   if (! dname.split_into_directive_and_value(tmp, ':', replicates))
     return 0;
 
-  dname = tmp;
+  dname.truncate_at_first(':');
 
   return 1;
 }

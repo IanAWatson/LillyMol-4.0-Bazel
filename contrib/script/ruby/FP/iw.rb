@@ -24,7 +24,6 @@ class IW
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    $stderr << "getting path info from #{fp}\n"
     path_length, atype = FpCommon.parse_fp_token(fp[2..])
 
     cmd << ' -J FPIW'

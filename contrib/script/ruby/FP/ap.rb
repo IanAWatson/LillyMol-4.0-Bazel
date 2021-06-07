@@ -10,7 +10,7 @@ class AP
 
   def initialize
     @rx = Regexp.new('^M*AP')
-    @description = 'atom pair fingerprints'
+    @description = 'Atom pair fingerprints'
     @executable = 'atom_pair_fingerprint'
   end
 
@@ -20,11 +20,11 @@ class AP
 
   def expand(fp, first_in_pipeline:, extra_qualifiers:) # rubocop:disable Naming/MethodParameterName
     m = /^M*AP(\d+)*/.match(fp)
-    raise "Unrecognized IW fp form '#{fp}'" unless m
+    raise "Unrecognized AP fp form '#{fp}'" unless m
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    path_length, atype = FpCommon.parse_fp_token(fp[3..])
+    path_length, atype = FpCommon.parse_fp_token(fp.gsub(/^M*AP/, ''))
 
     cmd << ' -J NCAP'
     cmd << "#{path_length} -R #{path_length}" if path_length

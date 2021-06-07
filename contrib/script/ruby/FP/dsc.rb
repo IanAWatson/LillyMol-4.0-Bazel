@@ -10,7 +10,7 @@ class DSC
 
   def initialize
     @rx = Regexp.new('^DSC')
-    @description = 'descriptor based fingerprint'
+    @description = 'Descriptor based fingerprint'
     @executable = 'iwdescr'
   end
 
@@ -24,8 +24,10 @@ class DSC
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    # iwdescr does not have a -f option. Should change that.
+    # iwdescr already has a -f option that does something different.
     cmd = cmd.gsub(/-f/, '-G FILTER') unless first_in_pipeline
+    cmd << ' -O dm -O complex'
+    # TODO: ianwatson Figure out donor/acceptor things...
     cmd
   end
 end

@@ -87,9 +87,7 @@ while remaining_args.size.positive?
 end
 files = files.reverse
 
-$stderr << "remaining_args #{remaining_args}\n"
 fp_args = GfpMakeSupport.group_args(remaining_args)
-$stderr << "from group_args #{fp_args}\n"
 unless fp_args
   fp_args = [OptionValue.new('IW', nil), OptionValue.new('MK', '-J LEVEL2=MK2')]
   $stderr << "Cannot parse fingerprint arguments\n"
@@ -104,7 +102,6 @@ fp_args = consoliate_mkmk2(fp_args)
 
 # Detect any duplicates
 
-$stderr << "fp_args #{fp_args} before all_options_unique\n"
 unique_fps = GfpMakeSupport.all_options_unique(fp_args)
 unless unique_fps
   $stderr << 'Duplicate fingerprints detected\n'
@@ -149,7 +146,6 @@ first_token = false if is_filter
 files = files.join(' ')
 
 fp_args.each do |fp_option|
-  $stderr << "Processing #{fp_option}\n"
   cmdline.push(fp_option_to_known_fp[fp_option.option].expand(fp_option.option,
                                                               first_in_pipeline: first_token,
                                                               extra_qualifiers: fp_option.value))
