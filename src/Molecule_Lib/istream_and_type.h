@@ -459,6 +459,7 @@ data_source_and_type<T>::molecules_remaining()
 
 // If _skip_first is specified, skip that many structures.
 // Reading csv is a special case.
+// TODO: ianwatson read the csv header record and preserve to enable Info collection.
 template <typename T>
 void
 data_source_and_type<T>::_do_skip_first()

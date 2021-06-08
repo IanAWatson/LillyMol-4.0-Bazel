@@ -44,9 +44,9 @@ Allowed_Elements::reset_to_defaults()
 }
 
 int
-Allowed_Elements::build_from_command_line (Command_Line & cl,
-                                           char flag,
-                                           int verbose)
+Allowed_Elements::build_from_command_line(Command_Line & cl,
+                                          char flag,
+                                          int verbose)
 {
   int i = 0;
   IWString e;
@@ -90,7 +90,7 @@ Allowed_Elements::build_from_command_line (Command_Line & cl,
 }
 
 int
-Allowed_Elements::contains_non_allowed_atoms (const Molecule & m) const
+Allowed_Elements::contains_non_allowed_atoms(const Molecule & m) const
 {
   for (int i = m.natoms() - 1; i >= 0; i--)
   {
@@ -107,9 +107,19 @@ Allowed_Elements::contains_non_allowed_atoms (const Molecule & m) const
 }
 
 void
-Allowed_Elements::set_allow (atomic_number_t z, int s)
+Allowed_Elements::set_allow(atomic_number_t z, int s)
 {
   _allowed_element[z] = s;
 
   return;
+}
+
+void
+Allowed_Elements::exclude_metals() {
+  for (int i = 0; i <= HIGHEST_ATOMIC_NUMBER; ++i) {
+    const Element* e = get_element_from_atomic_number(i);
+    if (e->is_metal()) {
+      _allowed_element[i] = 0;
+    }
+  }
 }

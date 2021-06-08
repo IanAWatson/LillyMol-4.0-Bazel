@@ -25,6 +25,9 @@ class Allowed_Elements
 
     void set_allow (atomic_number_t, int);
 
+    // Any element that is a metal will be set to exclude.
+    void exclude_metals();
+
     void reset_to_defaults();
 };
 

@@ -2660,9 +2660,9 @@ max_ring_size (Molecule & m)
 */
 
 static int
-exclude_for_non_organic_and_non_periodic_table (const Molecule & m)
+exclude_for_non_organic_and_non_periodic_table(const Molecule & m)
 {
-  int matoms = m.natoms();
+  const int matoms = m.natoms();
   for (int i = 0; i < matoms; i++)
   {
     const Element * e = m.elementi(i);
@@ -2686,16 +2686,17 @@ exclude_for_non_organic_and_non_periodic_table (const Molecule & m)
 }
 
 static int
-exclude_for_non_organic (const Molecule & m)
+exclude_for_non_organic(const Molecule & m)
 {
   int matoms = m.natoms();
+  cerr << "Checking " << matoms << " atoms for non organic\n";
   for (int i = 0; i < matoms; i++)
   {
     const Element * e = m.elementi(i);
     if (e->organic())
       continue;
 
-    if (! ok_non_organics.matches (e))
+    if (! ok_non_organics.matches(e))
     {
       non_organic_molecules_found++;
       return 1;
@@ -2706,7 +2707,7 @@ exclude_for_non_organic (const Molecule & m)
 }
 
 static int
-exclude_for_non_real_elements (const Molecule & m)
+exclude_for_non_real_elements(const Molecule & m)
 {
   int matoms = m.natoms();
   for (int i = 0; i < matoms; i++)
@@ -2729,8 +2730,9 @@ exclude_for_non_real_elements (const Molecule & m)
 */
 
 static int
-exclude_for_atom_types (const Molecule & m)
+exclude_for_atom_types(const Molecule & m)
 {
+  cerr << "exclude_for_atom_types\n";
   if (exclude_non_real_elements && output_organic_only)
     return exclude_for_non_organic_and_non_periodic_table(m);
 
@@ -2900,9 +2902,9 @@ atoms_in_largest_fragment (Molecule & m)
 }
 
 static int 
-_apply_all_filters (Molecule & m,
-                    IWString & rejection_reason,
-                    int & molecule_changed)
+_apply_all_filters(Molecule & m,
+                   IWString & rejection_reason,
+                   int & molecule_changed)
 {
   assert(m.ok());
 
@@ -3964,6 +3966,11 @@ handle_dash_O_stuff (Command_Line & cl,
 
       continue;
     }
+    else if (o == "nometal") {
+      allowed_elements.exclude_metals();
+      filter_for_disallowed_elements = 1;
+      continue;
+    }
     else if ("help" == o)
     {
       cerr << "The -O option is troublesome due to it's long history and evolution\n";
@@ -3972,6 +3979,7 @@ handle_dash_O_stuff (Command_Line & cl,
       cerr << " -O allow:El    temporarily allow El as an OK non-organic\n";
       cerr << " -O none        reject if any non-organic atoms present\n";
       cerr << " -O El          element El becomes fully organic for the course of the run\n";
+      cerr << " -O nometal     exclude any molecule containing metal atoms\n";
       exit(1);
     }
     else
