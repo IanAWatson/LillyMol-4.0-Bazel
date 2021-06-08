@@ -174,8 +174,7 @@ data_source_and_type<T>::data_source_and_type(FileType input_type,
   if (! _file_opened_ok (fname))
     return;
 
-  if (_skip_first)
-    _do_skip_first();
+  _do_skip_first();
 
   return;
 }
@@ -188,11 +187,10 @@ data_source_and_type<T>::data_source_and_type(FileType input_type,
   if (! _default_values(input_type))
     return;
 
-  if (! _file_opened_ok (fname))
+  if (! _file_opened_ok(fname))
     return;
 
-  if (_skip_first)
-    _do_skip_first();
+  _do_skip_first();
 
   return;
 }
@@ -214,8 +212,7 @@ data_source_and_type<T>::data_source_and_type (const IWString & fname)
   if (! _file_opened_ok (fname))
     return;
 
-  if (_skip_first)
-    _do_skip_first();
+  _do_skip_first();
 
   return;
 }
@@ -460,15 +457,24 @@ data_source_and_type<T>::molecules_remaining()
   return iwstring_data_source::grep(rx);
 }
 
+// If _skip_first is specified, skip that many structures.
+// Reading csv is a special case.
 template <typename T>
 void
 data_source_and_type<T>::_do_skip_first()
 {
   assert (_valid);
+  if (FILE_TYPE_CSV == _input_type) {
+    skip_records(1);
+  }
 
-  if (FILE_TYPE_SMI == _input_type)
+  if (_skip_first == 0) {
+    return;
+  }
+
+  if (FILE_TYPE_SMI == _input_type || _input_type == FILE_TYPE_CSV)
   {
-    if (! skip_records (_skip_first))
+    if (! skip_records(_skip_first))
       _valid = 0;
 
     return;

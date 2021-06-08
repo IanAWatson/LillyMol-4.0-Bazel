@@ -265,6 +265,7 @@ cc_library(
     srcs = [
         "charmm.cc",
         "cif.cc",
+        "csv.cc",
         "inchi_dummy.cc",
         "marvin.cc",
         "mdl.cc",

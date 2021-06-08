@@ -209,7 +209,11 @@ Molecule_Output_Object::new_stem(const const_IWSubstring& nstem, int keep_suffix
     return 1;
   }
 
-  int nt = _output_types.number_elements();
+  const int nt = _output_types.number_elements();
+  if (nt == 0) {
+    cerr << "Molecule_Output_Object::new_stem: no output types defined\n";
+    return 0;
+  }
 
   if ('-' == nstem)
   {
@@ -222,16 +226,10 @@ Molecule_Output_Object::new_stem(const const_IWSubstring& nstem, int keep_suffix
 
     _use_stdout = 1;
 
-    return 1;
+    return _write_any_header_records();
   }
 
   resize(nt);
-
-  if (0 == nt)
-  {
-    cerr << "Molecule_Output_Object::new_stem: no output types defined\n";
-    return 0;
-  }
 
   return _open_new_stems(nstem, keep_suffix);
 }
@@ -358,7 +356,26 @@ Molecule_Output_Object::_open_new_stems(const const_IWSubstring& nstem, int keep
 
   _stem = nstem;
 
+
+  _write_any_header_records();
+
   return _number_elements;
+}
+
+// Currently does not respect the output separator setting
+// defined in csv.cc
+int 
+Molecule_Output_Object::_write_any_header_records() const {
+  for (int i = 0; i < _output_types.number_elements(); ++i) {
+    if (_output_types[i] == FILE_TYPE_CSV) {
+      if (_use_stdout)
+        std::cout << "SMILES,ID\n";
+      else
+        *_things[i] << "SMILES,ID\n";
+    }
+  }
+
+  return 1;
 }
 
 /*int

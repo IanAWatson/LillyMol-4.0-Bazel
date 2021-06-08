@@ -58,6 +58,10 @@ class Molecule_Output_Object : public resizable_array_p<ofstream_and_type>
 
     int _add_output_type (FileType, const const_IWSubstring &, MDL_File_Supporting_Material &);
 
+    // Some file types might have header records (csv).
+    int _write_any_header_records() const;
+    int _read_any_header_records() const;
+
   public:
     Molecule_Output_Object ();
     ~Molecule_Output_Object ();

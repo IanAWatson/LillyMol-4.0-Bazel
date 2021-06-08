@@ -425,6 +425,10 @@ suffix_for_file_type(FileType file_type)
       return "tdt";
       break;
 
+    case FILE_TYPE_CSV:
+        return "csv";
+        break;
+
     default:
       return NULL;
       break;
@@ -479,10 +483,6 @@ suffix_for_file_type(int file_type)
     case QRY:
       return "qry";
       break;
-
-/*  case BFILE:
-      return "b";
-      break;*/
 
     case RSMI:
       return "smi";
@@ -692,8 +692,6 @@ discern_file_type_from_name(const IWString & file_name)
     return FILE_TYPE_RDF;
   if (file_name.ends_with(".qry"))
     return FILE_TYPE_QRY;
-/*if (file_name.ends_with(".b"))
-    return FILE_TYPE_BFILE;*/
   if (file_name.ends_with(".mol2"))
     return FILE_TYPE_MOL2;
   if (file_name.ends_with(".chm"))
@@ -710,6 +708,8 @@ discern_file_type_from_name(const IWString & file_name)
     return FILE_TYPE_INCHI;
   if (file_name.ends_with(".cif"))
     return FILE_TYPE_CIF;
+  if (file_name.ends_with(".csv"))
+    return FILE_TYPE_CSV;
 
   return FILE_TYPE_INVALID;
 }
@@ -775,6 +775,8 @@ _string_to_file_type(const const_IWSubstring & file_type)
     return FILE_TYPE_MRV;
   if ("inchi" == file_type)
     return FILE_TYPE_INCHI;
+  if ("csv" == file_type)
+    return FILE_TYPE_CSV;
   
   return FILE_TYPE_INVALID;
 }
@@ -1039,6 +1041,9 @@ Molecule::read_molecule_ds(iwstring_data_source & input, FileType input_type)
   else if (FILE_TYPE_CIF == input_type)
     rc = read_molecule_cif_ds(input);
 
+  else if (FILE_TYPE_CSV == input_type)
+    rc = read_molecule_csv_ds(input);
+
   else
   {
     cerr << "read_molecule_ds: Unknown type " << input_type << "\n";
@@ -1114,6 +1119,8 @@ Molecule::write_molecule(std::ostream & os, FileType output_type,
     rc = write_molecule_mrv(os);
   else if (FILE_TYPE_INCHI == output_type)
     rc = write_molecule_inchi(os);
+  else if (FILE_TYPE_CSV == output_type)
+    rc = write_molecule_csv(os);
   else
     cerr << "Molecule::write_molecule: unrecognised type " << output_type << "\n";
     

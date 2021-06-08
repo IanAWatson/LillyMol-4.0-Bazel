@@ -986,6 +986,8 @@ class Molecule : private resizable_array_p<Atom>
     int write_molecule_wchm  (std::ostream &);
 
     int write_molecule_cif (std::ostream &);
+    // Smiles as csv form.
+    int write_molecule_csv (std::ostream &);
 
     int write_molecule_smarts (std::ostream &);
 
@@ -1019,6 +1021,7 @@ class Molecule : private resizable_array_p<Atom>
     int read_molecule_mrv_ds   (iwstring_data_source &);
     int read_molecule_inchi_ds (iwstring_data_source &);
     int read_molecule_cif_ds   (iwstring_data_source &);
+    int read_molecule_csv_ds   (iwstring_data_source &);
 
     int build_from_smiles     (const char *);
     int build_from_smiles     (const char *, int);

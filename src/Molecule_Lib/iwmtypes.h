@@ -295,6 +295,8 @@ enum FileType
   FILE_TYPE_MRV,
   FILE_TYPE_WCHM,
   FILE_TYPE_CIF,
+  // Smiles and ID header.
+  FILE_TYPE_CSV,
   // A special value used internally.
   FILE_TYPE_NO_ARG_CONSTRUCTOR,
 };
