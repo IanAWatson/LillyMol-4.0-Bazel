@@ -111,7 +111,6 @@ cc_library(
         "mdl_atom_record.cc",
         "mdl_file_data.cc",
         "mdl_molecule.cc",
-        "mdl_v30.cc",
         "misc2.cc",
         "mol2graph.cc",
         "mol2graph_proto.cc",
@@ -122,7 +121,6 @@ cc_library(
         "moleculeh.cc",
         "moleculer.cc",
         "molecule_smarts.cc",
-        "mrk.cc",
         "mpr.cc",
         "numass.cc",
         "ostream_and_type.cc",
@@ -212,10 +210,8 @@ cc_library(
         "parse_smarts_tmp.h",
         "pearlman.h",
         "qry_wstats.h",
-        "readmdl.h",
         "rotbond_common.h",
         "rmele.h",
-        "rwmolecule.h",
         "rwsubstructure.h",
         "set_of_atoms.h",
         "smiles.h",
@@ -271,6 +267,7 @@ cc_library(
         "mdl.cc",
         "mdl_v30.cc",
         "mmod.cc",
+        "mrk.cc",
         "msi.cc",
         "pdb.cc",
         "rwmolecule.cc",
@@ -278,6 +275,8 @@ cc_library(
         "tripos.cc",
     ],
     hdrs = [
+        "readmdl.h",
+        "rwmolecule.h",
         "tripos.h",
     ],
     deps = [
@@ -312,6 +311,7 @@ cc_library(
     ],
     deps = [
         ":iwmolecule",
+        ":moleculeio",
         ":reaction_cc_proto",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Foundational/iwmisc:iwmisc",
@@ -407,6 +407,24 @@ cc_test(
     linkopts = [
         "-lz",
     ],
+)
+
+
+cc_test(
+    name = "molecule_each_index_test",
+    srcs = [
+        "molecule_each_index_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        ":substructure_cc_proto",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ]
 )
 
 cc_test(

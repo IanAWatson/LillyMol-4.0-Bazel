@@ -111,9 +111,11 @@ class resizable_array_base
 #ifdef NDEBUG
     T    first                  () const { return _things[0];}
     T    last_item              () const { return _things[_number_elements - 1];}
+    T    back                   () const { return _things[_number_elements - 1];}
 #else
     T    first                  () const;
     T    last_item              () const;
+    T    back                   () const;
 #endif
     void sort                   ( int  (*) (const T *, const T *));
     template <typename C>
@@ -1251,6 +1253,15 @@ resizable_array_base<T>::first () const
   assert (_number_elements > 0);
 
   return _things[0];
+}
+
+template <typename T>
+T
+resizable_array_base<T>::back() const {
+  assert(ok());
+  assert (_number_elements > 0);
+
+  return _things[_number_elements - 1];
 }
 #endif
 

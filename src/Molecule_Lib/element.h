@@ -213,8 +213,8 @@ extern void de_allocate_periodic_table();
   Mar 2010, extend the meaning of D and T to input formats other than mdl
 */
 
-extern int interpret_d_as_deuterium ();
-extern int interpret_t_as_tritium ();
+extern int interpret_d_as_deuterium();
+extern int interpret_t_as_tritium();
 
 extern void reset_element_file_scope_variables ();
 

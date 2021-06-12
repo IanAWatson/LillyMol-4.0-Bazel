@@ -81,6 +81,22 @@ set_display_strange_chemistry_messages(int s)
   display_strange_chemistry_messages = s;
 }
 
+static int _interpret_d_as_deuterium = 0;
+void set_interpret_d_as_deuterium(int s) {
+  _interpret_d_as_deuterium = s;
+}
+int interpret_d_as_deuterium() {
+  return _interpret_d_as_deuterium;
+}
+
+static int _interpret_t_as_tritium = 0;
+void set_interpret_t_as_tritium(int s) {
+  _interpret_t_as_tritium = s;
+}
+int interpret_t_as_tritium() {
+  return _interpret_t_as_tritium;
+}
+
 /*
   Search the non periodic table elements. 
   If this ever becomes slow, use a hash

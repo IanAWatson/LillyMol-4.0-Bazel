@@ -1025,8 +1025,8 @@ Atom::_compute_implicit_hydrogens(int & result)
   cerr << "ose " << ose << endl;
 #endif
 
-  if (ose - _formal_charge <=
-      0)    // formal charge has removed all outer shell electrons (maybe even more)
+  // formal charge has removed all outer shell electrons (maybe even more)
+  if (ose - _formal_charge <= 0)
     return 1;
 
   if (ose - _formal_charge >= 8)    // we only consider elements with at most tetrahedral bonding

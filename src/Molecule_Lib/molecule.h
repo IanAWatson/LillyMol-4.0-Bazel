@@ -675,7 +675,12 @@ class Molecule : private resizable_array_p<Atom>
     Molecule & operator = (Molecule &&);
     bool       operator == ( Molecule & );
 
-    int  add (Atom *, int = 0);   // optional arg means partial molecule, no invalidation
+    // Add Atom `a` to the Molecule. Note that the molecule assumes
+    // ownership of `a`.
+    // Setting partial_molecule sidesteps invalidation steps
+    // and may be more efficient while building molecules.
+    int  add (Atom *a , int partial_molecule = 0);
+
     int  add (const Element *);
     int  resize (int);
 
@@ -768,7 +773,28 @@ class Molecule : private resizable_array_p<Atom>
     template <typename F> void each_bond(F &) const;
     template <typename F> void each_ring(F &) const;
 
-    int   maximum_connectivity () const;
+    // Functions for iterating a member function where the first/only argument
+    // is the atom number. Assumes the member function returns something which
+    // is summed and returned.
+    template <typename T>
+      using const_member_fn = T (Molecule::*)(int) const;
+    template <typename T>
+      using member_fn = T (Molecule::*)(int);
+    template <typename T, typename FN_TYPE>
+    T each_index(FN_TYPE fn) {
+      T rc = {};
+      for (int i = 0; i < _number_elements; ++i) {
+        rc += (this->*fn)(i);
+      }
+      return rc;
+    }
+
+    // Greatest flexibility for iterating over the indices.
+    template <typename F, typename ... Args> void each_index_lambda(F fn, Args && ... args) {
+      for (int i = 0; i < _number_elements; ++i) {
+        fn(i, std::move(args)...);
+      }
+    }
 
     int   set_bond_type_between_atoms (atom_number_t a1, atom_number_t a2,
                                      bond_type_t bt);
@@ -813,6 +839,8 @@ class Molecule : private resizable_array_p<Atom>
     int  ncon (int *) const;                           // all ncon values
     int  ncon (resizable_array<int> &) const;
     int  nbonds (int *) const;                         // all nbonds values
+    // Max connectivity of any atom.
+    int  maximum_connectivity () const;
 
 //  Once we introduce ESSSR rings, the nrings() method is ambiguous. If the
 //  ESSSR rings have been determined, it will report the number of ESSSR rings,

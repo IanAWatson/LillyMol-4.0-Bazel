@@ -137,18 +137,6 @@ ignore_self_bonds()
 }
 
 int
-interpret_d_as_deuterium()
-{
-  return default_mdl_file_optional_settings.allow_deuterium();
-}
-
-int
-interpret_t_as_tritium()
-{
-  return default_mdl_file_optional_settings.allow_tritium();
-}
-
-int
 set_display_non_organic_chirality_messages()
 {
   return default_mdl_file_optional_settings.display_non_organic_chirality_messages();
