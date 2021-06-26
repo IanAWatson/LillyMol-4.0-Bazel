@@ -1,5 +1,18 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "bazel_skylib",
+    urls = [
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+    ],
+    sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
+)
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+bazel_skylib_workspace()
+
 # rules_cc defines rules for generating C++ code from Protocol Buffers.
 http_archive(
     name = "rules_cc",
@@ -25,11 +38,12 @@ http_archive(
 # rules_proto defines abstract rules for building Protocol Buffers.
 http_archive(
     name = "rules_proto",
-    sha256 = "2490dca4f249b8a9a3ab07bd1ba6eca085aaf8e45a734af92aad0c42d9dc7aaf",
-    strip_prefix = "rules_proto-218ffa7dfa5408492dc86c01ee637614f8695c45",
+#   sha256 = "2490dca4f249b8a9a3ab07bd1ba6eca085aaf8e45a734af92aad0c42d9dc7aaf",
+#   sha256 = "cfdc2fa31879c0aebe31ce7702b1a9c8a4be02d2",
+    strip_prefix = "rules_proto-cfdc2fa31879c0aebe31ce7702b1a9c8a4be02d2",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/218ffa7dfa5408492dc86c01ee637614f8695c45.tar.gz",
-        "https://github.com/bazelbuild/rules_proto/archive/218ffa7dfa5408492dc86c01ee637614f8695c45.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/cfdc2fa31879c0aebe31ce7702b1a9c8a4be02d2.tar.gz",
+        "https://github.com/bazelbuild/rules_proto/archive/cfdc2fa31879c0aebe31ce7702b1a9c8a4be02d2.tar.gz",
     ],
 )
 
@@ -74,12 +88,14 @@ local_repository(
   path = "/home/ian/pub/leveldb",
 )
 
-#http_archive(
-#    name = "com_google_protobuf",
-#    sha256 = "e28570de66bd308d8d06ba24df8fd375f6c584331003be98a34dade2215f9291",
-#    strip_prefix = "protobuf-master",
-#    urls = ["https://github.com/protocolbuffers/protobuf/archive/master.zip"],
-#)
+
+http_archive(
+    name = "com_google_protobuf",
+#   sha256 = "e28570de66bd308d8d06ba24df8fd375f6c584331003be98a34dade2215f9291",
+    sha256 = "07fdbc63cfc0d7f71564a5fe07e535d1fe0d832e1600b333adcb8368a0e87117",
+    strip_prefix = "protobuf-master",
+    urls = ["https://github.com/protocolbuffers/protobuf/archive/master.zip"],
+)
 # This com_google_protobuf_cc repository is required for cc_proto_library
 # rule. It provides protobuf C++ runtime. Note that it actually is the same
 # repo as com_google_protobuf but has to be given a different name as
@@ -89,7 +105,7 @@ local_repository(
 #    strip_prefix = "protobuf-master",
 #    urls = ["https://github.com/protocolbuffers/protobuf/archive/master.zip"],
 #)
-
+#
 #http_archive(
 #    name = "bazel_skylib",
 #    sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
@@ -108,13 +124,18 @@ http_archive(
     urls = ["https://github.com/grailbio/bazel-toolchain/archive/master.tar.gz"],
 )
 
+load("@com_grail_bazel_toolchain//toolchain:deps.bzl", "bazel_toolchain_dependencies")
+
+bazel_toolchain_dependencies()
+
 load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
 
 llvm_toolchain(
     name = "llvm_toolchain",
-    llvm_version = "11.0.0",
+    llvm_version = "8.0.0",
 )
 
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
 
 llvm_register_toolchains()
+
