@@ -5786,8 +5786,11 @@ compute_symmetry_related_descriptors (Molecule & m,
     int ns = 1;
     int maxsep = 0;
 
-    for (int j = i + 1; j < matoms; ++j)
+    for (int j = 0; j < matoms; ++j)
     {
+      if (i == j) {
+        continue;
+      }
       if (si == s[j])
       {
         ns++;
@@ -5797,7 +5800,7 @@ compute_symmetry_related_descriptors (Molecule & m,
       }
     }
 
-    if (1 == ns)         // not reelated to anything else
+    if (1 == ns)         // not related to anything else
     {
       asymmetric++;
       continue;
