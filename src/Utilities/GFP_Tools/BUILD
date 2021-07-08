@@ -51,6 +51,24 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_naive_bayesian",
+    srcs = [
+      "gfp_naive_bayesian.cc",
+      "bit_subset_v2.h",
+    ],
+    deps = [
+        ":gfp",
+        ":spread_v2",
+        ":smiles_id_dist",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/iwmisc:iwmisc",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "gfp_spread",
     srcs = [
         "gfp_spread_v2.cc",

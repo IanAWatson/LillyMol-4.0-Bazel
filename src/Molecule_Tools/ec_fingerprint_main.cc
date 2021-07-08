@@ -536,6 +536,11 @@ EcFingerprint(int argc, char ** argv)
     }
     else if ("explain" == directive)
     {
+      ECBitMeanings bit_meanings;
+      if (! bit_meanings.ReadBitsToFind(fname)) {
+        return 1;
+      }
+      rc = DoEcFingerprint(cl, input_type, ec_fp_gen, bit_meanings, output);
     }
     else 
     {

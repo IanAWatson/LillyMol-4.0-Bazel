@@ -2,6 +2,7 @@
 #define EC_FINGERPRINT_H_
 
 #include <algorithm>
+#include <cstdint>
 #include <tuple>
 #include <unordered_set>
 
@@ -213,7 +214,16 @@ class WriteAllBits : public ECBaseWithOutput, public ECFunction
 class ECBitMeanings : public ECBaseWithOutput, public ECFunction
 {
   private:
-    std::unordered_set<atom_type_t> _bits_to_find;
+    std::unordered_set<uint32_t> _bits_to_find;
+
+    int _bits_found;
+    int _bits_not_found;
+
+    IWString _buffer_current_molecule;
+
+  // private functions
+
+    int _ReadBitsToFind(iwstring_data_source& input);
 
   public:
     ECBitMeanings();
@@ -221,9 +231,7 @@ class ECBitMeanings : public ECBaseWithOutput, public ECFunction
 
     int ReadBitsToFind(IWString& fname);
 
-    int PrepareToProcess(Molecule& m) {
-      return 1;
-    }
+    int PrepareToProcess(Molecule& m);
 
     void Bit(const ShellInfo& shell_info, const atom_type_t running_sum, const int radius);
 
@@ -231,9 +239,7 @@ class ECBitMeanings : public ECBaseWithOutput, public ECFunction
       return 1;
     }
     int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
-                    IWString_and_File_Descriptor& output) {
-      return 1;
-    }
+                    IWString_and_File_Descriptor& output) ;
 };
 
 // When adjusting magic values in the ECFingerprint object, studying collisions

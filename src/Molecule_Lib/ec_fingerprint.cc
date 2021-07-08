@@ -593,5 +593,81 @@ ECUsePrecedent::_ParsePrecedentRecord(const const_IWSubstring& line)
   return 1;
 }
 
+ECBitMeanings::ECBitMeanings() {
+  _bits_found = 0;
+  _bits_not_found = 0;
+}
+
+ECBitMeanings::~ECBitMeanings() {
+}
+
+int
+ECBitMeanings::ReadBitsToFind(IWString& fname) {
+  iwstring_data_source input(fname);
+  if (! input.good()) {
+    cerr << "ECBitMeanings::ReadBitsToFind:cannot open '" << fname << "'\n";
+    return 0;
+  }
+
+  input.set_strip_leading_blanks(1);
+  input.set_strip_trailing_blanks(1);
+
+  return _ReadBitsToFind(input);
+}
+
+int
+ECBitMeanings::_ReadBitsToFind(iwstring_data_source& input) {
+  const_IWSubstring buffer;
+  while (input.next_record(buffer)) {
+    if (buffer.starts_with('#') || buffer.empty()) {
+      continue;
+    }
+    buffer.truncate_at_first(' ');
+    atom_type_t b;
+    if (! buffer.numeric_value(b)) {
+      cerr << "ECBitMeanings::_ReadBitsToFind:invalid bit " << buffer << "'\n";
+      return 0;
+    }
+    _bits_to_find.insert(b);
+  }
+
+  return _bits_to_find.size();
+}
+
+int
+ECBitMeanings::PrepareToProcess(Molecule& m) {
+  _buffer_current_molecule.resize_keep_storage(0);
+  return 1;
+}
+
+void
+ECBitMeanings::Bit(const ShellInfo& shell_info, const atom_type_t running_sum, const int radius) {
+  const auto iter = _bits_to_find.find(running_sum);
+  if (iter == _bits_to_find.end()) {
+    _bits_not_found++;
+    return;
+  }
+
+  constexpr char sep = ' ';
+
+  _bits_found++;
+
+  Molecule mcopy(shell_info.m());
+  mcopy.set_atom_map_number(shell_info.a0(), radius);
+  _buffer_current_molecule << mcopy.smiles() << sep <<
+                              shell_info._m.name() << sep << running_sum << '\n';
+}
+
+int
+ECBitMeanings::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+                            IWString_and_File_Descriptor& output) {
+  if (_buffer_current_molecule.empty()) {
+    return 1;
+  }
+
+  output << _buffer_current_molecule;
+  output.write_if_buffer_holds_more_than(8192);
+  return 1;
+}
 
 }  // namespace ec_fingerprint

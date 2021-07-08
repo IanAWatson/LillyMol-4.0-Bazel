@@ -68,6 +68,22 @@ cc_binary(
 )
 
 cc_binary(
+    name = "iwsplit",
+    srcs = [
+        "iwsplit.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "iwcut",
     srcs = [
         "iwcut.cc",

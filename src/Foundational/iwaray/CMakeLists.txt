@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
-project(iwaray)
+project(iwaray LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cc)
