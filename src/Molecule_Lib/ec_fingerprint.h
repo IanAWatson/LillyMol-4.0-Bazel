@@ -214,7 +214,7 @@ class WriteAllBits : public ECBaseWithOutput, public ECFunction
 class ECBitMeanings : public ECBaseWithOutput, public ECFunction
 {
   private:
-    std::unordered_set<uint32_t> _bits_to_find;
+    std::unordered_set<atom_type_t> _bits_to_find;
 
     int _bits_found;
     int _bits_not_found;
@@ -230,6 +230,9 @@ class ECBitMeanings : public ECBaseWithOutput, public ECFunction
     ~ECBitMeanings();
 
     int ReadBitsToFind(IWString& fname);
+
+    // 
+    int  ParseOptionalSettings(const IWString & args);
 
     int PrepareToProcess(Molecule& m);
 
@@ -281,11 +284,36 @@ class ECCheckCollisions : public ECBaseWithOutput
 class ECBuildPrecedent
 {
   private:
+    // The data that is accumulated during builds.
+    struct BitCount {
+      // The smiles of the first exemplar structure.
+      IWString smiles;
+      // Atom type of the center atom.
+      atom_type_t center_atom_type;
+      // The radius
+      int radius;
+      // The number of instances found.
+      count_type_t count;
+
+      BitCount(const IWString& s, atom_type_t a, int r, count_type_t c) {
+        smiles = s;
+        center_atom_type = a;
+        radius = r;
+        count = c;
+      }
+    };
+
     // If recording the provenance of of bits formed, we need to ma the bit number to
     // something recording the first molecule, atom_type of centre atom, radius and count.
 
-    using bit_count_tuple_type = std::tuple<IWString, atom_type_t, int, count_type_t>;
-    std::unordered_map<atom_type_t, bit_count_tuple_type> _bit_count;
+    std::unordered_map<atom_type_t, BitCount> _bit_count;
+
+    // During construction is can be useful to keep track of the number of bit
+    // collisions avoided.
+
+    int _bit_collisions_avoided;
+    // The radii at which collisions are observed.
+    extending_resizable_array<int> _collision_at_radius;
 
   public:
     ECBuildPrecedent();
@@ -307,6 +335,8 @@ class ECBuildPrecedent
 
     // Once data is accumulated, write to file.
     int WritePrecedentData(const char sep, const JobParameters& job_parameters, IWString& fname) const;
+
+    int Report(std::ostream& output) const;
 };
 
 // Once a set of precedent data has been built, class ECUsePrecedent can use that
@@ -316,9 +346,18 @@ class ECUsePrecedent : public ECFunction
   private:
     // For precedent calculations, keep the number of occurrences and radius of each bit
     // read from the previously generated precedent data.
-    using precedent_type = std::tuple<count_type_t, int>;
- 
-    std::unordered_map<atom_type_t, precedent_type> _precedent;
+    struct BitCount {
+      // The number of occurrences of this bit in the knowledge base.
+      count_type_t count;
+      // The radius.
+      int radius;
+      BitCount(count_type_t c, int r) {
+        count = c;
+        radius = r;
+      }
+    };
+
+    std::unordered_map<atom_type_t, BitCount> _precedent;
 
     // The longest radius used in the current calculation.
     // Note that this might be different from what was used to generate
@@ -327,6 +366,7 @@ class ECUsePrecedent : public ECFunction
     const int _max_radius;
 
     // Various arrays used during processing each molecule.
+    // No this is not thread safe.
     // At each radius, the smallest precedent value
     count_type_t * _count;
     // At each radius, the centre atom of the rare shell.
@@ -354,6 +394,38 @@ class ECUsePrecedent : public ECFunction
 
     // Once all bits have been generated, and precedent data has been collected, 
     int FingerprintingComplete(Molecule& m);
+    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+                    IWString_and_File_Descriptor& output);
+    int Report(std::ostream& output) const;
+};
+
+// A class that examines each molecule and if any of the bits in `_bits_to_find`
+// are generated, that molecule is not written.
+class ECFilterByBits : public ECFunction
+{
+  private:
+    std::unordered_set<uint32_t> _bits_to_find;
+
+    bool _write_current_molecule;
+
+  public:
+    ECFilterByBits();
+    ~ECFilterByBits() {}
+
+    // Read a previously generated file of bits to look for.
+    int ReadBitsToFilter(IWString& fname);
+
+    int PrepareToProcess(Molecule& m) {
+      _write_current_molecule = true;
+      return 1;
+    }
+
+    void Bit(const ShellInfo& shell_info, const atom_type_t running_sum, const int radius);
+
+    // Once all bits have been generated, and precedent data has been collected, 
+    int FingerprintingComplete(Molecule& m) {
+      return 1;
+    }
     int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output);
     int Report(std::ostream& output) const;

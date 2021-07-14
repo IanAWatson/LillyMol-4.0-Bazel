@@ -2138,12 +2138,13 @@ extern int arrange_kekule_forms_in_fused_rings (Molecule & m);
 
 extern void set_invalidate_bond_list_ring_info_during_invalidate_ring_info (int s);
 
+// Write a smiles where the isotope of each atom is the atom number.
 template <typename T>
-int write_isotopically_labelled_smiles (Molecule &, const bool uniq, T &);
+int write_isotopically_labelled_smiles(Molecule &, const bool uniq, T & output);
+// Write a smiles where the atom map number of each atom is the atom number.
+// Returns a reference to `output` to facilitate chaining.
+template <typename T>
+T& write_atom_map_number_labelled_smiles(Molecule &, const bool uniq, T & output);
 
 
 #endif
-
-/* arch-tag: 2137d4c2-7ac1-4028-8347-e12e3515b13f
-
-*/

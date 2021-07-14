@@ -5248,6 +5248,41 @@ write_isotopically_labelled_smiles(Molecule & m, const bool uniq, T & output)
 template int write_isotopically_labelled_smiles(Molecule & m, const bool, std::ostream &);
 template int write_isotopically_labelled_smiles(Molecule & m, const bool, IWString_and_File_Descriptor &);
 
+template <typename T>
+T&
+write_atom_map_number_labelled_smiles(Molecule & m, const bool uniq, T & output)
+{
+  const int matoms = m.natoms();
+  int * msave = new int[matoms]; std::unique_ptr<int[]> free_msave(msave);
+
+  int non_zero_existing_atom_map_found = 0;
+  for (int i = 0; i < matoms; ++i)
+  {
+    msave[i] = m.atom_map_number(i);
+    if (msave[i])
+      non_zero_existing_atom_map_found = 1;
+    m.set_atom_map_number(i, i);
+  }
+
+  if (uniq)
+    output << m.unique_smiles();
+  else
+    output << m.smiles();
+
+  output << ' ' << m.name();
+
+  if (non_zero_existing_atom_map_found) {
+    for (int i = 0; i < matoms; ++i) {
+      m.set_atom_map_number(i, msave[i]);
+    }
+  }
+
+  return output;
+}
+
+template std::ostream& write_atom_map_number_labelled_smiles(Molecule & m, const bool, std::ostream &);
+template IWString_and_File_Descriptor& write_atom_map_number_labelled_smiles(Molecule & m, const bool, IWString_and_File_Descriptor &);
+
 void
 Molecule::reset_all_atom_map_numbers()
 {

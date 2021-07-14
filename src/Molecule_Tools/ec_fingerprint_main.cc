@@ -47,8 +47,6 @@ Accumulator_Int<uint> atom_count;
 Accumulator_Int<uint> longest_path_acc;
 extending_resizable_array<int> longest_path;
 
-bool produce_output = true;
-
 void
 usage(int rc)
 {
@@ -67,6 +65,8 @@ usage(int rc)
   cerr << "  -D pgen          Gather precedent data and write\n";
   cerr << "  -D puse          Read previously generated precedent data and use\n";
   cerr << "  -D writeall      Write all bits generated to <fname>\n";
+  cerr << "  -D filter        Write smiles of molecules that do NOT contain bits in <fname>\n";
+  cerr << "  -D args=...      Pass arbitrary text directives to the class doing the work\n";
   cerr << "  -n            suppress fingerprint output (useful with the some -D options)\n";
   cerr << "  -s            gather statistics on molecules processed\n";
   cerr << "  -p            precise fingerprints - includes attachment point in inner shell\n";
@@ -123,7 +123,7 @@ EcFingerprint(Molecule & m,
 
   op.FingerprintingComplete(m);
 
-  if (! produce_output)
+  if (! job_parameters.produce_output)
     return 1;
 
   op.DoAnyOutput(m, job_parameters, output);
@@ -308,6 +308,39 @@ DirectiveAndMaybeFile(Command_Line& cl, char flag)
   return to_be_returned;
 }
 
+// Examine the -flag options on the command line, and
+// identify two special directives, file= and args=
+// Return a tuple of
+//  0: directive
+//  1: any file= value
+//  2: any args= value
+std::tuple<IWString, IWString, IWString>
+DirectiveAnd(Command_Line& cl, char flag)
+{
+  std::tuple<IWString,IWString, IWString> to_be_returned;
+
+  const_IWSubstring d;
+  for (int i = 0; cl.value(flag, d, i); ++i)
+  {
+    if (d.starts_with("file="))
+    {
+      d.remove_leading_chars(5);
+      std::get<1>(to_be_returned) = d;
+    }
+    else if (d.starts_with("args="))
+    {
+      d.remove_leading_chars(5);
+      std::get<2>(to_be_returned) = d;
+    }
+    else
+    {
+      std::get<0>(to_be_returned) = d;
+    }
+  }
+
+  return to_be_returned;
+}
+
 int
 EcFingerprint(int argc, char ** argv)
 {
@@ -438,7 +471,7 @@ EcFingerprint(int argc, char ** argv)
     job_parameters.fingerprint_tag += '<';
   }
 
-  if (verbose)
+  if (verbose && job_parameters.produce_output)
     cerr << "Will produce fingerprints with tag " << job_parameters.fingerprint_tag << endl;
   
   ECFingerprint ec_fp_gen;
@@ -468,7 +501,7 @@ EcFingerprint(int argc, char ** argv)
 
   IWString_and_File_Descriptor output(1);
 
-  auto [directive, fname] = DirectiveAndMaybeFile(cl, 'D');
+  auto [directive, fname, args] = DirectiveAnd(cl, 'D');
 
   if (!cl.option_present('D') && cl.option_present('J'))
   {
@@ -503,11 +536,12 @@ EcFingerprint(int argc, char ** argv)
 
     if ("pgen" == directive)
     {
-      cerr << "pgen, file is " << fname << endl;
       ECBuildPrecedent precedent;
       rc = DoEcFingerprint(cl, input_type, ec_fp_gen, precedent, output);
-      if (rc)
+      if (rc) {
         rc = precedent.WritePrecedentData(' ', job_parameters, fname);
+        precedent.Report(std::cerr);
+      }
     }
     else if ("puse" == directive)
     {
@@ -542,6 +576,14 @@ EcFingerprint(int argc, char ** argv)
       }
       rc = DoEcFingerprint(cl, input_type, ec_fp_gen, bit_meanings, output);
     }
+    else if (directive == "filter") {
+      ECFilterByBits filter_by_bits;
+      if (! filter_by_bits.ReadBitsToFilter(fname)) {
+        cerr << "Cannot read bits to filter from '" << fname << "'\n";
+        return 1;
+      }
+      rc = DoEcFingerprint(cl, input_type, ec_fp_gen, filter_by_bits, output);
+    }
     else 
     {
       cerr << "Unrecognised -D qualifier '" << directive << "'\n";
@@ -561,7 +603,7 @@ EcFingerprint(int argc, char ** argv)
     }
   }
 
-  return rc;
+  return !rc;
 }
 
 }  // namespace ec_fingerprint

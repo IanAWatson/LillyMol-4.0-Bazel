@@ -2,6 +2,8 @@
 #include <limits>
 #include <memory>
 
+#include <stdlib.h>
+
 #include "Foundational/data_source/iwstring_data_source.h"
 
 #include "ec_fingerprint.h"
@@ -65,20 +67,52 @@ ShellInfo::GrabNextShell(Set_of_Atoms& next_shell) {
   return;
 }
 
+//#define MAGIC_FROM_SHELL_VARIABLES
+
+#ifdef MAGIC_FROM_SHELL_VARIABLES
+// Fetch the value of numeric shell variable `vname` into `value`.
+// Useful for trying different combinations of numbers from outside the program.
+template <typename T>
+int
+FromShellVariable(const char * vname, T& value) {
+  const char * from_env = getenv(vname);
+  if (from_env == NULL) {
+    return 0;
+  }
+
+  const const_IWSubstring s(from_env);
+  return s.numeric_value(value);
+}
+#endif
+
 ECFingerprint::ECFingerprint() {
   _min_radius = 0;
   _max_radius = 3;
 
-  _bond_magic1 = 145;
-  _bond_magic2 = 7001;
-  _bond_magic3 = 23112;
-  _bond_magic4 = 720114;
+  _bond_magic1 = 12541;
+  _bond_magic2 = 14434;
+  _bond_magic3 = 22690;
+  _bond_magic4 = 1496;
 
-  _magic1 = 28231;
-  _magic2 = 10101;
-  _magic3 = 521;
-  _magic4 = 9218;
-  _magic5 = 2013;
+  _magic1 = 12724;
+  _magic2 = 20070;
+  _magic3 = 3998;
+  _magic4 = 30703;
+  _magic5 = 3595;
+
+#ifdef MAGIC_FROM_SHELL_VARIABLES
+  FromShellVariable("MAGIC1", _magic1);
+  FromShellVariable("MAGIC2", _magic2);
+  FromShellVariable("MAGIC3", _magic3);
+  FromShellVariable("MAGIC4", _magic4);
+  FromShellVariable("MAGIC5", _magic5);
+  FromShellVariable("BOND_MAGIC1", _bond_magic1);
+  FromShellVariable("BOND_MAGIC2", _bond_magic2);
+  FromShellVariable("BOND_MAGIC3", _bond_magic3);
+  FromShellVariable("BOND_MAGIC4", _bond_magic4);
+  cerr << _magic1 << ' ' << _magic2 << ' ' << _magic3 << ' ' << _magic4 << ' ' << _magic5 << ' ' <<
+          _bond_magic1 << ' ' << _bond_magic2 << ' ' << _bond_magic3 << ' ' << _bond_magic4 << '\n';
+#endif
 
   _precise = true;
 
@@ -304,10 +338,22 @@ ECCheckCollisions::Bit(const ShellInfo& shell_info,
 
 ECBuildPrecedent::ECBuildPrecedent()
 {
+  _bit_collisions_avoided = 0;
 }
 
 ECBuildPrecedent::~ECBuildPrecedent()
 {
+}
+
+int
+ECBuildPrecedent::Report(std::ostream& output) const
+{
+  output << "ECBuildPrecedent:avoided " << _bit_collisions_avoided << " bit collisions\n";
+  for (int i = 0; i < _collision_at_radius.number_elements(); ++i) {
+    if (_collision_at_radius[i])
+      output << _collision_at_radius[i] << " at radius " << i << "\n";
+  }
+  return output.good();
 }
 
 void
@@ -317,17 +363,24 @@ ECBuildPrecedent::Bit(const ShellInfo& shell_info,
 {
   auto f = _bit_count.find(running_sum);
   
+  const atom_number_t a0 = shell_info.a0();
+
   if (f == _bit_count.end())  // Newly discovered bit.
   {
     Molecule mcopy(shell_info.m());
-    const atom_number_t a0 = shell_info.a0();
     mcopy.set_atom_map_number(a0, radius + 1);
-    bit_count_tuple_type tmp(mcopy.smiles(), shell_info.atom_type(a0),
-                            radius, static_cast<count_type_t>(1));
+    BitCount tmp(mcopy.smiles(), shell_info.atom_type(a0),
+                 radius, static_cast<count_type_t>(1));
 
     _bit_count.emplace(running_sum, std::move(tmp));
-  } else {   
-    std::get<3>(f->second)++;
+  } else if (f->second.center_atom_type != shell_info.atom_type(a0)) {
+    _bit_collisions_avoided++;
+    _collision_at_radius[radius]++;
+  } else if (f->second.radius != radius) {
+    _bit_collisions_avoided++;
+    _collision_at_radius[radius]++;
+  } else {
+    f->second.count++;
   }
 
   return;
@@ -348,10 +401,10 @@ ECBuildPrecedent::WritePrecedentData(const char sep, const JobParameters& job_pa
   for (const auto iter : _bit_count) 
   {
     output << iter.first << sep <<                       // The bit
-              std::get<3>(iter.second) << sep <<   // count
-              std::get<IWString>(iter.second) << sep <<  // get<0>, smiles of first exemplar
-              std::get<1>(iter.second) << sep <<         // atom type of centre atom
-              std::get<2>(iter.second) <<                // radius
+              iter.second.count << sep <<
+              iter.second.smiles << sep <<
+              iter.second.center_atom_type << sep <<
+              iter.second.radius <<
               "\n";
     output.write_if_buffer_holds_more_than(8192);
   }
@@ -405,13 +458,12 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
   }
 
 #ifdef DEBUG_USE_PRECEDENT
-  cerr << "Bit: we have info on " << running_sum << " radius " << radius << endl;
+  cerr << "Bit: we have info on " << running_sum << " radius " << radius << " db " << std::get<1>(f->second) << endl;
 #endif
-  const int db_radius = std::get<1>(f->second);
-  if (db_radius != radius)  // collision
+  if (f->second.radius != radius)  // collision
     return;
 
-  const count_type_t db_count = std::get<0>(f->second);
+  const count_type_t db_count = f->second.count;
 
 #ifdef DEBUG_USE_PRECEDENT
   cerr << "No collision, count is " << db_count << endl;
@@ -425,6 +477,8 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
 
   return;
 }
+
+#define DEBUG_USE_PRECEDENT
 
 int
 ECUsePrecedent::FingerprintingComplete(Molecule& m)
@@ -448,8 +502,9 @@ ECUsePrecedent::FingerprintingComplete(Molecule& m)
     cerr << "Radius " << r << " count " << _count[r] << " ationm " << _atom[r] << endl;
 #endif
     result << r << ',';
-    if (std::numeric_limits<count_type_t>::max() == _count[r])
+    if (std::numeric_limits<count_type_t>::max() == _count[r]) {
       result << '0';
+    }
     else
     {
       if (_count[r] < lowest_count)
@@ -468,13 +523,14 @@ ECUsePrecedent::FingerprintingComplete(Molecule& m)
     }
   }
 
-  assert(rarest_atom != INVALID_ATOM_NUMBER);
-
 #ifdef DEBUG_USE_PRECEDENT
   cerr << "lowest_count " << lowest_count << " rarest_atom " << rarest_atom << endl;
 #endif
 
-  m.set_atom_map_number(rarest_atom, lowest_count + 1);
+  if (rarest_atom != INVALID_ATOM_NUMBER)
+    m.set_atom_map_number(rarest_atom, lowest_count + 1);
+  else
+    cerr << "No rarest atom in " << m.smiles() << '\n';
 
   m.append_to_name(result);
 
@@ -586,11 +642,33 @@ ECUsePrecedent::_ParsePrecedentRecord(const const_IWSubstring& line)
     return 0;
   }
 
-  std::tuple<count_type_t, int> tmp{count, radius};
+//std::tuple<count_type_t, int> tmp{count, radius};
+  BitCount tmp(count, radius);
 
   _precedent.emplace(b, std::move(tmp));
 
   return 1;
+}
+
+int
+hash_from_file(iwstring_data_source& input,
+               std::unordered_set<atom_type_t>& destination) {
+
+  const_IWSubstring buffer;
+  while (input.next_record(buffer)) {
+    if (buffer.starts_with('#') || buffer.empty()) {
+      continue;
+    }
+    buffer.truncate_at_first(' ');
+    atom_type_t b;
+    if (! buffer.numeric_value(b)) {
+      cerr << "hash_from_file::_ReadBitsToFind:invalid bit " << buffer << "'\n";
+      return 0;
+    }
+    destination.insert(b);
+  }
+
+  return destination.size();
 }
 
 ECBitMeanings::ECBitMeanings() {
@@ -612,26 +690,7 @@ ECBitMeanings::ReadBitsToFind(IWString& fname) {
   input.set_strip_leading_blanks(1);
   input.set_strip_trailing_blanks(1);
 
-  return _ReadBitsToFind(input);
-}
-
-int
-ECBitMeanings::_ReadBitsToFind(iwstring_data_source& input) {
-  const_IWSubstring buffer;
-  while (input.next_record(buffer)) {
-    if (buffer.starts_with('#') || buffer.empty()) {
-      continue;
-    }
-    buffer.truncate_at_first(' ');
-    atom_type_t b;
-    if (! buffer.numeric_value(b)) {
-      cerr << "ECBitMeanings::_ReadBitsToFind:invalid bit " << buffer << "'\n";
-      return 0;
-    }
-    _bits_to_find.insert(b);
-  }
-
-  return _bits_to_find.size();
+  return hash_from_file(input, _bits_to_find);
 }
 
 int
@@ -642,8 +701,7 @@ ECBitMeanings::PrepareToProcess(Molecule& m) {
 
 void
 ECBitMeanings::Bit(const ShellInfo& shell_info, const atom_type_t running_sum, const int radius) {
-  const auto iter = _bits_to_find.find(running_sum);
-  if (iter == _bits_to_find.end()) {
+  if (const auto iter = _bits_to_find.find(running_sum); iter == _bits_to_find.end()) {
     _bits_not_found++;
     return;
   }
@@ -666,6 +724,44 @@ ECBitMeanings::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
   }
 
   output << _buffer_current_molecule;
+  output.write_if_buffer_holds_more_than(8192);
+  return 1;
+}
+
+ECFilterByBits::ECFilterByBits() {
+  _write_current_molecule = true;
+}
+
+int
+ECFilterByBits::ReadBitsToFilter(IWString& fname) {
+  iwstring_data_source input(fname);
+  if (! input.good()) {
+    cerr << "ECFilterByBits:ReadBitsToFilter:cannot open '" << fname << "'\n";
+    return 0;
+  }
+
+  return hash_from_file(input, _bits_to_find);
+}
+
+void
+ECFilterByBits::Bit(const ShellInfo& shell_info, const atom_type_t running_sum, const int radius) {
+  // If already discarded, do not check again.
+  if (! _write_current_molecule) {
+    return;
+  }
+  if (const auto iter = _bits_to_find.find(running_sum); iter != _bits_to_find.end()) {
+    _write_current_molecule = false;
+  }
+}
+
+int
+ECFilterByBits::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+                    IWString_and_File_Descriptor& output) {
+  if (! _write_current_molecule) {
+    return 0;
+  }
+
+  output << m.smiles() << ' ' << m.name() << '\n';
   output.write_if_buffer_holds_more_than(8192);
   return 1;
 }

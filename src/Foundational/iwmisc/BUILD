@@ -8,6 +8,7 @@ cc_library(
         "dash_s.cc",
         "dash_x.cc",
         "endian.cc",
+        "fetch_via_regexp.cc",
         "fraction_as_string.cc",
         "int_comparator.cc",
         "iwdigits.cc",
@@ -22,6 +23,7 @@ cc_library(
         "_set_or_unset_float.cc",
     ],
     hdrs = [
+        "fetch_via_regexp.h",
         "iwarchive.h",
         "iwdigits.h",
         "iwminmax.h",

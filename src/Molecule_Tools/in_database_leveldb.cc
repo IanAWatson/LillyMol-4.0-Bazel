@@ -63,7 +63,6 @@ int DoLookup(Molecule& m, const IWString& smiles,
     return HandleFoundMolecule(m, value);
   }
 
-  cerr << "Did not get " << status.ToString() << "\n";
   if (stream_for_not_found_structures.active()) {
     stream_for_not_found_structures.write(m);
   }
@@ -197,6 +196,23 @@ int InDatabase(int argc, char ** argv) {
     }
     if (verbose)
       cerr << "Molecules found written to '" << f << "'\n";
+  }
+
+  if (cl.option_present('U')) {
+    if (! stream_for_not_found_structures.determine_output_types(cl, 'o')) {
+      cerr << "Cannot determine output type(s)\n";
+      return 1;
+    }
+    const IWString u = cl.option_value('U');
+    if (stream_for_not_found_structures.would_overwrite_input_files(cl, u)) {
+      cerr << "Cannot overwrite input(s) '" << u << "'\n";
+    }
+    if (! stream_for_not_found_structures.new_stem(u)) {
+      cerr << "Cannot open stream for not found molecules '" << u << "'\n";
+      return 1;
+    }
+    if (verbose)
+      cerr << "Molecules not found written to '" << u << "'\n";
   }
 
   FileType input_type = FILE_TYPE_INVALID;

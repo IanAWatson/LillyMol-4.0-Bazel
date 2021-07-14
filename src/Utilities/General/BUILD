@@ -51,6 +51,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "fetch_sdf_quick",
+    srcs = [
+        "fetch_sdf_quick.cc",
+    ],
+    deps = [
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "fetch_smiles_quick",
     srcs = [
         "fetch_smiles_quick.cc",

@@ -77,7 +77,7 @@ Molecule::is_non_ring_atom (atom_number_t a)
 }
 
 int
-Molecule::is_ring_atom (atom_number_t a)
+Molecule::is_ring_atom(atom_number_t a)
 {
   assert (ok_atom_number(a));
 
