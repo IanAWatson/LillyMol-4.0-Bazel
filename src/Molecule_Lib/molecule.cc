@@ -144,6 +144,8 @@ Molecule::_default_values(int atoms_in_new_molecule)
   _number_sssr_rings = IW_NRINGS_NOT_COMPUTED;
   _ring_membership = NULL;
 
+  _ring_bond_count = nullptr;
+
   _aromaticity = NULL;
 
   _fragment_information.invalidate();
@@ -214,6 +216,11 @@ Molecule::_free_all_dynamically_allocated_things()
   {
     delete [] _ring_membership;
     _ring_membership = NULL;
+  }
+
+  if (_ring_bond_count != nullptr) {
+    delete [] _ring_bond_count;
+    _ring_bond_count = nullptr;
   }
 
   return 1;
@@ -415,6 +422,10 @@ Molecule::debug_print(std::ostream & os) const
     {
       os << " (q " << std::setw(7) << _charges->item(i) << ')';
       net_charge += _charges->item(i);
+    }
+
+    if (_ring_bond_count != nullptr) {
+      os << " rbc " << _ring_bond_count[i];
     }
 
     if (hcd > 1)
@@ -1574,6 +1585,8 @@ Molecule::_set_modified_no_ok()
   if (NULL != _ring_membership)
     _invalidate_ring_info();
 
+  DELETE_IF_NOT_NULL_ARRAY(_ring_bond_count);
+
   DELETE_IF_NOT_NULL_ARRAY(_distance_matrix);
 
   _bond_list.invalidate_bond_numbers();
@@ -1610,7 +1623,8 @@ Molecule::invalidate_smiles()
     }
   }*/
 
-  if (NULL != _ring_membership || IW_NRINGS_NOT_COMPUTED != _nrings || _number_sssr_rings > 0)
+  if (NULL != _ring_membership || IW_NRINGS_NOT_COMPUTED != _nrings || _number_sssr_rings > 0 ||
+      _ring_bond_count != nullptr)
     _invalidate_ring_info();
 
   _number_sssr_rings = IW_NRINGS_NOT_COMPUTED;
@@ -1692,6 +1706,10 @@ Molecule::_invalidate_ring_info()
   {
     delete [] _ring_membership;
     _ring_membership = NULL;
+  }
+  if (_ring_bond_count != nullptr) {
+    delete [] _ring_bond_count;
+    _ring_bond_count = nullptr;
   }
 
   _sssr_rings.resize(0);

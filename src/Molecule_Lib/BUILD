@@ -428,6 +428,22 @@ cc_test(
 )
 
 cc_test(
+    name = "ring_bond_count_test",
+    srcs = [
+        "ring_bond_count_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ]
+)
+
+cc_test(
     name = "smiles_test",
     srcs = [
         "smiles_test.cc",

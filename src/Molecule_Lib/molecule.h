@@ -470,6 +470,10 @@ class Molecule : private resizable_array_p<Atom>
     resizable_array_p<Ring> _raw_rings;
     resizable_array_p<Ring> _sssr_rings;
 
+    // The ring bond count of each atom can be computed quickly and separate
+    // from finding.
+    int *     _ring_bond_count;
+
 //  During uniqueness determination, we need to know true ring membership,
 //  rather than the SSSR ring membership. For example, in cubane, we want
 //  to know that each atom is in three four membered rings, whereas the
@@ -608,6 +612,9 @@ class Molecule : private resizable_array_p<Atom>
     int _find_raw_rings_for_fragment (int id, int * already_done);
     int _find_raw_rings (int * already_done);
     int _find_raw_rings ();
+
+    int _update_fragment_information(int * visited, int fragment_number, int min_visited_value);
+    void _compute_ring_bond_count();
 
 //  Functions dealing with chiral centres
 
@@ -858,7 +865,10 @@ class Molecule : private resizable_array_p<Atom>
     int nrings (atom_number_t, int);  // rings for atom I of a given size
     int nrings_size (int);          // number of rings of size N
 
+    // The number of ring bonds incident on an atom.
     int ring_bond_count (atom_number_t);
+    // The ring_bond_count for each atom.
+    const int * ring_bond_count();
 
 //  Given a set of atoms with uncertain bonding, can a valid Kekule representation be found
 //  First argument is set for each aromatic atom. The optional 2nd arg is for aromatic bonds

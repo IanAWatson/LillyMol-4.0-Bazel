@@ -2459,11 +2459,13 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       int ltgt;
       nchars = smarts_fetch_numeric(smarts + 1, rr, ltgt);
       if (0 == nchars)
-        _nrings.set_min(1);
+        _ring_bond_count.set_min(1);  // In a ring.
       else if (ltgt > 0)
         _nrings.set_min(rr + 1);
       else if (ltgt < 0)
         _nrings.set_max(rr - 1);
+      else if (rr == 0)
+        _ring_bond_count.add(0);
       else
         _nrings.add(rr);
 

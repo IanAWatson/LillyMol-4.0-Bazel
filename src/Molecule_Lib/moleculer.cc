@@ -60,7 +60,11 @@ int
 Molecule::is_non_ring_atom (atom_number_t a)
 {
   assert (ok_atom_number(a));
+  if (_ring_bond_count == nullptr)
+    _compute_ring_bond_count();
+  return _ring_bond_count[a] == 0;
 
+#ifdef OLD_VERSION_USING_RING_FINDING
   if (0 == nrings())     // molecule has no rings, all are non ring atoms
     return 1;
 
@@ -74,13 +78,19 @@ Molecule::is_non_ring_atom (atom_number_t a)
     return 1;
   else
     return 0;
+#endif
 }
 
 int
 Molecule::is_ring_atom(atom_number_t a)
 {
   assert (ok_atom_number(a));
+  if (_ring_bond_count == nullptr)
+    _compute_ring_bond_count();
 
+  return _ring_bond_count[a] > 0;
+
+#ifdef OLD_VERSION_USING_RING_FINDING
   if (0 == nrings())    // molecule has no rings, no atom is a ring atom
     return 0;
 
@@ -98,39 +108,57 @@ Molecule::is_ring_atom(atom_number_t a)
     _determine_ring_or_non_ring(a);
   }
 
+  if (0 == _ring_membership[a] && _ring_bond_count[a] == 0)
+    ;
+  else if (_ring_membership[a] > 0 && _ring_bond_count[a] > 0)
+    ;
+  else
+  {
+    cerr << "is_ring_atom inconsistent " << _ring_membership[a] << " vs " << _ring_bond_count[a] << " atom " << a << endl;
+    debug_print(cerr);
+  }
+  return _ring_bond_count[a] > 0;
   if (0 == _ring_membership[a])
     return 0;
   else
     return 1;
+#endif
 }
 
 int
-Molecule::nrings (atom_number_t a)
+Molecule::nrings(atom_number_t a)
 {
   assert (ok_atom_number(a));
 
   if (NULL != _ring_membership && _ring_membership[a] >= 0)
     return _ring_membership[a];
 
-  if (0 == nrings())     // no atoms in molecule, atom A not in any
+  if (_things[a]->ncon() <= 1) {
     return 0;
+  }
+
+  // Try the fast way of getting ring info from _ring_bond_count.
+  if (ring_bond_count(a) == 0)
+    return 0;
+
+// Test no longer needed, since ring_bond_count is > 0 here.
+//if (0 == nrings())     // no atoms in molecule, atom A not in any
+//  return 0;
 
   if (NULL == _ring_membership)
     _initialise_ring_membership();
 
-  if (1 == _things[a]->ncon())
-  {
-    _ring_membership[a] = 0;
-    return 0;
-  }
-
   int frag_id = _fragment_information.fragment_membership(a);
-
-  if (0 == _fragment_information.rings_in_fragment(frag_id))
-  {
-    _ring_membership[a] = 0;
-    return 0;
+  if (rings_in_fragment(frag_id) == 1) {
+    return 1;
   }
+
+  // No longer necessary
+//if (0 == _fragment_information.rings_in_fragment(frag_id))
+//{
+//  _ring_membership[a] = 0;
+//  return 0;
+//}
 
   if (IW_RING_MEMBERSHIP_NOT_COMPUTED == _ring_membership[a])
     _determine_ring_or_non_ring(a);
@@ -147,6 +175,7 @@ Molecule::nrings (atom_number_t a)
   return _ring_membership[a];
 }
 
+#ifdef OLD_VERSION_RBC
 int
 Molecule::ring_bond_count (atom_number_t zatom)
 {
@@ -174,6 +203,7 @@ Molecule::ring_bond_count (atom_number_t zatom)
 
   return rc;
 }
+#endif
 
 int
 Molecule::is_part_of_fused_ring_system(atom_number_t a)
@@ -2163,4 +2193,333 @@ Molecule::sssr_rings()
   (void) ring_membership();
 
   return _sssr_rings;
+}
+
+// the ring bond count algorithm needs a starting atom.
+// Return the first singly bonded atom if present. If no singly
+// connected atom, then a doubly connected atom.
+// Otherwise the first atom.
+atom_number_t
+FirstLowConnectedAtom(const Molecule& m) {
+  const int natoms = m.natoms();
+  atom_number_t a_doubly_bonded = INVALID_ATOM_NUMBER;
+  for (int i = 0; i < natoms; ++i) {
+    const Atom * a = m.atomi(i);
+    if (a->ncon() == 1) {
+      return 1;
+    }
+    if (a->ncon() == 2) {
+      a_doubly_bonded = i;
+    }
+  }
+
+  if (a_doubly_bonded != INVALID_ATOM_NUMBER) {
+    return a_doubly_bonded;
+  }
+
+  if (natoms == 0) {
+    return INVALID_ATOM_NUMBER;
+  }
+
+  return 0;
+}
+
+// A variant of the above that checks an already processed array.
+// If it cannot find any unvisited atoms, it will return INVALID_ATOM_NUMBER.
+atom_number_t
+FirstLowConnectedAtom(const Molecule& m, const int * visited) {
+  const int natoms = m.natoms();
+  atom_number_t a_doubly_bonded_atom = INVALID_ATOM_NUMBER;
+  atom_number_t an_unvisited_atom = INVALID_ATOM_NUMBER;
+  for (int i = 0; i < natoms; ++i) {
+    if (visited[i]) {
+      continue;
+    }
+    const Atom * a = m.atomi(i);
+    if (a->ncon() == 1) {
+      return 1;
+    }
+    an_unvisited_atom = i;
+    if (a->ncon() == 2) {
+      a_doubly_bonded_atom = i;
+    }
+  }
+
+  if (a_doubly_bonded_atom != INVALID_ATOM_NUMBER) {
+    return a_doubly_bonded_atom;
+  }
+
+  return an_unvisited_atom;
+}
+
+
+const int *
+Molecule::ring_bond_count()
+{
+  assert(ok());
+
+  if (_ring_bond_count == nullptr)
+    _compute_ring_bond_count();
+
+  return _ring_bond_count;
+}
+
+int
+Molecule::ring_bond_count(atom_number_t zatom)
+{
+  assert(ok_atom_number(zatom));
+
+  if (_ring_bond_count == nullptr)
+    _compute_ring_bond_count();
+
+  return _ring_bond_count[zatom];
+}
+
+//#define DEBUG_RING_FINDER
+
+// The ring finding algorithm. Non member function to make
+// testing a little easier. This version does not fill in
+// a ring_bond_count array.
+#ifdef NOT_NEEDED_NOW
+int
+RingFinder(Molecule& m,
+           atom_number_t previous_atom,
+           atom_number_t current_atom,
+           int * ring_membership,
+           int * visited,
+           int counter) {
+
+  visited[current_atom] = counter;
+#ifdef DEBUG_RING_FINDER
+//cerr << "RingFinder enter atom " << current_atom << ' ' << m.smarts_equivalent_for_atom(current_atom) << " from " << previous_atom << " counter " << counter << '\n';
+  cerr << "RingFinder enter atom " << current_atom << " from " << previous_atom << " counter " << counter << '\n';
+#endif
+  const Atom * a = m.atomi(current_atom);
+  int found_ring = 0;
+  for (const Bond* b : *a) {
+    atom_number_t j = b->other(current_atom);
+    if (previous_atom == j) {
+      continue;
+    }
+#ifdef DEBUG_RING_FINDER
+    cerr << " from " << current_atom << " (" << counter << ") to " << j << " visited[" << j << "]=" << visited[j] << endl;
+#endif
+    if (visited[j] > counter) {
+      continue;
+    }
+    if (visited[j]) {
+      ring_membership[j] += 1;
+      found_ring++;
+    } else {
+      int tmp = RingFinder(m, current_atom, j, ring_membership, visited, counter + 1);
+      if (tmp)
+        found_ring += tmp;
+    }
+  }
+
+#ifdef DEBUG_RING_FINDER
+  cerr << " atom " << current_atom << " found_ring " << found_ring << " rm " << ring_membership[current_atom] << '\n';
+#endif
+
+  // If no evidence of ring activity, we are done.
+  if (found_ring == 0 && ring_membership[current_atom] == 0) {
+    return 0;
+  }
+
+  // If the only thing that happened is that we closed one or
+  // more rings, return true.
+  if (found_ring && ring_membership[current_atom] == 0) {
+    ring_membership[current_atom] = found_ring;
+    return found_ring;
+  }
+
+  // If we found all the rings that terminate here return 0;
+  if (found_ring == ring_membership[current_atom]) {
+    return 0;
+  }
+
+  int rc = found_ring - ring_membership[current_atom];
+  ring_membership[current_atom] = found_ring;
+#ifdef DEBUG_RING_FINDER
+  cerr << " return from atom " << current_atom << " rc " << rc << '\n';
+#endif
+  return rc;
+}
+#endif
+
+// Given that `current_atom` and `other` have been detected at the ends
+// of a bond, upate `ring_bond_membership` to reflect that.
+// `ring_bond_membership` is assumed to be a matoms*matoms array.
+void
+UpdateRingBondCount(int * ring_bond_membership,
+                    const int matoms,
+                    int current_atom,
+                    int other) {
+  ring_bond_membership[current_atom * matoms + other]++;
+  ring_bond_membership[other * matoms + current_atom]++;
+}
+
+int
+RingFinder(Molecule& m,
+           atom_number_t previous_atom,
+           atom_number_t current_atom,
+           int * ring_membership,
+           int * ring_bond_count,
+           int * visited,
+           int counter) {
+
+  const int matoms = m.natoms();
+
+  visited[current_atom] = counter;
+#ifdef DEBUG_RING_FINDER
+//cerr << "RingFinder enter atom " << current_atom << ' ' << m.smarts_equivalent_for_atom(current_atom) << " from " << previous_atom << " counter " << counter << '\n';
+  cerr << "RingFinder enter atom " << current_atom << " from " << previous_atom << " counter " << counter << '\n';
+#endif
+  const Atom * a = m.atomi(current_atom);
+  int found_ring = 0;
+  for (const Bond* b : *a) {
+    atom_number_t j = b->other(current_atom);
+    if (previous_atom == j) {
+      continue;
+    }
+#ifdef DEBUG_RING_FINDER
+    cerr << " from " << current_atom << " (" << counter << ") to " << j << " visited[" << j << "]=" << visited[j] << endl;
+#endif
+    if (visited[j] > counter) {
+      continue;
+    }
+    if (visited[j]) {
+      ring_membership[j] += 1;
+      UpdateRingBondCount(ring_bond_count, matoms, current_atom, j);
+      found_ring++;
+    } else {
+      int tmp = RingFinder(m, current_atom, j, ring_membership, ring_bond_count, visited, counter + 1);
+      if (tmp) {
+        found_ring += tmp;
+        UpdateRingBondCount(ring_bond_count, matoms, current_atom, j);
+      }
+    }
+  }
+
+#ifdef DEBUG_RING_FINDER
+  cerr << " atom " << current_atom << " found_ring " << found_ring << " rm " << ring_membership[current_atom] << '\n';
+#endif
+
+  // If no evidence of ring activity, we are done.
+  if (found_ring == 0 && ring_membership[current_atom] == 0) {
+    return 0;
+  }
+
+  // If the only thing that happened is that we closed one or
+  // more rings, return true.
+  if (found_ring && ring_membership[current_atom] == 0) {
+    ring_membership[current_atom] = found_ring;
+    return found_ring;
+  }
+
+  // If we found all the rings that terminate here return 0;
+  if (found_ring == ring_membership[current_atom]) {
+    return 0;
+  }
+
+  int rc = found_ring - ring_membership[current_atom];
+  ring_membership[current_atom] = found_ring;
+#ifdef DEBUG_RING_FINDER
+  cerr << " return from atom " << current_atom << " rc " << rc << '\n';
+#endif
+  return rc;
+}
+
+
+
+// Return the index of the first member of `visited` that is zero.
+// Returns -1 if not found.
+int
+FirstUnvisited(const int * visited, const int n) {
+  for (int i = 0; i < n; ++i) {
+    if (visited[i] == 0) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+// Also updates the fragment information since that is a byproduct of the
+// path traversal.
+void
+Molecule::_compute_ring_bond_count()
+{
+  if (_number_elements == 0) {
+    return;
+  }
+
+  if (_ring_bond_count == nullptr) {
+    _ring_bond_count = new_int(_number_elements);
+  }
+
+
+  // Computation of nrings requires fragment information to already exist. If there is
+  // already valid fragment information present, we can use it.
+  if (_fragment_information.contains_valid_data() && nrings() == 0) {
+    return;
+  }
+
+  int fragment_number = 0;
+
+  _fragment_information.initialise(_number_elements);
+
+  int * visited = new_int(_number_elements); std::unique_ptr<int[]> free_visited(visited);
+  std::unique_ptr<int[]> is_ring(new_int(_number_elements));
+  std::unique_ptr<int[]> rbc(new_int(_number_elements * _number_elements));
+
+  atom_number_t starting_atom = 0;
+  int counter_start = 1;
+  do {
+//  RingFinder(*this, INVALID_ATOM_NUMBER, starting_atom, is_ring.get(), visited, counter_start);
+    RingFinder(*this, INVALID_ATOM_NUMBER, starting_atom, is_ring.get(), rbc.get(), visited, counter_start);
+    counter_start += _update_fragment_information(visited, fragment_number, visited[starting_atom]);
+    fragment_number++;
+    starting_atom = FirstUnvisited(visited, _number_elements);
+  } while (starting_atom != INVALID_ATOM_NUMBER);
+
+  _fragment_information.set_number_fragments(fragment_number);
+
+  // Until we get the ring bond count algorithm working, do a final adjustment of ring bond count values.
+
+  for (int i = 0; i < _number_elements; ++i) {
+    _ring_bond_count[i] = 0;
+    if (is_ring[i] <= 0) {  // Not in a ring.
+      continue;
+    }
+    for (const Bond * b : *_things[i]) {
+      if (rbc[i * _number_elements + b->other(i)])
+        _ring_bond_count[i]++;
+    }
+  }
+}
+
+// Update _fragment_information to reflect the fact that some number
+// of atoms have been found to be part of fragment `fragment_number`.
+// The atoms in question are those for which their `visited` value is
+// >= `min_visited_value`.
+// Unfortunately this is done by messing with non-const accessors to
+// _fragment_information, so this could be brittle.
+// Returns the number of atoms in `fragment_number`.
+int
+Molecule::_update_fragment_information(int * visited, int fragment_number, int min_visited_value) {
+  int * f = _fragment_information.fragment_membership();
+  int atoms_in_fragment = 0;
+  int bonds_in_fragment = 0;
+  for (int i = 0; i < _number_elements; ++i) {
+    if (visited[i] >= min_visited_value) {
+      f[i] = fragment_number;
+      atoms_in_fragment++;
+      bonds_in_fragment += _things[i]->ncon();
+    }
+  }
+
+  _fragment_information.atoms_in_fragment().add(atoms_in_fragment);
+  _fragment_information.bonds_in_fragment().add(bonds_in_fragment / 2);
+  return atoms_in_fragment;
 }
