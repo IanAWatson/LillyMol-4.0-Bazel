@@ -247,6 +247,13 @@ class resizable_array: public resizable_array_base <T>
     void fill (const T & v) {set_all(v);}
 };
 
+
+// Just like ruby.
+template <typename T> resizable_array_base<T>& operator<< (resizable_array_base<T>&lhs, T rhs) {
+  lhs.add(rhs);
+  return lhs;
+}
+
 /*
   Whenever the [] operator of an extending resizable array is accessed,
   the array is extended if necessary

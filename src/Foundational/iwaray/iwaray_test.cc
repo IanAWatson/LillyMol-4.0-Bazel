@@ -133,4 +133,17 @@ TEST(iwaray, test_remove_no_delete) {
   delete removed;
 }
 
+TEST(resizable_array, operator_ltlt) {
+  resizable_array<int> x;
+  for (int i = 0; i < 5; ++i) {
+    x << i;
+    EXPECT_EQ(x.back(), i);
+    EXPECT_EQ(x.size(), i + 1);
+  }
+
+  x << 99 << 100;
+  EXPECT_EQ(x.size(), 5 + 2);
+  EXPECT_EQ(x.back(), 100);
+}
+
 }  // namespace

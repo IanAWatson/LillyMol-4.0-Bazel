@@ -3037,6 +3037,7 @@ Molecule::_handle_spiro_between_isolated_and_fused (const resizable_array<Ring *
   return _pearlman_sssr(atmp, 1);
 }
 
+#ifdef NOT_USED
 int
 Molecule::_all_atoms_are_chain_atoms (const int * process_these_atoms)
 {
@@ -3051,6 +3052,7 @@ Molecule::_all_atoms_are_chain_atoms (const int * process_these_atoms)
 
   return 1;
 }
+#endif
 
 /*int
 Molecule::_determine_ring_closure_bonds (const int * zorder,

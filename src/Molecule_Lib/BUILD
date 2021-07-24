@@ -394,6 +394,20 @@ cc_test(
 )
 
 cc_test(
+    name = "frag_test",
+    srcs = ["frag_test.cc"],
+    timeout = "short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
     name = "atom_pair_fingerprint_test",
     srcs = ["atom_pair_fingerprint_test.cc"],
     timeout = "short",

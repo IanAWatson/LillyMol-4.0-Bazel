@@ -1485,6 +1485,119 @@ Fragment_Information::atoms_in_fragment (int matoms,
 }
 
 int
+Molecule::_recursive_fragment_membership(Fragment_Information& fragment_information,
+                atom_number_t zatom,
+                int fragment_number,
+                int & bonds_in_fragment) {
+  int * fragment_membership = fragment_information.fragment_membership();
+
+  fragment_membership[zatom] = fragment_number;
+  int rc = 1;
+  const Atom * a = _things[zatom];
+  bonds_in_fragment += a->ncon();
+  for (const Bond* b : *a) {
+    atom_number_t j = b->other(zatom);
+    if (fragment_membership[j] >= 0) {
+      continue;
+    }
+    rc += _recursive_fragment_membership(fragment_information, j, fragment_number, bonds_in_fragment);
+  }
+
+  return rc;
+}
+
+int
+Molecule::_recursive_fragment_membership(Fragment_Information& fragment_information)
+{
+  resizable_array<int> & atoms_in_fragment = fragment_information.atoms_in_fragment();
+  resizable_array<int> & bonds_in_fragment = fragment_information.bonds_in_fragment();
+  int * fragment_membership = fragment_information.fragment_membership();
+
+  int fragment_number = 0;
+  for (int i = 0; i < _number_elements; ++i) {
+    if (fragment_membership[i] >= 0) {
+      continue;
+    }
+    int bif = 0;
+    atoms_in_fragment << _recursive_fragment_membership(fragment_information, 
+               i, fragment_number, bif);
+    bonds_in_fragment << bif;
+    fragment_number++;
+  }
+
+  if (! fragment_information.set_number_fragments(fragment_number))
+    return 0;
+
+  for (int i = 0; i < fragment_number; ++i) {
+    bonds_in_fragment[i] /= 2;
+  }
+
+  return fragment_number;
+}
+
+int
+Molecule::_compute_fragment_information (Fragment_Information & fragment_information,
+                                         int update_ring_info)
+{
+  if (fragment_information.contains_valid_data())
+    return fragment_information.number_fragments();
+
+  if (0 == _number_elements)
+    return 1;
+
+  fragment_information.initialise(_number_elements);
+
+  const int nf = _recursive_fragment_membership(fragment_information);
+
+  assert(nf > 0);
+
+  int fragments_with_no_rings = 0;
+
+  for (int i = 0; i < nf; i++)
+  {
+    if (0 == fragment_information.rings_in_fragment(i))
+      fragments_with_no_rings++;
+  }
+
+//#define DEBUG_COMPUTE_FRAGMENT_MEMBERSHIP
+#ifdef DEBUG_COMPUTE_FRAGMENT_MEMBERSHIP
+  cerr << "Fragment membership computed '" << _molecule_name << "' with " << _number_elements << " atoms has " << _number_fragments << " fragments\n";
+  for (int i = 0; i < _number_elements; i++)
+  {
+    cerr << "Atom " << i << " in fragment " << fragment_membership[i] << endl;
+  }
+  for (int i = 0; i < nf; i++)
+  {
+    cerr << "Fragment " << i << " " << atoms_in_fragment[i] << " atoms and " << bonds_in_fragment[i] << " bonds, nr = " << _fragment_information.rings_in_fragment(i) << endl;
+  }
+#endif
+
+// We can do some very quick ring membership stuff
+
+  if (0 == fragments_with_no_rings)
+    return nf;
+
+  if (! update_ring_info)
+    return nf;
+
+  if (NULL == _ring_membership)
+    _initialise_ring_membership();
+
+  int * fragment_membership = fragment_information.fragment_membership();
+
+  for (int i = 0; i < _number_elements; i++)
+  {
+    int f = fragment_membership[i];
+
+    if (0 == fragment_information.rings_in_fragment(f))
+      _ring_membership[i] = 0;
+  }
+
+  return nf;
+}
+
+#ifdef OLD_VERSION_MAYBE_SLOW
+int
 Molecule::_compute_fragment_information (Fragment_Information & fragment_information,
                                          int update_ring_info)
 {
@@ -1598,6 +1711,7 @@ Molecule::_compute_fragment_information (Fragment_Information & fragment_informa
 
   return nf;
 }
+#endif
 
 static int 
 next_available_atom (int needle,

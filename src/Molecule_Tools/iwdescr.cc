@@ -48,6 +48,9 @@ static int reduce_to_largest_fragment = 0;
 
 static IWString undefined_value = '.';
 
+// Prepended to the name of each descriptor.
+static IWString descriptor_prefix = "w_";
+
 static Charge_Assigner charge_assigner;
 
 static Donor_Acceptor_Assigner donor_acceptor_assigner;
@@ -446,7 +449,7 @@ class Descriptor : public Set_or_Unset<float>, public Accumulator<float>
   public:
     Descriptor();
 
-    void set_name(const char * newname) { _name = newname; _active = 1;}
+    void set_name(const char * newname);
 
     void set_best_fingerprint (int s) { _best_fingerprint = s;}
     int  best_fingerprint () const { return _best_fingerprint;}
@@ -491,6 +494,20 @@ Descriptor::Descriptor()
 
   _best_fingerprint = 0;
 
+  return;
+}
+
+void
+Descriptor::set_name(const char * newname) {
+  _active = 1;
+
+  if (descriptor_prefix.empty()) {
+    _name = newname;
+    return;
+  }
+
+  _name = descriptor_prefix;
+  _name << newname;
   return;
 }
 
@@ -906,10 +923,10 @@ identify_descriptor (const IWString & dname,
                      int number_descriptors)
 {
   IWString mydname;
-  if (dname.starts_with("w_"))
+  if (dname.starts_with(descriptor_prefix))
     mydname = dname;
   else
-    mydname << "w_" << dname;
+    mydname << descriptor_prefix << dname;
 
   for (int i = 0; i < number_descriptors; i++)
   {
@@ -1109,278 +1126,278 @@ allocate_descriptors()
     return 0;
   }
 
-  descriptor[iwdescr_natoms].set_name("w_natoms");
-  descriptor[iwdescr_nrings].set_name("w_nrings");
-  descriptor[iwdescr_nelem].set_name("w_nelem");
-  descriptor[iwdescr_amw].set_name("w_amw");
-  descriptor[iwdescr_ncon1].set_name("w_ncon1");
-  descriptor[iwdescr_fncon1].set_name("w_fncon1");
-  descriptor[iwdescr_ncon2].set_name("w_ncon2");
-  descriptor[iwdescr_fncon2].set_name("w_fncon2");
-  descriptor[iwdescr_ncon3].set_name("w_ncon3");
-  descriptor[iwdescr_fncon3].set_name("w_fncon3");
-  descriptor[iwdescr_ncon4].set_name("w_ncon4");
-  descriptor[iwdescr_fncon4].set_name("w_fncon4");
-  descriptor[iwdescr_frhc].set_name("w_frhc");
-  descriptor[iwdescr_mltbd].set_name("w_mltbd");
-  descriptor[iwdescr_fmltbd].set_name("w_fmltbd");
-  descriptor[iwdescr_chmltbd].set_name("w_chmltbd");
-  descriptor[iwdescr_fchmltbd].set_name("w_fchmltbd");
-  descriptor[iwdescr_rgmltbd].set_name("w_rgmltbd");
-  descriptor[iwdescr_frgmltbd].set_name("w_frgmltbd");
-  descriptor[iwdescr_dcca].set_name("w_dcca");
-  descriptor[iwdescr_fdcca].set_name("w_fdcca");
-  descriptor[iwdescr_mxdst].set_name("w_mxdst");
-  descriptor[iwdescr_mxsdlp].set_name("w_mxsdlp");
-  descriptor[iwdescr_avsdlp].set_name("w_avsdlp");
-  descriptor[iwdescr_mxsdlprl].set_name("w_mxsdlprl");
-  descriptor[iwdescr_rotbond].set_name("w_rotbond");
-  descriptor[iwdescr_ringatom].set_name("w_ringatom");
-  descriptor[iwdescr_rhacnt].set_name("w_rhacnt");
-  descriptor[iwdescr_rhaf].set_name("w_rhaf");
-  descriptor[iwdescr_frafus].set_name("w_frafus");
-  descriptor[iwdescr_rngatmf].set_name("w_rngatmf");
-  descriptor[iwdescr_aroma].set_name("w_aroma");
-  descriptor[iwdescr_aromha].set_name("w_aromha");
-  descriptor[iwdescr_fraromha].set_name("w_fraromha");
-  descriptor[iwdescr_aromdens].set_name("w_aromdens");
-  descriptor[iwdescr_ch2].set_name("w_ch2");
-  descriptor[iwdescr_ch].set_name("w_ch");
-  descriptor[iwdescr_htroatom].set_name("w_htroatom");
-  descriptor[iwdescr_htroaf].set_name("w_htroaf");
-  descriptor[iwdescr_nrgnhlht].set_name("w_nrgnhlht");
-  descriptor[iwdescr_ohsh].set_name("w_ohsh");
-  descriptor[iwdescr_co2h].set_name("w_co2h");
-  descriptor[iwdescr_amine].set_name("w_amine");
-  descriptor[iwdescr_pyridine].set_name("w_pyridine");
-  descriptor[iwdescr_pyrrole].set_name("w_pyrrole");
-  descriptor[iwdescr_hacts].set_name("w_hacts");
-  descriptor[iwdescr_hdons].set_name("w_hdons");
-  descriptor[iwdescr_hduals].set_name("w_hduals");
-  descriptor[iwdescr_mhr].set_name("w_mhr");
-  descriptor[iwdescr_mxhrf].set_name("w_mxhrf");
-  descriptor[iwdescr_mnhrf].set_name("w_mnhrf");
-  descriptor[iwdescr_lrsysz].set_name("w_lrsysz");
-  descriptor[iwdescr_lrsz].set_name("w_lrsz");
-  descriptor[iwdescr_nrsyscmr].set_name("w_nrsyscmr");
-  descriptor[iwdescr_mars].set_name("w_mars");
-  descriptor[iwdescr_frspch].set_name("w_frspch");
-  descriptor[iwdescr_spchtro].set_name("w_spchtro");
-  descriptor[iwdescr_rbfrspch].set_name("w_rbfrspch");
-  descriptor[iwdescr_satspcha].set_name("w_satspcha");
-  descriptor[iwdescr_unsatspcha].set_name("w_unsatspcha");
-  descriptor[iwdescr_fsatspcha].set_name("w_fsatspcha");
-  descriptor[iwdescr_nrnspch].set_name("w_nrnspch");
-  descriptor[iwdescr_fnrnspc].set_name("w_fnrnspc");
-  descriptor[iwdescr_trmnlrng].set_name("w_trmnlrng");
-  descriptor[iwdescr_intrnlrng].set_name("w_intrnlrng");
-  descriptor[iwdescr_rng2spch].set_name("w_rng2spch");
-  descriptor[iwdescr_rng2bridge].set_name("w_rng2bridge");
-  descriptor[iwdescr_rcj].set_name("w_rcj");
-  descriptor[iwdescr_rchj].set_name("w_rchj");
-  descriptor[iwdescr_amrcj].set_name("w_amrcj");
-  descriptor[iwdescr_alrcj].set_name("w_alrcj");
-  descriptor[iwdescr_pbcount].set_name("w_pbcount");
-  descriptor[iwdescr_frpbond].set_name("w_frpbond");
-  descriptor[iwdescr_nonpbond].set_name("w_nonpbond");
-  descriptor[iwdescr_pbarom].set_name("w_pbarom");
-  descriptor[iwdescr_npbarom].set_name("w_npbarom");
-  descriptor[iwdescr_pbunset].set_name("w_pbunset");
-  descriptor[iwdescr_dvinylb].set_name("w_dvinylb");
-  descriptor[iwdescr_ringsys].set_name("w_ringsys");
-  descriptor[iwdescr_arring].set_name("w_arring");
-  descriptor[iwdescr_alring].set_name("w_alring");
-  descriptor[iwdescr_excybond].set_name("w_excybond");
-  descriptor[iwdescr_excydbond].set_name("w_excydbond");
-  descriptor[iwdescr_excydscon].set_name("w_excydscon");
-  descriptor[iwdescr_excydsconh].set_name("w_excydsconh");
-  descriptor[iwdescr_excydscondon].set_name("w_excydscondon");
-//descriptor[iwdescr_scra].set_name("w_scra");
-//descriptor[iwdescr_scrha].set_name("w_scrha");
-//descriptor[iwdescr_scrd].set_name("w_scrd");
-  descriptor[iwdescr_atmpiele].set_name("w_atmpiele");
-  descriptor[iwdescr_fratmpie].set_name("w_fratmpie");
-  descriptor[iwdescr_unsatura].set_name("w_unsatura");
-  descriptor[iwdescr_funsatura].set_name("w_funsatura");
-  descriptor[iwdescr_ringisol].set_name("w_ringisol");
-  descriptor[iwdescr_isolrc].set_name("w_isolrc");
-  descriptor[iwdescr_isolhtrc].set_name("w_isolhtrc");
-  descriptor[iwdescr_erichsct].set_name("w_erichsct");
-  descriptor[iwdescr_aiercsct].set_name("w_aiercsct");
-  descriptor[iwdescr_lercsct].set_name("w_lercsct");
-  descriptor[iwdescr_faiercst].set_name("w_faiercst");
-  descriptor[iwdescr_avcon].set_name("w_avcon");
-  descriptor[iwdescr_avchcon].set_name("w_avchcon");
-  descriptor[iwdescr_avalcon].set_name("w_avalcon");
-  descriptor[iwdescr_crowding].set_name("w_crowding");
-  descriptor[iwdescr_fcrowdng].set_name("w_fcrowdng");
-  descriptor[iwdescr_halogen].set_name("w_halogen");
-  descriptor[iwdescr_halogena].set_name("w_halogena");
-  descriptor[iwdescr_bigatom].set_name("w_bigatom");
-  descriptor[iwdescr_fbigatom].set_name("w_fbigatom");
-  descriptor[iwdescr_csp3].set_name("w_csp3");
-  descriptor[iwdescr_fcsp3].set_name("w_fcsp3");
-  descriptor[iwdescr_fccsp3].set_name("w_fccsp3");
-  descriptor[iwdescr_csp3_chain].set_name("w_csp3_chain");
-  descriptor[iwdescr_aromc].set_name("w_aromc");
-  descriptor[iwdescr_aliphc].set_name("w_aliphc");
-  descriptor[iwdescr_numcdb].set_name("w_numcdb");
-  descriptor[iwdescr_totdbsub].set_name("w_totdbsub");
-  descriptor[iwdescr_avcdbsub].set_name("w_avcdbsub");
-  descriptor[iwdescr_nflxchn].set_name("w_nflxchn");
-  descriptor[iwdescr_atflxchn].set_name("w_atflxchn");
-  descriptor[iwdescr_faflxchn].set_name("w_faflxchn");
-  descriptor[iwdescr_fnflxchn].set_name("w_fnflxchn");
-  descriptor[iwdescr_lflxchn].set_name("w_lflxchn");
-  descriptor[iwdescr_avflxchn].set_name("w_avflxchn");
-  descriptor[iwdescr_rkentrpy].set_name("w_rkentrpy");
-  descriptor[iwdescr_nconjgsc].set_name("w_nconjgsc");
-  descriptor[iwdescr_atincnjs].set_name("w_atincnjs");
-  descriptor[iwdescr_mxcnjscz].set_name("w_mxcnjscz");
-  descriptor[iwdescr_cinconjs].set_name("w_cinconjs");
-  descriptor[iwdescr_brunsneg].set_name("w_brunsneg");
-  descriptor[iwdescr_brunspos].set_name("w_brunspos");
-  descriptor[iwdescr_brunsacc].set_name("w_brunsacc");
-  descriptor[iwdescr_brnsdual].set_name("w_brnsdual");
-  descriptor[iwdescr_brunsdon].set_name("w_brunsdon");
-  descriptor[iwdescr_nplus].set_name("w_nplus");
-  descriptor[iwdescr_nminus].set_name("w_nminus");
+  descriptor[iwdescr_natoms].set_name("natoms");
+  descriptor[iwdescr_nrings].set_name("nrings");
+  descriptor[iwdescr_nelem].set_name("nelem");
+  descriptor[iwdescr_amw].set_name("amw");
+  descriptor[iwdescr_ncon1].set_name("ncon1");
+  descriptor[iwdescr_fncon1].set_name("fncon1");
+  descriptor[iwdescr_ncon2].set_name("ncon2");
+  descriptor[iwdescr_fncon2].set_name("fncon2");
+  descriptor[iwdescr_ncon3].set_name("ncon3");
+  descriptor[iwdescr_fncon3].set_name("fncon3");
+  descriptor[iwdescr_ncon4].set_name("ncon4");
+  descriptor[iwdescr_fncon4].set_name("fncon4");
+  descriptor[iwdescr_frhc].set_name("frhc");
+  descriptor[iwdescr_mltbd].set_name("mltbd");
+  descriptor[iwdescr_fmltbd].set_name("fmltbd");
+  descriptor[iwdescr_chmltbd].set_name("chmltbd");
+  descriptor[iwdescr_fchmltbd].set_name("fchmltbd");
+  descriptor[iwdescr_rgmltbd].set_name("rgmltbd");
+  descriptor[iwdescr_frgmltbd].set_name("frgmltbd");
+  descriptor[iwdescr_dcca].set_name("dcca");
+  descriptor[iwdescr_fdcca].set_name("fdcca");
+  descriptor[iwdescr_mxdst].set_name("mxdst");
+  descriptor[iwdescr_mxsdlp].set_name("mxsdlp");
+  descriptor[iwdescr_avsdlp].set_name("avsdlp");
+  descriptor[iwdescr_mxsdlprl].set_name("mxsdlprl");
+  descriptor[iwdescr_rotbond].set_name("rotbond");
+  descriptor[iwdescr_ringatom].set_name("ringatom");
+  descriptor[iwdescr_rhacnt].set_name("rhacnt");
+  descriptor[iwdescr_rhaf].set_name("rhaf");
+  descriptor[iwdescr_frafus].set_name("frafus");
+  descriptor[iwdescr_rngatmf].set_name("rngatmf");
+  descriptor[iwdescr_aroma].set_name("aroma");
+  descriptor[iwdescr_aromha].set_name("aromha");
+  descriptor[iwdescr_fraromha].set_name("fraromha");
+  descriptor[iwdescr_aromdens].set_name("aromdens");
+  descriptor[iwdescr_ch2].set_name("ch2");
+  descriptor[iwdescr_ch].set_name("ch");
+  descriptor[iwdescr_htroatom].set_name("htroatom");
+  descriptor[iwdescr_htroaf].set_name("htroaf");
+  descriptor[iwdescr_nrgnhlht].set_name("nrgnhlht");
+  descriptor[iwdescr_ohsh].set_name("ohsh");
+  descriptor[iwdescr_co2h].set_name("co2h");
+  descriptor[iwdescr_amine].set_name("amine");
+  descriptor[iwdescr_pyridine].set_name("pyridine");
+  descriptor[iwdescr_pyrrole].set_name("pyrrole");
+  descriptor[iwdescr_hacts].set_name("hacts");
+  descriptor[iwdescr_hdons].set_name("hdons");
+  descriptor[iwdescr_hduals].set_name("hduals");
+  descriptor[iwdescr_mhr].set_name("mhr");
+  descriptor[iwdescr_mxhrf].set_name("mxhrf");
+  descriptor[iwdescr_mnhrf].set_name("mnhrf");
+  descriptor[iwdescr_lrsysz].set_name("lrsysz");
+  descriptor[iwdescr_lrsz].set_name("lrsz");
+  descriptor[iwdescr_nrsyscmr].set_name("nrsyscmr");
+  descriptor[iwdescr_mars].set_name("mars");
+  descriptor[iwdescr_frspch].set_name("frspch");
+  descriptor[iwdescr_spchtro].set_name("spchtro");
+  descriptor[iwdescr_rbfrspch].set_name("rbfrspch");
+  descriptor[iwdescr_satspcha].set_name("satspcha");
+  descriptor[iwdescr_unsatspcha].set_name("unsatspcha");
+  descriptor[iwdescr_fsatspcha].set_name("fsatspcha");
+  descriptor[iwdescr_nrnspch].set_name("nrnspch");
+  descriptor[iwdescr_fnrnspc].set_name("fnrnspc");
+  descriptor[iwdescr_trmnlrng].set_name("trmnlrng");
+  descriptor[iwdescr_intrnlrng].set_name("intrnlrng");
+  descriptor[iwdescr_rng2spch].set_name("rng2spch");
+  descriptor[iwdescr_rng2bridge].set_name("rng2bridge");
+  descriptor[iwdescr_rcj].set_name("rcj");
+  descriptor[iwdescr_rchj].set_name("rchj");
+  descriptor[iwdescr_amrcj].set_name("amrcj");
+  descriptor[iwdescr_alrcj].set_name("alrcj");
+  descriptor[iwdescr_pbcount].set_name("pbcount");
+  descriptor[iwdescr_frpbond].set_name("frpbond");
+  descriptor[iwdescr_nonpbond].set_name("nonpbond");
+  descriptor[iwdescr_pbarom].set_name("pbarom");
+  descriptor[iwdescr_npbarom].set_name("npbarom");
+  descriptor[iwdescr_pbunset].set_name("pbunset");
+  descriptor[iwdescr_dvinylb].set_name("dvinylb");
+  descriptor[iwdescr_ringsys].set_name("ringsys");
+  descriptor[iwdescr_arring].set_name("arring");
+  descriptor[iwdescr_alring].set_name("alring");
+  descriptor[iwdescr_excybond].set_name("excybond");
+  descriptor[iwdescr_excydbond].set_name("excydbond");
+  descriptor[iwdescr_excydscon].set_name("excydscon");
+  descriptor[iwdescr_excydsconh].set_name("excydsconh");
+  descriptor[iwdescr_excydscondon].set_name("excydscondon");
+//descriptor[iwdescr_scra].set_name("scra");
+//descriptor[iwdescr_scrha].set_name("scrha");
+//descriptor[iwdescr_scrd].set_name("scrd");
+  descriptor[iwdescr_atmpiele].set_name("atmpiele");
+  descriptor[iwdescr_fratmpie].set_name("fratmpie");
+  descriptor[iwdescr_unsatura].set_name("unsatura");
+  descriptor[iwdescr_funsatura].set_name("funsatura");
+  descriptor[iwdescr_ringisol].set_name("ringisol");
+  descriptor[iwdescr_isolrc].set_name("isolrc");
+  descriptor[iwdescr_isolhtrc].set_name("isolhtrc");
+  descriptor[iwdescr_erichsct].set_name("erichsct");
+  descriptor[iwdescr_aiercsct].set_name("aiercsct");
+  descriptor[iwdescr_lercsct].set_name("lercsct");
+  descriptor[iwdescr_faiercst].set_name("faiercst");
+  descriptor[iwdescr_avcon].set_name("avcon");
+  descriptor[iwdescr_avchcon].set_name("avchcon");
+  descriptor[iwdescr_avalcon].set_name("avalcon");
+  descriptor[iwdescr_crowding].set_name("crowding");
+  descriptor[iwdescr_fcrowdng].set_name("fcrowdng");
+  descriptor[iwdescr_halogen].set_name("halogen");
+  descriptor[iwdescr_halogena].set_name("halogena");
+  descriptor[iwdescr_bigatom].set_name("bigatom");
+  descriptor[iwdescr_fbigatom].set_name("fbigatom");
+  descriptor[iwdescr_csp3].set_name("csp3");
+  descriptor[iwdescr_fcsp3].set_name("fcsp3");
+  descriptor[iwdescr_fccsp3].set_name("fccsp3");
+  descriptor[iwdescr_csp3_chain].set_name("csp3_chain");
+  descriptor[iwdescr_aromc].set_name("aromc");
+  descriptor[iwdescr_aliphc].set_name("aliphc");
+  descriptor[iwdescr_numcdb].set_name("numcdb");
+  descriptor[iwdescr_totdbsub].set_name("totdbsub");
+  descriptor[iwdescr_avcdbsub].set_name("avcdbsub");
+  descriptor[iwdescr_nflxchn].set_name("nflxchn");
+  descriptor[iwdescr_atflxchn].set_name("atflxchn");
+  descriptor[iwdescr_faflxchn].set_name("faflxchn");
+  descriptor[iwdescr_fnflxchn].set_name("fnflxchn");
+  descriptor[iwdescr_lflxchn].set_name("lflxchn");
+  descriptor[iwdescr_avflxchn].set_name("avflxchn");
+  descriptor[iwdescr_rkentrpy].set_name("rkentrpy");
+  descriptor[iwdescr_nconjgsc].set_name("nconjgsc");
+  descriptor[iwdescr_atincnjs].set_name("atincnjs");
+  descriptor[iwdescr_mxcnjscz].set_name("mxcnjscz");
+  descriptor[iwdescr_cinconjs].set_name("cinconjs");
+  descriptor[iwdescr_brunsneg].set_name("brunsneg");
+  descriptor[iwdescr_brunspos].set_name("brunspos");
+  descriptor[iwdescr_brunsacc].set_name("brunsacc");
+  descriptor[iwdescr_brnsdual].set_name("brnsdual");
+  descriptor[iwdescr_brunsdon].set_name("brunsdon");
+  descriptor[iwdescr_nplus].set_name("nplus");
+  descriptor[iwdescr_nminus].set_name("nminus");
 
-  descriptor[iwdescr_muldiam].set_name("w_muldiam");
-  descriptor[iwdescr_rad].set_name("w_rad");
-  descriptor[iwdescr_mulrad].set_name("w_mulrad");
-  descriptor[iwdescr_tm].set_name("w_tm");
-  descriptor[iwdescr_tg3].set_name("w_tg3");
-  descriptor[iwdescr_ishape].set_name("w_ishape");
-  descriptor[iwdescr_maxdrng].set_name("w_maxdrng");
-  descriptor[iwdescr_maxdarom].set_name("w_maxdarom");
-  descriptor[iwdescr_avebbtwn].set_name("w_avebbtwn");
-  descriptor[iwdescr_normbbtwn].set_name("w_normbbtwn");
-  descriptor[iwdescr_compact].set_name("w_compact");
-  descriptor[iwdescr_nolp].set_name("w_nolp");
-  descriptor[iwdescr_avdcentre].set_name("w_avdcentre");
-  descriptor[iwdescr_stddcentre].set_name("w_stddcentre");
-  descriptor[iwdescr_centre3].set_name("w_centre3");
-  descriptor[iwdescr_centre3h].set_name("w_centre3h");
-  descriptor[iwdescr_mh3b].set_name("w_mh3b");
-  descriptor[iwdescr_cntrdgncy].set_name("w_cntrdgncy");
-  descriptor[iwdescr_cntrdshell1].set_name("w_cntrdshell1");
-  descriptor[iwdescr_cntrdshell2].set_name("w_cntrdshell2");
-  descriptor[iwdescr_cntrdshell3].set_name("w_cntrdshell3");
+  descriptor[iwdescr_muldiam].set_name("muldiam");
+  descriptor[iwdescr_rad].set_name("rad");
+  descriptor[iwdescr_mulrad].set_name("mulrad");
+  descriptor[iwdescr_tm].set_name("tm");
+  descriptor[iwdescr_tg3].set_name("tg3");
+  descriptor[iwdescr_ishape].set_name("ishape");
+  descriptor[iwdescr_maxdrng].set_name("maxdrng");
+  descriptor[iwdescr_maxdarom].set_name("maxdarom");
+  descriptor[iwdescr_avebbtwn].set_name("avebbtwn");
+  descriptor[iwdescr_normbbtwn].set_name("normbbtwn");
+  descriptor[iwdescr_compact].set_name("compact");
+  descriptor[iwdescr_nolp].set_name("nolp");
+  descriptor[iwdescr_avdcentre].set_name("avdcentre");
+  descriptor[iwdescr_stddcentre].set_name("stddcentre");
+  descriptor[iwdescr_centre3].set_name("centre3");
+  descriptor[iwdescr_centre3h].set_name("centre3h");
+  descriptor[iwdescr_mh3b].set_name("mh3b");
+  descriptor[iwdescr_cntrdgncy].set_name("cntrdgncy");
+  descriptor[iwdescr_cntrdshell1].set_name("cntrdshell1");
+  descriptor[iwdescr_cntrdshell2].set_name("cntrdshell2");
+  descriptor[iwdescr_cntrdshell3].set_name("cntrdshell3");
 
-  descriptor[iwdescr_nnsssrng].set_name("w_nnsssrng");
-  descriptor[iwdescr_nrings3].set_name("w_nrings3");
-  descriptor[iwdescr_nrings4].set_name("w_nrings4");
-  descriptor[iwdescr_nrings5].set_name("w_nrings5");
-  descriptor[iwdescr_nrings6].set_name("w_nrings6");
-  descriptor[iwdescr_nrings7].set_name("w_nrings7");
-  descriptor[iwdescr_nrings8].set_name("w_nrings8");
+  descriptor[iwdescr_nnsssrng].set_name("nnsssrng");
+  descriptor[iwdescr_nrings3].set_name("nrings3");
+  descriptor[iwdescr_nrings4].set_name("nrings4");
+  descriptor[iwdescr_nrings5].set_name("nrings5");
+  descriptor[iwdescr_nrings6].set_name("nrings6");
+  descriptor[iwdescr_nrings7].set_name("nrings7");
+  descriptor[iwdescr_nrings8].set_name("nrings8");
 
-  descriptor[iwdescr_rsarom1].set_name("w_rsarom1");
-  descriptor[iwdescr_rsarom2].set_name("w_rsarom2");
-  descriptor[iwdescr_rsarom3].set_name("w_rsarom3");
+  descriptor[iwdescr_rsarom1].set_name("rsarom1");
+  descriptor[iwdescr_rsarom2].set_name("rsarom2");
+  descriptor[iwdescr_rsarom3].set_name("rsarom3");
 
-  descriptor[iwdescr_rsaliph1].set_name("w_rsaliph1");
-  descriptor[iwdescr_rsaliph2].set_name("w_rsaliph2");
-  descriptor[iwdescr_rsaliph3].set_name("w_rsaliph3");
-  descriptor[iwdescr_rsaliph4].set_name("w_rsaliph4");
+  descriptor[iwdescr_rsaliph1].set_name("rsaliph1");
+  descriptor[iwdescr_rsaliph2].set_name("rsaliph2");
+  descriptor[iwdescr_rsaliph3].set_name("rsaliph3");
+  descriptor[iwdescr_rsaliph4].set_name("rsaliph4");
 
-  descriptor[iwdescr_rssys1].set_name("w_rssys1");
-  descriptor[iwdescr_rssys2].set_name("w_rssys2");
-  descriptor[iwdescr_rssys3].set_name("w_rssys3");
-  descriptor[iwdescr_rssys4].set_name("w_rssys4");
-  descriptor[iwdescr_rssys5].set_name("w_rssys5");
-  descriptor[iwdescr_rssys6].set_name("w_rssys6");
-  descriptor[iwdescr_rssys7].set_name("w_rssys7");
-  descriptor[iwdescr_rssys8].set_name("w_rssys8");
-  descriptor[iwdescr_rssys9].set_name("w_rssys9");
+  descriptor[iwdescr_rssys1].set_name("rssys1");
+  descriptor[iwdescr_rssys2].set_name("rssys2");
+  descriptor[iwdescr_rssys3].set_name("rssys3");
+  descriptor[iwdescr_rssys4].set_name("rssys4");
+  descriptor[iwdescr_rssys5].set_name("rssys5");
+  descriptor[iwdescr_rssys6].set_name("rssys6");
+  descriptor[iwdescr_rssys7].set_name("rssys7");
+  descriptor[iwdescr_rssys8].set_name("rssys8");
+  descriptor[iwdescr_rssys9].set_name("rssys9");
 
-  descriptor[iwdescr_ar5].set_name("w_ar5");
-  descriptor[iwdescr_ar6].set_name("w_ar6");
-  descriptor[iwdescr_al5].set_name("w_al5");
-  descriptor[iwdescr_al6].set_name("w_al6");
+  descriptor[iwdescr_ar5].set_name("ar5");
+  descriptor[iwdescr_ar6].set_name("ar6");
+  descriptor[iwdescr_al5].set_name("al5");
+  descriptor[iwdescr_al6].set_name("al6");
 
-  descriptor[iwdescr_fsdrng5l5l].set_name("w_fsdrng5l5l");
-  descriptor[iwdescr_fsdrng5l5r].set_name("w_fsdrng5l5r");
-  descriptor[iwdescr_fsdrng5r5r].set_name("w_fsdrng5r5r");
-  descriptor[iwdescr_fsdrng5l6l].set_name("w_fsdrng5l6l");
-  descriptor[iwdescr_fsdrng5l6r].set_name("w_fsdrng5l6r");
-  descriptor[iwdescr_fsdrng5r6l].set_name("w_fsdrng5r6l");
-  descriptor[iwdescr_fsdrng5r6r].set_name("w_fsdrng5r6r");
-  descriptor[iwdescr_fsdrng6r6r].set_name("w_fsdrng6r6r");
-  descriptor[iwdescr_fsdrng6l6r].set_name("w_fsdrng6l6r");
-  descriptor[iwdescr_fsdrng6l6l].set_name("w_fsdrng6l6l");
+  descriptor[iwdescr_fsdrng5l5l].set_name("fsdrng5l5l");
+  descriptor[iwdescr_fsdrng5l5r].set_name("fsdrng5l5r");
+  descriptor[iwdescr_fsdrng5r5r].set_name("fsdrng5r5r");
+  descriptor[iwdescr_fsdrng5l6l].set_name("fsdrng5l6l");
+  descriptor[iwdescr_fsdrng5l6r].set_name("fsdrng5l6r");
+  descriptor[iwdescr_fsdrng5r6l].set_name("fsdrng5r6l");
+  descriptor[iwdescr_fsdrng5r6r].set_name("fsdrng5r6r");
+  descriptor[iwdescr_fsdrng6r6r].set_name("fsdrng6r6r");
+  descriptor[iwdescr_fsdrng6l6r].set_name("fsdrng6l6r");
+  descriptor[iwdescr_fsdrng6l6l].set_name("fsdrng6l6l");
 
-  descriptor[iwdescr_fsdrngarar].set_name("w_fsdrngarar");
-  descriptor[iwdescr_fsdrngalar].set_name("w_fsdrngalar");
-  descriptor[iwdescr_fsdrngalal].set_name("w_fsdrngalal");
+  descriptor[iwdescr_fsdrngarar].set_name("fsdrngarar");
+  descriptor[iwdescr_fsdrngalar].set_name("fsdrngalar");
+  descriptor[iwdescr_fsdrngalal].set_name("fsdrngalal");
 
-  descriptor[iwdescr_nchiral].set_name("w_nchiral");
-  descriptor[iwdescr_nvrtspsa].set_name("w_nvrtspsa");
-  descriptor[iwdescr_acmbe].set_name("w_acmbe");
-  descriptor[iwdescr_cmr].set_name("w_cmr");
-  descriptor[iwdescr_cd4ring].set_name("w_cd4ring");
-  descriptor[iwdescr_cd4chain].set_name("w_cd4chain");
-  descriptor[iwdescr_frsub].set_name("w_frsub");
-  descriptor[iwdescr_frssub].set_name("w_frssub");
-  descriptor[iwdescr_bbr1].set_name("w_bbr1");
-  descriptor[iwdescr_bbr2].set_name("w_bbr2");
-  descriptor[iwdescr_bbr3].set_name("w_bbr3");
-  descriptor[iwdescr_bbr4].set_name("w_bbr4");
-  descriptor[iwdescr_bbr5].set_name("w_bbr5");
-  descriptor[iwdescr_bbr6].set_name("w_bbr6");
-  descriptor[iwdescr_sboradjf].set_name("w_sboradjf");
-  descriptor[iwdescr_dboradjf].set_name("w_dboradjf");
-  descriptor[iwdescr_hcount].set_name("w_hcount");
-  descriptor[iwdescr_hperatom].set_name("w_hperatom");
-  descriptor[iwdescr_ro5_ohnh].set_name("w_ro5_ohnh");
-  descriptor[iwdescr_ro5_on].set_name("w_ro5_on");    // the last on ewhich will always be computed
+  descriptor[iwdescr_nchiral].set_name("nchiral");
+  descriptor[iwdescr_nvrtspsa].set_name("nvrtspsa");
+  descriptor[iwdescr_acmbe].set_name("acmbe");
+  descriptor[iwdescr_cmr].set_name("cmr");
+  descriptor[iwdescr_cd4ring].set_name("cd4ring");
+  descriptor[iwdescr_cd4chain].set_name("cd4chain");
+  descriptor[iwdescr_frsub].set_name("frsub");
+  descriptor[iwdescr_frssub].set_name("frssub");
+  descriptor[iwdescr_bbr1].set_name("bbr1");
+  descriptor[iwdescr_bbr2].set_name("bbr2");
+  descriptor[iwdescr_bbr3].set_name("bbr3");
+  descriptor[iwdescr_bbr4].set_name("bbr4");
+  descriptor[iwdescr_bbr5].set_name("bbr5");
+  descriptor[iwdescr_bbr6].set_name("bbr6");
+  descriptor[iwdescr_sboradjf].set_name("sboradjf");
+  descriptor[iwdescr_dboradjf].set_name("dboradjf");
+  descriptor[iwdescr_hcount].set_name("hcount");
+  descriptor[iwdescr_hperatom].set_name("hperatom");
+  descriptor[iwdescr_ro5_ohnh].set_name("ro5_ohnh");
+  descriptor[iwdescr_ro5_on].set_name("ro5_on");    // the last on ewhich will always be computed
 
   if (min_hbond_feature_separation > 0)
   {
-    descriptor[iwdescr_aamind].set_name("w_aamind");
-    descriptor[iwdescr_aa2mind].set_name("w_aa2mind");
-    descriptor[iwdescr_aaave].set_name("w_aaave");
-    descriptor[iwdescr_admind].set_name("w_admind");
-    descriptor[iwdescr_ad2mind].set_name("w_ad2mind");
-    descriptor[iwdescr_adave].set_name("w_adave");
-    descriptor[iwdescr_ddmind].set_name("w_ddmind");
-    descriptor[iwdescr_dd2mind].set_name("w_dd2mind");
-    descriptor[iwdescr_ddave].set_name("w_ddave");
+    descriptor[iwdescr_aamind].set_name("aamind");
+    descriptor[iwdescr_aa2mind].set_name("aa2mind");
+    descriptor[iwdescr_aaave].set_name("aaave");
+    descriptor[iwdescr_admind].set_name("admind");
+    descriptor[iwdescr_ad2mind].set_name("ad2mind");
+    descriptor[iwdescr_adave].set_name("adave");
+    descriptor[iwdescr_ddmind].set_name("ddmind");
+    descriptor[iwdescr_dd2mind].set_name("dd2mind");
+    descriptor[iwdescr_ddave].set_name("ddave");
   }
 
   if (do_complexity_descriptors)
   {
-    descriptor[iwdescr_nspiro].set_name("w_nspiro");
-    descriptor[iwdescr_nsfsdsys].set_name("w_nsfsdsys");
-    descriptor[iwdescr_rnginsfs].set_name("w_rnginsfs");
-    descriptor[iwdescr_lgstrfsy].set_name("w_lgstrfsy");
-    descriptor[iwdescr_htrcsfsy].set_name("w_htrcsfsy");
-    descriptor[iwdescr_mxhtsfsy].set_name("w_mxhtsfsy");
-    descriptor[iwdescr_npfsdsys].set_name("w_npfsdsys");
-    descriptor[iwdescr_rnginpfs].set_name("w_rnginpfs");
-    descriptor[iwdescr_lgplnfsy].set_name("w_lgplnfsy");
-    descriptor[iwdescr_htrcpfsy].set_name("w_htrcpfsy");
-    descriptor[iwdescr_mxhtpfsy].set_name("w_mxhtpfsy");
+    descriptor[iwdescr_nspiro].set_name("nspiro");
+    descriptor[iwdescr_nsfsdsys].set_name("nsfsdsys");
+    descriptor[iwdescr_rnginsfs].set_name("rnginsfs");
+    descriptor[iwdescr_lgstrfsy].set_name("lgstrfsy");
+    descriptor[iwdescr_htrcsfsy].set_name("htrcsfsy");
+    descriptor[iwdescr_mxhtsfsy].set_name("mxhtsfsy");
+    descriptor[iwdescr_npfsdsys].set_name("npfsdsys");
+    descriptor[iwdescr_rnginpfs].set_name("rnginpfs");
+    descriptor[iwdescr_lgplnfsy].set_name("lgplnfsy");
+    descriptor[iwdescr_htrcpfsy].set_name("htrcpfsy");
+    descriptor[iwdescr_mxhtpfsy].set_name("mxhtpfsy");
   }
 
-  descriptor[iwdescr_symmatom].set_name("w_symmatom");
-  descriptor[iwdescr_fsymmatom].set_name("w_fsymmatom");
-  descriptor[iwdescr_lsepsymatom].set_name("w_lsepsymatom");
-  descriptor[iwdescr_flsepsymatom].set_name("w_flsepsymatom");
-  descriptor[iwdescr_maxsymmclass].set_name("w_maxsymmclass");
+  descriptor[iwdescr_symmatom].set_name("symmatom");
+  descriptor[iwdescr_fsymmatom].set_name("fsymmatom");
+  descriptor[iwdescr_lsepsymatom].set_name("lsepsymatom");
+  descriptor[iwdescr_flsepsymatom].set_name("flsepsymatom");
+  descriptor[iwdescr_maxsymmclass].set_name("maxsymmclass");
 
   if (do_ramey_descriptors)
   {
-    descriptor[iwdescr_obalance].set_name("w_obalance");
-    descriptor[iwdescr_rmync].set_name("w_rmync");
-    descriptor[iwdescr_rmynn].set_name("w_rmynn");
-    descriptor[iwdescr_rmyno].set_name("w_rmyno");
-    descriptor[iwdescr_rmynf].set_name("w_rmynf");
-    descriptor[iwdescr_rmyns].set_name("w_rmyns");
-    descriptor[iwdescr_rmyncl].set_name("w_rmyncl");
-    descriptor[iwdescr_rmynbr].set_name("w_rmynbr");
-    descriptor[iwdescr_rmyni].set_name("w_rmyni");
+    descriptor[iwdescr_obalance].set_name("obalance");
+    descriptor[iwdescr_rmync].set_name("rmync");
+    descriptor[iwdescr_rmynn].set_name("rmynn");
+    descriptor[iwdescr_rmyno].set_name("rmyno");
+    descriptor[iwdescr_rmynf].set_name("rmynf");
+    descriptor[iwdescr_rmyns].set_name("rmyns");
+    descriptor[iwdescr_rmyncl].set_name("rmyncl");
+    descriptor[iwdescr_rmynbr].set_name("rmynbr");
+    descriptor[iwdescr_rmyni].set_name("rmyni");
   }
 
   descriptor[iwdescr_maxdarom].set_best_fingerprint(1);
@@ -1434,10 +1451,10 @@ descriptor_name_2_index (const Descriptor * d,
                          int n,
                          const const_IWSubstring & dname)
 {
-  if (! dname.starts_with("w_"))
+  if (! dname.starts_with(descriptor_prefix))
   {
     IWString s;
-    s << "w_" << dname;
+    s << descriptor_prefix << dname;
     return descriptor_name_2_index(d, n, s);
   }
 
@@ -2346,8 +2363,11 @@ do_compute_chirality_descriptors (Molecule & m,
 
     if (! perform_expensive_chirality_perception)
       ;
-    else if (is_actually_chiral(m, i))    // too expensive to compute
+    else if (m.is_ring_atom(i))    // C1C2C3C1N1C2C31 has 5 chiral centers otherwise.
+      ;
+    else if (is_actually_chiral(m, i))  {   // Too expensive to compute by default.
       chiral_centres++;
+    }
   }
 
   descriptor[iwdescr_nchiral].set(static_cast<float>(chiral_centres));
@@ -6215,12 +6235,12 @@ back_to_zero(T * v,
 }
 
 static int
-discern_conjugated_section (Molecule & m,
-                            atom_number_t zatom,
-                            const Atom ** atom,
-                            const int * is_aromatic,
-                            int * already_done,
-                            int flag)
+discern_conjugated_section(Molecule & m,
+                           atom_number_t zatom,
+                           const Atom ** atom,
+                           const int * is_aromatic,
+                           int * already_done,
+                           int flag)
 {
   already_done[zatom] = flag;
 
@@ -6653,6 +6673,7 @@ compute_topological_descriptors (Molecule & m,
 
       if (ncon[i] < ai->nbonds())
       {
+        atoms_with_pi_electrons++;
         unsaturation++;
         electron_rich = true;
       }
@@ -6748,7 +6769,7 @@ compute_topological_descriptors (Molecule & m,
   int mbonds = m.nedges();
   if (0 == mbonds)           // let's hope no-one does computations on single atom molecules
   {
-    cerr << "Waring, no bonds in molecule\n";
+    cerr << "Warning, no bonds in molecule\n";
     mbonds = 1;
   }
 
@@ -7909,18 +7930,19 @@ usage (int rc)
   cerr << "  -O complex     compute planar fused ring complexity descriptors\n";
   cerr << "  -O mxsfsdf=nn  max difference in ring size for strongly fused rings\n";
   cerr << "  -O expchiral   perform computationally expensive chirality detection\n";
+  cerr << "  -O all         activate all optional features\n";
   cerr << "  -a <seconds>   abandon any computation after <seconds> seconds\n";
   cerr << "  -F <filter>    filter specification\n";
   cerr << "  -G ...         fingerprint specification\n";    
+  cerr << "  -B ...         other optional features\n";
   cerr << "  -s .           include the smiles as a descriptor - for now . means first descriptor\n";
   cerr << "  -S             zero value for SD2 in Polar Surface Area computations\n";
   cerr << "  -z             write empty descriptors for zero atom molecules\n";
   cerr << "  -i <type>      specify input file type\n";
-//cerr << "  -f             match only the first charge assigner query match\n";   not sure why this was ever needed
-  cerr << "  -E <symbol>    create element with symbol\n";
+  cerr << "  -l             reduce to largest fragment\n";
+  cerr << "  -E <symbol>    standard element related options\n";
   display_standard_chemical_standardisation_options(cerr, 'g');
   display_standard_aromaticity_options(cerr);
-  cerr << "  -l             reduce to largest fragment\n";
   cerr << "  -v             verbose output\n";
 
   exit(rc);
@@ -7945,7 +7967,7 @@ parse_replicates_specification (const_IWSubstring & dname,
 int
 iwdescr (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:szS");
+  Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:szSB:");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -8019,10 +8041,34 @@ iwdescr (int argc, char ** argv)
         if (verbose)
           cerr << "Will not report unclassified atoms\n";
       }
+      else if (o == "all") {
+        compute_distance_matrix_descriptors = 1;
+        do_complexity_descriptors = 1;
+        do_ramey_descriptors = 1;
+        perform_expensive_chirality_perception = 1;
+      }
       else
       {
         cerr << "Unrecognised optional feature qualifier '" << o << "'\n";
         usage(15);
+      }
+    }
+  }
+
+  if (cl.option_present('B')) {
+    IWString b;
+    for (int i = 0; cl.value('B', b, i); ++i) {
+      if (b.starts_with("prefix=")) {
+        b.remove_leading_chars(7);
+        char_name_to_char(b);
+        descriptor_prefix = b;
+        if (verbose)
+          cerr << "Descriptors generated with prefix '" << descriptor_prefix << "'\n";
+      }
+      else if (b == "help") {
+      } else {
+        cerr << "Unrecognized -B qualifier '" << b << "'\n";
+        return 1;
       }
     }
   }

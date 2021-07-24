@@ -73,7 +73,7 @@
                                    atom_number_t & first_atom,
                                    const int *);
 
-    int _all_atoms_are_chain_atoms (const int * process_these_atoms);
+//  int _all_atoms_are_chain_atoms (const int * process_these_atoms);
 
     int _determine_ring_closure_bonds (const int * zorder,
                                         const int * include_atom);
@@ -88,6 +88,12 @@
                                          int * already_done);
 
 //  in frag.cc
+
+    int _recursive_fragment_membership(Fragment_Information& fragment_information);
+    int _recursive_fragment_membership(Fragment_Information& fragment_information,
+                atom_number_t zatom,
+                int fragment_number,
+                int & bonds_in_fragment);
 
     int _compute_fragment_information_subset(Fragment_Information & fragment_information,
                                                const int * include_atom) const;

@@ -2347,6 +2347,27 @@ RingFinder(Molecule& m,
 }
 #endif
 
+// The ring finding algorithm needs some temporary arrays.
+// Put them all together into a single struct.
+struct RingFinderArrays {
+  // Whehter or not each atom has been visited by the algorithm.
+  int * visited;
+  // The result of the calculation.
+  int * ring_membership;
+  // Is the bond between two atoms a ring bond or not?
+  int * ring_bond_count;
+  RingFinderArrays(int natoms) {
+    visited = new_int(natoms);
+    ring_membership = new_int(natoms);
+    ring_bond_count = new_int(natoms * natoms);
+  }
+  ~RingFinderArrays() {
+    delete [] visited;
+    delete [] ring_membership;
+    delete [] ring_bond_count;
+  }
+};
+
 // Given that `current_atom` and `other` have been detected at the ends
 // of a bond, upate `ring_bond_membership` to reflect that.
 // `ring_bond_membership` is assumed to be a matoms*matoms array.
@@ -2363,12 +2384,12 @@ int
 RingFinder(Molecule& m,
            atom_number_t previous_atom,
            atom_number_t current_atom,
-           int * ring_membership,
-           int * ring_bond_count,
-           int * visited,
+           RingFinderArrays& data,
            int counter) {
-
   const int matoms = m.natoms();
+  int * visited = data.visited;
+  int * ring_membership = data.ring_membership;
+  int * ring_bond_count = data.ring_bond_count;
 
   visited[current_atom] = counter;
 #ifdef DEBUG_RING_FINDER
@@ -2393,7 +2414,7 @@ RingFinder(Molecule& m,
       UpdateRingBondCount(ring_bond_count, matoms, current_atom, j);
       found_ring++;
     } else {
-      int tmp = RingFinder(m, current_atom, j, ring_membership, ring_bond_count, visited, counter + 1);
+      int tmp = RingFinder(m, current_atom, j, data, counter + 1);
       if (tmp) {
         found_ring += tmp;
         UpdateRingBondCount(ring_bond_count, matoms, current_atom, j);
@@ -2469,18 +2490,15 @@ Molecule::_compute_ring_bond_count()
 
   _fragment_information.initialise(_number_elements);
 
-  int * visited = new_int(_number_elements); std::unique_ptr<int[]> free_visited(visited);
-  std::unique_ptr<int[]> is_ring(new_int(_number_elements));
-  std::unique_ptr<int[]> rbc(new_int(_number_elements * _number_elements));
+  RingFinderArrays data(_number_elements);
 
   atom_number_t starting_atom = 0;
   int counter_start = 1;
   do {
-//  RingFinder(*this, INVALID_ATOM_NUMBER, starting_atom, is_ring.get(), visited, counter_start);
-    RingFinder(*this, INVALID_ATOM_NUMBER, starting_atom, is_ring.get(), rbc.get(), visited, counter_start);
-    counter_start += _update_fragment_information(visited, fragment_number, visited[starting_atom]);
+    RingFinder(*this, INVALID_ATOM_NUMBER, starting_atom, data, counter_start);
+    counter_start += _update_fragment_information(data.visited, fragment_number, data.visited[starting_atom]);
     fragment_number++;
-    starting_atom = FirstUnvisited(visited, _number_elements);
+    starting_atom = FirstUnvisited(data.visited, _number_elements);
   } while (starting_atom != INVALID_ATOM_NUMBER);
 
   _fragment_information.set_number_fragments(fragment_number);
@@ -2489,11 +2507,11 @@ Molecule::_compute_ring_bond_count()
 
   for (int i = 0; i < _number_elements; ++i) {
     _ring_bond_count[i] = 0;
-    if (is_ring[i] <= 0) {  // Not in a ring.
+    if (data.ring_membership[i] <= 0) {  // Not in a ring.
       continue;
     }
     for (const Bond * b : *_things[i]) {
-      if (rbc[i * _number_elements + b->other(i)])
+      if (data.ring_bond_count[i * _number_elements + b->other(i)])
         _ring_bond_count[i]++;
     }
   }

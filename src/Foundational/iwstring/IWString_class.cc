@@ -5252,6 +5252,11 @@ char_name_to_char(IWString & s)
     s = '`';
     return 1;
   }
+
+  else if (s == "empty") {
+    s.resize(0);
+    return 1;
+  }
   
   if ("help" == s)
   {

@@ -478,8 +478,6 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
   return;
 }
 
-#define DEBUG_USE_PRECEDENT
-
 int
 ECUsePrecedent::FingerprintingComplete(Molecule& m)
 {
