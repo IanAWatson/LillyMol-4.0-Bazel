@@ -17,26 +17,6 @@ cc_proto_library(
 )
 
 cc_binary(
-    name = "ring_finder",
-    srcs = [
-        "ring_finder_main.cc",
-        "ring_finder.cc",
-        "ring_finder.h",
-    ],
-    deps = [
-        "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculeio",
-        "//Molecule_Lib:substructure_cc_proto",
-        "//Foundational/accumulator:accumulator",
-        "//Foundational/iwaray:iwaray",
-        "//Foundational/iwmisc:iwmisc",
-    ],
-    linkopts = [
-        "-lz",
-    ],
-)
-
-cc_binary(
     name = "activity_consistency",
     srcs = [
         "activity_consistency.cc",
@@ -927,6 +907,25 @@ cc_binary(
         "//Foundational/iw_tdt:iw_tdt",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:iwreaction",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
+    name = "tsmiles",
+    srcs = [
+        "tsmiles.cc",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],

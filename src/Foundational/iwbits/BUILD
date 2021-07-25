@@ -9,11 +9,13 @@ cc_library(
         "hexbits.cc",
         "iwbits.cc",
         "swap_byte_order.cc",
+        "fixed_bit_vector.cc",
     ],
     hdrs = [
         "iwbits.h",
         "dy_fingerprint.h",
         "iwbits_support.h",
+        "fixed_bit_vector.h",
     ],
     deps = [
         "//Foundational/data_source:iwstring_data_source",
@@ -38,3 +40,18 @@ cc_library(
 #         "//Molecule_Lib:iwmolecule",
 #     ]
 # )
+
+cc_test(
+    name = "fixed_bit_vector_test",
+    srcs = [
+        "fixed_bit_vector_test.cc",
+    ],
+    deps = [
+        ":iwbits",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)

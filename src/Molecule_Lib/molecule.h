@@ -31,7 +31,7 @@ class Smiles_First_Atom;
 class Smiles_Formation_Info;
 class MDL_File_Supporting_Material;
 
-class CMarkup;    // xml reader used by Marvin
+class CMarkup;    // xml reader used for reading Marvin files.
 
 #ifdef COMPILING_MOLECULER_CC
 class Rings_Found;
@@ -663,6 +663,8 @@ class Molecule : private resizable_array_p<Atom>
     int __identify_side_of_bond (int * either_side, atom_number_t astart, int flag, atom_number_t avoid) const;
 
     int _do_put_formal_charges_on_neutral_ND3v4 ();
+
+    bool _ok_for_fast_atom_comparisons();  // Used in uniqueness determinations.
 
   protected:
 

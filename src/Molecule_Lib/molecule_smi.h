@@ -94,7 +94,6 @@
                 atom_number_t zatom,
                 int fragment_number,
                 int & bonds_in_fragment);
-
     int _compute_fragment_information_subset(Fragment_Information & fragment_information,
                                                const int * include_atom) const;
     int _create_bond_subset_starting_with (Molecule & subset,

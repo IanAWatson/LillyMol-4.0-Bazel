@@ -5272,6 +5272,8 @@ write_atom_map_number_labelled_smiles(Molecule & m, const bool uniq, T & output)
 {
   const int matoms = m.natoms();
   int * msave = new int[matoms]; std::unique_ptr<int[]> free_msave(msave);
+  const int incsave = include_atom_map_with_smiles();
+  set_include_atom_map_with_smiles(1);
 
   int non_zero_existing_atom_map_found = 0;
   for (int i = 0; i < matoms; ++i)
@@ -5294,6 +5296,8 @@ write_atom_map_number_labelled_smiles(Molecule & m, const bool uniq, T & output)
       m.set_atom_map_number(i, msave[i]);
     }
   }
+
+  set_include_atom_map_with_smiles(incsave);
 
   return output;
 }
