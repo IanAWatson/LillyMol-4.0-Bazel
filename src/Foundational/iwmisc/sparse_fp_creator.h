@@ -8,9 +8,6 @@
 
 #include "timsort.hpp"
 
-using std::cerr;
-using std::endl;
-
 class IW_Unsigned_Int_Hash_Fn
 {
   private:
@@ -125,7 +122,7 @@ unordered_map_to_md5(const std::unordered_map<unsigned int, C> & h, O & output)
   }
 
   if (ndx != sz)
-    cerr << "Yipes, ndx " << ndx << " vs size " << sz << endl;
+    std::cerr << "Yipes, ndx " << ndx << " vs size " << sz << '\n';
 
   assert (sz == static_cast<unsigned int>(ndx));
 

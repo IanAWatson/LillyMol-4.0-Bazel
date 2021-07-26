@@ -1,4 +1,7 @@
 #include <algorithm>
+#include <limits>
+#include <iostream>
+#include <iomanip>
 #include <nmmintrin.h>
 
 #include "fixed_bit_vector.h"
@@ -14,72 +17,91 @@ for o in 0:63
 end
 */
 
-uint64_t one_bit_64[] =  {
-0x0000000000000001,
-0x0000000000000002,
-0x0000000000000004,
-0x0000000000000008,
-0x0000000000000010,
-0x0000000000000020,
-0x0000000000000040,
-0x0000000000000080,
-0x0000000000000100,
-0x0000000000000200,
-0x0000000000000400,
-0x0000000000000800,
-0x0000000000001000,
-0x0000000000002000,
-0x0000000000004000,
-0x0000000000008000,
-0x0000000000010000,
-0x0000000000020000,
-0x0000000000040000,
-0x0000000000080000,
-0x0000000000100000,
-0x0000000000200000,
-0x0000000000400000,
-0x0000000000800000,
-0x0000000001000000,
-0x0000000002000000,
-0x0000000004000000,
-0x0000000008000000,
-0x0000000010000000,
-0x0000000020000000,
-0x0000000040000000,
-0x0000000080000000,
-0x0000000100000000,
-0x0000000200000000,
-0x0000000400000000,
-0x0000000800000000,
-0x0000001000000000,
-0x0000002000000000,
-0x0000004000000000,
-0x0000008000000000,
-0x0000010000000000,
-0x0000020000000000,
-0x0000040000000000,
-0x0000080000000000,
-0x0000100000000000,
-0x0000200000000000,
-0x0000400000000000,
-0x0000800000000000,
-0x0001000000000000,
-0x0002000000000000,
-0x0004000000000000,
-0x0008000000000000,
-0x0010000000000000,
-0x0020000000000000,
-0x0040000000000000,
-0x0080000000000000,
-0x0100000000000000,
-0x0200000000000000,
-0x0400000000000000,
-0x0800000000000000,
-0x1000000000000000,
-0x2000000000000000,
-0x4000000000000000,
-0x8000000000000000
+static uint64_t one_bit_64[] = {
+  0x1,
+  0x2,
+  0x4,
+  0x8,
+  0x10,
+  0x20,
+  0x40,
+  0x80,
+  0x100,
+  0x200,
+  0x400,
+  0x800,
+  0x1000,
+  0x2000,
+  0x4000,
+  0x8000,
+  0x10000,
+  0x20000,
+  0x40000,
+  0x80000,
+  0x100000,
+  0x200000,
+  0x400000,
+  0x800000,
+  0x1000000,
+  0x2000000,
+  0x4000000,
+  0x8000000,
+  0x10000000,
+  0x20000000,
+  0x40000000,
+  0x80000000,
+  0x100000000,
+  0x200000000,
+  0x400000000,
+  0x800000000,
+  0x1000000000,
+  0x2000000000,
+  0x4000000000,
+  0x8000000000,
+  0x10000000000,
+  0x20000000000,
+  0x40000000000,
+  0x80000000000,
+  0x100000000000,
+  0x200000000000,
+  0x400000000000,
+  0x800000000000,
+  0x1000000000000,
+  0x2000000000000,
+  0x4000000000000,
+  0x8000000000000,
+  0x10000000000000,
+  0x20000000000000,
+  0x40000000000000,
+  0x80000000000000,
+  0x100000000000000,
+  0x200000000000000,
+  0x400000000000000,
+  0x800000000000000,
+  0x1000000000000000,
+  0x2000000000000000,
+  0x4000000000000000,
+  0x8000000000000000,
 };
+
+#ifdef NOT_USED_MAYBE_USEFUL_SOMETIME
+  static const uint64_t bx[] = {
+    0xFFFFFFFF00000000,
+    0xFFFF0000,
+    0xFF00,
+    0xF0,
+    0xC,
+    0x2,
+    };
+
+static const uint8_t BitReverseTable256[256] = 
+{
+#   define R2(n)     n,     n + 2*64,     n + 1*64,     n + 3*64
+#   define R4(n) R2(n), R2(n + 2*16), R2(n + 1*16), R2(n + 3*16)
+#   define R6(n) R4(n), R4(n + 2*4 ), R4(n + 1*4 ), R4(n + 3*4 )
+    R6(0), R6(2), R6(1), R6(3)
+};
+#endif
 
 // Return the number of 64 bit words needed for `nbits` bits.
 int
@@ -164,6 +186,14 @@ FixedBitVector::nset() const {
   return rc;
 }
 
+void
+FixedBitVector::reset() {
+  if (_bits == nullptr) {
+    return;
+  }
+  std::fill_n(_bits, _nwords, 0);
+}
+
 // Could possibly be made more efficient with loop unrolling, see gfp_standard.cc
 int
 FixedBitVector::BitsInCommon(const FixedBitVector& rhs) const {
@@ -172,6 +202,109 @@ FixedBitVector::BitsInCommon(const FixedBitVector& rhs) const {
     rc +=  _mm_popcnt_u64(_bits[i] & rhs._bits[i]);
   }
   return rc;
+}
+
+// Taken from http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious. Amazing!
+
+int
+most_significant_bit(uint64_t v)
+{
+  static const uint64_t b[] = {0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000, 0xFFFFFFFF00000000};
+  static const uint64_t S[] = {1, 2, 4, 8, 16, 32};
+
+  uint64_t r = 0; // result of first_bit_set(v) will go here
+  for (int i = 5; i >= 0; i--) // unroll for speed...
+  {
+    if (v & b[i])
+    {
+      v >>= S[i];
+      r |= S[i];
+    }
+  }
+
+  return r;
+}
+
+int
+first_bit_set(uint64_t v) {
+  static const uint64_t b[] = {
+    0x00000000FFFFFFFF,
+    0x0000FFFF,
+    0x00FF,
+    0x0F,
+    0x3,
+    0x1,
+  };
+  static const uint64_t S[] = {32, 16, 8, 4, 2, 1};
+
+  if (v == 0) {
+    return -1;
+  }
+
+  uint64_t result = 0;
+  for (int i = 0; i < 6; ++i)
+  {
+    const uint64_t vnbi = v & b[i];
+    if (vnbi == 0)
+    {
+      v >>= S[i];
+      result |= S[i];
+    }
+    else if (vnbi == b[i]) {
+      return result;
+    }
+  }
+
+  return result;
+}
+
+// Note this could be optimized if we knew low order bits were preferentially set.
+int
+first_unset_bit(uint64_t v)
+{
+
+  static const uint64_t b[] = {
+    0x00000000FFFFFFFF,
+    0x0000FFFF,
+    0x00FF,
+    0x0F,
+    0x3,
+    0x1,
+  };
+  static const uint64_t S[] = {32, 16, 8, 4, 2, 1};
+
+  if (v == 0) {
+    return 0;
+  }
+  if (v == std::numeric_limits<uint64_t>::max()) {
+    return -1;
+  }
+
+  uint64_t result = 0;
+  for (int i = 0; i < 6; ++i)
+  {
+    const uint64_t vnbi = v & b[i];
+    if (vnbi == 0) {
+      return result;
+    }
+    if (vnbi == b[i])  // All bits set, shift
+    {
+      v >>= S[i];
+      result |= S[i];
+    }
+  }
+
+  return result;
+}
+
+int
+FixedBitVector::FirstBitSet() const {
+  for (int i = 0; i < _nwords; ++i) {
+    if (_bits[i] == 0)
+      continue;
+    return i * 64 + first_bit_set(_bits[i]);
+  }
+  return -1;
 }
 
 }  // namespace fixed_bit_vector

@@ -16,6 +16,8 @@
 #include "iwstring_data_source.h"
 
 using std::cout;
+using std::cerr;
+using std::endl;
 
 static int verbose= 0;
 static int abort_on_error = 0;
@@ -218,9 +220,14 @@ test4 (const char * fname)
   if (0 == random_tests)
     random_tests = nr;
 
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> whole_file_distribution(1, nr - 1);
+  std::uniform_int_distribution<int> zero_to_three(0, 3);
+
+
   for (int i = 0; i < random_tests; i++)
   {
-    int j = intbtwij (0, nr - 1);
+    int j = whole_file_distribution(generator);
 
     size_t o = offset[j];
 
@@ -244,7 +251,7 @@ test4 (const char * fname)
 
 //  Do some more reading so we test reading after a seek
 
-    int kstop = intbtwij (0, 3);
+    int kstop = zero_to_three(generator);
     for (int k = 0; k < kstop; k++)
     {
       (void) input.next_record (buffer);
@@ -401,14 +408,14 @@ do_rx_test (const char * fname, const const_IWSubstring & rx)
   if (verbose)
     cerr << "Input file '" << fname << "' has " << nr << " records\n";
 
-  IW_Regular_Expression iwcrx (rx);
-  if (! iwcrx.ok ())
-  {
+  re2::StringPiece rxs(rx.data(), rx.length());
+  RE2 regex(rxs);
+  if (! regex.ok()) {
     cerr << "Could not compile '" << rx << "'\n";
     return 0;
   }
 
-  int ng = input.grep (iwcrx);
+  int ng = input.grep(regex);
 
   if (verbose)
     cerr << "Found " << ng << " instances of '" << rx << "'\n";

@@ -16,6 +16,9 @@
 
 #include "iwtokeniser.h"
 
+using std::cerr;
+using std::endl;
+
 const char * prog_name = NULL;
 
 static int verbose = 0;

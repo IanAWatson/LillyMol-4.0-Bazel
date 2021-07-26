@@ -10,9 +10,6 @@
 
 #include "Foundational/iwstring/iwstring.h"
 
-using std::cerr;
-using std::endl;
-
 #ifdef IWCYGWIN
 #define IWDIRECTORY_SEPARATOR '\\'
 #else

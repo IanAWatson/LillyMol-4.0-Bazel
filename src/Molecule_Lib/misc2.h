@@ -64,7 +64,7 @@ ReadProtoFile(const const_IWSubstring fname, T& destination)
 
   if (! input.good())
   {
-    cerr << "ReadProtoFile:cannot open '" << fname;
+    std::cerr << "ReadProtoFile:cannot open '" << fname;
     return 0;
   }
 
@@ -81,15 +81,15 @@ ReadProtoFile(const const_IWSubstring fname, T& destination)
 
   if (! google::protobuf::TextFormat::ParseFromString(string_proto, &proto))
   {
-    cerr << "ReadProtoFile:cannot parse proto\n";
-    cerr << string_proto << endl;
+    std::cerr << "ReadProtoFile:cannot parse proto\n";
+    std::cerr << string_proto << '\n';
     return 0;
   }
 
   if (! destination.ConstructFromProto(proto)) 
   {
-    cerr << "ReadProtoFile:cannot build object from proto\n";
-    cerr << proto.ShortDebugString() << endl;
+    std::cerr << "ReadProtoFile:cannot build object from proto\n";
+    std::cerr << proto.ShortDebugString() << '\n';
     return 0;
   }
 

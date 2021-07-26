@@ -18,6 +18,9 @@
 #include "Foundational/iwmisc/iwre2.h"
 #include "iwstring_data_source.h"
 
+using std::cerr;
+using std::endl;
+
 static int
 iw_open_file (const char * fname)
 {

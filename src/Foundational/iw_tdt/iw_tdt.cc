@@ -3,6 +3,9 @@
 #include "Foundational/iwmisc/iwre2.h"
 #include "iw_tdt.h"
 
+using std::cerr;
+using std::endl;
+
 IW_TDT::IW_TDT()
 {
 };

@@ -8,6 +8,9 @@
 #include "Foundational/cmdline_v2/cmdline_v2.h"
 #include "iwdigits.h"
 
+using std::cerr;
+using std::endl;
+
 const char * prog_name = NULL;
 
 static int verbose = 0;

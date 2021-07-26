@@ -43,4 +43,7 @@ cc_binary(
         ":iwstring_data_source",
         "//Foundational/cmdline:iwcmdline",
     ],
+    linkopts = [
+        "-lz",
+    ],
 )

@@ -4,7 +4,7 @@
 #include <cstdint>
 namespace fixed_bit_vector {
 // A BitVector class that only operates on 64 bit words.
-// Minimal functionality.
+// Deliberately minimal functionality. Designed for speed.
 class FixedBitVector {
   protected:
     uint64_t * _bits;
@@ -29,10 +29,27 @@ class FixedBitVector {
     void unset_bit(int b);
     bool is_set(int b);
 
+    // Turn off all bits.
+    void reset();
+
+    // The number of bits set.
     int nset() const;
 
+    // Bits in common with another vector. Must be same size.
     int BitsInCommon(const FixedBitVector& rhs) const;
+
+    // Returns -1 if no bits are set.
+    int FirstBitSet() const;
+    // Returns -1 if all bits are set.
+    int FirstUnsetBit() const;
 };
+
+// Returns the first bit set in a uint64_t. Exposed just for testing.
+// Note that this is not the most significant bit, but the least significant bit.
+int first_bit_set(uint64_t);
+// Returns the first unset bit in a uint64_t. Note that it returns the first
+// unset least significant bit.
+int first_unset_bit(uint64_t);
 
 }  // namespace fixed_bit_vector
 #endif  // FOUNDATIONAL_IWBITS_FIXED_BIT_VECTOR_H

@@ -7,6 +7,9 @@
 #include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwstring/iwstring.h"
 
+using std::cerr;
+using std::endl;
+
 class IW_MMapd_File
 {
   protected:

@@ -150,6 +150,10 @@ extern int include_newlines_in_tdt ();
 */
 
 //#define DEBUG_DATAITEM_VALUE
+#ifdef DEBUG_DATAITEM_VALUE
+using std::cerr;
+using std::endl;
+#endif
 
 template <typename S>
 int
@@ -318,8 +322,8 @@ IW_TDT::set_dataitem_value (const char * tag,
   int i = _find_index_in_end_array (tag, len_tag, which_one);
   if (i < 0)
   {
-    cerr << "IW_TDT::set_dataitem_value:no " << which_one << " instance of ";
-    cerr.write (tag, len_tag) << "' found\n";
+    std::cerr << "IW_TDT::set_dataitem_value:no " << which_one << " instance of ";
+    std::cerr.write (tag, len_tag) << "' found\n";
     return 0;
   }
 

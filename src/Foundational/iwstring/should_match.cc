@@ -8,6 +8,9 @@
 
 #include "should_match.h"
 
+using std::cerr;
+using std::endl;
+
 extern int verbose;
 
 template <typename Char_Type>

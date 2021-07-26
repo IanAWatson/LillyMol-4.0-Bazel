@@ -63,7 +63,7 @@ IWDigits::initialise (int mysize)
 {
   if (! iwaray<IWString>::resize (mysize))
   {
-    cerr << "IWDigits::initialise: cannot size to " << mysize << endl;
+    std::cerr << "IWDigits::initialise: cannot size to " << mysize << '\n';
     return 0;
   }
 

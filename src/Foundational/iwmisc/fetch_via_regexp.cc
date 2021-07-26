@@ -31,7 +31,7 @@ Fetch_via_Regexp::build(Command_Line & cl, const char flag)
 
   if (0 == _n)
   {
-    cerr << "Fetch_via_Regexp::build:no option '" << flag << "' specified\n";
+    std::cerr << "Fetch_via_Regexp::build:no option '" << flag << "' specified\n";
     return 0;
   }
 
@@ -46,7 +46,7 @@ Fetch_via_Regexp::build(Command_Line & cl, const char flag)
     _rx[i] = std::make_unique<re2::RE2>(tmp);
     if (! _rx[i]->ok())
     {
-      cerr << "Fetch_via_Regexp::build:invalid regular expression '" << s << "'\n";
+      std::cerr << "Fetch_via_Regexp::build:invalid regular expression '" << s << "'\n";
       return 0;
     }
   }

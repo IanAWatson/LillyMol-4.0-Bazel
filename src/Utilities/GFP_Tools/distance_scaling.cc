@@ -4,6 +4,9 @@
 
 #include "distance_scaling.h"
 
+using std::cerr;
+using std::endl;
+
 Distance_Scaling::Distance_Scaling()
 {
   _conv = nullptr;

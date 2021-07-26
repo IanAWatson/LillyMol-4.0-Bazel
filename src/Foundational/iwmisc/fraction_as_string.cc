@@ -33,13 +33,13 @@ Fraction_as_String::initialise (float minvl, float maxvl, int digits)
     _nbuckets = 10 * _nbuckets;
   }
 
-//cerr << "Allocating " << _nbuckets << " buckets\n";
+//std::cerr << "Allocating " << _nbuckets << " buckets\n";
 
   _fraction = new IWString[_nbuckets + 1];
 
   if (NULL == _fraction)
   {
-    cerr << "Fraction_as_String::initialise:cannot allocate " << _nbuckets << " string representations\n";
+    std::cerr << "Fraction_as_String::initialise:cannot allocate " << _nbuckets << " string representations\n";
     return 0;
   }
 
@@ -56,7 +56,7 @@ Fraction_as_String::_fill_string_data ()
 {
   assert (NULL != _fraction);
 
-//cerr << "Fraction_as_String:_fill_string_data:leading space '" << _leading_space << "'\n";
+//std::cerr << "Fraction_as_String:_fill_string_data:leading space '" << _leading_space << "'\n";
 
   for (int i = 0; i < _nbuckets; i++)
   {
@@ -81,7 +81,7 @@ Fraction_as_String::_fill_string_data ()
         f << '0';
       }
     }
-//  cerr << " i = " << i << " string '" << _fraction[i] << "'\n";
+//  std::cerr << " i = " << i << " string '" << _fraction[i] << "'\n";
   }
 
   if (_leading_space.length())
@@ -188,7 +188,7 @@ Fraction_as_String::append_to_each_stored_string (const const_IWSubstring & s)
 {
   if (NULL == _fraction)
   {
-    cerr << "Fraction_as_String::append_to_each_stored_string:no strings\n";
+    std::cerr << "Fraction_as_String::append_to_each_stored_string:no strings\n";
     return 0;
   }
 

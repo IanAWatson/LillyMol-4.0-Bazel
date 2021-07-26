@@ -21,7 +21,7 @@ common_write (int fd, const char * s, int nchars)
   if (rc == nchars)
     return 1;
 
-  cerr << "iwstring::common_write: cannot write " << nchars << " bytes to fd " << fd << endl;
+  std::cerr << "iwstring::common_write: cannot write " << nchars << " bytes to fd " << fd << '\n';
 
   return 0;
 }

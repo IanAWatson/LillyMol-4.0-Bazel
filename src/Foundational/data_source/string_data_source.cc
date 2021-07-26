@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <iostream>
 
 #include "string_data_source.h"
 
@@ -89,7 +90,7 @@ String_Data_Source::push_record()
 {
   if (0 == _iptr)
   {
-    cerr << "String_Data_Source::push_record:at beginning\n";
+    std::cerr << "String_Data_Source::push_record:at beginning\n";
     return 0;
   }
 
@@ -119,7 +120,7 @@ String_Data_Source::seekg(off_t o)
 
   if (o > static_cast<off_t>(s))
   {
-    cerr << "String_Data_Source::seekg:cannot seek to " << o << ", len " << strlen(_src) << '\n';
+    std::cerr << "String_Data_Source::seekg:cannot seek to " << o << ", len " << strlen(_src) << '\n';
     return 0;
   }
 

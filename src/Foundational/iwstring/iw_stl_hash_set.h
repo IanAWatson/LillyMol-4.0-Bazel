@@ -21,9 +21,6 @@ using namespace __gnu_cxx;
 #define IW_Hash_Set hash_set
 #endif
 
-using std::cerr;
-using std::endl;
-
 #include "iwstring.h"
 
 #include "iwhash.h"

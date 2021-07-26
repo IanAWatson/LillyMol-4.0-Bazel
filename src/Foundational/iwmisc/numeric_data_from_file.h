@@ -55,7 +55,7 @@ Numeric_Data_From_File<T>::read_data (const const_IWSubstring & fname)
 
   if (! input.good())
   {
-    cerr << "Numeric_Data_From_File::_read_data:cannot open '" << fname << "'\n";
+    std::cerr << "Numeric_Data_From_File::_read_data:cannot open '" << fname << "'\n";
     return 0;
   }
 
@@ -77,8 +77,8 @@ Numeric_Data_From_File<T>::read_data (iwstring_data_source & input)
 
     if (! _read_data_record(buffer))
     {
-      cerr << "Numeric_Data_From_File::_read_data:cannot read data, line " << input.lines_read() << endl;
-      cerr << "'" << buffer << "'\n";
+      std::cerr << "Numeric_Data_From_File::_read_data:cannot read data, line " << input.lines_read() << '\n';
+      std::cerr << "'" << buffer << "'\n";
       return 0;
     }
   }
@@ -95,7 +95,7 @@ Numeric_Data_From_File<T>::_read_data_record (const const_IWSubstring & buffer)
 
   if (! buffer.nextword(id, i))
   {
-    cerr << "Numeric_Data_From_File::_read_data_record:cannot extract identifier\n";
+    std::cerr << "Numeric_Data_From_File::_read_data_record:cannot extract identifier\n";
     return 0;
   }
 
@@ -103,7 +103,7 @@ Numeric_Data_From_File<T>::_read_data_record (const const_IWSubstring & buffer)
 
   if (! buffer.nextword(token, i))
   {
-    cerr << "Numeric_Data_From_File::_read_data_record:not enough tokens\n";
+    std::cerr << "Numeric_Data_From_File::_read_data_record:not enough tokens\n";
     return 0;
   }
 
@@ -111,7 +111,7 @@ Numeric_Data_From_File<T>::_read_data_record (const const_IWSubstring & buffer)
   {
     if (! buffer.word(_column, token))
     {
-      cerr << "Numeric_Data_From_File::_read_data_record:cannot extract column '" << (_column + 1) << " from record\n";
+      std::cerr << "Numeric_Data_From_File::_read_data_record:cannot extract column '" << (_column + 1) << " from record\n";
       return 0;
     }
   }
@@ -123,7 +123,7 @@ Numeric_Data_From_File<T>::_read_data_record (const const_IWSubstring & buffer)
     _header = token;
   else
   {
-    cerr << "Numeric_Data_From_File::_read_data_record:non numeric value '" << token << "', id '" << id << "'\n";
+    std::cerr << "Numeric_Data_From_File::_read_data_record:non numeric value '" << token << "', id '" << id << "'\n";
     return 0;
   }
 
@@ -131,11 +131,11 @@ Numeric_Data_From_File<T>::_read_data_record (const const_IWSubstring & buffer)
     id.remove_leading_chars('0');
   
   if (this->contains(id))
-    cerr << "Duplicate data for '" << id << "', ignored\n";
+    std::cerr << "Duplicate data for '" << id << "', ignored\n";
   else
     (*this)[id] = a;
 
-//cerr << "for id '" << id << "' value '" << activity[id] << "', token '" << token << "'\n";
+//std::cerr << "for id '" << id << "' value '" << activity[id] << "', token '" << token << "'\n";
 
   return 1;
 }

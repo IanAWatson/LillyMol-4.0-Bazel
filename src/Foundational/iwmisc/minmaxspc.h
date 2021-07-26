@@ -73,8 +73,6 @@ template <typename T>  std::ostream &
 
 #include <assert.h>
 #include <iomanip>
-using std::cerr;
-using std::endl;
 
 #include "minmaxspc.h"
 
@@ -107,14 +105,14 @@ Min_Max_Specifier<T>::Min_Max_Specifier (const char * name_for_msi)
 template <typename T>
 Min_Max_Specifier<T>::~Min_Max_Specifier ()
 {
-//cerr << "Deleting Min_Max_Specifier with " << _number_elements << " items, _is_set?" << _is_set << " _match_any? " << _match_any << endl;
+//cerr << "Deleting Min_Max_Specifier with " << _number_elements << " items, _is_set?" << _is_set << " _match_any? " << _match_any << '\n';
 
   if (!ok()) {
-    cerr << "Deleting bad Min_Max_Specifier\n";
-    cerr << _number_elements << " items\n";
-    cerr << _min_val.is_set() << " _min_val.is_set()\n";
-    cerr << _max_val.is_set() << " _max_val.is_set()\n";
-    cerr << _match_any << " _match_any\n";
+    std::cerr << "Deleting bad Min_Max_Specifier\n";
+    std::cerr << _number_elements << " items\n";
+    std::cerr << _min_val.is_set() << " _min_val.is_set()\n";
+    std::cerr << _max_val.is_set() << " _max_val.is_set()\n";
+    std::cerr << _match_any << " _match_any\n";
 
   }
 
@@ -171,19 +169,19 @@ Min_Max_Specifier<T>::debug_print (std::ostream & os) const
     os << " not set.";
   if (_match_any)
     os << " matches all values";
-  os << endl;
+  os << '\n';
 
   if (! ok ())
     os << "Warning, OK fails\n";
 
   T tmp;
   if (_min_val.value (tmp))
-    os << "Minimum value is " << tmp << endl;
+    os << "Minimum value is " << tmp << '\n';
   if (_max_val.value (tmp))
-    os << "Maximum value is " << tmp << endl;
+    os << "Maximum value is " << tmp << '\n';
 
   for (int i = 0; i < _number_elements; i++)
-    os << "Value " << i << " set " << _things[i] << endl;
+    os << "Value " << i << " set " << _things[i] << '\n';
   
   return 1;
 }
@@ -225,7 +223,7 @@ int
 Min_Max_Specifier<T>::add_if_not_already_present(T extra)
 {
   if (iwarchive<T>::contains(extra)) {
-    cerr << "Min_Max_Specifier:add_if_not_already_present:already present\n";
+    std::cerr << "Min_Max_Specifier:add_if_not_already_present:already present\n";
     return 0;
   }
 
@@ -459,7 +457,7 @@ Min_Max_Specifier<T>::initialise (const const_IWSubstring & buffer)
     T v;
     if (! mybuffer.numeric_value (v))
     {
-      cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
+      std::cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
       return 0;
     }
 
@@ -476,7 +474,7 @@ Min_Max_Specifier<T>::initialise (const const_IWSubstring & buffer)
     int m;
     if (! mybuffer.numeric_value (m))
     {
-      cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
+      std::cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
       return 0;
     }
 
@@ -493,7 +491,7 @@ Min_Max_Specifier<T>::initialise (const const_IWSubstring & buffer)
     T v;
     if (! mybuffer.numeric_value (v))
     {
-      cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
+      std::cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
       return 0;
     }
 
@@ -510,7 +508,7 @@ Min_Max_Specifier<T>::initialise (const const_IWSubstring & buffer)
     int m;
     if (! mybuffer.numeric_value (m))
     {
-      cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
+      std::cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
       return 0;
     }
 
@@ -539,14 +537,14 @@ Min_Max_Specifier<T>::initialise (const const_IWSubstring & buffer)
       const_IWSubstring r1, r2;
       if (! token.split(r1, '-', r2) || 0 == r1.length() || 0 == r2.length())
       {
-        cerr << "Min_Max_Specifier::initialise:invalid range specification '" << token << "'\n";
+        std::cerr << "Min_Max_Specifier::initialise:invalid range specification '" << token << "'\n";
         return 0;
       }
 
       T vr1, vr2;
       if (! r1.numeric_value(vr1) || ! r2.numeric_value(vr2) || vr1 > vr2)
       {
-        cerr << "Min_Max_Specifier::initialise:invalid range specification '" << token << "'\n";
+        std::cerr << "Min_Max_Specifier::initialise:invalid range specification '" << token << "'\n";
         return 0;
       }
       while (vr1 <= vr2)    // theoretically T could be float or double type...
@@ -561,7 +559,7 @@ Min_Max_Specifier<T>::initialise (const const_IWSubstring & buffer)
 
       if (! token.numeric_value (m))
       {
-        cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
+        std::cerr << "Min_Max_Specifier::initialise: invalid numeric '" << buffer << "'\n";
         return 0;
       }
 

@@ -5,6 +5,8 @@
 
 #include "iwzlib.h"
 
+using std::cerr;
+
 #ifdef NO_ZLIB
 #else
 
@@ -53,7 +55,7 @@ IW_ZLib_Wrapper::open_file (const char * fname)
   if (NULL == _gzfile)
   {
     int errnum;
-    cerr << "IW_ZLib_Wrapper::open_file:cannot open '" << fname << "' " << gzerror (_gzfile, &errnum) << endl;
+    cerr << "IW_ZLib_Wrapper::open_file:cannot open '" << fname << "' " << gzerror (_gzfile, &errnum) << '\n';
     return 0;
   }
 
@@ -99,7 +101,7 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
 #ifdef DEBUG_NEXT_RECORD
   cerr << "Fetching record\n";
 
-  cerr << "_chars_in_buffer " << _chars_in_buffer << " EOF? " << gzeof(_gzfile) << endl;
+  cerr << "_chars_in_buffer " << _chars_in_buffer << " EOF? " << gzeof(_gzfile) << '\n';
 #endif
 
   if (0 == _chars_in_buffer && gzeof (_gzfile))
@@ -109,9 +111,9 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
   {
 #ifdef DEBUG_NEXT_RECORD
 #if (__GNUC__ >= 6)
-    cerr << "At start of loop _chars_in_buffer = " << _chars_in_buffer << " start " << _start_of_next_record << " gztell64 " << gztell64(_gzfile) << endl;
+    cerr << "At start of loop _chars_in_buffer = " << _chars_in_buffer << " start " << _start_of_next_record << " gztell64 " << gztell64(_gzfile) << '\n';
 #else
-    cerr << "At start of loop _chars_in_buffer = " << _chars_in_buffer << " start " << _start_of_next_record << " gztell " << gztell(_gzfile) << endl;
+    cerr << "At start of loop _chars_in_buffer = " << _chars_in_buffer << " start " << _start_of_next_record << " gztell " << gztell(_gzfile) << '\n';
 #endif
 #endif
 
@@ -180,7 +182,7 @@ IW_ZLib_Wrapper::seekg (z_off_t o)
 {
   assert (NULL != _gzfile);
 
-//cerr << "Seeking to " << o << ", eof? " << gzeof(_gzfile) << endl;
+//cerr << "Seeking to " << o << ", eof? " << gzeof(_gzfile) << '\n';
 
   if (gzeof(_gzfile))
     gzclearerr(_gzfile);
@@ -212,8 +214,8 @@ IW_ZLib_Wrapper::tellg () const
   z_off_t o = gztell(_gzfile);
 #endif
 
-//cerr << "gztell yields " << o << ", buffer contains " << _chars_in_buffer << " start " << _start_of_next_record << endl;
-//cerr << "gztell yields " << static_cast<unsigned int>(o) << ", buffer contains " << _chars_in_buffer << " start " << _start_of_next_record << endl;
+//cerr << "gztell yields " << o << ", buffer contains " << _chars_in_buffer << " start " << _start_of_next_record << '\n';
+//cerr << "gztell yields " << static_cast<unsigned int>(o) << ", buffer contains " << _chars_in_buffer << " start " << _start_of_next_record << '\n';
 
 // Dec 2006. I saw very wierd things. gztell was yielding huge numbers,
 // so, I just cast it back to something reasonable. This is obviously

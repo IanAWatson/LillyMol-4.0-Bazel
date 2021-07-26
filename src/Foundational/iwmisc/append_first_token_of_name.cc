@@ -26,7 +26,7 @@ append_first_token_of_name(const IWString & mname,
 
   if (0 == tmp.length())
   {
-    cerr << "append_first_token_of_name:blank name!\n";
+    std::cerr << "append_first_token_of_name:blank name!\n";
     output << "NONAME";
     return 0;
   }

@@ -35,8 +35,6 @@ class const_IWSubstring;
 #define IW_LOGEXP_LOW_PRIORITY_AND 4
 
 #include <iostream>
-using std::cerr;
-using std::endl;
 
 #include "Foundational/iwaray/iwaray.h"
 #include "set_or_unset.h"

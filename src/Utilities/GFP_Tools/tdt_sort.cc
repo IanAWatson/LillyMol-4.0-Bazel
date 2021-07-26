@@ -15,6 +15,9 @@
 #define IWQSORT_FO_IMPLEMENTATION
 #include "Foundational/iwqsort/iwqsort.h"
 
+using std::cerr;
+using std::endl;
+
 static int verbose = 0;
 
 /*

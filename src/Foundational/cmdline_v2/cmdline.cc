@@ -1,7 +1,11 @@
 #include <stdlib.h>
 
+
 #include "cmdline_v2.h"
 #include "Foundational/iwmisc/misc.h"
+
+using std::cerr;
+using std::endl;
 
 /*
   All the different qualifiers that can follow an option

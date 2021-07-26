@@ -4,8 +4,6 @@
 class const_IWSubstring;
 
 #include <iostream>
-using std::cerr;
-using std::endl;
 
 class IWString;
 

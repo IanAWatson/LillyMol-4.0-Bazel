@@ -21,9 +21,6 @@ using namespace __gnu_cxx;
 #define IW_Hash_Map hash_map
 #endif
 
-using std::cerr;
-using std::endl;
-
 #include "iwstring.h"
 #include "iwhash.h"
 

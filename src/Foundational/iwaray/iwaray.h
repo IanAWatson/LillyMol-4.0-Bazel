@@ -340,9 +340,6 @@ class iwaray
 #include <stdlib.h>
 #include <string.h>
 
-using std::endl;
-using std::cerr;
-
 template <typename T>
 resizable_array_base<T>::resizable_array_base ()
 {
@@ -844,7 +841,7 @@ resizable_array_base<T>::resize (int new_size)
     _things = new T[new_size];
     if (NULL == _things)
     {
-      cerr << "resizable_array_base<T>::resize: malloc failure, size " << new_size << endl;
+      std::cerr << "resizable_array_base<T>::resize: malloc failure, size " << new_size << '\n';
       return 1;
     }
 
@@ -858,7 +855,7 @@ resizable_array_base<T>::resize (int new_size)
 
   if (NULL == new_things)
   {
-    cerr << "resizable_array_base<T>::resize: malloc failure, size " << new_size << endl;
+    std::cerr << "resizable_array_base<T>::resize: malloc failure, size " << new_size << '\n';
     return 1;
   }
 
@@ -922,7 +919,7 @@ resizable_array_p<T>::resize_keep_storage_no_delete (int new_size)
     return 1;
   }
 
-  cerr << "resize_keep_storage_no_delete:new size larger!, currently " << _number_elements << " request " << new_size << ", ignored\n";
+  std::cerr << "resize_keep_storage_no_delete:new size larger!, currently " << _number_elements << " request " << new_size << ", ignored\n";
 
   return 1;
 }
@@ -974,7 +971,7 @@ resizable_array_base<T>::debug_print (std::ostream & os) const
         _number_elements << " used\n";
   
   if (! ok())
-    cerr << "Warning, OK fails, this = " << (void *) this << " magic = " << _magic << endl;
+    std::cerr << "Warning, OK fails, this = " << (void *) this << " magic = " << _magic << '\n';
 
   return ok();
 }
@@ -1427,7 +1424,7 @@ resizable_array_p<T>::operator = (resizable_array_p<T> && other)
   other._number_elements = 0;
   other._elements_allocated = 0;
 
-//cerr << "resizable_array_p::operator = move\n";
+//std::cerr << "resizable_array_p::operator = move\n";
 
   return *this;
 }
@@ -1436,11 +1433,11 @@ template <typename T>
 resizable_array<T> & 
 resizable_array<T>::operator = (resizable_array<T> && other)
 {   
-//cerr << "resizable_array::operator = rvalue\n";
+//std::cerr << "resizable_array::operator = rvalue\n";
   if (NULL != _things)
     delete [] _things;
 
-//cerr << "operator = && called, my size " << _number_elements << " rhs " << other._number_elements << endl;
+//std::cerr << "operator = && called, my size " << _number_elements << " rhs " << other._number_elements << '\n';
 
   _things = other._things;
   _elements_allocated = other._elements_allocated;
@@ -1739,10 +1736,10 @@ resizable_array_base<T>::remove_items (const int * items_to_remove, int nremove)
 
 // Looks like a serious problem
 
-  cerr << "resizable_array_base<T>::remove_items: array not exhausted, WAS IT SORTED?\n";
+  std::cerr << "resizable_array_base<T>::remove_items: array not exhausted, WAS IT SORTED?\n";
   for (int i = 0; i < nremove; i++)
   {
-    cerr << "  " << i << ' ' << items_to_remove[i] << endl;
+    std::cerr << "  " << i << ' ' << items_to_remove[i] << '\n';
   }
 
   abort();
@@ -1783,7 +1780,7 @@ resizable_array_p<T>::remove_items (const int * items_to_remove, int nremove)
     int j = items_to_remove[i];
     if (! this->ok_index(j))
     {
-      cerr << "resizable_array_p<T>::remove_items: cannot remove item " << j << endl;
+      std::cerr << "resizable_array_p<T>::remove_items: cannot remove item " << j << '\n';
       abort();
       return 0;
     }
@@ -1899,7 +1896,7 @@ resizable_array_base<T>::remove_two_items (const T i1, const T i2)
     ndx2 = tmp;
   }
 
-//cerr << " found at " << ndx1 << " and " << ndx2 << endl;
+//std::cerr << " found at " << ndx1 << " and " << ndx2 << '\n';
   for (int i = ndx1; i < ndx2; ++i)
   {
     _things[i] = _things[i+1];

@@ -7,6 +7,9 @@
 
 #include "ematch.h"
 
+using std::cerr;
+using std::endl;
+
 void
 Element_Matcher::_default_values ()
 {

@@ -9,6 +9,9 @@
 
 #include "misc2.h"
 
+using std::cerr;
+using std::endl;
+
 /*
   This file contains miscelaneous functions which cannot go in misc1.cc
   because of misc1 instantiates templates.

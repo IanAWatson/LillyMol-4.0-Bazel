@@ -2,8 +2,6 @@
 #define IW_ARCHIVE1_H
 
 #include <iostream>
-using std::cerr;
-using std::endl;
 
 class msi_object;
 class const_IWSubstring;
@@ -28,7 +26,7 @@ class iwarchive : public resizable_array<T>
     iwarchive (const iwarchive<T> &);
 
     int ok () const;
-    int debug_print (std::ostream & = cerr) const;
+    int debug_print (std::ostream & = std::cerr) const;
 
     int set_match_any (int i);
     int match_any () const { return _match_any;};
@@ -91,7 +89,7 @@ iwarchive<T>::debug_print(std::ostream & os) const
   
   for (int i = 0; i < _number_elements; i++)
   {
-    os << "Item " << i << " will match " << _things[i] << endl;
+    os << "Item " << i << " will match " << _things[i] << '\n';
   }
 
   return 1;
@@ -105,7 +103,7 @@ iwarchive<T>::set_match_any(int i)
     return _match_any = i;
 
   if (_number_elements)    // should be fatal, ok() will fail
-    cerr << "iwarchive<T>::set_match_any: warning, " << _number_elements << " values present\n";
+    std::cerr << "iwarchive<T>::set_match_any: warning, " << _number_elements << " values present\n";
 
   return _match_any = i;
 }
@@ -192,7 +190,7 @@ iwarchive<T>::specification_from_string(const const_IWSubstring & s)
     T v;
     if (! token.numeric_value(v))
     {
-      cerr << "iwarchive::specification_from_string:invalid numeric '" << token << "'\n";
+      std::cerr << "iwarchive::specification_from_string:invalid numeric '" << token << "'\n";
       return 0;
     }
 
@@ -220,8 +218,8 @@ iwarchive<T>::add_values_from_msi_object(const msi_object * msi,
     T x;
     if (! msi_attribute->value(x))
     {
-      cerr << "iwarchive<T>::add_values_from_msi_object: invalid value " <<
-             (*msi_attribute) << endl;
+      std::cerr << "iwarchive<T>::add_values_from_msi_object: invalid value " <<
+             (*msi_attribute) << '\n';
       return 0;
     }
 

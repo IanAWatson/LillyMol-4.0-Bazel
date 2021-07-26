@@ -22,9 +22,6 @@
 #include <vector>
 #include <string>
 
-using std::cerr;
-using std::endl;
-
 #if defined (__STRING__) || defined (_CPP_STRING) || defined (_IOSTREAM_) || defined (__STD_IOSTREAM__) || defined (_STLP_IOSTREAM) || defined (_GLIBCXX_STRING)
 #define IW_STD_STRING_DEFINED 1
 #endif
@@ -1180,7 +1177,7 @@ const_IWSubstring::split_into_directive_and_value (const_IWSubstring & directive
 
   if (! nextword (directive, i, separator))
   {
-    cerr << "IWString::split_into_directive_and_value:cannot split directive on '" << separator << "'\n";
+    std::cerr << "IWString::split_into_directive_and_value:cannot split directive on '" << separator << "'\n";
     return 0;
   }
 
@@ -1188,14 +1185,14 @@ const_IWSubstring::split_into_directive_and_value (const_IWSubstring & directive
 
   if (! nextword (tmp, i, separator))
   {
-    cerr << "const_IWSubstring::split_into_directive_and_value:cannot split value on '" << separator << "'\n";
+    std::cerr << "const_IWSubstring::split_into_directive_and_value:cannot split value on '" << separator << "'\n";
     return 0;
   }
 
   if (tmp.numeric_value (v))
     return 1;
 
-  cerr << "const_IWSubstring::split_into_directive_and_value:invalid numeric '" << tmp << "'\n";
+  std::cerr << "const_IWSubstring::split_into_directive_and_value:invalid numeric '" << tmp << "'\n";
   return 0;
 }
 

@@ -9,6 +9,8 @@
 #include "logical_expression.h"
 #include "set_or_unset.h"
 
+using std::cerr;
+
 /*
   Results will be stored as 0 and 1's. We need a special value which
   means missing or unknown value. The expression cannot be evaluated
@@ -145,7 +147,7 @@ IW_Logical_Expression::debug_print(std::ostream & os) const
       os << char_ops[_operator[i]];
   }
 
-  os << endl;
+  os << '\n';
 
   if (NULL != _first_low_priority_and_grouping)
     _first_low_priority_and_grouping->debug_print(os);
@@ -254,7 +256,7 @@ IW_Logical_Expression::add_operator(int op)
     ;
   else
   {
-    cerr << "IW_Logical_Expression::add_operator: invalid operator " << op << endl;
+    cerr << "IW_Logical_Expression::add_operator: invalid operator " << op << '\n';
     abort();
     return 0;
   }
@@ -327,7 +329,7 @@ IW_Logical_Expression::set_all_operators(int op)
   if (IW_LOGEXP_LOW_PRIORITY_AND == op)
     return _set_all_operators(op);
 
-  cerr << "IW_Logical_Expression::_set_all_operators: what operator is this " << op << endl;
+  cerr << "IW_Logical_Expression::_set_all_operators: what operator is this " << op << '\n';
   return 0;
   
 }
@@ -376,7 +378,7 @@ IW_Logical_Expression::all_operators_are(int op) const
   if (IW_LOGEXP_LOW_PRIORITY_AND == op)
     return _all_operators_are(op);
 
-  cerr << "IW_Logical_Expression::all_operators_are: what operator is this " << op << endl;
+  cerr << "IW_Logical_Expression::all_operators_are: what operator is this " << op << '\n';
   return 0;
 }
 
@@ -408,7 +410,7 @@ IW_Logical_Expression::evaluate(int & zresult)
     if (IW_LOGEXP_UNKNOWN_RESULT == _things[0])
       return 0;
 
-//  cerr << "What about " << _unary_operator[0] << " and " << _things[0] << endl;
+//  cerr << "What about " << _unary_operator[0] << " and " << _things[0] << '\n';
     zresult = _things[0];
     return 1;
   }
@@ -539,7 +541,7 @@ IW_Logical_Expression::_evaluate_single_operator(int & zresult)
   }
   else
   {
-    cerr << "IW_Logical_Expression::_evaluate_single_operator: what kind of operator is this " << _operator[0] << endl;
+    cerr << "IW_Logical_Expression::_evaluate_single_operator: what kind of operator is this " << _operator[0] << '\n';
     abort();
   }
 
@@ -571,7 +573,7 @@ IW_Logexp_AND_Grouping::debug_print(std::ostream & os) const
 
   int zresult;
   if (_result.value(zresult))
-    os << zresult << endl;
+    os << zresult << '\n';
   else
     os << "unknown\n";
 
@@ -608,7 +610,7 @@ IW_Logexp_AND_Grouping::initialise(const resizable_array<int> & the_operators,
   assert (_n < 0);    // must not have been initialised before
 
 #ifdef DEBUG_AND_GROUP_INITIALISE
-  cerr << "Initialising high priority AND on " << the_operators.number_elements() << " operators, istart = " << istart << endl;
+  cerr << "Initialising high priority AND on " << the_operators.number_elements() << " operators, istart = " << istart << '\n';
 #endif
 
   _istart = istart;
@@ -643,7 +645,7 @@ IW_Logexp_AND_Grouping::evaluate(int * zresults,
 #ifdef DEBUG_AND_GROUP_EVALUATE
   cerr << "Evaluating and group starting at " << _istart;
   if (_result.value(zresult))
-    cerr << ". Result " << zresult << endl;
+    cerr << ". Result " << zresult << '\n';
   else
     cerr << ". Result unknown\n";
 #endif
@@ -656,7 +658,7 @@ IW_Logexp_AND_Grouping::evaluate(int * zresults,
   for (int i = _istart; i < _istart + _n; i++)
   {
 #ifdef DEBUG_AND_GROUP_EVALUATE
-    cerr << "Result " << i << " is " << zresults[i] << endl;
+    cerr << "Result " << i << " is " << zresults[i] << '\n';
 #endif
 
     if (0 == zresults[i])
@@ -687,7 +689,7 @@ void
 IW_Logexp_AND_Grouping::_mark_remaining_results_not_needed(int * zresults, int istart) const
 {
   int istop = _istart + _n;
-//cerr << "Marking results from " << istart << " to " << istop << " _n = " << _n << endl;
+//cerr << "Marking results from " << istart << " to " << istop << " _n = " << _n << '\n';
 
   while (istart < istop)
   {
@@ -741,7 +743,7 @@ IW_Logexp_Low_Priority_and_Grouping::debug_print(std::ostream & os) const
 
   int zresult;
   if (_result.value(zresult))
-    os << zresult << endl;
+    os << zresult << '\n';
   else
     os << " unknown\n";
 
@@ -788,7 +790,7 @@ IW_Logexp_Low_Priority_and_Grouping::initialise(const resizable_array<int> & the
   assert (NULL == _next);
 
 #if defined(DEBUG_LOW_PRIORITY_AND_G_INITIALISE)
-  cerr << "Initialising low priority and grouping with " << the_operators.number_elements() << " operators, istart = " << istart << endl;
+  cerr << "Initialising low priority and grouping with " << the_operators.number_elements() << " operators, istart = " << istart << '\n';
 #endif
 
   _istart = istart;
@@ -808,7 +810,7 @@ IW_Logexp_Low_Priority_and_Grouping::initialise(const resizable_array<int> & the
     }
 
 #ifdef DEBUG_LOW_PRIORITY_AND_G_INITIALISE
-    cerr << "And group consumed " << current->number_results() << " results, istart = " << istart << endl;
+    cerr << "And group consumed " << current->number_results() << " results, istart = " << istart << '\n';
 #endif
 
     if (istart > nop)
@@ -827,7 +829,7 @@ IW_Logexp_Low_Priority_and_Grouping::initialise(const resizable_array<int> & the
   _n = istart - _istart;
 
 #if defined(DEBUG_LOW_PRIORITY_AND_G_INITIALISE)
-  cerr << "At end, istart = " << istart << ", nop = " << nop << ", n = " << _n << endl;
+  cerr << "At end, istart = " << istart << ", nop = " << nop << ", n = " << _n << '\n';
 #endif
 
   if (istart > nop)
@@ -847,7 +849,7 @@ IW_Logexp_Low_Priority_and_Grouping::evaluate(int * the_results,
 #ifdef DEBUG_LOW_P_AND_EVALUATE
   cerr << "Checking lpand grouping starting at " << _istart;
   if (_result.value(zresult))    // already determined
-    cerr << " already determined " << zresult << endl;
+    cerr << " already determined " << zresult << '\n';
   else
     cerr << " unknown\n";
 #endif
@@ -866,7 +868,7 @@ IW_Logexp_Low_Priority_and_Grouping::evaluate(int * the_results,
     int tmpresult;
 
 #ifdef DEBUG_LOW_P_AND_EVALUATE
-    cerr << "Trying to evaluate AND group at " << current->istart() << endl;
+    cerr << "Trying to evaluate AND group at " << current->istart() << '\n';
 #endif
 
     if (! current->evaluate(the_results, tmpresult))    // cannot be evaluated yet

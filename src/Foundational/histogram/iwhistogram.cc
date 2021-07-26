@@ -7,6 +7,9 @@
 
 #include "iwhistogram.h"
 
+using std::cerr;
+using std::endl;
+
 IWHistogram::IWHistogram ()
 {
   _min = _max = _dx = 0.0;

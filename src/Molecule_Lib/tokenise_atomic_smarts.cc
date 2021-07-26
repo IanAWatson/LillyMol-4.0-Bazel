@@ -4,6 +4,9 @@
 #include "Foundational/iwmisc/logical_expression.h"
 #include "tokenise_atomic_smarts.h"
 
+using std::cerr;
+using std::endl;
+
 Atomic_Smarts_Component::Atomic_Smarts_Component ()
 {
   _unary_operator = 1;         // the default

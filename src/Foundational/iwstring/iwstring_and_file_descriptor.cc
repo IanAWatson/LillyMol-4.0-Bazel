@@ -12,6 +12,9 @@
 
 #include "iwstring.h"
 
+using std::cerr;
+using std::endl;
+
 IWString_and_File_Descriptor::IWString_and_File_Descriptor()
 {
   _fd = -9;

@@ -13,6 +13,9 @@
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 
+using std::cerr;
+using std::endl;
+
 const char * prog_name = NULL;
 
 static int verbose = 0;

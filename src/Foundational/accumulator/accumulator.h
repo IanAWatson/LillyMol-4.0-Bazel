@@ -3,9 +3,6 @@
 
 #include <iostream>
 
-using std::cerr;
-using std::endl;
-
 #include "Foundational/iwstring/iwstring.h"
 
 #include "kahan_sum.h"
@@ -309,12 +306,12 @@ Accumulator_Base<T, SUMMER>::subtract_data (const Accumulator_Base<T, SUMMER> & 
     ;
   else if (zresult._x2sum > -1.0e-06)     // probably just roundoff errors
   {
-    cerr << "Accumulator::subtract_data: trimming possible roundoff error " << zresult._x2sum << endl;
+    std::cerr << "Accumulator::subtract_data: trimming possible roundoff error " << zresult._x2sum << '\n';
     zresult._x2sum = 0.0;
   }
   else
   {
-    cerr << "Accumulator::subtract_data: invalid x2sum\n";
+    std::cerr << "Accumulator::subtract_data: invalid x2sum\n";
     abort ();
   }
 
@@ -349,7 +346,7 @@ Accumulator<T>::variance ()
 
   if (rc < 0.0)   // presumably some roundoff
   {
-//  cerr << "Accumulator::variance: Warning, negative variance intermediate " << tmp << endl;
+//  std::cerr << "Accumulator::variance: Warning, negative variance intermediate " << tmp << '\n';
 
     return 0.0;
   }
@@ -370,7 +367,7 @@ Accumulator_Base<T, SUMMER>::variance () const
 
   if (rc < 0.0)   // presumably some roundoff
   {
-//  cerr << "Accumulator::variance: Warning, negative variance intermediate " << tmp << endl;
+//  std::cerr << "Accumulator::variance: Warning, negative variance intermediate " << tmp << '\n';
 
     return 0.0;
   }
@@ -444,7 +441,7 @@ Accumulator_Base<T, SUMMER>::average_if_available_minval_if_not () const
   if (_n > 0)
     return _minval;
 
-  cerr << "Accumulator_Base::average_if_available_minval_if_not: no data!\n";
+  std::cerr << "Accumulator_Base::average_if_available_minval_if_not: no data!\n";
   return 0.0;
 }
 

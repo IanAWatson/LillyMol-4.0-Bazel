@@ -124,7 +124,7 @@ Report_Progress_Template<T>::initialise(C & cl, char flag, int verbose)
     }
     else if (! cl.value(flag, _report_every) || 0 == _report_every)
     {
-      cerr << "Report_Progress::initialise:the report every option (-" << flag << ") must be a whole +ve number\n";
+      std::cerr << "Report_Progress::initialise:the report every option (-" << flag << ") must be a whole +ve number\n";
       return 0;
     }
   }
@@ -132,7 +132,7 @@ Report_Progress_Template<T>::initialise(C & cl, char flag, int verbose)
   _report_next = _report_every;
 
   if (verbose)
-    cerr << "Will report progress every " << _report_every << " items\n";
+    std::cerr << "Will report progress every " << _report_every << " items\n";
 
   return 1;
 }

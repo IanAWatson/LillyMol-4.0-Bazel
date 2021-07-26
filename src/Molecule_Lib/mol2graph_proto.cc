@@ -5,6 +5,9 @@
 #include "Molecule_Lib/mol2graph.h"
 #include "Molecule_Lib/mol2graph.pb.h"
 
+using std::cerr;
+using std::endl;
+
 int BuildMol2Graph(Command_Line & cl, const char flag, const int verbose,
         LLYMol::Mol2Graph& destination) {
 
