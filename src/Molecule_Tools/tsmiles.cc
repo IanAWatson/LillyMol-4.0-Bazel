@@ -33,6 +33,8 @@ int reduce_to_largest_fragment = 0;
 
 int remove_chirality = 0;
 
+int consider_chirality_in_unique_smiles = 1;
+
 Molecule_Output_Object stream_for_failures;
 
 Chemical_Standardisation chemical_standardisation;
@@ -47,6 +49,8 @@ usage(int rc) {
   cerr << "  -F <fname>     write failed molecules to <fname>\n";
   cerr << "  -q             do NOT display failure messages\n";
   cerr << "  -l             reduce to largest fragment\n";
+  cerr << "  -c             remove chirality from incoming molecules\n";
+  cerr << "  -C             exclude chirality from the unique smiles determination\n";
   cerr << "  -v             verbose output\n";
   exit(rc);
 }
@@ -69,7 +73,8 @@ preprocess(Molecule& m) {
 void
 make_report(std::ostream & output) {
   output << "Read " << molecules_read << " molecules, " << failures << " failures\n";
-  output << "Skipped " << molecules_containing_unmarked_chirality << " molecules containing unmarked chirality\n";
+  if (molecules_containing_unmarked_chirality > 0)
+    output << "Skipped " << molecules_containing_unmarked_chirality << " molecules containing unmarked chirality\n";
 }
 
 int
@@ -122,6 +127,10 @@ tsmiles(Molecule& m) {
       cerr << "Cannot parse smiles '" << rsmi << "' from " << m.name() << '\n';
       return 0;
     }
+    if (verbose > 2) {
+      cerr << "tsmiles i = " << i << ' ';
+      write_atom_map_number_labelled_smiles(mcopy, false, cerr) << '\n';
+    }
     if (mcopy.unique_smiles() == initial_smiles) {
       continue;
     }
@@ -173,7 +182,7 @@ tsmiles(const char * fname,
 }
 
 int tsmiles(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vA:l:g:K:i:r:p:qF:c");
+  Command_Line cl(argc, argv, "vA:l:g:K:i:r:p:qF:cCs:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     usage(1);
@@ -207,11 +216,31 @@ int tsmiles(int argc, char** argv) {
 
   if (cl.option_present('g'))
   {
-    if(! chemical_standardisation.construct_from_command_line(cl, verbose))
+    if(! chemical_standardisation.construct_from_command_line(cl, verbose > 2))
     {
       cerr << "Cannot parse -g option\n";
       return 61;
     }
+  }
+
+  if (cl.option_present('p')) {
+    if (! cl.value('p', permutations) || permutations <= 0) {
+      cerr << "The number of permutations (-p) must be a whole +ve number\n";
+      usage(1);
+    }
+    if (verbose)
+      cerr << "Will perform " << permutations << " permutations on each molecule\n";
+  }
+
+  if (cl.option_present('s')) {
+    uint32_t seed;
+    if (! cl.value('s', seed)) {
+      cerr << "The -s option needs a valid int\n";
+      usage(1);
+    }
+    set_smiles_random_number_seed(seed);
+    if (verbose)
+      cerr << "Using seed " << seed << '\n';
   }
 
   if (cl.option_present('r')) {
@@ -232,6 +261,13 @@ int tsmiles(int argc, char** argv) {
     remove_chirality = 1;
     if (verbose)
       cerr << "Chirality removed from molecules\n";
+  }
+
+  if (cl.option_present('C')) {
+    consider_chirality_in_unique_smiles = 0;
+    if (verbose)
+      cerr << "Chirality not included in unique smiles determination\n";
+    set_include_chiral_info_in_smiles(0);
   }
 
   if (cl.empty()) {
