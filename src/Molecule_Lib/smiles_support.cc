@@ -728,7 +728,8 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
 // excluding chirality from smiles, so we need to fetch the value again
 
   int ihknown = a->implicit_hydrogens_known();
-  if (! _include_chiral_info_in_smiles && ihknown && (NULL != chiral_centre_at_atom(zatom)) && hcount < 0 && 0 == a->formal_charge() && 0 == a->isotope() && e->organic())
+  if (! _include_chiral_info_in_smiles && ihknown && (NULL != chiral_centre_at_atom(zatom)) &&
+      hcount < 0 && 0 == a->formal_charge() && 0 == a->isotope() && e->organic())
     ihknown = 0;
 
   int need_to_close_square_bracket = 0;
