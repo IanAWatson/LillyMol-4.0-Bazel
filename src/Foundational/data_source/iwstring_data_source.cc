@@ -1822,11 +1822,15 @@ iwstring_data_source::is_pipe() const
   if (! is_open())
     return 0;
 
+  if (_gzfile.active()) {
+    return 0;
+  }
+
   struct stat s;
 
   const auto rc = fstat(_fd, &s);
   if (rc < 0) {
-    cerr << "iwstring_data_source::is_open:fstat failed " << rc << endl;
+    cerr << "iwstring_data_source::is_pipe:fstat failed " << rc << endl;
     return 0;
   }
 

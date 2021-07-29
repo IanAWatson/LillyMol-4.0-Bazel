@@ -35,7 +35,7 @@ IW_ZLib_Wrapper::~IW_ZLib_Wrapper ()
     gzclose (_gzfile);
 
   if (NULL != _buffer)
-    delete _buffer;
+    delete [] _buffer;
   
   return;
 }
