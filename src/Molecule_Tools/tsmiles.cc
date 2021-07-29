@@ -35,6 +35,8 @@ int remove_chirality = 0;
 
 int consider_chirality_in_unique_smiles = 1;
 
+int try_explicit_hydrogen_variant = 0;
+
 Molecule_Output_Object stream_for_failures;
 
 Chemical_Standardisation chemical_standardisation;
@@ -51,6 +53,8 @@ usage(int rc) {
   cerr << "  -l             reduce to largest fragment\n";
   cerr << "  -c             remove chirality from incoming molecules\n";
   cerr << "  -C             exclude chirality from the unique smiles determination\n";
+  cerr << "  -h             after testing each molecules, make hydrogens explicit and retest\n";
+  cerr << "  -b             use legacy uniqueness determination\n";
   cerr << "  -v             verbose output\n";
   exit(rc);
 }
@@ -155,6 +159,10 @@ tsmiles(data_source_and_type<Molecule>& input) {
     molecules_read++;
     preprocess(*m);
     tsmiles(*m);
+    if (try_explicit_hydrogen_variant) {
+      m->make_implicit_hydrogens_explicit();
+      tsmiles(*m);
+    }
     if (report_progress()) {
       make_report(cerr);
     }
@@ -182,7 +190,7 @@ tsmiles(const char * fname,
 }
 
 int tsmiles(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vA:l:g:K:i:r:p:qF:cCs:");
+  Command_Line cl(argc, argv, "vA:l:g:K:i:r:p:qF:hcCs:b");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     usage(1);
@@ -250,6 +258,12 @@ int tsmiles(int argc, char** argv) {
     }
   }
 
+  if (cl.option_present('b')) {
+    set_unique_smiles_legacy_atom_ordering(1);
+    if (verbose)
+      cerr << "Will use legacy atom ordering in unique determination\n";
+  }
+
   if (cl.option_present('q')) {
     display_error_messages = 0;
 
@@ -268,6 +282,12 @@ int tsmiles(int argc, char** argv) {
     if (verbose)
       cerr << "Chirality not included in unique smiles determination\n";
     set_include_chiral_info_in_smiles(0);
+  }
+
+  if (cl.option_present('h')) {
+    try_explicit_hydrogen_variant = 1;
+    if (verbose)
+      cerr << "Will test an explicit Hydrogen variant of each input molecule\n";
   }
 
   if (cl.empty()) {

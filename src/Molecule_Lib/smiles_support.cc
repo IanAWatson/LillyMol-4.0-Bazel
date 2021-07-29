@@ -257,7 +257,6 @@ display_all_smiles_options (char flag, std::ostream & os)
   os << "  -" << flag << " noD         do NOT include the D operator in smarts generated\n";
   os << "  -" << flag << " iso01       when computing unique smiles, isotopes are zero or non zero\n";
   os << "  -" << flag << " rcsbd       include directionality in ring closure single bonds\n";
-  os << "  -" << flag << " usv2        use faster, but incompatible unique smiles determination\n";
   os << "  -" << flag << " nd4h        four connected neutral Nitrogen atoms have a Hydrogen\n";
   os << "  -" << flag << " fcnum       write formal charges as +[number] rather than ++\n";
 
@@ -369,10 +368,6 @@ process_standard_smiles_options (Command_Line & cl, int verbose,
     else if ("rcsbd" == tmp)
     {
       set_include_directionality_in_ring_closure_bonds(1);
-    }
-    else if ("usv2" == tmp)
-    {
-      set_unique_determination_version(2);
     }
     else if ("nd4h" == tmp)
     {

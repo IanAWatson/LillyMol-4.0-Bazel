@@ -339,6 +339,7 @@ class iwaray
 
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 
 template <typename T>
 resizable_array_base<T>::resizable_array_base ()
@@ -410,13 +411,10 @@ resizable_array<T>::resizable_array (int n, const T initialiser)
     
   this->resize(n);
 
-  for (int i = 0; i < _elements_allocated; i++)
-  {
-    _things[i] = initialiser;
-  }
-                                
   _number_elements = _elements_allocated;
 
+  std::fill_n(_things, _number_elements, initialiser);
+                                
   return;
 }
 

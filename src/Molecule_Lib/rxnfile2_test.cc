@@ -23,6 +23,7 @@ class TestReactionStringRep : public testing::Test
 void
 TestReactionStringRep::SetUp()
 {
+  set_unique_smiles_legacy_atom_ordering(1);
   return;
 }
 

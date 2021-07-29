@@ -7,6 +7,7 @@
 #include "google/protobuf/text_format.h"
 
 #include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/smiles.h"
 
 #include "iwreaction.h"
 
@@ -41,6 +42,7 @@ void
 TestReaction::SetUp()
 {
   set_global_aromaticity_type(Daylight);
+  set_unique_smiles_legacy_atom_ordering(1);
   interpret_d_as_deuterium();
 }
 

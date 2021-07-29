@@ -680,6 +680,22 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "unique_test",
+    srcs = ["unique_test.cc"],
+    timeout = "short",
+    deps = [
+        ":iwmolecule",
+        ":iwreaction",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
 cc_library(
     name = "iwmfingerprint",
     srcs = [

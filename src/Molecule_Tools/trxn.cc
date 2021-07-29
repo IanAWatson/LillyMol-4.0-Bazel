@@ -1580,11 +1580,6 @@ trxn (int argc, char ** argv)
         if (verbose)
           cerr << "In smirks, lost atoms mean remove fragment\n";
       }
-      else if (j == "usv2") {
-        set_unique_determination_version(2);
-        if (verbose)
-          cerr << "Using version 2 unique smiles\n";
-      }
       else 
       {
         cerr << "Unrecognised -J qualifier '" << j << "'\n";

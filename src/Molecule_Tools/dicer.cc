@@ -6433,7 +6433,6 @@ display_misc_B_options (std::ostream & os)
   os << " -B flush          flush output after each molecule\n";
   os << " -B lostchiral     check each fragment for lost chirality\n";
   os << " -B recap          work like Recap - break all breakable bonds at once\n";
-  os << " -B fusmi          use a faster unique smiles determination - but incompatible with default\n";
   os << " -B help           this message\n";
 
   exit(3);
@@ -7037,10 +7036,6 @@ dicer (int argc, char ** argv)
         work_like_recap = 1;
         if (verbose)
           cerr << "Will work like Recap\n";
-      }
-      else if ("fusmi" == b)
-      {
-        set_unique_determination_version(2);
       }
       else if("help" == b)
       {

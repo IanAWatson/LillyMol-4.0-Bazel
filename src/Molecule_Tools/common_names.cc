@@ -612,8 +612,6 @@ common_names(int argc, char ** argv)
       return 5;
     }
   }
-  else
-    set_unique_determination_version(2);
 
   if (! process_elements(cl, verbose, 'E'))
   {

@@ -537,8 +537,6 @@ unique_molecule(int argc, char** argv)
       return 5;
     }
   }
-  else
-    set_unique_determination_version(2);
 
   if (cl.option_present('n'))
   {

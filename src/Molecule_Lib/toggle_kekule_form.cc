@@ -961,11 +961,9 @@ Toggle_Kekule_Form::_process_single_ring (Molecule & m,
   {
     atom_number_t atom1 = embedding[_bond[i]->a1()];
     atom_number_t atom2 = embedding[_bond[i]->a2()];
-    bond_type_t previous_bond;
     
     if (rid == process_these[atom1]  && rid == process_these[atom2])
     {
-      previous_bond = _bond[i]->btype();
       astart1 = atom1;
       astart2 = atom2;
       break;

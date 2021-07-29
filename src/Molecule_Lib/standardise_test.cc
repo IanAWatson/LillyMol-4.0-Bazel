@@ -3,8 +3,9 @@
 #include "googletest/include/gtest/gtest.h"
 
 #include "aromatic.h"
-#include "standardise.h"
 #include "molecule.h"
+#include "smiles.h"
+#include "standardise.h"
 
 namespace {
 
@@ -26,6 +27,7 @@ void
 TestStandardisation::SetUp()
 {
   set_global_aromaticity_type(Daylight);
+  set_unique_smiles_legacy_atom_ordering(true);
 }
 
 TEST_F(TestStandardisation, EmptyMolecule)

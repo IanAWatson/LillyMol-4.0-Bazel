@@ -73,7 +73,7 @@ extern int  include_isotopic_information_in_unique_smiles ();
 
 extern void set_include_directional_bonding_information_in_unique_smiles (int s);
 
-extern void set_unique_determination_version(const int s);
+extern void set_unique_smiles_legacy_atom_ordering(int s);
 
 extern void set_include_implicit_hydrogens_on_aromatic_n_and_p (int);
 
