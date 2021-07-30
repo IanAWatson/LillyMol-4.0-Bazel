@@ -2,6 +2,8 @@ syntax = "proto2";
 
 package SubstructureSearch;
 
+import "Molecule_Lib/geometric_constraints.proto";
+
 // Many of these protos fairly closely match correspondingly named
 // classes in the C++ code.
 

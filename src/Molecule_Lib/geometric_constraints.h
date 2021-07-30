@@ -1,0 +1,194 @@
+#ifndef MOLECULE_LIB_GEOMETRIC_CONSTRAINTS_H
+#define MOLECULE_LIB_GEOMETRIC_CONSTRAINTS_H
+// Geometry matching conditions.
+
+#include "molecule.h"
+#include "Molecule_Lib/geometric_constraints.pb.h"
+
+namespace geometric_constraints {
+
+class AllowedRange {
+  private:
+    float _min_value;
+    float _max_value;
+  public:
+    AllowedRange();
+
+    int BuildFromProto(const GeometricConstraints::Range& proto);
+
+    // Is this initialised?
+    int Active() const {
+      return _min_value <= _max_value;
+    }
+
+    int set_range(float d1, float d2) {
+      _min_value = d1;
+      _max_value = d2;
+      return 1;
+    }
+
+    int Matches(float x) const {
+      return x >= _min_value && x <= _max_value;
+    }
+
+    friend std::ostream& operator<< (std::ostream& output, const AllowedRange& arange);
+};
+
+// Classes for matching geometric constraints. They are all very similar.
+// All contain a Matches method that has two signatures.
+// The two Matches function differ in how the atom numbers (_a1, _a2...) are interpreted.
+// Without an embedding, the atom numbers are just atom numbers in the molecule.
+// With an embedding, they are matched atom numbers from the embedding.
+// Note too that the Active methods just check the first of the atom numbers for
+// validity.
+// The IsValid method provides more expensive checking.
+
+// Class specifying a geometric distance between atoms constraint.
+class DistanceConstraint {
+  private:
+    int _a1;
+    int _a2;
+    AllowedRange _allowed_range;
+
+  public:
+    DistanceConstraint();
+
+    int BuildFromProto(const GeometricConstraints::Distance& proto);
+
+    int Active() const {
+      return _allowed_range.Active() && _a1 >= 0;
+    }
+
+    int IsValid() const;
+
+    int set_atoms(int s1, int s2) {
+      _a1 = s1;
+      _a2 = s2;
+      return 1;
+    }
+
+    int set_range(float d1, float d2) {
+      return _allowed_range.set_range(d1, d2);
+    }
+
+    int Matches(const Molecule& m);
+    int Matches(const Molecule& m, const Set_of_Atoms& embedding);
+
+    friend std::ostream& operator<< (std::ostream& output, const DistanceConstraint& constraint);
+};
+
+// Class specifying constaints on a bond angle.
+class BondAngleConstraint {
+  private:
+    int _a1;
+    int _a2;
+    int _a3;
+
+    AllowedRange _allowed_range;
+  public:
+    BondAngleConstraint();
+
+    int BuildFromProto(const GeometricConstraints::BondAngle& proto);
+
+    int Active() const {
+      return _allowed_range.Active() && _a1 >= 0;
+    }
+
+    int IsValid() const;
+
+    int set_atoms(int s1, int s2, int s3) {
+      _a1 = s1;
+      _a2 = s2;
+      _a3 = s3;
+      return 1;
+    }
+
+    int set_range_in_degrees(float mn, float mx) {
+      return _allowed_range.set_range(iwmisc::Deg2Rad(mn), iwmisc::Deg2Rad(mx));
+    }
+    int set_range_in_radians(float mn, float mx) {
+      return _allowed_range.set_range(mn, mx);
+    }
+
+    int Matches(const Molecule& m);
+    int Matches(const Molecule& m, const Set_of_Atoms& embedding);
+
+    friend std::ostream& operator<< (std::ostream& output, const BondAngleConstraint& constraint);
+};
+
+// Class specifying constaints on a torsion angle.
+class TorsionAngleConstraint {
+  private:
+    int _a1;
+    int _a2;
+    int _a3;
+    int _a4;
+
+    AllowedRange _allowed_range;
+  public:
+    TorsionAngleConstraint();
+
+    int BuildFromProto(const GeometricConstraints::TorsionAngle& proto);
+
+    int Active() const {
+      return _allowed_range.Active() && _a1 >= 0;
+    }
+
+    int IsValid() const;
+
+    int set_atoms(int s1, int s2, int s3, int s4) {
+      _a1 = s1;
+      _a2 = s2;
+      _a3 = s3;
+      _a4 = s4;
+      return 1;
+    }
+
+    int set_range_in_degrees(float mn, float mx) {
+      return _allowed_range.set_range(iwmisc::Deg2Rad(mn), iwmisc::Deg2Rad(mx));
+    }
+    int set_range_in_radians(float mn, float mx) {
+      return _allowed_range.set_range(mn, mx);
+    }
+
+    int Matches(const Molecule& m);
+    int Matches(const Molecule& m, const Set_of_Atoms& embedding);
+
+    friend std::ostream& operator<< (std::ostream& output, const TorsionAngleConstraint& constraint);
+};
+
+// A common situation is to have an arbitrary number of constraints of different kinds.
+// The _number_to_match parameter governs matching.
+// it specifies the number of queries must match - set to the sum of
+// distance + angle + torsion conditions to force all to match.
+// Set to 1 for an 'or' type match. But note that there is no ability to 
+// force matching at least one item from each type of constraint.
+class SetOfGeometricConstraints {
+  private:
+    // Whether or not any data is in here.
+    int _active;
+
+    resizable_array_p<DistanceConstraint> _distances;
+    resizable_array_p<BondAngleConstraint> _bond_angles;
+    resizable_array_p<TorsionAngleConstraint> _torsion_angles;
+    int _number_to_match;
+
+    // Private functions.
+
+    int _number_constraints() const;
+
+  public:
+    SetOfGeometricConstraints();
+
+    int BuildFromProto(const GeometricConstraints::SetOfConstraints& proto);
+
+    int IsValid() const;
+
+    int Active() const { return _active ;}
+
+    int Matches(const Molecule& m) const;
+    int Matches(const Molecule& m, const Set_of_Atoms& embedding) const;
+};
+
+}  // namespace geometric_constraints
+#endif // MOLECULE_LIB_GEOMETRIC_CONSTRAINTS_H

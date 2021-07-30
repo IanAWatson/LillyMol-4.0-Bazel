@@ -17,6 +17,7 @@
 
 #include "atom_alias.h"
 #include "iwmtypes.h"
+#include "geometric_constraints.h"
 
 class Molecule_to_Match;
 class Target_Atom;
@@ -2414,6 +2415,10 @@ class Single_Substructure_Query
 //  If any of our component Substructure_Atom's have atom type groups,
 //  those will need to be checked after matching.
     int _atom_type_groups_present;
+
+    // Jul 2021. Introduce geometric constraints.
+
+    geometric_constraints::SetOfGeometricConstraints _geometric_constraints;
 
 //  private functions
 

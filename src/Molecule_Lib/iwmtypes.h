@@ -301,6 +301,22 @@ enum FileType
   FILE_TYPE_NO_ARG_CONSTRUCTOR,
 };
 
+namespace iwmisc {
+// Conversion from degrees to radians.
+template <typename T>
+T
+Deg2Rad(T x) {
+  return DEG2RAD * x;
+}
+
+// Conversion from radians to degrees.
+template <typename T>
+T
+Rad2Deg(T x) {
+  return RAD2DEG * x;
+}
+}  // namespace iwmisc
+
 
 #define ATOM_TYPE_SYBYL "SYBYL"
 

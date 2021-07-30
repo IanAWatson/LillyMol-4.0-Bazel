@@ -24,9 +24,27 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "geometric_constraints_proto",
+    srcs = [
+        "geometric_constraints.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "geometric_constraints_cc_proto",
+    deps = [
+        ":geometric_constraints_proto",
+    ],
+)
+
+
+proto_library(
     name = "substructure_proto",
     srcs = [
         "substructure.proto"
+    ],
+    deps = [
+        "geometric_constraints_proto",
     ],
 )
 
@@ -102,6 +120,7 @@ cc_library(
         "ematch.cc",
         "etrans.cc",
         "frag.cc",
+        "geometric_constraints.cc",
         "ISIS_Atom_List.cc",
         "is_actually_chiral.cc",
         "iwrcb.cc",
@@ -181,6 +200,7 @@ cc_library(
         "ematch.h",
         "etrans.h",
         "istream_and_type.h",
+        "geometric_constraints.h",
         "is_actually_chiral.h",
         "iwmtypes.h",
         "iwrcb.h",
@@ -348,6 +368,20 @@ cc_library(
 )
 
 cc_library(
+    name = "geometric_constraints",
+    srcs = [
+        "geometric_constraints.cc",
+    ],
+    hdrs = [
+        "geometric_constraints.h",
+    ],
+    deps = [
+        ":iwmolecule",
+        ":geometric_constraints_cc_proto",
+    ],
+)
+
+cc_library(
     name = "linear_fingerprint",
     srcs = [
         "linear_fingerprint.cc",
@@ -400,6 +434,22 @@ cc_test(
     deps = [
         ":iwmolecule",
         ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
+    name = "geometric_constraints_test",
+    srcs = ["geometric_constraints_test.cc"],
+    timeout = "short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        ":geometric_constraints",
+        ":geometric_constraints_cc_proto",
         "@googletest//:gtest_main",
     ],
     linkopts = [

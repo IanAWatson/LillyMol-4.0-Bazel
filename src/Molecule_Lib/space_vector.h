@@ -416,7 +416,9 @@ template <typename T>
 angle_t
 Space_Vector<T>::angle_between_unit_vectors (const Space_Vector<T> & v1) const
 {
-  double tmp = static_cast<double>(_x) * static_cast<double>(v1._x) + static_cast<double>(_y) * static_cast<double>(v1._y) + static_cast<double>(_z) * static_cast<double>(v1._z);    // the dot product
+  double tmp = static_cast<double>(_x) * static_cast<double>(v1._x) +
+               static_cast<double>(_y) * static_cast<double>(v1._y) +
+               static_cast<double>(_z) * static_cast<double>(v1._z);    // the dot product
 
   if (fabs(tmp) <= 1.0)    // that's good
     ;
@@ -547,25 +549,6 @@ operator << (std::ostream & os, const Space_Vector<T> & qq)
 
   return os;
 }
-
-#ifdef NO_LONGER_USED_ASDASDASD
-static angle_t
-internal_angle_between (double a,
-                        double b,
-                        double c)
-{
-  double x = (a * a - b * b - c * c) / (2.0 * b);
-
-  double tmp = (b + x) / a;
-
-  if (tmp > 1.0)
-    return static_cast<angle_t>(0.0);
-  else if (tmp < -1.0)
-    return static_cast<angle_t>(M_PI * 0.5);
-
-  return static_cast<angle_t>(acos(tmp));
-}
-#endif
 
 template <typename T>
 angle_t

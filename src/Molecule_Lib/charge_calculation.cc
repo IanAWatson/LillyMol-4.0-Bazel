@@ -1852,7 +1852,7 @@ int Molecule :: find_simplified_sybyl_atom_type_sybyl_style(atom_type_t atom_typ
                             int not_exception = 1;
                             if (this_ring->number_elements() ==5)
                               {
-                                int all_carbon_in_ring = 1;
+//                              int all_carbon_in_ring = 1;
                                 int double_bond_in_ring = 0;
                                 int single_bonded_item = -1;
                                 for (int j=0; j<5; j++)
@@ -1862,8 +1862,8 @@ int Molecule :: find_simplified_sybyl_atom_type_sybyl_style(atom_type_t atom_typ
                                       single_bonded_item = (j+1) % 5;
                                     if ((btype_between_atoms(this_ring->item(j), this_ring->item((j+1) %5)) % 8) > 1)
                                       double_bond_in_ring++;
-                                    if (6!=atomic_number(this_ring->item(j)))
-                                      all_carbon_in_ring = 0;
+//                                  if (6!=atomic_number(this_ring->item(j)))
+//                                    all_carbon_in_ring = 0;
                                   }
                                 
                                 if ((2==double_bond_in_ring) && (-1 != single_bonded_item)) 
@@ -1901,7 +1901,7 @@ int Molecule :: find_simplified_sybyl_atom_type_sybyl_style(atom_type_t atom_typ
                               {
                                 int is_in_fused_ring = is_part_of_fused_ring_system(one_car_atom);
                                 
-                                int one_car_not_in_exception_ring_for_c7_above_ring = 1;
+//                              int one_car_not_in_exception_ring_for_c7_above_ring = 1;
                                 int one_car_in_exception_ring_for_c5_c6_ring = 0;
                                 
                                 const Ring * this_ring = ring_containing_atom(one_car_atom);
@@ -1920,7 +1920,7 @@ int Molecule :: find_simplified_sybyl_atom_type_sybyl_style(atom_type_t atom_typ
                                           double_bond_in_ring++;
                                       }
                                 //cerr<<"o or s="<<n_of_o_or_s<<"    no of n="<<n_of_n<<endl;
-                                if ((1==n_of_o_or_s) && (n_of_n ==2)) one_car_not_in_exception_ring_for_c7_above_ring = 0;
+//                              if ((1==n_of_o_or_s) && (n_of_n ==2)) one_car_not_in_exception_ring_for_c7_above_ring = 0;
                                 if ((n_of_o_or_s<2) && (n_of_n == 1) && (!is_in_fused_ring) && (double_bond_in_ring<2)) 
                                   one_car_in_exception_ring_for_c5_c6_ring = 1;
                                   }

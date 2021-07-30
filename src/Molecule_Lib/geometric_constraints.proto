@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package GeometricConstraints;
+
+message Range {
+  // Min and max values allowed in a range.
+  float min = 1;
+  float max = 2;
+}
+
+// All the geometric constraings follow a similar pattern.
+// One or more atoms, and a range of allowed values.
+
+message Distance {
+  int32 a1 = 1;
+  int32 a2 = 2;
+  Range range = 3;
+}
+
+// Note that with angles, the Range is interpreted as Radians.
+
+message BondAngle {
+  uint32 a1 = 1;
+  uint32 a2 = 2;
+  uint32 a3 = 3;
+  Range range = 4;
+}
+
+message TorsionAngle {
+  uint32 a1 = 1;
+  uint32 a2 = 2;
+  uint32 a3 = 3;
+  uint32 a4 = 4;
+  Range range = 5;
+}
+
+message SetOfConstraints {
+  repeated Distance distances = 1;
+  repeated BondAngle bond_angles = 2;
+  repeated TorsionAngle torsion_angles = 3;
+  // The number of the above constraints that must match.
+  uint32 number_to_match = 4;
+}

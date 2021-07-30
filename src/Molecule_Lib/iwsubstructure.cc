@@ -1228,6 +1228,16 @@ Single_Substructure_Query::_global_query_conditions_also_matched(Query_Atoms_Mat
       return 0;
   }
 
+  if (_geometric_constraints.Active()) {
+    Set_of_Atoms embedding;
+    for (const auto * q : matched_query_atoms) {
+      embedding << q->atom_number_matched();
+    }
+    if (!_geometric_constraints.Matches(*target_molecule.molecule(), embedding)) {
+      return 0;
+    }
+  }
+
 #ifdef DEBUG_MATCHED_ATOM_POST_CHECK
   cerr << "Global conditions OK\n";
 #endif
