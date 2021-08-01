@@ -182,6 +182,8 @@ class SetOfGeometricConstraints {
 
     int BuildFromProto(const GeometricConstraints::SetOfConstraints& proto);
 
+    void DebugPrint(std::ostream& output) const;
+
     int IsValid() const;
 
     int Active() const { return _active ;}

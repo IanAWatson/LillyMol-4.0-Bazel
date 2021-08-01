@@ -145,24 +145,20 @@ fetch_numeric(const const_IWSubstring & zstring, int & result, int max_chars)
 int
 fetch_numeric_char(const char * zstring, int & result, int max_chars)
 {
-  int rc = 0;
+  int consumed = 0;
   result = 0;
 
-  int characters_to_search = max_chars;
-  if (max_chars > 0 && max_chars < characters_to_search)
-    characters_to_search = max_chars;
-
-  for (int i = 0; i < characters_to_search; i++)
+  for (int i = 0; i < max_chars; i++)
   {
     int tmp = zstring[i] - '0';
     if (tmp < 0 || tmp > 9)
-      return rc;
+      return consumed;
 
     result = result * 10 + tmp;
-    rc++;
+    consumed++;
   }
 
-  return rc;
+  return consumed;
 }
 
 std::optional<int>

@@ -2095,6 +2095,18 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
   if (proto.no_matched_atoms_between().size() > 0) {
   }
 
+  if (proto.geometric_constraints().size() > 0) {
+    for (const auto& constraint : proto.geometric_constraints()) {
+      std::unique_ptr<geometric_constraints::SetOfGeometricConstraints> c =
+              std::make_unique<geometric_constraints::SetOfGeometricConstraints>();
+      if (! c->BuildFromProto(constraint)) {
+        cerr << "Single_Substructure_Query::_construct_from_proto:invalid distance constraint " << constraint.ShortDebugString() << '\n';
+        return 0;
+      }
+      _geometric_constraints.add(c.release());
+    }
+  }
+
 //if (_root_atoms.number_elements())
 //  _adjust_for_internal_consistency();
 

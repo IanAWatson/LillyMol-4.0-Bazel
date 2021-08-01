@@ -274,4 +274,31 @@ TEST(TestSet, TestAllFeatures) {
   EXPECT_TRUE(constraints.Matches(m));
 }
 
+TEST(TestDistance, FromSmiles) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("C{{0,0,0}}C{{1.5,0,0}}"));
+  std::string string_proto = R"pb(
+    distances {
+      range {
+        min: 1.4
+        max: 1.6
+      }
+      a1: 0
+      a2: 1
+    }
+    number_to_match: 1
+  )pb";
+  GeometricConstraints::SetOfConstraints proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(string_proto, &proto));
+  ASSERT_EQ(proto.distances().size(), 1);
+
+  geometric_constraints::SetOfGeometricConstraints constraints;
+  ASSERT_TRUE(constraints.BuildFromProto(proto));
+  EXPECT_GT(constraints.Matches(m), 0);
+
+  Set_of_Atoms embedding;
+  embedding << 1 << 0;
+  EXPECT_TRUE(constraints.Matches(m, embedding));
+}
+
 }  // namespace

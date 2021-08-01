@@ -13,6 +13,58 @@ http_archive(
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
+# The next were all copied from Riegeli's WORKSPACE to enable riegeli
+http_archive(
+    name = "com_google_absl",
+    sha256 = "6a6eee57ce3375e26d49c542d191ceb90822984d5b587f0ea8e0d0c77016b02b",
+    strip_prefix = "abseil-cpp-20200225.3",
+    urls = [
+        "https://mirror.bazel.build/github.com/abseil/abseil-cpp/archive/20200225.3.zip",
+        "https://github.com/abseil/abseil-cpp/archive/20200225.3.zip",  # 2020-10-09
+    ],
+)
+http_archive(
+    name = "highwayhash",
+    build_file = "//third_party:highwayhash.BUILD",
+#   sha256 = "cf891e024699c82aabce528a024adbe16e529f2b4e57f954455e0bf53efae585",
+    strip_prefix = "highwayhash-276dd7b4b6d330e4734b756e97ccfb1b69cc2e12",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/highwayhash/archive/276dd7b4b6d330e4734b756e97ccfb1b69cc2e12.zip",
+        "https://github.com/google/highwayhash/archive/276dd7b4b6d330e4734b756e97ccfb1b69cc2e12.zip",  # 2019-02-22
+    ],
+)
+http_archive(
+    name = "org_brotli",
+#   sha256 = "6e69be238ff61cef589a3fa88da11b649c7ff7a5932cb12d1e6251c8c2e17a2f",
+    strip_prefix = "brotli-1.0.7",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/brotli/archive/v1.0.7.zip",
+        "https://github.com/google/brotli/archive/v1.0.7.zip",  # 2018-10-23
+        "https://github.com/google/brotli/releases/tag/v1.0.9",
+    ],
+)
+http_archive(
+    name = "snappy",
+    build_file = "//third_party:snappy.BUILD",
+    sha256 = "38b4aabf88eb480131ed45bfb89c19ca3e2a62daeb081bdf001cfb17ec4cd303",
+    strip_prefix = "snappy-1.1.8",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/snappy/archive/1.1.8.zip",
+        "https://github.com/google/snappy/archive/1.1.8.zip",  # 2020-01-14
+    ],
+)
+http_archive(
+    name = "net_zstd",
+    build_file = "//third_party:net_zstd.BUILD",
+#   sha256 = "b6c537b53356a3af3ca3e621457751fa9a6ba96daf3aebb3526ae0f610863532",
+    strip_prefix = "zstd-1.4.5/lib",
+    urls = [
+        "https://mirror.bazel.build/github.com/facebook/zstd/archive/v1.4.5.zip",
+        "https://github.com/facebook/zstd/archive/v1.4.5.zip",  # 2020-05-22
+    ],
+)
+
+
 # rules_cc defines rules for generating C++ code from Protocol Buffers.
 http_archive(
     name = "rules_cc",
@@ -74,8 +126,23 @@ local_repository(
 )
 
 local_repository(
+    name = 'riegeli',
+    path = "/home/ian/pub/riegeli",
+)
+
+local_repository(
     name = 'benchmark',
     path = "/home/ian/pub/benchmark",
+)
+
+local_repository(
+    name = 'tensorflow',
+    path = '/home/ian/pub/tensorflow',
+)
+
+local_repository(
+    name = "absl_cpp",
+    path = '/home/ian/pub/abseil-cpp',
 )
 
 local_repository(
@@ -120,6 +187,7 @@ http_archive(
 # Change master to the git tag you want.
 http_archive(
     name = "com_grail_bazel_toolchain",
+    sha256 = "f82f3ddfb4e5e11fd34edc518cbf2943c6e7680a6144976eb33e97369af5453e",
     strip_prefix = "bazel-toolchain-master",
     urls = ["https://github.com/grailbio/bazel-toolchain/archive/master.tar.gz"],
 )

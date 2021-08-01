@@ -12,7 +12,7 @@ AllowedRange::AllowedRange() {
 
 std::ostream&
 operator<< (std::ostream& output, const AllowedRange& arange) {
-  output << "AllowedRange:btw [" << arange._min_value << ',' << arange._max_value << ']';
+  output << "AllowedRange [" << arange._min_value << ',' << arange._max_value << ']';
   return output;
 }
 
@@ -287,7 +287,7 @@ SetOfGeometricConstraints::Matches(const Molecule& m) const {
   for (auto c : _distances) {
     if (c->Matches(m)) {
       matched_here++;
-      if (matched_here > _number_to_match) {
+      if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
@@ -295,7 +295,7 @@ SetOfGeometricConstraints::Matches(const Molecule& m) const {
   for (auto c : _bond_angles) {
     if (c->Matches(m)) {
       matched_here++;
-      if (matched_here > _number_to_match) {
+      if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
@@ -303,7 +303,7 @@ SetOfGeometricConstraints::Matches(const Molecule& m) const {
   for (auto c : _torsion_angles) {
     if (c->Matches(m)) {
       matched_here++;
-      if (matched_here > _number_to_match) {
+      if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
@@ -318,7 +318,7 @@ SetOfGeometricConstraints::Matches(const Molecule& m, const Set_of_Atoms& embedd
   for (auto c : _distances) {
     if (c->Matches(m, embedding)) {
       matched_here++;
-      if (matched_here > _number_to_match) {
+      if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
@@ -326,7 +326,7 @@ SetOfGeometricConstraints::Matches(const Molecule& m, const Set_of_Atoms& embedd
   for (auto c : _bond_angles) {
     if (c->Matches(m, embedding)) {
       matched_here++;
-      if (matched_here > _number_to_match) {
+      if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
@@ -334,13 +334,39 @@ SetOfGeometricConstraints::Matches(const Molecule& m, const Set_of_Atoms& embedd
   for (auto c : _torsion_angles) {
     if (c->Matches(m, embedding)) {
       matched_here++;
-      if (matched_here > _number_to_match) {
+      if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
   }
 
   return 0;
+}
+
+template <typename T>
+void
+write_constraints(const resizable_array_p<T>& constraints, std::ostream& output) {
+  for (const T * constraint : constraints) {
+    output << ' ' << *constraint;
+  }
+  output << '\n';
+}
+void
+SetOfGeometricConstraints::DebugPrint(std::ostream& output) const {
+  output << "SetOfGeometricConstraints\n";
+  if (_distances.size()) {
+    output << " distances";
+    write_constraints(_distances, output);
+  }
+  if (_bond_angles.size()) {
+    output << " bond angles";
+    write_constraints(_bond_angles, output);
+  }
+  if (_torsion_angles.size()) {
+    output << " torsion angles";
+    write_constraints(_torsion_angles, output);
+  }
+  output << "must match " << _number_to_match << '\n';
 }
 
 }  // namespace geometric_constraints

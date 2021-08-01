@@ -2418,7 +2418,7 @@ class Single_Substructure_Query
 
     // Jul 2021. Introduce geometric constraints.
 
-    geometric_constraints::SetOfGeometricConstraints _geometric_constraints;
+    resizable_array_p<geometric_constraints::SetOfGeometricConstraints> _geometric_constraints;
 
 //  private functions
 

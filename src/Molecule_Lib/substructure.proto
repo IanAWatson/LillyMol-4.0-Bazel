@@ -882,6 +882,8 @@ message SingleSubstructureQuery {
 
   // Atom typing specification, done within the query.
   optional string atom_type = 119;
+
+  repeated GeometricConstraints.SetOfConstraints geometric_constraints = 120;
 }
 
 // A SubstructureQuery is merely a collection of individual
