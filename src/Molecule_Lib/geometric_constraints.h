@@ -34,6 +34,35 @@ class AllowedRange {
     friend std::ostream& operator<< (std::ostream& output, const AllowedRange& arange);
 };
 
+// All geometric constraints consist of a set of atom numbers and an allowed range
+// for the quantity defined by those atoms.
+class ConstraintBaseClass {
+  protected:
+    // All constraints have 2 or more atoms.
+    resizable_array<int> _atoms;
+    // All constraints have a range of allowed values.
+    AllowedRange _allowed_range;
+  public:
+    int SetRange(float d1, float d2) {
+      return _allowed_range.set_range(d1, d2);
+    }
+
+    // Add our atom numbers to `atoms_present` if not already there.
+    int AtomNumbersPresent(resizable_array<int>& atoms_present) const;
+
+    friend std::ostream& operator<< (std::ostream& output, const ConstraintBaseClass& constraint);
+
+    // The range must be set and the atoms unique. Expensive.
+    int IsValid() const;
+
+    // Inexpensive check that does not ensure internal validity.
+    int Active() const { return _allowed_range.Active();}
+
+    int SetAtoms(int s1, int s2);
+    int SetAtoms(int s1, int s2, int s3);
+    int SetAtoms(int s1, int s2, int s3, int s4);
+};
+
 // Classes for matching geometric constraints. They are all very similar.
 // All contain a Matches method that has two signatures.
 // The two Matches function differ in how the atom numbers (_a1, _a2...) are interpreted.
@@ -44,32 +73,11 @@ class AllowedRange {
 // The IsValid method provides more expensive checking.
 
 // Class specifying a geometric distance between atoms constraint.
-class DistanceConstraint {
+class DistanceConstraint : public ConstraintBaseClass {
   private:
-    int _a1;
-    int _a2;
-    AllowedRange _allowed_range;
 
   public:
-    DistanceConstraint();
-
     int BuildFromProto(const GeometricConstraints::Distance& proto);
-
-    int Active() const {
-      return _allowed_range.Active() && _a1 >= 0;
-    }
-
-    int IsValid() const;
-
-    int set_atoms(int s1, int s2) {
-      _a1 = s1;
-      _a2 = s2;
-      return 1;
-    }
-
-    int set_range(float d1, float d2) {
-      return _allowed_range.set_range(d1, d2);
-    }
 
     int Matches(const Molecule& m);
     int Matches(const Molecule& m, const Set_of_Atoms& embedding);
@@ -78,30 +86,11 @@ class DistanceConstraint {
 };
 
 // Class specifying constaints on a bond angle.
-class BondAngleConstraint {
+class BondAngleConstraint : public ConstraintBaseClass{
   private:
-    int _a1;
-    int _a2;
-    int _a3;
 
-    AllowedRange _allowed_range;
   public:
-    BondAngleConstraint();
-
     int BuildFromProto(const GeometricConstraints::BondAngle& proto);
-
-    int Active() const {
-      return _allowed_range.Active() && _a1 >= 0;
-    }
-
-    int IsValid() const;
-
-    int set_atoms(int s1, int s2, int s3) {
-      _a1 = s1;
-      _a2 = s2;
-      _a3 = s3;
-      return 1;
-    }
 
     int set_range_in_degrees(float mn, float mx) {
       return _allowed_range.set_range(iwmisc::Deg2Rad(mn), iwmisc::Deg2Rad(mx));
@@ -117,32 +106,11 @@ class BondAngleConstraint {
 };
 
 // Class specifying constaints on a torsion angle.
-class TorsionAngleConstraint {
+class TorsionAngleConstraint : public ConstraintBaseClass {
   private:
-    int _a1;
-    int _a2;
-    int _a3;
-    int _a4;
 
-    AllowedRange _allowed_range;
   public:
-    TorsionAngleConstraint();
-
     int BuildFromProto(const GeometricConstraints::TorsionAngle& proto);
-
-    int Active() const {
-      return _allowed_range.Active() && _a1 >= 0;
-    }
-
-    int IsValid() const;
-
-    int set_atoms(int s1, int s2, int s3, int s4) {
-      _a1 = s1;
-      _a2 = s2;
-      _a3 = s3;
-      _a4 = s4;
-      return 1;
-    }
 
     int set_range_in_degrees(float mn, float mx) {
       return _allowed_range.set_range(iwmisc::Deg2Rad(mn), iwmisc::Deg2Rad(mx));
@@ -183,6 +151,9 @@ class SetOfGeometricConstraints {
     int BuildFromProto(const GeometricConstraints::SetOfConstraints& proto);
 
     void DebugPrint(std::ostream& output) const;
+
+    // Return a unique list of all the atom numbers mentioned in any component.
+    resizable_array<int> AtomNumbersPresent() const;
 
     int IsValid() const;
 

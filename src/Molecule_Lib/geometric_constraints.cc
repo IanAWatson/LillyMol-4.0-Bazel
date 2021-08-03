@@ -20,21 +20,92 @@ int
 AllowedRange::BuildFromProto(const GeometricConstraints::Range& proto) {
   _min_value = proto.min();
   _max_value = proto.max();
+
+  // If an upper bound is not specified, assume infinite.
+  if (_min_value > 0.0 && _max_value == 0.0) {
+    _max_value = std::numeric_limits<float>::max();
+  }
+
   if (_min_value > _max_value) {
     cerr << "AllowedRange::BuildFromProto:invalid range " << *this << '\n';
     return 0;
   }
+
+  if (proto.one_time_scaling_factor() != 0.0) {
+    _min_value *= proto.one_time_scaling_factor();
+    _max_value *= proto.one_time_scaling_factor();
+  }
+
   return 1;
 }
 
-DistanceConstraint::DistanceConstraint() {
-  _a1 = -1;
-  _a2 = -1;
+int
+ConstraintBaseClass::IsValid() const {
+  // Unset is a valid state.
+  if (!_allowed_range.Active() && _atoms.empty()) {
+    return 1;
+  }
+
+  const int natoms = _atoms.number_elements();
+
+  if (natoms < 2)  // The DistanceConstraint has 2 atoms.
+    return 0;
+  if (natoms > 4)  // Torsion has 4 atoms.
+    return 0;
+
+  // We have atoms specified, but no _allowed_range.
+  if (!_allowed_range.Active()) {
+    return 0;
+  }
+
+  // Are all the atom numbers unique?
+  for (int i = 0; i < natoms; ++i) {
+    int a1 = _atoms[i];
+    for (int j = i + 1; j < natoms; ++j) {
+      if (_atoms[j] == a1)
+        return 0;
+    }
+  }
+
+  return 1;
 }
 
-std::ostream& operator<< (std::ostream& output, const DistanceConstraint& constraint) {
-  output << "DistanceConstraint:atoms " << constraint._a1 << ',' << constraint._a2 << ' ';
-  output << constraint._allowed_range;
+int
+ConstraintBaseClass::SetAtoms(int a1, int a2) {
+  return (_atoms.add_if_not_already_present(a1)> 0) +
+         (_atoms.add_if_not_already_present(a2)> 0);
+}
+
+int
+ConstraintBaseClass::SetAtoms(int a1, int a2, int a3) {
+  return (_atoms.add_if_not_already_present(a1)> 0) +
+         (_atoms.add_if_not_already_present(a2)> 0) +
+         (_atoms.add_if_not_already_present(a3)> 0);
+}
+
+int
+ConstraintBaseClass::SetAtoms(int a1, int a2, int a3, int a4) {
+  return (_atoms.add_if_not_already_present(a1)> 0) +
+         (_atoms.add_if_not_already_present(a2)> 0) +
+         (_atoms.add_if_not_already_present(a3)> 0) +
+         (_atoms.add_if_not_already_present(a4)> 0);
+}
+
+int
+ConstraintBaseClass::AtomNumbersPresent(resizable_array<int>& atom_numbers) const {
+  int rc = 0;
+  for (int a : _atoms) {
+    rc += atom_numbers.add_if_not_already_present(a);
+  }
+  return rc;
+}
+
+std::ostream& operator<<(std::ostream& output, const ConstraintBaseClass& constraint) {
+  for (int i : constraint._atoms) {
+    output << ' ' << i;
+  }
+  output << ' ' << constraint._allowed_range;
+
   return output;
 }
 
@@ -44,9 +115,11 @@ DistanceConstraint::BuildFromProto(const GeometricConstraints::Distance& proto) 
     cerr << "DistanceConstraint::BuildFromProto:invalid range " << proto.ShortDebugString() << '\n';
     return 0;
   }
+  if (SetAtoms(proto.a1(), proto.a2()) != 2) {
+    cerr << "DistanceConstraint::BuildFromProto:invalid atom numbers " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
 
-  _a1 = proto.a1();
-  _a2 = proto.a2();
   if (! IsValid()) {
     cerr << "DistanceConstraint::BuildFromProto:invalid " << *this << '\n';
     return 0;
@@ -55,33 +128,21 @@ DistanceConstraint::BuildFromProto(const GeometricConstraints::Distance& proto) 
   return 1;
 }
 
-int
-DistanceConstraint::IsValid() const {
-  if (! _allowed_range.Active()) {
-    return 0;
-  }
 
-  if (_a1 < 0 || _a2 < 0) {
-    return 0;
-  }
-
-  return _a1 != _a2;
+std::ostream& operator<< (std::ostream& output, const DistanceConstraint& constraint) {
+  const ConstraintBaseClass& me = constraint;
+  output << "DistanceConstraint:atoms " << me;
+  return output;
 }
 
 int
 DistanceConstraint::Matches(const Molecule& m) {
-  return _allowed_range.Matches(m.distance_between_atoms(_a1, _a2));
+  return _allowed_range.Matches(m.distance_between_atoms(_atoms[0], _atoms[1]));
 }
 
 int
 DistanceConstraint::Matches(const Molecule& m, const Set_of_Atoms& embedding) {
-  return _allowed_range.Matches(m.distance_between_atoms(embedding[_a1], embedding[_a2]));
-}
-
-BondAngleConstraint::BondAngleConstraint() {
-  _a1 = -1;
-  _a2 = -1;
-  _a3 = -1;
+  return _allowed_range.Matches(m.distance_between_atoms(embedding[_atoms[0]], embedding[_atoms[1]]));
 }
 
 int
@@ -91,9 +152,11 @@ BondAngleConstraint::BuildFromProto(const GeometricConstraints::BondAngle& proto
     return 0;
   }
 
-  _a1 = proto.a1();
-  _a2 = proto.a2();
-  _a3 = proto.a3();
+  if (SetAtoms(proto.a1(), proto.a2(), proto.a3()) != 3) {
+    cerr << "BondAngle::BuildFromProto:invalid atom numbers " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
   if (! IsValid()) {
     cerr << "BondAngleConstraint::BuildFromProto:invalid " << *this << '\n';
     return 0;
@@ -104,43 +167,20 @@ BondAngleConstraint::BuildFromProto(const GeometricConstraints::BondAngle& proto
 
 std::ostream&
 operator<< (std::ostream& output, const BondAngleConstraint& constraint) {
-  output << "BondAngleConstraint:atoms " << constraint._a1 << ' ' <<
-            constraint._a2 << ' ' <<
-            constraint._a3 << ' ';
-  output << constraint._allowed_range;
+  const ConstraintBaseClass& me = constraint;
+  output << "BondAngleConstraint:atoms " <<  me;
   return output;
-}
-
-int
-BondAngleConstraint::IsValid() const {
-  if (! _allowed_range.Active()) {
-    return 0;
-  }
-
-  if (_a1 < 0 || _a2 < 0 || _a3 < 0) {
-    return 0;
-  }
-
-  if (_a1 == _a2 || _a1 == _a3) {
-    return 0;
-  }
-
-  if (_a2 == _a3) {
-    return 0;
-  }
-
-  return 1;
 }
 
 int
 BondAngleConstraint::Matches(const Molecule& m) {
 //std::cerr << "Angle is " << m.bond_angle(_a1, _a2, _a3) << " radians " << _allowed_range << '\n';
-  return _allowed_range.Matches(m.bond_angle(_a1, _a2, _a3));
+  return _allowed_range.Matches(m.bond_angle(_atoms[0], _atoms[1], _atoms[2]));
 }
 
 int
 BondAngleConstraint::Matches(const Molecule& m, const Set_of_Atoms& embedding) {
-  return _allowed_range.Matches(m.bond_angle(embedding[_a1], embedding[_a2], embedding[_a3]));
+  return _allowed_range.Matches(m.bond_angle(embedding[_atoms[0]], embedding[_atoms[1]], embedding[_atoms[2]]));
 }
 
 int
@@ -150,10 +190,11 @@ TorsionAngleConstraint::BuildFromProto(const GeometricConstraints::TorsionAngle&
     return 0;
   }
 
-  _a1 = proto.a1();
-  _a2 = proto.a2();
-  _a3 = proto.a3();
-  _a4 = proto.a4();
+  if (SetAtoms(proto.a1(), proto.a2(), proto.a3(), proto.a4()) != 4) {
+    cerr << "TorsionAngle::BuildFromProto:invalid atom numbers " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
   if (! IsValid()) {
     cerr << "TorsionAngle::BuildFromProto:invalid " << *this << '\n';
     return 0;
@@ -164,54 +205,18 @@ TorsionAngleConstraint::BuildFromProto(const GeometricConstraints::TorsionAngle&
 
 std::ostream&
 operator<< (std::ostream& output, const TorsionAngleConstraint& constraint) {
-  output << "TorsionAngleConstraint:atoms " << constraint._a1 << ' ' <<
-            constraint._a2 << ' ' <<
-            constraint._a3 << ' ' <<
-            constraint._a4 << ' ';
-  output << constraint._allowed_range;
+  const ConstraintBaseClass& me = constraint;
+  output << "TorsionAngleConstraint:atoms " << me;
   return output;
 }
-
-TorsionAngleConstraint::TorsionAngleConstraint() {
-  _a1 = -1;
-  _a2 = -1;
-  _a3 = -1;
-  _a4 = -1;
-}
-
-int
-TorsionAngleConstraint::IsValid() const {
-  if (! _allowed_range.Active()) {
-    return 0;
-  }
-
-  if (_a1 < 0 || _a2 < 0 || _a3 < 0 || _a4 < 0) {
-    return 0;
-  }
-
-  if (_a1 == _a2 || _a1 == _a3 || _a1 == _a4) {
-    return 0;
-  }
-
-  if (_a2 == _a3 || _a2 == _a4) {
-    return 0;
-  }
-
-  if (_a3 == _a4) {
-    return 0;
-  }
-
-  return 1;
-}
-
 int
 TorsionAngleConstraint::Matches(const Molecule& m) {
-  return _allowed_range.Matches(m.dihedral_angle(_a1, _a2, _a3, _a4));
+  return _allowed_range.Matches(m.dihedral_angle(_atoms[0], _atoms[1], _atoms[2], _atoms[3]));
 }
 
 int
 TorsionAngleConstraint::Matches(const Molecule& m, const Set_of_Atoms& embedding) {
-  return _allowed_range.Matches(m.dihedral_angle(embedding[_a1], embedding[_a2], embedding[_a3], embedding[_a4]));
+  return _allowed_range.Matches(m.dihedral_angle(embedding[_atoms[0]], embedding[_atoms[1]], embedding[_atoms[2]], embedding[_atoms[3]]));
 }
 
 SetOfGeometricConstraints::SetOfGeometricConstraints() {
@@ -367,6 +372,22 @@ SetOfGeometricConstraints::DebugPrint(std::ostream& output) const {
     write_constraints(_torsion_angles, output);
   }
   output << "must match " << _number_to_match << '\n';
+}
+
+resizable_array<int>
+SetOfGeometricConstraints::AtomNumbersPresent() const {
+  resizable_array<int> result;
+  for (const auto * c : _distances) {
+    c->AtomNumbersPresent(result);
+  }
+  for (const auto * c : _bond_angles) {
+    c->AtomNumbersPresent(result);
+  }
+  for (const auto * c : _torsion_angles) {
+    c->AtomNumbersPresent(result);
+  }
+
+  return result;
 }
 
 }  // namespace geometric_constraints

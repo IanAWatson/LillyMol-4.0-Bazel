@@ -975,21 +975,6 @@ cc_binary(
     ],
 )
 
-cc_binary(
-    name = "smu_3d_ss_search",
-    srcs = [
-        "SMU_3d_search_main.cc",
-    ],
-    deps = [
-        "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculeio",
-        "@riegeli//riegeli/records:record_reader",
-    ],
-    linkopts = [
-        "-lz",
-    ],
-)
-
 cc_library(
     name = "extended_pi",
     srcs = [

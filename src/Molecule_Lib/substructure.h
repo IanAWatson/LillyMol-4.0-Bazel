@@ -2464,6 +2464,8 @@ class Single_Substructure_Query
 
     int _examine_bond_specifications();
 
+    int _atom_numbers_in_geometric_constraints_ok(const geometric_constraints::SetOfGeometricConstraints* constraints) const;
+
     void _determine_if_ring_ids_are_present();
     void _determine_if_spinach_specifications_are_present();
     void _determine_if_fused_system_ids_are_present();

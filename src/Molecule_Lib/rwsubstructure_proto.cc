@@ -2103,12 +2103,30 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
         cerr << "Single_Substructure_Query::_construct_from_proto:invalid distance constraint " << constraint.ShortDebugString() << '\n';
         return 0;
       }
+      if (! _atom_numbers_in_geometric_constraints_ok(c.get())) {
+        cerr << "Single_Substructure_Query::_construct_from_proto:invalid atom numbers in geometric constraint " << constraint.ShortDebugString() << '\n';
+        return 0;
+      }
       _geometric_constraints.add(c.release());
     }
   }
 
 //if (_root_atoms.number_elements())
 //  _adjust_for_internal_consistency();
+
+  return 1;
+}
+
+int
+Single_Substructure_Query::_atom_numbers_in_geometric_constraints_ok(const geometric_constraints::SetOfGeometricConstraints* constraints) const {
+  const resizable_array<int> atom_numbers_present = constraints->AtomNumbersPresent();
+  for (int a : atom_numbers_present) {
+    const Substructure_Atom* q = query_atom_with_initial_atom_number(a);
+    if (q == NULL) {
+      cerr << "Single_Substructure_Query::_atom_numbers_in_geometric_constraints_ok:no query atom " << a << '\n';
+      return 0;
+    }
+  }
 
   return 1;
 }

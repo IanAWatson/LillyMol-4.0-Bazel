@@ -6,6 +6,18 @@ message Range {
   // Min and max values allowed in a range.
   float min = 1;
   float max = 2;
+  // When C++ objects are instantiated from this proto, we have situations
+  // where distances in the molecules are in Bohr, but the user
+  // prefers Angstroms, or where angles in the Molecule object are specified
+  // in radians, but the user would prefer degrees to use degrees here.
+  // During construction, the value of `min` and `max` undergo a one
+  // time scaling to the values that will be used during matching.
+  // For example, if distances in the molecules are in Bohr, but the
+  // user wants to specify a distance constraint in Angstroms, set
+  // this to 1/0.529177=1.88973.
+  // If angles are interpreted as radians, but the user wants to specify
+  // angles in degrees, set this value to 180/π
+  float one_time_scaling_factor = 3;
 }
 
 // All the geometric constraings follow a similar pattern.
