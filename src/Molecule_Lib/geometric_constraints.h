@@ -61,6 +61,11 @@ class ConstraintBaseClass {
     int SetAtoms(int s1, int s2);
     int SetAtoms(int s1, int s2, int s3);
     int SetAtoms(int s1, int s2, int s3, int s4);
+
+    // Mostly for testing and debugging.
+    const resizable_array<int> Atoms() const {
+      return _atoms;
+    }
 };
 
 // Classes for matching geometric constraints. They are all very similar.

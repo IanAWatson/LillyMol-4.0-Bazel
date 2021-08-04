@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <memory>
 
+#include "re2/re2.h"
+
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline_v2/cmdline_v2.h"
 #include "Foundational/data_source/iwstring_data_source.h"
@@ -59,6 +61,12 @@ static resizable_array_p<IWString> descriptors_to_process;
 
 static int header_records_to_skip = 0;
 
+// Want the ability to only examine part of a token. If this is set,
+// then only the characters that match the regex are added to the hash
+// of already seen things.
+// If this does not match, it is a fatal error.
+static std::unique_ptr<RE2> text_subset;
+
 static void
 usage (int rc)
 {
@@ -81,6 +89,7 @@ usage (int rc)
   cerr << " -tab,-csv      deal with differently formatted files\n";
   cerr << " -i <...>       input column separator\n";
   cerr << " -nwz           No Warnings about Zero length text comparisons\n";
+  cerr << " -subset        regexp specifying which part of the column to consider '(..*)...' would be all except last 3 chars\n";
   cerr << " -h <n>         first <n> records in file\n";
   cerr << " -j             treat as descriptor file\n";
   cerr << " -v             verbose output\n";
@@ -151,6 +160,21 @@ read_previously_found_identifiers(const char * fname)
   }
 
   return read_previously_found_identifiers(input);
+}
+
+// Alter `comparison_text` to be only the parts that are matched by `text_subset`.
+int
+TruncateToSubset(RE2* text_subset, IWString& text) {
+  const re2::StringPiece tmp(text.data(), text.length());
+  std::string submatch;
+  if (! RE2::FullMatch(tmp, *text_subset, &submatch)) {
+    cerr << "TruncateToSubset:no match to " << text_subset->pattern() << " in '" << text << "'\n";
+    return 0;
+  }
+
+  text = submatch;
+
+  return 1;
 }
 
 /*
@@ -373,6 +397,12 @@ unique_rows(const const_IWSubstring & buffer,
     cerr << "Cannot truncate '" << comparison_text << "' at first '" << truncate_at << "'\n";
   else
     comparison_text.truncate_at_first(truncate_at);
+
+  if (text_subset) {
+    if (! TruncateToSubset(text_subset.get(), comparison_text)) {
+      return 0;
+    }
+  }
 
   if (! show_counts)
     ;
@@ -729,7 +759,7 @@ static int
 unique_rows (int argc, char ** argv)
 {
 //Command_Line cl (argc, argv, "vc:x:D:R:z");
-  Command_Line_v2 cl(argc, argv, "-v-c=s-x=ipos-D=s-R=s-z-nc-o-trunc=s-n-r=ipos-whash-P=sfile-O=s-tab-csv-vbar-comma-s-all-p=f-q-nwz-d=s-h=ipos-j=ipos-i=s");
+  Command_Line_v2 cl(argc, argv, "-v-c=s-x=ipos-D=s-R=s-z-nc-o-trunc=s-n-r=ipos-whash-P=sfile-O=s-tab-csv-vbar-comma-s-all-p=f-q-nwz-d=s-h=ipos-j=ipos-i=s-subset=s");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -1019,6 +1049,21 @@ unique_rows (int argc, char ** argv)
 
     if (verbose)
       cerr << "Duplicates written to '" << d << "'\n";
+  }
+
+  if (cl.option_present("subset")) {
+    const_IWSubstring r = cl.string_value("subset");
+
+    re2::StringPiece tmp(r.data(), r.length());
+    text_subset.reset(new RE2(tmp));
+    if (! text_subset->ok())
+    {
+      cerr << "Invalid text subset regexp '" << r << "'\n";
+      return 6;
+    }
+
+    if (verbose)
+      cerr << "Only the parts of a column that match " << text_subset->pattern() << " will be considered for uniqueness\n";
   }
 
   IWString_and_File_Descriptor output(1);

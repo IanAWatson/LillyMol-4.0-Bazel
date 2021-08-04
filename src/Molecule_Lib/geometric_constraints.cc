@@ -320,13 +320,27 @@ SetOfGeometricConstraints::Matches(const Molecule& m) const {
 int
 SetOfGeometricConstraints::Matches(const Molecule& m, const Set_of_Atoms& embedding) const {
   int matched_here = 0;
+#ifdef DEBUG_CONSTRAINTS_MATCHES
+  std::cerr << "Checking " << _distances.size() << " distance_constraints\n";
+#endif
   for (auto c : _distances) {
     if (c->Matches(m, embedding)) {
       matched_here++;
+#ifdef DEBUG_CONSTRAINTS_MATCHES
+      cerr << "distance constaint matched, now " << matched_here << " matches\n";
+#endif
       if (matched_here >= _number_to_match) {
         return matched_here;
       }
     }
+#ifdef DEBUG_CONSTRAINTS_MATCHES
+    else {
+      cerr << "Constraint " << *c << " did not match\n";
+      const auto atoms = c->Atoms();
+      std::cerr << "dist " << m.distance_between_atoms(embedding[atoms[0]], embedding[atoms[1]]) << '\n';
+    }
+#endif
+
   }
   for (auto c : _bond_angles) {
     if (c->Matches(m, embedding)) {
@@ -344,6 +358,9 @@ SetOfGeometricConstraints::Matches(const Molecule& m, const Set_of_Atoms& embedd
       }
     }
   }
+#ifdef DEBUG_CONSTRAINTS_MATCHES
+  std::cerr << "only matched " << matched_here << " items\n";
+#endif
 
   return 0;
 }

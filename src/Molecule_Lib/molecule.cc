@@ -5318,8 +5318,10 @@ Molecule::reset_all_atom_map_numbers()
     changes = 1;
   }
 
-  if (changes)
+  if (changes) {
     unset_unnecessary_implicit_hydrogens_known_values();
+    invalidate_smiles();
+  }
 
   return;
 }
