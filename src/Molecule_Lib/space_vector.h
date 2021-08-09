@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <cmath>
 
-#include "iwmtypes.h"
+#include "Foundational/iwmisc/iwconfig.h"
 
 class const_IWSubstring;
 
@@ -72,8 +72,8 @@ class Space_Vector
     int         operator != (const Space_Vector<T> &)const ;
     void        cross_product (const Space_Vector<T> &);
 
-    angle_t     angle_between              (const Space_Vector<T> &) const;
-    angle_t     angle_between_unit_vectors (const Space_Vector<T> &) const;
+    T           angle_between              (const Space_Vector<T> &) const;
+    T           angle_between_unit_vectors (const Space_Vector<T> &) const;
 
     T           distance (const Space_Vector<T> &) const;
     T           distance_squared (const Space_Vector<T> &) const;
@@ -82,7 +82,7 @@ class Space_Vector
 
     Space_Vector<T> form_unit_vector (const Space_Vector<T> &) const;
 
-    angle_t     angle_between (const Space_Vector<T> & a1, const Space_Vector<T> & a2) const;   // bond angle, we assume  a1 - this - a2, we return the angle a1-this-a2
+    T           angle_between (const Space_Vector<T> & a1, const Space_Vector<T> & a2) const;   // bond angle, we assume  a1 - this - a2, we return the angle a1-this-a2
 
     bool        closer_than (const Space_Vector<T> &, T) const;   // tries to be efficient
 };
@@ -223,7 +223,6 @@ Space_Vector<T>::setxyz (const Space_Vector<T> & rhs)
 
   return;
 }
-
 template <typename T>
 T
 Space_Vector<T>::operator ^ (const Space_Vector<T> & v2) const
@@ -413,7 +412,7 @@ Space_Vector<T>::operator - () const
 }
 
 template <typename T>
-angle_t
+T
 Space_Vector<T>::angle_between_unit_vectors (const Space_Vector<T> & v1) const
 {
   double tmp = static_cast<double>(_x) * static_cast<double>(v1._x) +
@@ -433,11 +432,11 @@ Space_Vector<T>::angle_between_unit_vectors (const Space_Vector<T> & v1) const
     abort();
   }
 
-  return static_cast<angle_t>(acos(tmp));
+  return static_cast<T>(acos(tmp));
 }
 
 template <typename T>
-angle_t
+T
 Space_Vector<T>::angle_between (const Space_Vector<T> & v1) const
 {
   Space_Vector<T> lhs(_x, _y, _z);
@@ -551,7 +550,7 @@ operator << (std::ostream & os, const Space_Vector<T> & qq)
 }
 
 template <typename T>
-angle_t
+T
 Space_Vector<T>::angle_between (const Space_Vector<T> & a1,
                                 const Space_Vector<T> & a2) const
 {

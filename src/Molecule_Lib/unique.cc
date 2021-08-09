@@ -1979,7 +1979,7 @@ Unique_Determination::_allocate_atom_arrays(int matoms, int rank_delta)
 
   _atom_xref = new Atom_and_Rank *[_matoms];
   
-  _rank_in_use.Initialise(matoms, 9, AR_TRIPLE_BOND + 1);
+  _rank_in_use.Initialise(matoms, 11, AR_TRIPLE_BOND + 1);
 
   return 1;
 }

@@ -3,12 +3,14 @@
 */
 
 #include <iostream>
-#include <memory>
 #include <fstream>
-using std::cerr;
-using std::endl;
+#include <tuple>
+#include <memory>
+
+#include "google/protobuf/text_format.h"
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/ematch.h"
@@ -20,41 +22,46 @@ using std::endl;
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
 
-static int queries_written = 0;
-static int verbose = 0;
-static int write_ncon_as_min_ncon = 0;
-static int write_nbonds_as_min_nbonds = 0;
-static int all_ring_bonds_become_undefined = 0;
-static int non_ring_atoms_become_nrings_0 = 0;
-static int atoms_conserve_ring_membership = 0;
+namespace mol2qry {
 
-static int isotopically_labelled_from_slicer = 0;
+using std::cerr;
+using std::endl;
 
-static Chemical_Standardisation chemical_standardisation;
+int queries_written = 0;
+int verbose = 0;
+int write_ncon_as_min_ncon = 0;
+int write_nbonds_as_min_nbonds = 0;
+int all_ring_bonds_become_undefined = 0;
+int non_ring_atoms_become_nrings_0 = 0;
+int atoms_conserve_ring_membership = 0;
+
+int isotopically_labelled_from_slicer = 0;
+
+Chemical_Standardisation chemical_standardisation;
 
 /*
   We may get molecules from slicer. These have isotopic labels that indicate
   where the fragment is attached to the rest of the molecule
 */
 
-static IWString stem_for_output;
+IWString stem_for_output;
 
 /*
   If we are processing multiple molecules, we need to produce a different .qry
   file for each
 */
 
-static int next_file_name_to_produce = 0;
+int next_file_name_to_produce = 0;
 
-static std::ofstream stream_for_names_of_query_files;
+std::ofstream stream_for_names_of_query_files;
 
 /*
   We can recognise R atoms as substitution points
 */
 
-static int change_R_groups_to_substitutions = 0;
+int change_R_groups_to_substitutions = 0;
 
-static Element_Matcher rgroup;
+Element_Matcher rgroup;
 
 /*
   People sometimes draw a two atom molecule across a ring in order to
@@ -63,27 +70,27 @@ static Element_Matcher rgroup;
 
 //static int kludge_for_ring_substitution = 0;
 
-static int all_queries_in_one_file = 0;
+int all_queries_in_one_file = 0;
 
-static std::ofstream stream_for_all_queries;
+std::ofstream stream_for_all_queries;
 
-static int remove_chiral_centres = 0;
+int remove_chiral_centres = 0;
 
-static int add_explicit_hydrogens = 0;
+int add_explicit_hydrogens = 0;
 
 const char * prog_name = NULL;
 
-static Substructure_Query coordination_point;
+Substructure_Query coordination_point;
 
-static int radius_from_coordination_point = 0;
+int radius_from_coordination_point = 0;
 
-static int remove_isotopes_from_input_molecules = 0;
+int remove_isotopes_from_input_molecules = 0;
 
-static IWString append_to_comment;
+IWString append_to_comment;
 
-static int perform_matching_test = 0;
+int perform_matching_test = 0;
 
-static void
+void
 usage(int rc = 1)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
@@ -117,6 +124,7 @@ usage(int rc = 1)
   cerr << "  -i <type>      specify input file type\n";
   cerr << "  -S <fname>     specify output file name\n";
   cerr << "  -b             put all queries in a single file rather than separate file for each\n";
+  cerr << "  -D ...         create proto query files with GeometricConstraints\n";
   cerr << "  -Y ...         more obscure options, enter '-Y help' for info\n";
   display_standard_aromaticity_options(cerr);
   cerr << "  -g ...         chemical standardisation options, enter '-g help' for info\n";
@@ -125,7 +133,127 @@ usage(int rc = 1)
   exit(rc);
 }
 
-static int
+struct GeometryConfig {
+  // Has anything been specified.
+  bool active = false;
+  // by how much can existing distances vary and still match.
+  float tolerance = 0.10;
+  // Are Hydrogen atoms included or not?
+  bool include_hydrogen = false;
+  // Perhaps a Substructure_Query to specify the atoms to consider.
+};
+
+int
+BuildGeometricConfig(Command_Line & cl, char flag,
+                     GeometryConfig& geometry_config) {
+  IWString d;
+  for (int i = 0; cl.value(flag, d, i); ++i) {
+    d.to_lowercase();
+    if (d.starts_with("tol=")) {
+      d.remove_leading_chars(4);
+      if (! d.numeric_value(geometry_config.tolerance) || 
+            geometry_config.tolerance < 0.0) {
+        cerr << "BuildGeometricConfig:invalid tolerance " << d << '\n';
+        return 0;
+      }
+    } else if (d == "inch") {
+      geometry_config.include_hydrogen = true;
+    } else {
+      cerr << "Unrecognised -" << flag << " specification '" << d << "'\n";
+      return 0;
+    }
+  }
+
+  geometry_config.active = true;
+  return 1;
+}
+
+std::tuple<float, float>
+DistanceRange(float distance, const GeometryConfig& config) {
+  const float delta = config.tolerance * distance;
+  const float min_dist = std::max(0.0f, distance - delta);
+  const float max_dist = distance + delta;
+  return {min_dist, max_dist};
+}
+
+int
+ToGeometricConstraints(MDL_Molecule& m,
+                       const IWString& name_stem,
+                       const GeometryConfig& config) {
+  IWString smarts;
+  const int matoms = m.natoms();
+  std::unique_ptr<int[]> ecount(new_int(HIGHEST_ATOMIC_NUMBER + 1));
+  std::unique_ptr<int[]> atom_xref(new_int(matoms, -1));
+
+  int ndx = 0;    // A count of the number of active atoms.
+  for (int i = 0; i < matoms; ++i) {
+    const Atom * a = m.atomi(i);
+    const atomic_number_t atnum = a->atomic_number();
+    if (atnum == 0 || atnum > HIGHEST_ATOMIC_NUMBER) {
+      cerr << "ToGeometricConstraints:invalid atomic number " << atnum << '\n';
+      return 0;
+    }
+    if (atnum == 1 && ! config.include_hydrogen) {
+      continue;
+    }
+    atom_xref[i] = ndx;
+    ndx++;
+    IWString atomic_smarts;
+    atomic_smarts << "[#" << atnum << ']';
+    smarts.append_with_spacer(atomic_smarts, '.');
+    ecount[atnum]++;
+  }
+
+  SubstructureSearch::SubstructureQuery proto;
+  SubstructureSearch::SingleSubstructureQuery * qry = proto.add_query();
+  std::string tmp(smarts.data(), smarts.length());
+  qry->set_smarts(tmp);
+  tmp.assign(m.name().data(), m.name().length());
+  qry->set_comment(tmp);
+  for (int i = 1; i <= HIGHEST_ATOMIC_NUMBER; ++i) {
+    if (ecount[i] == 0) {
+      continue;
+    }
+    SubstructureSearch::ElementsNeeded * needed = qry->add_elements_needed();
+    needed->set_atomic_number(i);
+    needed->add_hits_needed(ecount[i]);
+  }
+
+  GeometricConstraints::SetOfConstraints * constraints = qry->add_geometric_constraints();
+
+  for (int i = 0; i < matoms; ++i) {
+    if (atom_xref[i] < 0) {
+      continue;
+    }
+    for (int j = i + 1; j < matoms; ++j) {
+      if (atom_xref[j] < 0) {
+        continue;
+      }
+      const float d = m.distance_between_atoms(i, j);
+      GeometricConstraints::Distance * dconstraint = constraints->add_distances();
+      dconstraint->set_a1(atom_xref[i]);
+      dconstraint->set_a2(atom_xref[j]);
+      GeometricConstraints::Range * range = dconstraint->mutable_range();
+      const auto [min_dist, max_dist] = DistanceRange(d, config);
+      range->set_min(min_dist);
+      range->set_max(max_dist);
+    }
+  }
+
+  std::string as_string;
+  google::protobuf::TextFormat::PrintToString(proto, &as_string);
+
+  IWString fname(name_stem);
+  fname << "proto";
+
+  std::ofstream output(fname.null_terminated_chars(), std::ios::out);
+  output << as_string;
+  output.close();
+
+  return 1;
+}
+
+int
 expand_isotopes(MDL_Molecule & m,
                 atom_number_t zatom,
                 int radius,
@@ -153,7 +281,7 @@ expand_isotopes(MDL_Molecule & m,
   return 1;
 }
 
-static int
+int
 identify_coordination_point_and_adjacent_atoms(MDL_Molecule & m)
 {
   Substructure_Results sresults;
@@ -187,10 +315,10 @@ identify_coordination_point_and_adjacent_atoms(MDL_Molecule & m)
   return nhits;
 }
 
-static int
-mol2qry (MDL_Molecule & m,
-         Molecule_to_Query_Specifications & mqs,
-         std::ostream & output)
+int
+mol2qry(MDL_Molecule & m,
+        Molecule_to_Query_Specifications & mqs,
+        std::ostream & output)
 {
   Set_of_Atoms & substitution_points = mqs.externally_specified_substitution_points();
 
@@ -241,13 +369,12 @@ mol2qry (MDL_Molecule & m,
   return output.good();
 }
 
-static int
+int
 mol2qry(MDL_Molecule & m,
         Molecule_to_Query_Specifications & mqs,
+        const GeometryConfig& geometry_config,
         const IWString & output_stem)
 {
-//m.debug_print(cerr);
-
   if (isotopically_labelled_from_slicer && 0 == m.number_isotopic_atoms())
     cerr << "Warning, only substitute at isotopically labelled atoms, but no isotopes '" << m.name() << "'\n";
 
@@ -261,6 +388,11 @@ mol2qry(MDL_Molecule & m,
   next_file_name_to_produce++;
 
   output_fname += '.';
+
+  if (geometry_config.active) {
+    return ToGeometricConstraints(m, output_fname, geometry_config);
+  }
+
   output_fname += suffix_for_file_type(FILE_TYPE_QRY);
 
   std::ofstream output(output_fname.null_terminated_chars(), std::ios::out);
@@ -284,7 +416,7 @@ mol2qry(MDL_Molecule & m,
   out of sync...
 */
 
-static void
+void
 preprocess(MDL_Molecule & m)
 {
   if (remove_isotopes_from_input_molecules)
@@ -302,10 +434,11 @@ preprocess(MDL_Molecule & m)
   return;
 }
 
-static int
-mol2qry (data_source_and_type<MDL_Molecule> & input,
-         Molecule_to_Query_Specifications & mqs,
-         IWString & output_fname)
+int
+mol2qry(data_source_and_type<MDL_Molecule> & input,
+        Molecule_to_Query_Specifications & mqs,
+        const GeometryConfig& geometry_config,
+        IWString & output_fname)
 {
   MDL_Molecule * m;
 
@@ -318,17 +451,18 @@ mol2qry (data_source_and_type<MDL_Molecule> & input,
     if (! m->arrays_allocated())
       m->build(*m);
 
-    if (! mol2qry(*m, mqs, output_fname))
+    if (! mol2qry(*m, mqs, geometry_config, output_fname))
       return 0;
   }
 
   return 1;
 }
 
-static int
+int
 mol2qry(const char * input_fname,
         FileType input_type,
         Molecule_to_Query_Specifications & mqs,
+        const GeometryConfig& geometry_config,
         IWString & output_fname)
 {
   if (FILE_TYPE_INVALID == input_type)
@@ -347,13 +481,14 @@ mol2qry(const char * input_fname,
   if (verbose > 1)
     input.set_verbose(1);
 
-  return mol2qry(input, mqs, output_fname);
+  return mol2qry(input, mqs, geometry_config, output_fname);
 }
 
-static int
+int
 mol2qry(const char * ifile,
         const FileType input_type,
-        Molecule_to_Query_Specifications & mqs)
+        Molecule_to_Query_Specifications & mqs,
+        const GeometryConfig& geometry_config)
 {
   IWString output_fname;
 
@@ -367,10 +502,10 @@ mol2qry(const char * ifile,
     output_fname.remove_suffix();
   }
 
-  return mol2qry(ifile, input_type, mqs, output_fname);
+  return mol2qry(ifile, input_type, mqs, geometry_config, output_fname);
 }
 
-static int
+int
 do_read_environment(const const_IWSubstring & fname,
                     Molecule_to_Query_Specifications & mqs)
 {
@@ -385,7 +520,7 @@ do_read_environment(const const_IWSubstring & fname,
   return mqs.read_environment_specification(input);
 }
 
-static int
+int
 do_read_environment_no_match(const const_IWSubstring & fname,
                              Molecule_to_Query_Specifications & mqs)
 {
@@ -401,9 +536,10 @@ do_read_environment_no_match(const const_IWSubstring & fname,
 }
 
 
-static int
+int
 process_smiles_from_command_line(const IWString & smiles,
-                                 Molecule_to_Query_Specifications & mqs)
+                                 Molecule_to_Query_Specifications & mqs,
+                                 const GeometryConfig& geometry_config)
 {
   MDL_Molecule m;
   if (! m.build_from_smiles(smiles))
@@ -415,10 +551,10 @@ process_smiles_from_command_line(const IWString & smiles,
   if (0 == stem_for_output.length())
     return mol2qry(m, mqs, std::cout);
 
-  return mol2qry(m, mqs, stem_for_output);
+  return mol2qry(m, mqs, geometry_config, stem_for_output);
 }
 
-static void
+void
 display_dash_y_options(std::ostream & os)
 {
   os << " -Y minextra=n  for a match, target must have at least N extra atoms\n";
@@ -441,10 +577,10 @@ display_dash_y_options(std::ostream & os)
   exit(1);
 }
 
-static int
+int
 mol2qry(int  argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "aA:S:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:Icd");
+  Command_Line cl(argc, argv, "aA:S:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:");
 
   verbose = cl.option_count('v');
 
@@ -964,6 +1100,17 @@ mol2qry(int  argc, char ** argv)
   else if (! process_standard_aromaticity_options(cl, verbose))
     usage(4);
 
+
+  GeometryConfig geometry_config;
+  if (cl.option_present('D')) {
+    if (! BuildGeometricConfig(cl, 'D', geometry_config)) {
+      cerr << "Cannot determine geometric constraints specifications (-D)\n";
+      return 1;
+    }
+    if (verbose)
+      cerr << "Will write geometric constraint query protos\n";
+  }
+
   int rc = 0;
 
   if (cl.option_present('M'))
@@ -984,7 +1131,7 @@ mol2qry(int  argc, char ** argv)
 
     cl.value('M', smiles);
 
-    rc = process_smiles_from_command_line(smiles, mqs);
+    rc = process_smiles_from_command_line(smiles, mqs, geometry_config);
   }
   else if (0 == cl.number_elements())
     usage(1);
@@ -998,7 +1145,7 @@ mol2qry(int  argc, char ** argv)
   {
     for (int i = 0; i < cl.number_elements(); i++)
     {
-      if (! mol2qry(cl[i], input_type, mqs))
+      if (! mol2qry(cl[i], input_type, mqs, geometry_config))
       {
         rc = i + 1;
         break;
@@ -1012,12 +1159,15 @@ mol2qry(int  argc, char ** argv)
   return rc;
 }
 
+}  // namespace mol2qry
+
+
 int
 main(int argc, char ** argv)
 {
-  prog_name = argv[0];
+  mol2qry::prog_name = argv[0];
 
-  int rc = mol2qry(argc, argv);
+  int rc = mol2qry::mol2qry(argc, argv);
 
   return rc;
 }

@@ -20,12 +20,12 @@ TEST(Test_Distance, TestAtomNumbers) {
 
   DistanceConstraint constraint;
   ASSERT_FALSE(constraint.Active());
-  ASSERT_FALSE(constraint.IsValid());
-  ASSERT_TRUE(constraint.set_atoms(0, 1));
+  ASSERT_TRUE(constraint.IsValid());
+  ASSERT_TRUE(constraint.SetAtoms(0, 1));
   ASSERT_FALSE(constraint.Active());
   ASSERT_FALSE(constraint.IsValid());
   EXPECT_FALSE(constraint.Matches(m));
-  ASSERT_TRUE(constraint.set_range(0.9, 1.0));  // Somewhat dangerous float comparison.
+  ASSERT_TRUE(constraint.SetRange(0.9, 1.0));  // Somewhat dangerous float comparison.
   ASSERT_TRUE(constraint.Active());
   ASSERT_TRUE(constraint.IsValid());
   EXPECT_TRUE(constraint.Matches(m));
@@ -45,12 +45,12 @@ TEST(Test_Distance, TestEmbedding) {
   s << 1;
 
   DistanceConstraint constraint;
-  ASSERT_TRUE(constraint.set_atoms(0, 1));
-  ASSERT_TRUE(constraint.set_range(0.0, 1.1));
+  ASSERT_TRUE(constraint.SetAtoms(0, 1));
+  ASSERT_TRUE(constraint.SetRange(0.0, 1.1));
   EXPECT_TRUE(constraint.Matches(m, s));
-  constraint.set_range(0.5, 0.9);
+  constraint.SetRange(0.5, 0.9);
   EXPECT_FALSE(constraint.Matches(m, s));
-  constraint.set_atoms(1, 0);
+  constraint.SetAtoms(1, 0);
   EXPECT_FALSE(constraint.Matches(m, s));
 }
 
@@ -62,17 +62,17 @@ TEST(Test_Bond_Angle, TestAtomNumbersDegrees) {
   m.setxyz(2, 2.0, 0.0, 0.0);
 
   BondAngleConstraint constraint;
-  constraint.set_atoms(0, 1, 2);
+  constraint.SetAtoms(0, 1, 2);
   constraint.set_range_in_degrees(180.0 - 0.0001, 180.0 + 0.0001);
   EXPECT_TRUE(constraint.Matches(m));
-  constraint.set_atoms(2, 1, 0);
+  constraint.SetAtoms(2, 1, 0);
   EXPECT_TRUE(constraint.Matches(m));
 
   m.setxyz(2, 1.0 - 0.7071067811865475, 0.7071067811865475, 0.0);
   EXPECT_FALSE(constraint.Matches(m));
   constraint.set_range_in_degrees(40.0, 50.0);
   EXPECT_TRUE(constraint.Matches(m));
-  constraint.set_atoms(2, 1, 0);
+  constraint.SetAtoms(2, 1, 0);
   EXPECT_TRUE(constraint.Matches(m));
 
   m.setxyz(2, 1.0 + 0.7071067811865475, 0.7071067811865475, 0.0);
@@ -89,7 +89,7 @@ TEST(Test_Bond_Angle, TestEmbeddingRadians) {
   m.setxyz(7, 1.0, 1.0, 0.0);
 
   BondAngleConstraint constraint;
-  constraint.set_atoms(0, 1, 2);
+  constraint.SetAtoms(0, 1, 2);
   constraint.set_range_in_radians(M_PI / 2 - 0.0001, M_PI + 0.0001);
 
   Set_of_Atoms s;
@@ -108,7 +108,7 @@ TEST(Test_Torsion_Angle, TestDegrees) {
   m.setxyz(3, 1.5, 0.5, 0.1);
 
   TorsionAngleConstraint constraint;
-  constraint.set_atoms(0, 1, 2, 3);
+  constraint.SetAtoms(0, 1, 2, 3);
   constraint.set_range_in_degrees(-168.69 - 0.1, -168.69 + 0.1);
   EXPECT_TRUE(constraint.Matches(m));
   m.setxyz(3, 1.5, 0.5, -0.1);

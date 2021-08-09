@@ -91,6 +91,20 @@ cc_proto_library(
 )
 
 cc_library(
+    name = "coordinate_box",
+    srcs = [
+        "coordinate_box.cc",
+    ],
+    hdrs = [
+        "coordinate_box.h",
+    ],
+    deps = [
+        ":space_vector",
+        "//Foundational/iwstring:iwstring",
+    ],
+)
+
+cc_library(
     name = "iwmolecule",
     visibility = [
         "//visibility:public",
@@ -246,6 +260,7 @@ cc_library(
     ],
     deps = [
         ":mol2graph_cc_proto",
+        ":space_vector",
         ":substructure_cc_proto",
         ":toggle_kekule_form_cc_proto",
         "//Foundational/accumulator:accumulator",
@@ -395,6 +410,18 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "space_vector",
+    srcs = [
+    ],
+    hdrs = [
+        "space_vector.h",
+    ],
+    deps = [
+        "//Foundational/iwmisc:iwmisc",
+    ],
+)
+
 cc_test(
     name = "linear_fingerprint_test",
     srcs = ["linear_fingerprint_test.cc"],
@@ -467,6 +494,20 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
         "//Foundational/iwmisc:sparse_fp_creator",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
+    name = "coordinate_box_test",
+    srcs = [
+        "coordinate_box_test.cc",
+    ],
+    deps = [
+        ":coordinate_box",
+        "@googletest//:gtest_main",
     ],
     linkopts = [
         "-lz",

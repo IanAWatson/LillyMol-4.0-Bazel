@@ -170,6 +170,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "geometric_descriptors",
+    srcs = [
+        "geometric_descriptors.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+    ]
+)
+
+cc_binary(
     name = "hydrophobic_sections",
     srcs = [
         "hydrophobic_sections.cc",
