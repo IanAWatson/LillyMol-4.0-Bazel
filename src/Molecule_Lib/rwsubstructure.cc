@@ -1587,7 +1587,9 @@ Substructure_Atom::_add_bond(Substructure_Bond * b)
 {
   _bonds.add(b);
 
-//cerr << "Substructure_Atom::_add_bond:to atom " << b->a()->unique_id() << endl;
+#ifdef DEBUG_ADD_BOND
+  cerr << "Substructure_Atom::_add_bond:to atom " << b->a()->unique_id() << " now have " << _bonds.number_elements() << " bonds\n";
+#endif
 
   if (1 == _bonds.number_elements())     // first bond, must notify parent of extra child
   {
@@ -4615,20 +4617,22 @@ next_disconnected (const const_IWSubstring & smarts,
 
 template <typename T>
 void
-transfer_to_our_array (resizable_array_p<T> & to,
-                       const resizable_array<T *> & from)
+transfer_to_our_array(resizable_array_p<T> & to,
+                      resizable_array<T *> & from)
 {
+  to.make_room_for_extra_items(from.number_elements());
   for (int i = 0; i < from.number_elements(); i++)
   {
     to.add(from[i]);
   }
+  from.resize(0);
 
   return;
 }
 
-template void transfer_to_our_array (resizable_array_p<Substructure_Atom> &, const resizable_array<Substructure_Atom *> &);
-template void transfer_to_our_array (resizable_array_p<Bond> &, const resizable_array<Bond *> &);
-template void transfer_to_our_array (resizable_array_p<Link_Atom> &, const resizable_array<Link_Atom *> &);
+template void transfer_to_our_array (resizable_array_p<Substructure_Atom> &, resizable_array<Substructure_Atom *> &);
+template void transfer_to_our_array (resizable_array_p<Bond> &, resizable_array<Bond *> &);
+template void transfer_to_our_array (resizable_array_p<Link_Atom> &, resizable_array<Link_Atom *> &);
 
 //#define DEBUG_SSSQ_PARSE_SMARTS_SPECIFIER
 

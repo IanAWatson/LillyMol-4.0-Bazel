@@ -1240,6 +1240,15 @@ Single_Substructure_Query::_global_query_conditions_also_matched(Query_Atoms_Mat
     }
   }
 
+  if (_separated_atoms.number_elements() > 0) {
+    std::unique_ptr<Set_of_Atoms> embedding = _make_new_embedding(matched_query_atoms);
+    for (const SeparatedAtoms * separated_atoms : _separated_atoms) {
+      if (! separated_atoms->Matches(*target_molecule.molecule(), *embedding)) {
+        return 0;
+      }
+    }
+  }
+
 #ifdef DEBUG_MATCHED_ATOM_POST_CHECK
   cerr << "Global conditions OK\n";
 #endif
@@ -1440,6 +1449,52 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
   return rc;
 }
 
+
+// Based on the matched atoms in `matched_atoms`, generate an embedding derived from
+// those matched atoms.
+// Must respect each atom's include_in_embedding attribute, as well as our own
+// _respect_initial_atom_numbering.
+// If an atom is not included, that position in `new_embedding` will be INVALID_ATOM_NUMBER.
+std::unique_ptr<Set_of_Atoms>
+Single_Substructure_Query::_make_new_embedding(const Query_Atoms_Matched& matched_atoms) const {
+  std::unique_ptr<Set_of_Atoms> new_embedding(new Set_of_Atoms()); // Will be returned.
+  int number_matched_atoms = matched_atoms.number_elements();
+
+  if (_respect_initial_atom_numbering)
+  {
+    assert (_highest_initial_atom_number >= 0);
+    new_embedding->extend(_highest_initial_atom_number + 1, INVALID_ATOM_NUMBER);
+  }
+  else
+    new_embedding->resize(number_matched_atoms);
+
+#ifdef DEBUG_GOT_EMBEDDING
+  cerr << "Scanning " << number_matched_atoms << " matched atoms, _respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
+#endif
+
+  for (int i = 0; i < number_matched_atoms; i++)
+  {
+    const Substructure_Atom * a = matched_atoms[i];
+
+    if (! a->include_in_embedding())
+      continue;
+
+    atom_number_t ma = a->atom_number_matched();
+//  assert (! new_embedding->contains(ma));
+
+    if (_respect_initial_atom_numbering)
+      new_embedding->seti(a->initial_atom_number(), ma);
+    else
+      new_embedding->add(ma);
+
+#ifdef DEBUG_GOT_EMBEDDING
+//  cerr << "Processed atom " << ma << " initial " << a->initial_atom_number() << endl;
+#endif
+  }
+
+  return new_embedding;
+}
+
 //#define DEBUG_GOT_EMBEDDING
 
 /*
@@ -1513,8 +1568,10 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
     return 1;
   }
 
-  Set_of_Atoms * new_embedding = new Set_of_Atoms;
-  int na = matched_atoms.number_elements();
+  std::unique_ptr<Set_of_Atoms> new_embedding = _make_new_embedding(matched_atoms);
+#ifdef NOW_DONE_IN_FUNCTION
+  std::unique_ptr<Set_of_Atoms> new_embedding(new Set_of_Atoms());
+  int number_matched_atoms = matched_atoms.number_elements();
 
 // Note that if any of the matched atoms are to be excluded from the embedding, we may
 // end up with INVALID_ATOM_NUMBER atoms in the final embedding.
@@ -1525,13 +1582,13 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
     new_embedding->extend(_highest_initial_atom_number + 1, INVALID_ATOM_NUMBER);
   }
   else
-    new_embedding->resize(na);
+    new_embedding->resize(number_matched_atoms);
 
 #ifdef DEBUG_GOT_EMBEDDING
-  cerr << "Scanning " << na << " matched atoms, _respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
+  cerr << "Scanning " << number_matched_atoms << " matched atoms, _respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
 #endif
 
-  for (int i = 0; i < na; i++)
+  for (int i = 0; i < number_matched_atoms; i++)
   {
     const Substructure_Atom * a = matched_atoms[i];
 
@@ -1550,6 +1607,7 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
 //  cerr << "Processed atom " << ma << " initial " << a->initial_atom_number() << endl;
 #endif
   }
+#endif
 
 // Not sure what it would mean if all atoms had been excluded from the embedding
 // so for now, let's prohibit that
@@ -1565,7 +1623,6 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
 #ifdef DEBUG_GOT_EMBEDDING
     cerr << "Embedding is not unique, deleting it\n";
 #endif
-    delete new_embedding;
     return 0;
   }
 
@@ -1575,7 +1632,6 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
     cerr << "Embedding overlaps previous embeddings, deleting it\n";
 #endif
 
-    delete new_embedding;
     return 0;
   }
 
@@ -1585,18 +1641,18 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
 #ifdef DEBUG_GOT_EMBEDDING
     cerr << "Embedding symmetry related, discarded\n";
 #endif
-    delete new_embedding;
     return 0;
   }
 
-  if (_atom_type_groups_present && ! _atom_type_groupings_matched(matched_atoms))
+  if (_atom_type_groups_present && ! _atom_type_groupings_matched(matched_atoms)) {
     return 0;
+  }
 
 #ifdef DEBUG_GOT_EMBEDDING
   cerr << "Finally, got an embedding\n";
 #endif
 
-  return _add_embedding(matched_atoms, new_embedding, results);
+  return _add_embedding(matched_atoms, new_embedding.release(), results);
 }
 
 int
@@ -1605,15 +1661,15 @@ remove_atoms_with_same_or(Query_Atoms_Matched & matched_atoms,
                           const int orid)
 {
   int rc = 0;
-  int na = matched_atoms.number_elements();
-  for (int i = istart; i < na; i++)
+  int number_matched_atoms = matched_atoms.number_elements();
+  for (int i = istart; i < number_matched_atoms; i++)
   {
     const Substructure_Atom * b = matched_atoms[i];
     if (b->or_id() == orid)
     {
       matched_atoms.remove_item(i);
       i--;
-      na--;
+      number_matched_atoms--;
       rc++;
     }
   }
@@ -3067,4 +3123,13 @@ Single_Substructure_Query::_atom_type_groupings_matched(const Query_Atoms_Matche
   }
 
   return 1;
+}
+
+int
+SeparatedAtoms::Matches(Molecule& m,
+        const Set_of_Atoms& embedding) const {
+  atom_number_t a1 = embedding[_a1];
+  atom_number_t a2 = embedding[_a2];
+  // cerr << "Matched atoms are " << a1 << " and " << a2 << " betw " << m.bonds_between(a1, a2) << endl;
+  return _separation.matches(m.bonds_between(a1, a2));
 }

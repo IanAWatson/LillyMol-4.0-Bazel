@@ -427,6 +427,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "pharmacaphore_2d",
+    srcs = [
+        "pharmacaphore_2d.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/cmdline:iwcmdline",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "preferred_smiles",
     srcs = [
         "preferred_smiles.cc",
@@ -823,6 +838,23 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:iwreaction",
         "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
+    name = "smu_ring_membership_change",
+    srcs = [
+        "smu_ring_membership_change.cc",
+    ],
+    deps = [
+         "//Foundational/cmdline:iwcmdline",
+         "//Foundational/iwaray:iwaray",
+         "//Foundational/iwmisc:iwmisc",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
     ],
     linkopts = [
         "-lz",

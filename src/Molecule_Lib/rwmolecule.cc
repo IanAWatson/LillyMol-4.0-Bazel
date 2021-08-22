@@ -369,10 +369,6 @@ suffix_for_file_type(FileType file_type)
       return "qry";
       break;
 
-/*  case FILE_TYPE_BFILE:
-      return "b";
-      break;*/
-
     case FILE_TYPE_RSMI:
       return "smi";
       break;
@@ -749,8 +745,6 @@ _string_to_file_type(const const_IWSubstring & file_type)
     return FILE_TYPE_RDF;
   if ("qry" == file_type)
     return FILE_TYPE_QRY;
-/*if ("b" == file_type)
-    return BFILE;*/
   if ("rsmi" == file_type)
     return FILE_TYPE_RSMI;
   if ("sdf" == file_type)
@@ -879,10 +873,6 @@ valid_file_type(int ftype)
     case RDF:
       return 1;
       break;
-
-/*  case BFILE:
-      return 1;
-      break;*/
 
     case RSMI:
       return 1;
@@ -1095,8 +1085,6 @@ Molecule::write_molecule(std::ostream & os, FileType output_type,
     rc = write_molecule_tdt_unique(os, name());
   else if (FILE_TYPE_TDT_NAUSMI == output_type)
     rc = write_molecule_tdt_nausmi(os, name());
-/*else if (BFILE == output_type)
-    rc = write_molecule_bfile(os);*/
   else if (FILE_TYPE_RSMI == output_type)
     rc = write_molecule_rsmi(os, name());
   else if (FILE_TYPE_MOL2 == output_type)

@@ -234,7 +234,6 @@ typedef unsigned int atom_invariant_type_t;
 //#define TDT    8
 //#define RDF    9
 //#define QRY    10
-/*#define BFILE  11*/
 //#define RSMI   12
 //#define UTDT   13
 //#define SDF    14
@@ -280,7 +279,6 @@ enum FileType
   FILE_TYPE_TDT,
   FILE_TYPE_RDF,
   FILE_TYPE_QRY,
-  FILE_TYPE_BFILE,
   FILE_TYPE_INCHI,
   FILE_TYPE_RSMI,
   FILE_TYPE_SMT,

@@ -3061,12 +3061,20 @@ set_default_iwstring_float_concatenation_precision (int s)
 }
 
 void
-IWString::append_number(float f)
+IWString::append_number(float f, int fprecision)
 {
-  char buffer[100];
-  gcvt(static_cast<double>(f), float_precision, buffer);
+  char buffer[32];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+  gcvt(static_cast<double>(f), fprecision, buffer);
+#pragma GCC diagnostic pop
   resizable_array<char>::add(buffer, static_cast<int>(::strlen(buffer)));
   return;
+}
+
+void
+IWString::append_number(float f) {
+  append_number(f, float_precision);
 }
 
 static int double_precision = 10;
@@ -3080,27 +3088,17 @@ set_default_iwstring_double_concatenation_precision (int s)
 void
 IWString::append_number(double d)
 {
-  char buffer[32];
-  gcvt(d, double_precision, buffer);
-  resizable_array<char>::add(buffer, static_cast<int>(::strlen(buffer)));
-
-  return;
-}
-
-void
-IWString::append_number(float f, int fprecision)
-{
-  char buffer[100];
-  gcvt(static_cast<double>(f), fprecision, buffer);
-  resizable_array<char>::add(buffer, static_cast<int>(::strlen(buffer)));
-  return;
+  append_number(d, double_precision);
 }
 
 void
 IWString::append_number(double d, int dprecision)
 {
   char buffer[32];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
   gcvt(d, dprecision, buffer);
+#pragma GCC diagnostic pop
   resizable_array<char>::add(buffer, static_cast<int>(::strlen(buffer)));
   return;
 }

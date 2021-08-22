@@ -700,6 +700,8 @@ Substructure_Atom::_process_substructure_bond(const SubstructureSearch::Substruc
     return 0;
   }
 
+  // cerr << "Substructure_Atom::_process_substructure_bond:adding bond from " << _unique_id << " to " << other_end << " completed " << completed[other_end]->unique_id() << '\n';
+
   Substructure_Bond * b = new Substructure_Bond;
 
   b->set_bond_type(btype);
@@ -1155,6 +1157,7 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
     }
   }
 
+#ifdef QUERY_BONDS_PROCESSED_GREEDY
   if (proto.query_bond_size() > 0)
   {
     for (const auto & bond : proto.query_bond())
@@ -1167,6 +1170,7 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
       }
     }
   }
+#endif
 
   if (!GETVALUES(proto, unmatched_atoms_attached, 0, no_limit))
     return 0;
@@ -1175,6 +1179,31 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
     _atom_type_group = proto.atom_type_group();
 
   assert (ok());
+  return 1;
+}
+
+// Bonds are discerned after all the atoms have been constructed.
+int
+Substructure_Atom::FormBonds(const SubstructureSearch::SubstructureAtom& proto,
+                             extending_resizable_array<Substructure_Atom *> & completed)
+{
+  if (proto.query_bond_size() == 0) {
+    return 1;
+  }
+
+#ifdef DEBUG_FORM_BONDS
+  cerr << "Substructure_Atom::FormBonds:adding " << proto.query_bond_size() << " query bonds\n";
+#endif
+  for (const auto & bond : proto.query_bond())
+  {
+    if (! _process_substructure_bond(bond, completed)) 
+    {
+      cerr << "Substructure_Atom::construct_from_proto:invalid substructure bond\n";
+      cerr << proto.ShortDebugString() << endl;
+      return 0;
+    }
+  }
+
   return 1;
 }
 
@@ -1620,6 +1649,37 @@ template void transfer_to_our_array (resizable_array_p<Substructure_Atom> &, con
 template void transfer_to_our_array (resizable_array_p<Bond> &, const resizable_array<Bond *> &);
 template void transfer_to_our_array (resizable_array_p<Link_Atom> &, const resizable_array<Link_Atom *> &);
 
+SeparatedAtoms::SeparatedAtoms() {
+  _a1 = INVALID_ATOM_NUMBER;
+  _a2 = INVALID_ATOM_NUMBER;
+}
+
+int
+SeparatedAtoms::Build(const SubstructureSearch::SeparatedAtoms& proto) {
+  _a1 = proto.a1();
+  _a2 = proto.a2();
+  if (_a1 == _a2) {
+    cerr << "SeparatedAtoms::Build:separated atoms must be distinct\n";
+    return 0;
+  }
+  if (proto.bonds_between().size() > 0) {
+    for (auto s : proto.bonds_between()) {
+      _separation.add_if_not_already_present(s);
+    }
+  }
+  if (proto.min_bonds_between() > 0) {
+    _separation.set_min(proto.min_bonds_between());
+  }
+  if (proto.max_bonds_between() > 0) {
+    if (! _separation.set_max(proto.max_bonds_between())) {
+      cerr << "SeparatedAtoms::Build:invalid max bonds between\n";
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 //#define DEBUG_SSSQ_PARSE_SMARTS_SPECIFIER
 
 /*
@@ -2011,12 +2071,19 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
       delete a;
       return 0;
     }
+  }
 
-    if (0 == a->nbonds())     // no bonds to anything already defined
-    {
-      cerr << "Non root Substructure_Atom not bonded\n";
+  // Now that all atoms are available in the completed array, form bonds.
+  // Note that this only handles query_bond specifications, not single_bond, double_bond...
+  for (const auto& atom : proto.query_atom()) {
+    Substructure_Atom * a = completed[atom.id()];
+    if (! a->FormBonds(atom, completed)) {
+      cerr << "Single_Substructure_Query::_construct_from_proto:FormBonds failed\n";
+      return 0;
+    }
+    if (!IsRootSubstructureAtom(atom) && a->nbonds() == 0) {
+      cerr << "Non root Substructure_Atom not bonded, id " << a->unique_id() << "\n";
       cerr << atom.ShortDebugString() << "\n";
-      delete a;
       return 0;
     }
   }
@@ -2108,6 +2175,17 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
         return 0;
       }
       _geometric_constraints.add(c.release());
+    }
+  }
+
+  if (proto.separated_atoms().size() > 0) {
+    for (const auto& separated_atoms : proto.separated_atoms()) {
+      std::unique_ptr<SeparatedAtoms> s(new SeparatedAtoms);
+      if (! s->Build(separated_atoms)) {
+        cerr << "Single_Substructure_Query::_construct_from_proto:invalid separated atoms proto " << separated_atoms.ShortDebugString() << '\n';
+        return 0;
+      }
+      _separated_atoms.add(s.release());
     }
   }
 

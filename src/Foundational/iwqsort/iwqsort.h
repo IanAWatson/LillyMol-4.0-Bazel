@@ -61,9 +61,12 @@ swap_elements (T & t1, T & t2,
   t1 = t2;
   t2 = *tmp;
 #else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
   ::memcpy (tmp, &t1, sizeof (T));
   ::memcpy (&t1, &t2, sizeof (T));
   ::memcpy (&t2, tmp, sizeof (T));
+#pragma GCC diagnostic pop
 #endif
 
   return;

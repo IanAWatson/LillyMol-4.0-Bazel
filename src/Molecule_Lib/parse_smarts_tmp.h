@@ -71,6 +71,16 @@ class Parse_Smarts_Tmp
     const resizable_array<Bond *> & no_matched_atoms_between () const { return _no_matched_atoms_between;}
     const resizable_array<Link_Atom *> & link_atoms () const { return _link_atom;}
     const resizable_array<ThreeDots *> & three_dots () const { return _three_dots;}
+
+    resizable_array<Substructure_Atom *> & root_atoms () { return _root;}
+    resizable_array<Bond *> & no_matched_atoms_between () { return _no_matched_atoms_between;}
+    resizable_array<Link_Atom *> & link_atoms () { return _link_atom;}
+    resizable_array<ThreeDots *> & three_dots () { return _three_dots;}
+
+    // An error has occurred, and the smarts cannot be parsed. This object holds a bunch
+    // of things that have been allocated and not yet transferred to the
+    // Substructure_Query object. so they need to be manually deleted.
+    void DeletePointers();
 };
 
 #endif

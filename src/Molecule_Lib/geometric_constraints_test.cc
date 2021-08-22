@@ -172,7 +172,7 @@ TEST(Test_Distance, FromProto) {
 TEST(Test_Angle, FromProto) {
   Molecule m;
   ASSERT_TRUE(m.build_from_smiles("CCCCCCCC"));
-  m.setxyz(3, 0.0, 0.0, 0.0);
+  m.setxyz(5, 0.0, 0.0, 0.0);
   m.setxyz(6, 1.0, 0.0, 0.0);
   m.setxyz(7, -10.0, -0.1, 0.0);
   std::string string_proto = R"pb(
@@ -180,7 +180,7 @@ TEST(Test_Angle, FromProto) {
          min: 0.001
          max: 0.010
       }
-      a1: 3
+      a1: 5
       a2: 6
       a3: 7
   )pb";
@@ -195,7 +195,7 @@ TEST(Test_Angle, FromProto) {
 TEST(Test_Torsion_Angle, FromProto) {
   Molecule m;
   ASSERT_TRUE(m.build_from_smiles("CCCCCCCCC"));
-  m.setxyz(3, 0.0, -1.0, 0.0);
+  m.setxyz(5, 0.0, -1.0, 0.0);
   m.setxyz(6, 0.0, 0.0, 0.0);
   m.setxyz(7, 1.0, 0.0, 0.0);
   m.setxyz(8, 1.0, 0.0, 1.0);
@@ -204,7 +204,7 @@ TEST(Test_Torsion_Angle, FromProto) {
          min: -1.5709
          max: -1.5707
       }
-      a1: 3
+      a1: 5
       a2: 6
       a3: 7
       a4: 8

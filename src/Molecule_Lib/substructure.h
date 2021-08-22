@@ -1071,7 +1071,8 @@ class Substructure_Atom : public Substructure_Atom_Specifier
     int parse_smiles_specifier (const IWString & smiles);
 
     int construct_from_msi_object (const msi_object &, extending_resizable_array<Substructure_Atom *> &);
-    int construct_from_proto (const SubstructureSearch::SubstructureAtom & proto, extending_resizable_array<Substructure_Atom *> &);
+    int construct_from_proto (const SubstructureSearch::SubstructureAtom & proto, extending_resizable_array<Substructure_Atom *> & completed);
+    int FormBonds(const SubstructureSearch::SubstructureAtom& proto, extending_resizable_array<Substructure_Atom *> & completed);
     int create_from_molecule (Molecule & m, 
                               const MDL_File_Data & mdlfd,
                               atom_number_t my_atom_number,
@@ -2021,6 +2022,31 @@ class Substructure_Results
     int CompressToSingleEmbedding();
 };
 
+// Specify the bond separation between pairs of matched atoms.
+// This is likely to be most useful in the case of a query that consists
+// of multiple fragments, but can be applied to any query.
+class SeparatedAtoms {
+  private:
+    // A pair of matched atoms - indices within the embedding.
+    int _a1;
+    int _a2;
+    // The bonds_between value that must be met.
+    Min_Max_Specifier<int> _separation;
+
+  public:
+    SeparatedAtoms();
+
+    int Build(const SubstructureSearch::SeparatedAtoms& proto);
+
+    // Return true if atoms molecule[embedding[separated_atoms.a1]]
+    //                  and molecule[embedding[aseparated_atoms.2]]
+    // are compatible with the bond separation constraint in
+    // separated_atoms.separation.
+    int Matches(Molecule& m,
+                const Set_of_Atoms& embedding) const;
+};
+
+
 /*
   The process of verifying the internal consistency of a substructure
   query is somewhat expensive. To avoid recomputing this, we keep
@@ -2420,6 +2446,9 @@ class Single_Substructure_Query
 
     resizable_array_p<geometric_constraints::SetOfGeometricConstraints> _geometric_constraints;
 
+    // Aug 2021. Bond separation between individual matched atoms.
+    resizable_array_p<SeparatedAtoms> _separated_atoms;
+
 //  private functions
 
     void _default_values();
@@ -2456,6 +2485,7 @@ class Single_Substructure_Query
                             Molecule_to_Match & target_molecule,
                             int * already_matched,
                             Substructure_Results & results);
+    std::unique_ptr<Set_of_Atoms> _make_new_embedding(const Query_Atoms_Matched& matched_atoms) const;
 
     int _set_start_atom(Target_Atom *);
 

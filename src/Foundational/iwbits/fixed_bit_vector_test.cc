@@ -182,4 +182,18 @@ TEST(TestFixedBitVector, TestFirstBitMultipleValues) {
     EXPECT_EQ(foo.FirstBitSet(), i);
   }
 }
+
+TEST(TestFixedBitVector, TestOperatorLtLtSingleBit) {
+  constexpr int nbits = 64;
+  constexpr uint64_t one = 1;
+  for (int i = 0; i < nbits; ++i) {
+    FixedBitVector foo(nbits);
+    foo.set_bit(i);
+    std::stringstream ss;
+    ss << foo;
+    std::stringstream expected;
+    expected << "FixedBitVector 64 " << std::hex << (one << i);
+    EXPECT_EQ(ss.str(), expected.str());
+  }
+}
 }  // namespace

@@ -349,6 +349,8 @@ du_ascii2bin(char const * ascii, int nchars,
     ascii += 4;
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
   if (1 == valid_bytes_in_last_3)
   {
     unsigned char notused1, notused2;
@@ -361,6 +363,7 @@ du_ascii2bin(char const * ascii, int nchars,
     ASCII2BIN (ascii, binary[nbytes - 3], binary[nbytes - 2], notused);
     nbytes--;
   }
+#pragma GCC diagnostic pop
 
   return 1;
 }

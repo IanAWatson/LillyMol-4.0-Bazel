@@ -38,9 +38,6 @@ Molecule_Output_Object::~Molecule_Output_Object()
 {
   assert(ok());
 
-  //if (_use_stdout && 1 == _output_types.number_elements() && BFILE == _output_types[0])
-  //  cout << "-1\n";
-
   if (-1028 == _molecules_per_file)
     cerr << "Deleting already freed Molecule_Output_Object\n";
   _molecules_per_file = -1028;

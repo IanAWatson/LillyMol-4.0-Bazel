@@ -159,7 +159,6 @@ Substructure_Atom::highest_atom_map_number() const
 int
 Substructure_Atom::number_descendants() const
 {
-
   int rc = 1;
 
   for (const Substructure_Atom* c : _children)
@@ -1110,7 +1109,7 @@ Substructure_Atom::matches(Target_Atom & target, const int * already_matched)
 */
 
 int
-Substructure_Atom::_ring_closure_bonds_match (Target_Atom * a) const
+Substructure_Atom::_ring_closure_bonds_match(Target_Atom * a) const
 {
   int nb = _bonds.number_elements();
   if (1 == nb)     // just the bond to parent, no ring closure bonds
@@ -1787,10 +1786,8 @@ Substructure_Atom::assign_unique_id_from_atom_number_if_set (extending_resizable
 */
 
 int
-Substructure_Atom::add_your_children (Query_Atoms_Matched & alist)
+Substructure_Atom::add_your_children(Query_Atoms_Matched & alist)
 {
-//assert (ok ());    too expensive here
-
   for (Substructure_Atom* c : _children)
   {
     c->prepare_for_matching(_current_hold_atom);   // tell children their new anchor
@@ -1807,28 +1804,9 @@ Substructure_Atom::add_your_children (Query_Atoms_Matched & alist)
   Then, we release any hold we may have.
   Finally, we invalidate any info about a previous anchor
 */
-
-/*int
-Substructure_Atom::remove_your_children (Query_Atoms_Matched & atoms,
-                                         int * already_matched)
-{
-//assert (ok ());
-
-  int nc = _children.number_elements ();
-  for (int i = 0; i < nc; i++)
-  {
-    atoms.remove_first (_children[i]);
-  }
-
-  if (_current_hold_atom)
-    release_hold (already_matched);
-
-  return 1;
-}*/
-
 int
-Substructure_Atom::remove_your_children (Query_Atoms_Matched & atoms,
-                                         int * already_matched)
+Substructure_Atom::remove_your_children(Query_Atoms_Matched & atoms,
+                                        int * already_matched)
 {
 //assert (ok ());
 
@@ -1907,7 +1885,7 @@ Substructure_Atom::unmatched_atoms_attached_specified() const
 }
 
 void
-Substructure_Atom::notify_extra_child (Substructure_Atom * a)
+Substructure_Atom::notify_extra_child(Substructure_Atom * a)
 {
   assert (ok());
   assert (a && a->ok());
@@ -2188,7 +2166,7 @@ Substructure_Atom::query_atom_with_atom_map_number(atom_number_t a)
 }
 
 int
-Substructure_Atom::is_bonded_to (atom_number_t o) const
+Substructure_Atom::is_bonded_to(atom_number_t o) const
 {
   if (NULL == _parent)
     ;
@@ -2216,7 +2194,7 @@ Substructure_Atom::add_ncon_preference_object(int n, int p)
 }
 
 void
-Substructure_Atom::identify_atom_numbers (extending_resizable_array<int> & a) const
+Substructure_Atom::identify_atom_numbers(extending_resizable_array<int> & a) const
 {
 //cerr << "Substructure_Atom::identify_atom_numbers:my number " << _initial_atom_number << endl;
 
@@ -2232,7 +2210,7 @@ Substructure_Atom::identify_atom_numbers (extending_resizable_array<int> & a) co
 }
 
 void
-Substructure_Atom::identify_atom_map_numbers (extending_resizable_array<int> & a) const
+Substructure_Atom::identify_atom_map_numbers(extending_resizable_array<int> & a) const
 {
 //cerr << "Substructure_Atom::identify_atom_numbers:my number " << _initial_atom_number << endl;
 
@@ -2407,7 +2385,7 @@ Substructure_Atom::query_atom_with_isotope (int iso) const
 }
 
 void
-Substructure_Atom::adjust_initial_atom_numbers (const int * xref)
+Substructure_Atom::adjust_initial_atom_numbers(const int * xref)
 {
   _initial_atom_number = xref[_initial_atom_number];
 

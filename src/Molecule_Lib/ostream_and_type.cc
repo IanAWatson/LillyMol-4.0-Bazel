@@ -59,9 +59,6 @@ ofstream_and_type::ofstream_and_type(FileType output_type, IWString & fname)
 
 ofstream_and_type::~ofstream_and_type()
 {
-//if (_valid && good () && BFILE == _output_type)
-//  (*this) << "-1\n";
-
   return;
 }
 

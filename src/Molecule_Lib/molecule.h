@@ -1015,8 +1015,6 @@ class Molecule : private resizable_array_p<Atom>
 
     int write_molecule_msi   (std::ostream &, const IWString & = "") const;
 
-    int write_molecule_bfile (std::ostream &);
-
     int write_molecule_mol2  (std::ostream &);
 
     int write_molecule_crd   (std::ostream &);

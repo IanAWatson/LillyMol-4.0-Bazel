@@ -12,6 +12,7 @@ Parse_Smarts_Tmp::Parse_Smarts_Tmp ()
 
 Parse_Smarts_Tmp::~Parse_Smarts_Tmp ()
 {
+  DeletePointers();
   return;
 }
 
@@ -46,4 +47,20 @@ ThreeDots::BuildFromProto(const SubstructureSearch::NoMatchedAtomsBetween& proto
   }
 
   return 1;
+}
+
+template <typename T>
+void
+DeleteAll(resizable_array<T*>& values) {
+  for (T * v : values) {
+    delete v;
+  }
+  values.resize(0);
+}
+
+void
+Parse_Smarts_Tmp::DeletePointers() {
+  DeleteAll(_no_matched_atoms_between);
+  DeleteAll(_link_atom);
+  DeleteAll(_three_dots);
 }

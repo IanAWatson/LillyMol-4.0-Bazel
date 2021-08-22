@@ -366,7 +366,7 @@ non_kekule_systems_ok_to_be_aromatic()
   return _non_kekule_systems_ok_to_be_aromatic;
 }
 
-static int global_aromaticity_determination_type = Pearlman;
+static int global_aromaticity_determination_type = Daylight;
 
 int
 set_global_aromaticity_type(int na)

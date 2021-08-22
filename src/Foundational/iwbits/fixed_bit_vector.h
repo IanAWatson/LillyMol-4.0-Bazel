@@ -2,6 +2,8 @@
 #define FOUNDATIONAL_IWBITS_FIXED_BIT_VECTOR_H
 
 #include <cstdint>
+#include <iostream>
+
 namespace fixed_bit_vector {
 // A BitVector class that only operates on 64 bit words.
 // Deliberately minimal functionality. Designed for speed.
@@ -15,6 +17,9 @@ class FixedBitVector {
   private:
     void _default_values();
     void _allocate_bits(int nb);
+
+  friend
+    std::ostream& operator<<(std::ostream& output, const FixedBitVector& b);
 
   public:
     FixedBitVector();
@@ -42,7 +47,12 @@ class FixedBitVector {
     int FirstBitSet() const;
     // Returns -1 if all bits are set.
     int FirstUnsetBit() const;
+
+    bool operator[](int i) const;
 };
+
+std::ostream&
+operator<<(const FixedBitVector& b, std::ostream& output);
 
 // Returns the first bit set in a uint64_t. Exposed just for testing.
 // Note that this is not the most significant bit, but the least significant bit.

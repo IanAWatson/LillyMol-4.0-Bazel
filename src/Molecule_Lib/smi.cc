@@ -2413,6 +2413,7 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
       if (0 == newsmarts.length())
       {
         cerr << "Substructure_Atom::parse_smiles_token:smarts cannot end in ... operator\n";
+        delete a;
         return 0;
       }
 

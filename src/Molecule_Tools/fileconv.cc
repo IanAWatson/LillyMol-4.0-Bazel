@@ -866,10 +866,11 @@ display_dash_b_options (std::ostream & os)
   exit(1);
 }
 
+// Recursively identify a contiguous group of Nitrogen atoms.
 static int
-identify_ngroup (const Molecule & m,
-                 atom_number_t n,
-                 int * ngroup)
+identify_ngroup(const Molecule & m,
+                atom_number_t n,
+                int * ngroup)
 {
   ngroup[n] = n + 1;
 
@@ -896,9 +897,9 @@ identify_ngroup (const Molecule & m,
 }
 
 static int
-is_azide (const Molecule & m,
-          atom_number_t n1,
-          int * ngroup)
+is_azide(const Molecule & m,
+         atom_number_t n1,
+         int * ngroup)
 {
   const Atom * an1 = m.atomi(n1);
 
@@ -947,7 +948,7 @@ is_azide (const Molecule & m,
 }
 
 static int
-compute_clnd (const Molecule & m)
+compute_clnd(const Molecule & m)
 {
   int rc = 0;
 
@@ -991,7 +992,7 @@ compute_clnd (const Molecule & m)
 }
 
 static void
-do_appends (Molecule & m, IWString & extra_stuff)
+do_appends(Molecule & m, IWString & extra_stuff)
 {
   if (append_molecular_formula_to_name)
   {
@@ -1067,7 +1068,7 @@ do_appends (Molecule & m, IWString & extra_stuff)
 }
 
 static void
-do_appends (Molecule & m)
+do_appends(Molecule & m)
 {
   const IWString & mname = m.name();
 
@@ -1079,8 +1080,7 @@ do_appends (Molecule & m)
 
   if (appended_properties_from_largest_fragment && m.number_fragments() > 1)
   {
-    Molecule tmp;
-    tmp.add_molecule(&m);    // make a copy
+    Molecule tmp(m);
     tmp.reduce_to_largest_fragment();
 
     do_appends(tmp, extra_stuff);
@@ -1097,7 +1097,7 @@ do_appends (Molecule & m)
 }
 
 static int
-do_remove_fragments_this_size_or_smaller (Molecule & m)
+do_remove_fragments_this_size_or_smaller(Molecule & m)
 {
   int nf = m.number_fragments();
 
@@ -1146,7 +1146,7 @@ do_remove_fragments_this_size_or_smaller (Molecule & m)
 }
 
 static int
-do_compute_partial_charges (Molecule & m)
+do_compute_partial_charges(Molecule & m)
 {
   int rc = 0;
 
@@ -1189,9 +1189,9 @@ append_bond(const Bond & b,
 }
 
 static int
-do_print_torsions (const Molecule & m,
-                   const Bond & b,
-                   std::ostream & output)
+do_print_torsions(const Molecule & m,
+                  const Bond & b,
+                  std::ostream & output)
 {
   const atom_number_t a2 = b.a1();
   const atom_number_t a3 = b.a2();
@@ -1277,10 +1277,10 @@ do_print_torsions(Molecule & m,
 }
 
 static int
-do_print_bond_angles (const Molecule & m,
-                      const atom_number_t a1,
-                      const atom_number_t a2,
-                      std::ostream & output)
+do_print_bond_angles(const Molecule & m,
+                     const atom_number_t a1,
+                     const atom_number_t a2,
+                     std::ostream & output)
 {
   const Atom * aa2 = m.atomi(a2);
 
@@ -1304,8 +1304,8 @@ do_print_bond_angles (const Molecule & m,
 }
 
 static int
-do_print_bond_angles (const Molecule & m,
-                      std::ostream & output)
+do_print_bond_angles(const Molecule & m,
+                     std::ostream & output)
 {
   const int nb = m.nedges();
 
@@ -1324,8 +1324,8 @@ do_print_bond_angles (const Molecule & m,
 }
 
 static int
-do_print_bond_lengths (const Molecule & m,
-                       std::ostream & output)
+do_print_bond_lengths(const Molecule & m,
+                      std::ostream & output)
 {
   const int matoms = m.natoms();
   for (int i = 0; i < matoms; i++)
@@ -1360,7 +1360,7 @@ do_print_bond_lengths (const Molecule & m,
 }
 
 static int
-do_invert_all_chiral_centres (Molecule & m)
+do_invert_all_chiral_centres(Molecule & m)
 {
   const int nc = m.chiral_centres();
   if (0 == nc)
@@ -1383,7 +1383,7 @@ do_invert_all_chiral_centres (Molecule & m)
 }
 
 static int
-do_reflect_coordinates (Molecule & m)
+do_reflect_coordinates(Molecule & m)
 {
   if (m.highest_coordinate_dimensionality() < 3)
   {
@@ -1411,7 +1411,7 @@ do_reflect_coordinates (Molecule & m)
 }
 
 static int
-do_find_all_chiral_centres (Molecule & m)
+do_find_all_chiral_centres(Molecule & m)
 {
   int matoms = m.natoms();
 
@@ -3745,13 +3745,12 @@ fileconv(Molecule & m,
 }
 
 static int
-fileconv (data_source_and_type<Molecule> & input,
-          Molecule_Output_Object & output_object)
+fileconv(data_source_and_type<Molecule> & input,
+         Molecule_Output_Object & output_object)
 {
   Molecule * m;
   while (NULL != (m = input.next_molecule()))
   {
-//  std::unique_ptr<Molecule> free_m(m);
     std::unique_ptr<Molecule> free_m(m);
 
     molecules_read++;
@@ -3777,8 +3776,8 @@ fileconv (data_source_and_type<Molecule> & input,
 */
 
 static int
-fileconv (const char *fname, FileType input_type,
-          Molecule_Output_Object & output)
+fileconv(const char *fname, FileType input_type,
+         Molecule_Output_Object & output)
 {
   assert(NULL != fname);
 
@@ -3851,9 +3850,9 @@ fileconv (const char *fname, FileType input_type,
 }
 
 static int
-fileconv_list_of_files (iwstring_data_source & input,
-                        FileType input_type,
-                        Molecule_Output_Object & output)
+fileconv_list_of_files(iwstring_data_source & input,
+                       FileType input_type,
+                       Molecule_Output_Object & output)
 {
   input.set_strip_trailing_blanks(1);
   input.set_skip_blank_lines(1);
@@ -3879,9 +3878,9 @@ fileconv_list_of_files (iwstring_data_source & input,
 }
 
 static int
-fileconv_list_of_files (const char * fname,
-                        FileType input_type,
-                        Molecule_Output_Object & output)
+fileconv_list_of_files(const char * fname,
+                       FileType input_type,
+                       Molecule_Output_Object & output)
 {
   const char * tmp = fname + 2;
 
@@ -3897,7 +3896,7 @@ fileconv_list_of_files (const char * fname,
 }
 
 static const Element *
-recognise_as_element (const const_IWSubstring & o)
+recognise_as_element(const const_IWSubstring & o)
 {
   const Element * rc = get_element_from_symbol_no_case_conversion(o);
 
@@ -3916,7 +3915,7 @@ recognise_as_element (const const_IWSubstring & o)
 }
 
 static const Element * 
-recognise_as_element_or_atomic_number (const const_IWSubstring & o)
+recognise_as_element_or_atomic_number(const const_IWSubstring & o)
 {
   int z;
   if (! o.numeric_value(z))
@@ -3932,8 +3931,8 @@ recognise_as_element_or_atomic_number (const const_IWSubstring & o)
 }
 
 static int
-handle_dash_O_stuff (Command_Line & cl,
-                     char flag)
+handle_dash_O_stuff(Command_Line & cl,
+                    char flag)
 {
   int i = 0;
   const_IWSubstring o;
@@ -4016,7 +4015,7 @@ handle_dash_O_stuff (Command_Line & cl,
 */
 
 static int
-get_translations (Command_Line & cl, int verbose, const char cflag)
+get_translations(Command_Line & cl, int verbose, const char cflag)
 {
   IWString token;
   (void) cl.value(cflag, token);
@@ -4074,7 +4073,7 @@ get_translations (Command_Line & cl, int verbose, const char cflag)
 }
 
 static int
-all_files_recognised_by_type (const Command_Line & cl)
+all_files_recognised_by_type(const Command_Line & cl)
 {
   for (int i = 0; i < cl.number_elements(); i++)
   {
@@ -4089,8 +4088,8 @@ all_files_recognised_by_type (const Command_Line & cl)
 }
 
 static int
-fetch_frag_smarts (const const_IWSubstring f, const char * largest_or_smallest,
-                    resizable_array_p<Substructure_Query> & queries)
+fetch_frag_smarts(const const_IWSubstring f, const char * largest_or_smallest,
+                  resizable_array_p<Substructure_Query> & queries)
 {
   Substructure_Query * tmp = new Substructure_Query(f);
   if (! tmp->create_from_smarts(f))
@@ -4110,8 +4109,8 @@ fetch_frag_smarts (const const_IWSubstring f, const char * largest_or_smallest,
 }
 
 static int
-fetch_frag_queries (const_IWSubstring f, const char * largest_or_smallest,
-                    resizable_array_p<Substructure_Query> & queries)
+fetch_frag_queries(const_IWSubstring f, const char * largest_or_smallest,
+                   resizable_array_p<Substructure_Query> & queries)
 {
   if (f.starts_with("F:"))
   {
@@ -4152,7 +4151,7 @@ fetch_frag_queries (const_IWSubstring f, const char * largest_or_smallest,
 }
 
 static int
-fileconv (int argc, char ** argv)
+fileconv(int argc, char ** argv)
 {
   if (! first_call)
     reset_file_scope_variables();

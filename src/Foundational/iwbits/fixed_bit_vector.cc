@@ -307,4 +307,16 @@ FixedBitVector::FirstBitSet() const {
   return -1;
 }
 
+std::ostream&
+operator<<(std::ostream& output, const FixedBitVector& b) {
+  output << "FixedBitVector " << b.nbits();
+  output << std::hex;
+  for (int i = 0; i < b._nwords; ++i) {
+    output << ' ' << b._bits[i];
+  }
+  output << std::dec;
+
+  return output;
+}
+
 }  // namespace fixed_bit_vector

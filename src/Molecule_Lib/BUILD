@@ -566,6 +566,21 @@ cc_test(
 )
 
 cc_test(
+    name = "substructure_sepma_test",
+    srcs = ["substructure_sepma_test.cc"],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        ":substructure_cc_proto",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
     name = "substructure_test",
     srcs = ["substructure_test.cc"],
     timeout="short",

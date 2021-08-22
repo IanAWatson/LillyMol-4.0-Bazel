@@ -602,6 +602,18 @@ message SubstructureEnvironment {
   optional uint32 max_env_matches_per_anchor = 18;
 }
 
+// Specifications for pairs of matched atoms.
+message SeparatedAtoms {
+  // A pair of matched atoms
+  optional uint32 a1 = 1;
+  optional uint32 a2 = 2;
+
+  // And the required bonds between them.
+  repeated uint32 bonds_between = 3;
+  optional uint32 min_bonds_between = 4;
+  optional uint32 max_bonds_between = 5;
+}
+
 message SingleSubstructureQuery {
   // Must be present, and unique across all SingleSubstructureQuery.
   optional int32 id = 1;
@@ -884,6 +896,9 @@ message SingleSubstructureQuery {
   optional string atom_type = 119;
 
   repeated GeometricConstraints.SetOfConstraints geometric_constraints = 120;
+
+  // Bond separation between matched atoms.
+  repeated SeparatedAtoms separated_atoms = 121;
 }
 
 // A SubstructureQuery is merely a collection of individual
@@ -900,7 +915,7 @@ message SubstructureQuery {
 
 // An interesting design choice. Should the various properties
 // be specified as a message like this, or as is currently
-// implemented. What really drove the decision was large about
+// implemented. What really drove the decision was more about
 // wishing to avoid too many layers of parentheses.
 message MinMaxSpecifierInt {
   repeated int32 value = 1;
