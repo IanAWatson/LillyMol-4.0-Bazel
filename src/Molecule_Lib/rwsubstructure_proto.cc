@@ -1028,31 +1028,6 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
       if (i > 0)
         AddOperator(spec.logical_operator(), _operator);
     }
-
-    // The default operator is OR.
-    if (proto.atom_properties_size() > 1 && proto.ap_operator_size() == 0) {
-      for (int i = 1; i < proto.atom_properties_size(); ++i) {
-        _operator.add_operator(IW_LOGEXP_OR);
-      }
-    } else if (proto.ap_operator_size() + 1 != proto.atom_properties_size()) {
-      cerr << "Substructure_Atom::_construct_from_proto:inconsistent atom properties " << proto.atom_properties_size() << " vs operators " << proto.ap_operator_size() << '\n';
-      return 0;
-    }
-
-    for (const auto op : proto.ap_operator()) {
-      if (op == SubstructureSearch::SS_OR) {
-        _operator.add_operator(IW_LOGEXP_OR);
-      } else if (op == SubstructureSearch::SS_AND) {
-        _operator.add_operator(IW_LOGEXP_AND);
-      } else if (op == SubstructureSearch::SS_XOR) {
-        _operator.add_operator(IW_LOGEXP_XOR);
-      } else if (op == SubstructureSearch::SS_LP_AND) {
-        _operator.add_operator(IW_LOGEXP_LOW_PRIORITY_AND);
-      } else {
-        cerr << "Substructure_Atom::_construct_from_proto:unrecognised operator " << op << '\n';
-        return 0;
-      }
-    }
   }
 
 // For simplicity, one can specify only one of atom smarts, smiles and smarts
@@ -1407,18 +1382,20 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
 
   if (_components.number_elements() > 1) {
     for (int i = 0; i < _components.number_elements(); ++i) {
-      _components[i]->BuildProto(*proto.add_atom_properties());
-    }
-    for (int i = 0; i < _operator.number_operators(); ++i) {
-      const int op = _operator.op(i);
+      SubstructureSearch::SubstructureAtomSpecifier* atom_prop = proto.add_atom_properties();
+      _components[i]->BuildProto(*atom_prop);
+      if (i == 0) {
+        continue;
+      }
+      const int op = _operator.op(i - 1);
       if (op == IW_LOGEXP_AND) {
-        proto.add_ap_operator(SubstructureSearch::SS_AND);
+        atom_prop->set_logical_operator(SubstructureSearch::SS_AND);
       } else if (op == IW_LOGEXP_OR) {
-        proto.add_ap_operator(SubstructureSearch::SS_OR);
+        atom_prop->set_logical_operator(SubstructureSearch::SS_OR);
       } else if (op == IW_LOGEXP_XOR) {
-        proto.add_ap_operator(SubstructureSearch::SS_XOR);
+        atom_prop->set_logical_operator(SubstructureSearch::SS_XOR);
       } else if (op == IW_LOGEXP_LOW_PRIORITY_AND) {
-        proto.add_ap_operator(SubstructureSearch::SS_LP_AND);
+        atom_prop->set_logical_operator(SubstructureSearch::SS_LP_AND);
       } else {
         cerr << "Substructure_Atom::BuildProto:unrecognized operator type " << op << '\n';
         return 0;

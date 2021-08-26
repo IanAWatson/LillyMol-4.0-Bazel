@@ -490,15 +490,13 @@ message SubstructureAtom {
   optional uint32 initial_atom_number = 5;
 
   // I do not understand what this is for. As implemented, the functionality
-  // seems strange. omitting for now.
+  // seems strange. Omitting for now.
   // optional uint32 or_id = 6;
   //optional int32 or_operator = 8;
 
 
   // A SubstructureAtom can consist of any number of individual choices of properties.
   repeated SubstructureAtomSpecifier atom_properties = 7;
-  // Operators defining the logical relationship among `atom_properties`.
-  repeated Operator ap_operator = 8;
 
   optional int32 ring_id = 9;
 

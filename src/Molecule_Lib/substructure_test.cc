@@ -2205,7 +2205,7 @@ TEST_F(TestSubstructure, TestUnmatchedAtomsAttachedRing)
   EXPECT_THAT(*_sresults.embedding(0), UnorderedElementsAre(0, 1, 2));
 }
 
-TEST_F(TestSubstructure, TestUnmatchedAtomsAttachedLogicalExp)
+TEST_F(TestSubstructure, TestUnmatchedAtomsAttachedLogicalExpOr)
 {
   // C-N-
   _string_proto = R"(query {
