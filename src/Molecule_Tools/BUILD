@@ -146,6 +146,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "echoqry",
+    srcs = [
+        "echoqry.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz"
+    ],
+)
+
+cc_binary(
     name = "fileconv",
     srcs = [
         "fileconv.cc",
@@ -1129,6 +1143,9 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
     ],
 )
 

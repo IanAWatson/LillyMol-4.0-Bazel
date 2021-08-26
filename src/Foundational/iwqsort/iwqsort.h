@@ -50,6 +50,16 @@ resizable_array_base<T>::iwqsort_lambda(C comparator)
 
 //#define DEBUG_IWQSORT
 
+// This does not work. Tried various things to make this adapt
+// to the compiler name. Got close, but not quite.
+// https://stackoverflow.com/questions/3030099/pragma-in-define-macro
+// seemed promising. For now the code below is hard coded for gcc.
+#ifdef __clang__
+#define COMPILING_ME clang
+#else
+#define COMPILING_ME gcc
+#endif
+
 template <typename T>
 void 
 swap_elements (T & t1, T & t2,
@@ -61,16 +71,17 @@ swap_elements (T & t1, T & t2,
   t1 = t2;
   t2 = *tmp;
 #else
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wclass-memaccess"
   ::memcpy (tmp, &t1, sizeof (T));
   ::memcpy (&t1, &t2, sizeof (T));
   ::memcpy (&t2, tmp, sizeof (T));
-#pragma GCC diagnostic pop
+#pragma gcc diagnostic pop
 #endif
 
   return;
 }
+#undef COMPILING_ME
 
 template <typename T, typename C>
 void

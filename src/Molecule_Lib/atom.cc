@@ -104,7 +104,7 @@ Atom::_default_values(const Element * zelement)
 
   _userAtomType = 0;
 
-  _user_specified_void_ptr = NULL;
+  _user_specified_void_ptr = nullptr;
 
   _atom_map = 0;
 
@@ -122,17 +122,17 @@ Atom::Atom(const Element * zelement)
 
 Atom::Atom(const char * asymbol)
 {
-  assert(NULL != asymbol);
+  assert(nullptr != asymbol);
 
   const Element * e =
       get_element_from_symbol(asymbol, static_cast<int>(::strlen(asymbol)), _isotope);
 
-  if (NULL == e)
+  if (nullptr == e)
   {
     if (auto_create_new_elements())
       e = new Element(asymbol);
 
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "Atom::Atom unrecognised atomic symbol '" << asymbol << "\n";
       iwabort();
@@ -147,7 +147,7 @@ Atom::Atom(const char * asymbol)
 Atom::Atom(atomic_number_t zz)
 {
   const Element * e = get_element_from_atomic_number(zz);
-  if (NULL == e)
+  if (nullptr == e)
   {
     cerr << "Atom::Atom: cannot get element for z = " << zz << endl;
     iwabort();
@@ -569,14 +569,14 @@ Atom::bond_to_atom(atom_number_t a) const
       return _things[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 const Bond *
 Atom::bond_to_atom(atom_number_t myAtomId, atom_number_t otherAtomId) const
 {
   if (myAtomId == otherAtomId)
-    return NULL;    // not bonded to itself
+    return nullptr;    // not bonded to itself
 
   for (int i = 0; i < _number_elements; i++)
   {
@@ -584,7 +584,7 @@ Atom::bond_to_atom(atom_number_t myAtomId, atom_number_t otherAtomId) const
       return _things[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 bond_type_t
@@ -601,7 +601,7 @@ Atom::btype_to_atom(atom_number_t myAtomId, atom_number_t otherAtomId) const
   assert(ok());
 
   const Bond * b = bond_to_atom(myAtomId, otherAtomId);
-  if (b == NULL)
+  if (b == nullptr)
     return UNKNOWN_BOND_TYPE;
   assert(b && b->ok());
 
@@ -627,7 +627,7 @@ Atom::connections(atom_number_t my_atom_number, atom_number_t * others, bond_typ
 {
   assert(ok());
 
-  if (NULL == bt)
+  if (nullptr == bt)
   {
     for (int i = 0; i < _number_elements; i++)
     {
@@ -1590,7 +1590,7 @@ Atom::set_bond_type_to_atom(atom_number_t zatom, bond_type_t bt)
 
   cerr << "Atom::set_bond_type_to_atom: atom not bonded to atom " << zatom << endl;
 
-  assert(NULL == "This is very bad");
+  assert(nullptr == "This is very bad");
 
   return 0;
 }

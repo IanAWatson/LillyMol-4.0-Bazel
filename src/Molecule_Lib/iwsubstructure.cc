@@ -1569,45 +1569,6 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
   }
 
   std::unique_ptr<Set_of_Atoms> new_embedding = _make_new_embedding(matched_atoms);
-#ifdef NOW_DONE_IN_FUNCTION
-  std::unique_ptr<Set_of_Atoms> new_embedding(new Set_of_Atoms());
-  int number_matched_atoms = matched_atoms.number_elements();
-
-// Note that if any of the matched atoms are to be excluded from the embedding, we may
-// end up with INVALID_ATOM_NUMBER atoms in the final embedding.
-
-  if (_respect_initial_atom_numbering)
-  {
-    assert (_highest_initial_atom_number >= 0);
-    new_embedding->extend(_highest_initial_atom_number + 1, INVALID_ATOM_NUMBER);
-  }
-  else
-    new_embedding->resize(number_matched_atoms);
-
-#ifdef DEBUG_GOT_EMBEDDING
-  cerr << "Scanning " << number_matched_atoms << " matched atoms, _respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
-#endif
-
-  for (int i = 0; i < number_matched_atoms; i++)
-  {
-    const Substructure_Atom * a = matched_atoms[i];
-
-    if (! a->include_in_embedding())
-      continue;
-
-    atom_number_t ma = a->atom_number_matched();
-//  assert (! new_embedding->contains(ma));
-
-    if (_respect_initial_atom_numbering)
-      new_embedding->seti(a->initial_atom_number(), ma);
-    else
-      new_embedding->add(ma);
-
-#ifdef DEBUG_GOT_EMBEDDING
-//  cerr << "Processed atom " << ma << " initial " << a->initial_atom_number() << endl;
-#endif
-  }
-#endif
 
 // Not sure what it would mean if all atoms had been excluded from the embedding
 // so for now, let's prohibit that
@@ -1767,9 +1728,8 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
               "), or = " << a->or_id() <<
               " atom to process = " << atom_to_process << " matched = " << matched_atoms.number_elements() << endl;
 #endif
-      int orid = a->or_id();
-      if (orid)
-        remove_atoms_with_same_or(matched_atoms, atom_to_process + 1, orid);
+      if (a->or_id())
+        remove_atoms_with_same_or(matched_atoms, atom_to_process + 1, a->or_id());
 
       a->add_your_children(matched_atoms);   // does nothing if already added
 
@@ -1871,6 +1831,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
   cerr << "Beginning atom matching over " << target_molecule.natoms() << " atoms\n";
+  cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
 #endif
 
   _iroot = 0;
@@ -2306,6 +2267,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 {
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
   cerr << "Begin common _substructure_search code, " << _root_atoms.number_elements() << " root atoms\n";
+  cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
 #endif
 
   if (! _match_global_specifications(target_molecule))

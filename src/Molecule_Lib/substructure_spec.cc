@@ -212,7 +212,7 @@ Substructure_Atom_Specifier::terse_details (std::ostream & os,
 int
 Substructure_Atom_Specifier::involves_rings() const
 {
-  assert (NULL == "This is not working");
+  assert (nullptr == "This is not working");
 
   if (_nrings.is_set())
   {
@@ -1106,7 +1106,7 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
 
   if (SUBSTRUCTURE_NOT_SPECIFIED != _chirality)
   {
-    if (NULL == target.chiral_centre())    // no chiral centre on matched atom
+    if (nullptr == target.chiral_centre())    // no chiral centre on matched atom
     {
       if (_chirality)
         return 0;
@@ -1177,7 +1177,7 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
   {
     cerr << "Oops, attributes specified = " << _attributes_specified << " processed = " << attributes_checked << endl;
     debug_print(cerr);
-    assert (NULL == "This should not happen");
+    assert (nullptr == "This should not happen");
   }
 
 #ifdef DEBUG_ATOM_MATCHES
@@ -1938,7 +1938,7 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 #endif
     }
 
-  } while (NULL != (asc = asc->next()));
+  } while (nullptr != (asc = asc->next()));
 
 #ifdef DEBUG_ATOM_CONSTRUCT_FROM_SMARTS_TOKEN
   cerr << "After building, operator is\n";
@@ -2064,7 +2064,7 @@ Substructure_Atom_Specifier::_get_atomic_number_or_symbol(const char * smarts,
 
   int nchars = 0;
 
-  const Element * e = NULL;
+  const Element * e = nullptr;
 
   if ('{' == smarts[0] && characters_to_process > 2)
   {
@@ -2082,12 +2082,12 @@ Substructure_Atom_Specifier::_get_atomic_number_or_symbol(const char * smarts,
     {
       e = get_element_from_symbol_no_case_conversion(token);
 
-      if (NULL != e)
+      if (nullptr != e)
         _add_element(e);
       else if (auto_create_new_elements())
       {
         e = create_element_with_symbol(token);
-        if (NULL == e)
+        if (nullptr == e)
           return 0;
 
         _add_element(e);
@@ -2128,7 +2128,7 @@ Substructure_Atom_Specifier::_add_element (const atomic_number_t z)
 {
   const Element * e = get_element_from_atomic_number(z);
 
-  if (NULL == e)
+  if (nullptr == e)
     return 0;
 
   return _add_element(e);
@@ -2333,7 +2333,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
 
     else if (isupper(s) && next_char_is_lowercase_letter && 
              ('r' == smarts[1] || 'v' == smarts[1] || 'x' == smarts[1]) &&
-             (NULL != (e = get_element_from_symbol_no_case_conversion(s))))
+             (nullptr != (e = get_element_from_symbol_no_case_conversion(s))))
     {
       _add_element(e);
       first_elemental_primitive_encountered = 1;
@@ -2893,7 +2893,7 @@ Substructure_Atom_Specifier::construct_from_smiles_token(const const_IWSubstring
   const Element * e;
 
   int nchars = parse_smiles_token(smiles.rawchars(), smiles.length(), e, _aromaticity);
-  if (0 == nchars || NULL == e)
+  if (0 == nchars || nullptr == e)
   {
     cerr << "Substructure_Atom_Specifier::construct_from_smiles_token: cannot parse '" << smiles << "'\n";
 //  iwabort();

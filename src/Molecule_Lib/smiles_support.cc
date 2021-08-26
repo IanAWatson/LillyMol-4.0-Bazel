@@ -403,12 +403,12 @@ Molecule::_smiles_write_directional_bond (atom_number_t a,
 {
 
   const Cis_Trans_Bond * ctb = part_of_cis_trans_bond (a, anchor);
-  if (NULL == ctb)
+  if (nullptr == ctb)
   {
     cerr << "Molecule::process_atom_for_smiles: directional bond, but no CTB\n";
     cerr << "Atoms " << a << " and " << anchor << endl;
     debug_print (cerr);
-    assert (NULL == "This should not happen");
+    assert (nullptr == "This should not happen");
   }
 
   if (anchor == ctb->left_up() && a == ctb->left_root())
@@ -423,7 +423,7 @@ Molecule::_smiles_write_directional_bond (atom_number_t a,
   {
     cerr << "Molecule::_smiles_write_directional_bond: anchor = " << anchor << " a = " << a << endl;
     ctb->debug_print(cerr);
-    assert (NULL == "What's going on here");
+    assert (nullptr == "What's going on here");
   }
 
   return 1;
@@ -543,7 +543,7 @@ Molecule::_append_smarts_equivalent (Smiles_Formation_Info & sfi,
 
   const IWString * const user_specified_atomic_smarts = sfi.user_specified_atomic_smarts();
 
-  if (NULL == user_specified_atomic_smarts)   // ignore
+  if (nullptr == user_specified_atomic_smarts)   // ignore
     ;
   else if (0 != user_specified_atomic_smarts[zatom].length())
   {
@@ -558,7 +558,7 @@ Molecule::_append_smarts_equivalent (Smiles_Formation_Info & sfi,
 
 //append_smarts_equivalent_for_atom(zatom, s, sfi);
 
-  if (NULL != sfi.include_atom())
+  if (nullptr != sfi.include_atom())
     append_smarts_equivalent_for_atom(zatom, s, sfi.include_atom());
   else
     append_smarts_equivalent_for_atom(zatom, s);
@@ -629,7 +629,7 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
 
   const IWString * const user_specified_atomic_smarts = sfi.user_specified_atomic_smarts();
 
-  if (NULL == user_specified_atomic_smarts)   // ignore it
+  if (nullptr == user_specified_atomic_smarts)   // ignore it
     ;
   else if (user_specified_atomic_smarts[zatom].length() > 0)
   {
@@ -719,11 +719,11 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
     }
   }
 
-// Real problems if we are excluding chirality from the smiles. Argument C will be NULL if we are
+// Real problems if we are excluding chirality from the smiles. Argument C will be nullptr if we are
 // excluding chirality from smiles, so we need to fetch the value again
 
   int ihknown = a->implicit_hydrogens_known();
-  if (! _include_chiral_info_in_smiles && ihknown && (NULL != chiral_centre_at_atom(zatom)) &&
+  if (! _include_chiral_info_in_smiles && ihknown && (nullptr != chiral_centre_at_atom(zatom)) &&
       hcount < 0 && 0 == a->formal_charge() && 0 == a->isotope() && e->organic())
     ihknown = 0;
 
@@ -794,7 +794,7 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
 
   const IWString * user_specified_atomic_smarts = sfi.user_specified_atomic_smarts();
 
-  if (NULL == user_specified_atomic_smarts)
+  if (nullptr == user_specified_atomic_smarts)
     ;
   else if (user_specified_atomic_smarts[zatom].length() > 0)
   {
@@ -939,19 +939,19 @@ Smiles_Formation_Info::Smiles_Formation_Info (int na, int nr) : _rnm (nr)
 {
   _natoms = na;
 
-  _already_done = NULL;
+  _already_done = nullptr;
 
   _previous_atom = INVALID_ATOM_NUMBER;
 
   _zatom = INVALID_ATOM_NUMBER;
 
-  _include_atom = NULL;
+  _include_atom = nullptr;
 
   _write_smiles = 1;
 
-  _make_smarts_embedding = NULL;
+  _make_smarts_embedding = nullptr;
 
-  _user_specified_atomic_smarts = NULL;
+  _user_specified_atomic_smarts = nullptr;
 
   return;
 }
@@ -970,7 +970,7 @@ Smiles_Formation_Info::ok() const
 int
 Smiles_Formation_Info::make_smarts_embedding (atom_number_t zatom) const
 {
-  if (NULL == _make_smarts_embedding)
+  if (nullptr == _make_smarts_embedding)
     return 0;
 
   return _make_smarts_embedding[zatom];
@@ -980,7 +980,7 @@ Smiles_Formation_Info::make_smarts_embedding (atom_number_t zatom) const
 Smiles_Formation_Info::set_create_embedding_smarts (atom_number_t zatom,
                                                     int s)
 {
-  if (NULL == _create_embedding)
+  if (nullptr == _create_embedding)
     _create_embedding = new_int(_natoms);
 
   _create_embedding[zatom] = s;

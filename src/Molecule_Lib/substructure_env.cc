@@ -84,8 +84,8 @@ Substructure_Environment::_print_common_info (std::ostream & os,
 }
 
 int
-Substructure_Environment::terse_details (std::ostream & os,
-                                         const IWString & indentation) const
+Substructure_Environment::terse_details(std::ostream & os,
+                                        const IWString & indentation) const
 {
   _print_common_info(os, indentation);
 
@@ -367,6 +367,7 @@ Substructure_Environment::matches(int * previously_matched_atoms,
 #ifdef DEBUG_SS_ENV_MATCHES
   cerr << "After checking components, nhits = " << nhits << ", pwuc = " << parents_with_unmatched_connections << endl;
   cerr << "_hits_needed.matches? " << _hits_needed.matches(nhits) << endl;
+  _hits_needed.debug_print(cerr);
 #endif
 
   if (nhits > 0)
@@ -543,7 +544,7 @@ Single_Substructure_Query::_environment_rejections_matched (const int atoms_in_t
 */
 
 int
-Single_Substructure_Query::_query_environment_also_matched (const int atoms_in_target_molecule,
+Single_Substructure_Query::_query_environment_also_matched(const int atoms_in_target_molecule,
                                            int * previously_matched_atoms,
                                            int * env_already_done)
 {
@@ -636,13 +637,16 @@ Single_Substructure_Query::_query_environment_also_matched(Query_Atoms_Matched &
   int * env_already_done = new_int(ne + nr); std::unique_ptr<int[]> free_env_already_done(env_already_done);
 
 #ifdef DEBUG_QUERY_ENVIRONMENT_ALSO_MATCHED
-  cerr << " ne " << ne << " and nr " << nr << endl;
+  cerr << " number env matches " << ne << " and number env rejections " << nr << endl;
 #endif
 
   if (ne)
   {
     if (! _query_environment_also_matched(atoms_in_target_molecule, previously_matched, env_already_done))
     {
+#ifdef DEBUG_QUERY_ENVIRONMENT_ALSO_MATCHED
+      cerr << "Matching query env did not match\n";
+#endif
       _no_match_to_environment++;
       return 0;
     }

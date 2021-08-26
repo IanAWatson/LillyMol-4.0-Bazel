@@ -61,8 +61,9 @@ no_newline (char *cc)
   return;
 }
 
+#ifdef CONFLICTS_WITH_STDLIB
 char *
-basename (char *path_name)
+basename(char *path_name)
 {
   char *c, *file_name;
 
@@ -76,6 +77,7 @@ basename (char *path_name)
 
   return (file_name);
 }
+#endif
 
 int
 remove_blanks (char *cc)
@@ -455,7 +457,7 @@ words (const char *string, const char separator)
 }
 
 const char *
-iwbasename (const char * fname)
+iwbasename(const char * fname)
 {
   const char * rc = fname;
   int previous_char_was_slash = 0;

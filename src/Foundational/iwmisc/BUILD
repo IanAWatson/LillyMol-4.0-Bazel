@@ -154,6 +154,7 @@ cc_test  (
         "@googletest//:gtest_main",
     ],
     linkopts = [
+        "-lm",
         "-lz",
     ],
 )
@@ -169,6 +170,7 @@ cc_test  (
         "@googletest//:gtest_main",
     ],
     linkopts = [
+        "-lm",
         "-lz",
     ],
 )

@@ -35,7 +35,7 @@ cc_binary(
         "gfp_leader_standard.cc",
     ],
     copts = [
-        "-fopenmp",
+        "-fopenmp=libiomp5",
     ],
     deps = [
         ":gfp",
@@ -44,10 +44,26 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
-        "-lgomp",
-    ],
+#   linkopts = [
+#       "-lz",
+#       "-L/usr/lib/llvm-11/lib/",
+#       "-lgomp",
+#   ],
+    linkopts = select({
+        ":gcc_build": ["-lz", "-lgomp"],
+        ":llvm_build": ["-lz",  "-L/usr/lib/llvm-11/lib/", "-lgomp"],
+        "//conditions:default": ["-lz"],
+    }),
+)
+
+config_setting(
+    name = "gcc_build",
+    values = {"iwc": "gcc"}
+)
+
+config_setting(
+    name = "llvm_build",
+    values = {"iwc": "llvm"}
 )
 
 cc_binary(
@@ -91,7 +107,7 @@ cc_binary(
         "gfp_spread_standard.cc",
     ],
     copts = [
-        "-fopenmp",
+        "-fopenmp=libiomp5",
     ],
     deps = [
         ":gfp",
@@ -102,6 +118,7 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+        "-L/usr/lib/llvm-11/lib/",
         "-lgomp",
     ],
 )

@@ -110,7 +110,7 @@ test_unhtml()
   should_match(foo, " hello", "unhtml");
 
   foo = "hello&nbsp;world";
-  t == foo.unhtml();
+  t = foo.unhtml();
   should_match(foo, "hello world", "unhtml");
 
   foo = "hello world&nbsp;";

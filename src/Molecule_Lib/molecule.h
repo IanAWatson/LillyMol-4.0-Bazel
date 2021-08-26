@@ -1790,9 +1790,9 @@ extern int all_files_recognised_by_suffix (const Command_Line &);
   distinct.
 */
 
-#define OK_2_ATOMS(m, a1, a2)         (NULL != (m) && (m)->ok_2_atoms ((a1), (a2)))
-#define OK_3_ATOMS(m, a1, a2, a3)     (NULL != (m) && (m)->ok_3_atoms ((a1), (a2), (a3)))
-#define OK_4_ATOMS(m, a1, a2, a3, a4) (NULL != (m) && (m)->ok_4_atoms ((a1), (a2), (a3), (a4)))
+#define OK_2_ATOMS(m, a1, a2)         ((m)->ok_2_atoms ((a1), (a2)))
+#define OK_3_ATOMS(m, a1, a2, a3)     ((m)->ok_3_atoms ((a1), (a2), (a3)))
+#define OK_4_ATOMS(m, a1, a2, a3, a4) ((m)->ok_4_atoms ((a1), (a2), (a3), (a4)))
 
 extern void set_mdl_ignore_self_bonds       (int);
 extern void set_write_mdl_charges_as_m_chg  (int);

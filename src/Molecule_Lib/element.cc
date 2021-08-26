@@ -45,7 +45,7 @@ set_explicit_hydrogens_need_square_brackets_in_smiles (int s)
   if (elements.number_elements())    // will pretty much always be the case
   {
     Element * h = const_cast<Element *> (get_element_from_atomic_number (1));
-    assert (NULL != h);
+    assert (nullptr != h);
 
     h->set_needs_square_brackets (0);
   }
@@ -121,7 +121,7 @@ get_element_from_long_symbols (const char * asymbol,
       return elements[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1322,8 +1322,8 @@ Element::_default_values (atomic_number_t i)
 void
 Element::_set_symbol (const char * symbol)
 {
-  if (NULL == symbol)
-    _set_symbol(NULL, 0);
+  if (nullptr == symbol)
+    _set_symbol(nullptr, 0);
   else
     _set_symbol(symbol, static_cast<int>(strlen(symbol)));
 
@@ -1333,7 +1333,7 @@ Element::_set_symbol (const char * symbol)
 void
 Element::_set_symbol (const char * symbol, int nchars)
 {
-  if (NULL == symbol || 0 == nchars)
+  if (nullptr == symbol || 0 == nchars)
   {
     _symbol.resize(0);
     _atomic_symbol_hash_value = -1;
@@ -1397,7 +1397,7 @@ void
 Element::_non_periodic_table_element_constructor (const char * s,
                                int nchars)
 {
-  assert (NULL != s);
+  assert (nullptr != s);
   assert (nchars > 0);
 
   _default_values(NOT_AN_ELEMENT);
@@ -1497,7 +1497,7 @@ debug_print_all_elements(std::ostream & os)
 const Element *
 get_element_from_symbol(const char *name, int nchars, int & isotope)
 {
-  assert (NULL != name);
+  assert (nullptr != name);
   assert (nchars > 0);
 
 // Get any isotopic specification
@@ -1512,7 +1512,7 @@ get_element_from_symbol(const char *name, int nchars, int & isotope)
   }
 
   if (0 == nchars)
-    return NULL;
+    return nullptr;
 
 #ifdef DEBUG_GET_ELEMENT_FROM_SYMBOL
   cerr << "Creating element from '";
@@ -1527,7 +1527,7 @@ get_element_from_symbol(const char *name, int nchars, int & isotope)
     tmp[0] = toupper(*name);
     const int hash = element_symbol_hash_function(tmp, 1);
     if (hash < 0 || hash >= SIZE_OF_ELEMENT_HASH_TABLE)
-      return NULL;
+      return nullptr;
 
     return ehash[hash];
   }
@@ -1551,7 +1551,7 @@ get_element_from_symbol(const char *name, int nchars, int & isotope)
   if (_atomic_symbols_can_have_arbitrary_length)
     return get_element_from_long_symbols(name, nchars);
 
-  return NULL;
+  return nullptr;
 }
 
 /*
@@ -1568,7 +1568,7 @@ get_element_from_symbol_no_case_conversion(const char * s,
   if (0 == nchars)
   {
     cerr << "get_element_from_symbol_no_case_conversion:no symbol\n";
-    return NULL;
+    return nullptr;
   }
 
   if (nchars <= 2)
@@ -1720,7 +1720,7 @@ element_from_long_smiles_string (const char * asymbol,
 
 //cerr << "LINE " << __LINE__ << " get_element_from_long_symbols\n";
   result = get_element_from_long_symbols(asymbol, close_square_bracket);
-  if (NULL != result)
+  if (nullptr != result)
     return close_square_bracket;
 
   Element * e = new Element(asymbol, close_square_bracket);
@@ -1746,7 +1746,7 @@ element_from_smiles_string (const char * smiles,
                             const int nchars,
                             const Element * & result)
 {
-  assert (NULL != smiles);
+  assert (nullptr != smiles);
 
   if (_atomic_symbols_can_have_arbitrary_length)
     return element_from_long_smiles_string(smiles, nchars, result);
@@ -1930,7 +1930,7 @@ get_element_from_atomic_number (atomic_number_t z)
       return elements[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -1988,17 +1988,17 @@ create_element_with_symbol (const char * symbol, int nchars)
   if (nchars <= 0)
   {
     cerr << "create_element_with_symbol:no symbol\n";
-    return NULL;
+    return nullptr;
   }
 
   if (nchars <= 2)
     ;
   else if (! auto_create_new_elements())
-    return NULL;
+    return nullptr;
   else
   {
     const Element * e = get_element_from_long_symbols(symbol, nchars);
-    if (NULL != e)
+    if (nullptr != e)
       return e;
 
     Element * rc = new Element(symbol, nchars);
@@ -2015,17 +2015,17 @@ create_element_with_symbol (const char * symbol, int nchars)
   }
 
   const Element * e = get_element_from_symbol_no_case_conversion(symbol, nchars);
-  if (NULL != e)
+  if (nullptr != e)
   {
     cerr << "create_element_with_symbol: cannot create new element with symbol '";
     cerr.write(symbol, nchars) << "', already present\n";
 
     e->debug_print(cerr);
 
-    return NULL;
+    return nullptr;
   }
 
-  Element * rc = NULL;
+  Element * rc = nullptr;
 
   if (nchars > 1 && isupper(symbol[1]))    // symbols cannot have uppercase 2nd characters
   {
@@ -2210,10 +2210,10 @@ read_ptable (const const_IWSubstring & buffer)
   }
 
   Element * e = const_cast<Element *>(get_element_from_symbol_no_case_conversion(sym));
-  if (NULL == e)
+  if (nullptr == e)
     e  = const_cast<Element *>(create_element_with_symbol(sym));
 
-  if (NULL == e)
+  if (nullptr == e)
   {
     cerr << "read_ptable:sorry, cannot fetch or create element '" << sym << "'\n";
     return 0;
@@ -2325,7 +2325,7 @@ process_elements(const Command_Line & cl,
 #endif
 
       Element * e = const_cast<Element *>(get_element_from_symbol_no_case_conversion(c));
-      if (NULL == e)
+      if (nullptr == e)
         e = const_cast<Element *>(create_element_with_symbol(c));
 
       e->set_organic(1);
@@ -2345,7 +2345,7 @@ process_elements(const Command_Line & cl,
       c.remove_leading_chars(5);
 
       Element * e = const_cast<Element *>(get_element_from_symbol_no_case_conversion(c));
-      if (NULL == e)
+      if (nullptr == e)
         e = const_cast<Element *>(create_element_with_symbol(c));
 
       e->set_needs_square_brackets(1);
@@ -2360,7 +2360,7 @@ process_elements(const Command_Line & cl,
 
     const Element * e = create_element_with_symbol(c);
 
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "process_elements: yipes, could not create element '" << c << "'\n";
       return 0;

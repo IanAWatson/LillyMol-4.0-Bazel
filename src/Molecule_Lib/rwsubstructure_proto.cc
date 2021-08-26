@@ -31,6 +31,7 @@ using std::endl;
 #include "Molecule_Lib/substructure.pb.h"
 #include "Molecule_Lib/target.h"
 
+#ifdef NONE_OF_THESE_NEEDED_HERE
 const const_IWSubstring NAME_OF_RING_SPECIFIER_OBJECT = "ring_specifier";
 const const_IWSubstring NAME_OF_RING_SYSTEM_SPECIFIER_OBJECT = "ring_system_specifier";
 const const_IWSubstring NAME_OF_QUERY_BOND_OBJECT = "query_bond";
@@ -181,6 +182,7 @@ const const_IWSubstring NAME_OF_MIN_FRACTION_ATOMS_MATCHED = "min_fraction_atoms
 const const_IWSubstring NAME_OF_MAX_FRACTION_ATOMS_MATCHED = "max_fraction_atoms_matched";
 
 const const_IWSubstring NAME_OF_HYDROGEN_OK_AS_ENVIRONMENT_MATCH = "hydrogen_ok";
+#endif
 
 constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
 
@@ -957,18 +959,18 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
   else
     _initial_atom_number = _unique_id;   // Not sure if this is the right thing to do or not.
 
+#ifdef OR_ID_NO_LONGER_PROCESSED
   if (proto.has_or_id())
+  {
     _or_id = proto.or_id();
 
-  if (proto.has_or_operator())
-  {
-    _or_id = proto.or_operator();
     if (0 == _or_id)
     {
       cerr << "Substructure_Atom::_construct_from_proto: or id must be a positive number\n";
       return 0;
     }
   }
+#endif
 
   if (proto.has_ring_id() && ! AssignValue(proto.ring_id(), _ring_id, [](int r) { return r > 0;}, "ring_id"))
     return 0;
@@ -1025,6 +1027,31 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
       _components.add(tmp.release());
       if (i > 0)
         AddOperator(spec.logical_operator(), _operator);
+    }
+
+    // The default operator is OR.
+    if (proto.atom_properties_size() > 1 && proto.ap_operator_size() == 0) {
+      for (int i = 1; i < proto.atom_properties_size(); ++i) {
+        _operator.add_operator(IW_LOGEXP_OR);
+      }
+    } else if (proto.ap_operator_size() + 1 != proto.atom_properties_size()) {
+      cerr << "Substructure_Atom::_construct_from_proto:inconsistent atom properties " << proto.atom_properties_size() << " vs operators " << proto.ap_operator_size() << '\n';
+      return 0;
+    }
+
+    for (const auto op : proto.ap_operator()) {
+      if (op == SubstructureSearch::SS_OR) {
+        _operator.add_operator(IW_LOGEXP_OR);
+      } else if (op == SubstructureSearch::SS_AND) {
+        _operator.add_operator(IW_LOGEXP_AND);
+      } else if (op == SubstructureSearch::SS_XOR) {
+        _operator.add_operator(IW_LOGEXP_XOR);
+      } else if (op == SubstructureSearch::SS_LP_AND) {
+        _operator.add_operator(IW_LOGEXP_LOW_PRIORITY_AND);
+      } else {
+        cerr << "Substructure_Atom::_construct_from_proto:unrecognised operator " << op << '\n';
+        return 0;
+      }
     }
   }
 
@@ -1264,6 +1291,7 @@ Single_Substructure_Query::WriteProto(std::ostream& output)
   } \
 }
 
+// Populates a Min_Max_Specifier.
 #define SETPROTOVALUES(p, attribute, type) { \
   ADDREPEATEDFIELD(p, attribute) \
   type tmp; \
@@ -1288,6 +1316,192 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
 
   SETPROTOVALUES(proto, hits_needed, int);
   ADDREPEATEDFIELD(proto, numeric_value);
+
+  extending_resizable_array<Substructure_Atom*> atoms;
+  for (Substructure_Atom * a : _root_atoms) {
+    a->collect_all_atoms(atoms);
+  }
+
+  for (const Substructure_Atom * atom : atoms) {
+    if (atom != NULL) {
+      atom->BuildProto(*proto.add_query_atom());
+    }
+  }
+
+  return 1;
+}
+
+// Many operations involve checking if a value is > `minval` and if so
+// then set the proto attribute.
+#define SET_PROTO_IF_SET(p, attribute, minval) { \
+  if (_ ## attribute > minval) { \
+    p.set_ ## attribute(_ ## attribute); \
+  } \
+}
+
+int
+Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const {
+  proto.set_id(_unique_id);  // 1
+
+  if (! _match_as_match_or_rejection) {  // Default is true.
+    proto.set_match_as_match(_match_as_match_or_rejection);  // 2
+  }
+
+  if (_text_identifier.length() > 0) {
+    proto.set_text_identifier(_text_identifier.data(), _text_identifier.length());  // 3
+  }
+
+  SET_PROTO_IF_SET(proto, atom_map_number, -1);  // 4
+  SET_PROTO_IF_SET(proto, initial_atom_number, -1);  // 5
+#ifdef OR_ID_NO_LONGER_PROCESSED
+  SET_PROTO_IF_SET(proto, or_id, 0);  // 6
+#endif
+  SET_PROTO_IF_SET(proto, ring_id, 0);  // 9
+  SET_PROTO_IF_SET(proto, fused_system_id, 0);  // 10
+  SET_PROTO_IF_SET(proto, fragment_id, 0);  // 11
+
+  double nv;
+  if (_numeric_value.value(nv)) {  // 12
+    proto.set_numeric_value(nv);
+  }
+  if (! _include_in_embedding) {
+    proto.set_include_in_embedding(false);  // 13
+  }
+
+  //  smarts // 14
+  //  atom_smarts // 15
+  //  smiles // 16
+
+  // environment looks hard.  // 17
+
+  for (const Substructure_Bond* b : _bonds) {  // 21
+    b->BuildProto(*proto.add_query_bond());
+  }
+
+  // bond smarts 22
+
+  // single, double triple aromatic, bond 25-29
+
+  for (const Substructure_Atom_Specifier* a : _preferences) {  // 23
+    a->BuildProto(*proto.add_preference());
+  }
+
+  if (_sum_all_preference_hits) {
+    proto.set_sum_all_preference_hits(true);  // 24
+  }
+
+  if (_unmatched_atoms_attached.is_set()) {
+    SETPROTOVALUES(proto, unmatched_atoms_attached, int);
+  }
+
+  SET_PROTO_IF_SET(proto, atom_type_group, 0);
+
+  if (_components.number_elements() == 0) {
+    const Substructure_Atom_Specifier* me = this;
+    me->BuildProto(*proto.add_atom_properties());
+  } else {
+    for (const Substructure_Atom_Specifier* c : _components) {
+      c->BuildProto(*proto.add_atom_properties());
+    }
+  }
+
+  if (_components.number_elements() > 1) {
+    for (int i = 0; i < _components.number_elements(); ++i) {
+      _components[i]->BuildProto(*proto.add_atom_properties());
+    }
+    for (int i = 0; i < _operator.number_operators(); ++i) {
+      const int op = _operator.op(i);
+      if (op == IW_LOGEXP_AND) {
+        proto.add_ap_operator(SubstructureSearch::SS_AND);
+      } else if (op == IW_LOGEXP_OR) {
+        proto.add_ap_operator(SubstructureSearch::SS_OR);
+      } else if (op == IW_LOGEXP_XOR) {
+        proto.add_ap_operator(SubstructureSearch::SS_XOR);
+      } else if (op == IW_LOGEXP_LOW_PRIORITY_AND) {
+        proto.add_ap_operator(SubstructureSearch::SS_LP_AND);
+      } else {
+        cerr << "Substructure_Atom::BuildProto:unrecognized operator type " << op << '\n';
+        return 0;
+      }
+    }
+  }
+
+  return 1;
+}
+
+int
+Substructure_Bond::BuildProto(SubstructureSearch::SubstructureBond& proto) const {
+  if (_bond_types & SINGLE_BOND) {
+    proto.add_bond_type(SubstructureSearch::SS_SINGLE_BOND);
+  }
+  if (_bond_types & DOUBLE_BOND) {
+    proto.add_bond_type(SubstructureSearch::SS_DOUBLE_BOND);
+  }
+  if (_bond_types & TRIPLE_BOND) {
+    proto.add_bond_type(SubstructureSearch::SS_TRIPLE_BOND);
+  }
+  if (_bond_types & AROMATIC_BOND) {
+    proto.add_bond_type(SubstructureSearch::SS_AROMATIC_BOND);
+  }
+
+  proto.set_other_end(_a1->unique_id());
+
+  if (_b == nullptr) {
+    return 1;
+  }
+
+  cerr << "Substructure_Bond::BuildProto:unhandled bond conditions\n";
+  return 0;
+}
+
+int
+Substructure_Atom_Specifier::BuildProto(SubstructureSearch::SubstructureAtomSpecifier& proto) const {
+  for (const Element* e : _element) {
+    if (e->is_in_periodic_table()) {
+      proto.add_atomic_number(e->atomic_number());
+    } else {
+      proto.add_atomic_symbol(e->symbol().data(), e->symbol().length());
+    }
+  }
+
+  SETPROTOVALUES(proto, ncon, int);  // 3
+  SETPROTOVALUES(proto, ncon2, int);  // 6
+  SETPROTOVALUES(proto, nbonds, int);  // 9
+  SETPROTOVALUES(proto, formal_charge, int);  // 12
+  SETPROTOVALUES(proto, nrings, int);  // 15
+  SETPROTOVALUES(proto, ring_bond_count, int);  // 18
+  SETPROTOVALUES(proto, ring_size, int);  // 21
+  SETPROTOVALUES(proto, hcount, int);  // 24
+  if (_aromaticity == SUBSTRUCTURE_NOT_SPECIFIED) {
+  }  else if (_aromaticity == AROMATIC) {  // 27
+    proto.set_aromatic(true);
+  }  else if (_aromaticity == NOT_AROMATIC) {
+    proto.set_aromatic(false);
+  }
+  if (_chirality != SUBSTRUCTURE_NOT_SPECIFIED)
+    proto.set_chirality(true);  // 28
+  SETPROTOVALUES(proto, aromatic_ring_size, int);  // 30
+  SETPROTOVALUES(proto, aliphatic_ring_size, int);  // 33
+  SETPROTOVALUES(proto, attached_heteroatom_count, int);  // 36
+  SETPROTOVALUES(proto, lone_pair_count, int);  // 39
+  SETPROTOVALUES(proto, unsaturation, int);  // 42
+  SETPROTOVALUES(proto, daylight_x, int);  // 45
+  SETPROTOVALUES(proto, isotope, int);  // 48
+  SETPROTOVALUES(proto, aryl, int);  // 51
+  SETPROTOVALUES(proto, vinyl, int);  // 54
+  SETPROTOVALUES(proto, fused_system_size, int);  // 57
+  if (_all_rings_kekule != SUBSTRUCTURE_NOT_SPECIFIED) {
+    proto.set_all_rings_kekule(true);  // 60
+  }
+  SETPROTOVALUES(proto, heteroatoms_in_ring, int);  // 61
+  SET_PROTO_IF_SET(proto, match_spinach_only, -1);  // 64
+  SETPROTOVALUES(proto, scaffold_bonds_attached_to_ring, int);  // 65
+  SET_PROTO_IF_SET(proto, preference_value, 0);  // 68
+  SETPROTOVALUES(proto, symmetry_degree, int);  // 69
+  SET_PROTO_IF_SET(proto, symmetry_group, 0);  // 72
+
+  // Not sure what to do with operator...
+  // atom typing is not implemented, seems ambiguous.
 
   return 1;
 }
@@ -1464,6 +1678,30 @@ Substructure_Environment::_add_possible_parent (atom_number_t possible_parent,
 int
 Substructure_Environment::BuildProto(SubstructureSearch::SubstructureEnvironment& proto) const
 {
+  proto.set_id(_unique_id);
+
+  SET_PROTO_IF_SET(proto, or_id, 0);  // 8
+  SET_PROTO_IF_SET(proto, and_id, 0);  // 9
+
+  SETPROTOVALUES(proto, hits_needed, int);  // 10
+  if (_no_other_substituents_allowed) {
+    proto.set_no_other_substituents_allowed(true);  // 13
+  }
+  if (_environments_can_share_attachment_points) {
+    proto.set_env_matches_can_share_attachment_points(true);  // 15
+  }
+  SET_PROTO_IF_SET(proto, max_matches_to_find, 0);  // 16
+  if (_hydrogen_ok_as_environment_match) {
+    proto.set_hydrogen_ok(true);  // 17
+  }
+  if (_max_environment_matches_per_attachment_point > 0) {
+    proto.set_max_env_matches_per_anchor(_max_environment_matches_per_attachment_point);
+  }
+
+  // The rest of this is too hard.
+  for (const Substructure_Atom* a : _possible_parents) {
+    a->BuildProto(*proto.add_query_atom());
+  }
   cerr << "Substructure_Environment::BuildProto:implement this sometime\n";
 
   return 1;
@@ -1911,7 +2149,7 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
 
   if (_only_keep_matches_in_largest_fragment && _all_hits_in_same_fragment)
   {
-    cerr << "Single_Substructure_Query::_construct_from_proto:the " << NAME_OF_ONLY_MATCH_LARGEST_FRAGMENT_ATTRIBUTE << " and " << NAME_OF_ALL_HITS_IN_SAME_FRAGMENT_ATTRIBUTE << " attributes are mutually inconsistent\n";
+    cerr << "Single_Substructure_Query::_construct_from_proto:the _only_keep_matches_in_largest_fragment and _all_hits_in_same_fragment attributes are mutually inconsistent\n";
     return 0;
   }
 
@@ -2260,7 +2498,7 @@ Single_Substructure_Query::ConstructFromProto(const SubstructureSearch::SingleSu
     const Bond * b = _no_matched_atoms_between[i];
     if (b->a1() >= _min_atoms_in_query || b->a2() >= _min_atoms_in_query)
     {
-      cerr << "Single_Substructure_Query::construct_from_proto: illegal " << NAME_OF_NO_MATCHED_ATOMS_BETWEEN_SPECIFIER << " specifier\n";
+      cerr << "Single_Substructure_Query::construct_from_proto: illegal no_matched_atoms_between specifier\n";
       cerr << "There are as few as " << _min_atoms_in_query << " query atoms\n";
       cerr << "No matched atoms between " << i << " specifies atoms " << b->a1() << " and " << b->a2() << endl;
       cerr << "this is impossible\n";

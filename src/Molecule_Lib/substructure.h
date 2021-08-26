@@ -471,8 +471,11 @@ class Substructure_Bond
     int ok () const;
     int debug_print (std::ostream &, const IWString &) const;
 
+    int construct_from_smarts (const char * smarts, int chars_to_process, int & characters_processed);
     int construct_from_msi_attribute (const msi_object *, extending_resizable_array<Substructure_Atom *> &);
+    int construct_from_msi_attribute (const msi_attribute *);
     int write_as_msi_attribute (std::ostream & os, int indentation) const;
+    int BuildProto(SubstructureSearch::SubstructureBond& proto) const;
 
     int make_single_or_aromatic ();
 
@@ -490,15 +493,11 @@ class Substructure_Bond
 
     int involves_aromatic_bond_specification (int & r) const;
 
-    int construct_from_msi_attribute (const msi_attribute *);
-
     int can_be_written_as_attribute () const;
 
     int copy (const Bond *, int);
 
     int matches (Bond_and_Target_Atom & b);
-
-    int construct_from_smarts (const char * smarts, int chars_to_process, int & characters_processed);
 
     void set_bond_type (bond_type_t b) { _bond_types = b;}
 };
@@ -623,6 +622,8 @@ class Substructure_Atom_Specifier
     int ok () const;
     int debug_print (std::ostream &, const IWString & = "") const;
     int terse_details (std::ostream &, const IWString &) const;
+
+    int BuildProto(SubstructureSearch::SubstructureAtomSpecifier& proto) const;
 
     int  preference_value () const { return _preference_value;}
     void set_preference_value (int s) { _preference_value = s;}
@@ -1000,6 +1001,8 @@ class Substructure_Atom : public Substructure_Atom_Specifier
     int terse_details (std::ostream &, const IWString &) const;
     int recursive_terse_details (std::ostream &, const IWString &) const;
     int print_connectivity_graph(std::ostream &) const;
+    // Transfer attributes to `proto`.
+    int BuildProto(SubstructureSearch::SubstructureAtom& proto) const;
 
     void set_match_as_match_or_rejection (int s) { _match_as_match_or_rejection = s;}
 
@@ -1091,6 +1094,7 @@ class Substructure_Atom : public Substructure_Atom_Specifier
     int check_internal_consistency (int) const;
 
     int or_id () const { return _or_id;}
+
     int ring_id () const { return _ring_id;}
     int fused_system_id () const { return _fused_system_id;}
 

@@ -263,12 +263,11 @@ Pharacaphore2d(Molecule& m,
   m.smiles();
   resizable_array<atom_number_t> atom_order_in_smiles = m.atom_order_in_smiles();
 
-  int group_number = 0;
   SubstructureSearch::SubstructureQuery composite_query;
-  std::string tmp_name(m.name().data(), m.name().length());
-  composite_query.set_comment(tmp_name);
+  composite_query.set_comment(m.name().data(), m.name().length());
   SubstructureSearch::SingleSubstructureQuery * query = composite_query.add_query();
   query->set_respect_initial_atom_numbering(true);
+  int group_number = 0;
   for (int i = 1; i <= number_functional_groups; ++i, ++group_number) {
     BuildQuery(m, functional_group, i, atom_order_in_smiles, *query);
   }

@@ -18,7 +18,7 @@ Substructure_Atom::_default_values()
 {
   _unique_id = -1;
   _initial_atom_number = -1;
-  _current_hold_atom = NULL;
+  _current_hold_atom = nullptr;
 
   _atom_map_number = -1;
 
@@ -29,17 +29,19 @@ Substructure_Atom::_default_values()
 
   _include_in_embedding = 1;
 
-  _bond_to_parent     = NULL;
-  _parent             = NULL;
+  _bond_to_parent     = nullptr;
+  _parent             = nullptr;
 
   _con = -1;
-  _anchor = NULL;
+  _anchor = nullptr;
 
   _sum_all_preference_hits = 0;
 
   _match_as_match_or_rejection = 1;
 
   _fragment_id = 0;
+
+  _atom_type = 0;
 
   _atom_type_group = 0;
 
@@ -363,7 +365,7 @@ Substructure_Atom::bond_to (const Substructure_Atom * s) const
       return b;
   }
 
-  return NULL;
+  return nullptr;
 }*/
 
 //#define SHOW_SUBSTRUCTURE_ATOM_OK
@@ -372,27 +374,27 @@ int
 Substructure_Atom::ok () const
 {
 #ifdef SHOW_SUBSTRUCTURE_ATOM_OK
-  if (NULL != _parent && NULL == _bond_to_parent)
+  if (nullptr != _parent && nullptr == _bond_to_parent)
   {
     cerr << "Substructure_Atom::ok: parent is not null, but bond to parent is, atom " << _unique_id << endl;
   }
 #endif
 
-  if (NULL != _parent)
+  if (nullptr != _parent)
   {
-    if (NULL == _bond_to_parent)
+    if (nullptr == _bond_to_parent)
       return 0;
   }
 
 #ifdef SHOW_SUBSTRUCTURE_ATOM_OK
-  if (NULL == _parent && NULL != _bond_to_parent)
+  if (nullptr == _parent && nullptr != _bond_to_parent)
   {
     cerr << "Yikes, has no parent but _bond_to_parent exists!!\n";
     _bond_to_parent->debug_print(cerr, ' ');
   }
 #endif
 
-  if (NULL == _parent && NULL != _bond_to_parent)
+  if (nullptr == _parent && nullptr != _bond_to_parent)
     return 0;
 
 #ifdef SHOW_SUBSTRUCTURE_ATOM_OK
@@ -466,7 +468,7 @@ Substructure_Atom::debug_print(std::ostream & os, const IWString & indentation) 
 
   Substructure_Atom_Specifier::debug_print(os, indentation);
 
-  if (NULL != _anchor)
+  if (nullptr != _anchor)
   {
     os << indentation << " Currently anchored at atom " << _anchor->atom_number() << ", _con = " << _con << endl;
   }
@@ -475,7 +477,7 @@ Substructure_Atom::debug_print(std::ostream & os, const IWString & indentation) 
     os << indentation << " Anchor not set\n";
   }
 
-  if (NULL != _current_hold_atom)
+  if (nullptr != _current_hold_atom)
     os << indentation << " Currently matched with atom " << _current_hold_atom;
   else
     os << indentation << " Not currently matched";
@@ -502,13 +504,13 @@ Substructure_Atom::debug_print(std::ostream & os, const IWString & indentation) 
       b->debug_print(os, ind);
 
       Substructure_Atom * other_query_atom = b->a();
-      if (NULL == other_query_atom)
+      if (nullptr == other_query_atom)
         os << indentation << "Very strange, atom at other end of bond is NULL, perhaps I am an environment atom\n";
       else
       {
         const Target_Atom * other_atom = other_query_atom->current_hold_atom();
 
-        if (NULL == other_atom)
+        if (nullptr == other_atom)
           os << indentation << "    Substructure atom at other end (" << other_query_atom->unique_id() << ") not matched\n";
         else
           os << indentation << "    Substructure atom at other end (" << other_query_atom->unique_id() << ") is matched with atom " <<
@@ -592,13 +594,13 @@ Substructure_Atom::terse_details (std::ostream & os,
   if (SUBSTRUCTURE_NOT_SPECIFIED != _aromaticity)
     os << indentation << " Aromaticity = " << _aromaticity << endl;
 
-  if (NULL != _current_hold_atom)
+  if (nullptr != _current_hold_atom)
     os << indentation << "Currently matched with atom " << _current_hold_atom << endl;
 
   if (_bonds.number_elements())
     os << _bonds.number_elements() << " ring closure bonds";
 
-  if (NULL != _anchor)
+  if (nullptr != _anchor)
   {
     os << indentation << "Currently anchored at atom " << _anchor->atom_number() << ", _con = " << _con << endl;
   }
@@ -637,7 +639,7 @@ Substructure_Atom::print_connectivity_graph(std::ostream & output) const
 {
   const int uid = 10000 * _unique_id + 1000 * _initial_atom_number + 100 * _atom_map_number;
   output << "atom " << _unique_id << " initial " << _initial_atom_number << " map " << _atom_map_number << ", UID " << uid << ", " << _children.number_elements() << " children. ";
-  if (NULL == _bond_to_parent)
+  if (nullptr == _bond_to_parent)
     output << " Root\n";
   else if (_bonds.number_elements() > 1)
   {
@@ -663,7 +665,7 @@ Substructure_Atom::print_current_hold (std::ostream & os) const
   assert (ok());
   
   os << "Query atom " << _unique_id;
-  if (NULL == _current_hold_atom)
+  if (nullptr == _current_hold_atom)
   {
     os << " not bound\n";
     return 0;
@@ -676,7 +678,7 @@ Substructure_Atom::print_current_hold (std::ostream & os) const
 int
 Substructure_Atom::involves_rings() const
 {
-  assert (NULL == "This is not working");
+  assert (nullptr == "This is not working");
 
   if (Substructure_Atom_Specifier::involves_rings())
     return 1;
@@ -701,7 +703,7 @@ Substructure_Atom::set_hold (Target_Atom * a, int * already_matched)
 {
 //assert (ok());
 
-  assert (NULL == _current_hold_atom);
+  assert (nullptr == _current_hold_atom);
 
   int anum = a->atom_number();
   assert (0 == already_matched[anum]);
@@ -722,7 +724,7 @@ Substructure_Atom::release_hold (int * already_matched)
 {
 //assert (ok());
 
-  assert (NULL != _current_hold_atom);
+  assert (nullptr != _current_hold_atom);
 
   assert (_current_hold_atom->ok());
 
@@ -735,7 +737,7 @@ Substructure_Atom::release_hold (int * already_matched)
 
   already_matched[anum] = 0;
 
-  _current_hold_atom = NULL;
+  _current_hold_atom = nullptr;
 
   return 1;
 }
@@ -743,10 +745,10 @@ Substructure_Atom::release_hold (int * already_matched)
 int
 Substructure_Atom::recursive_release_hold()
 {
-  if (NULL == _current_hold_atom)
+  if (nullptr == _current_hold_atom)
     return 1;
 
-  _current_hold_atom = NULL;
+  _current_hold_atom = nullptr;
 
 //#define IW_HAVE_LAMBDA
 #ifdef IW_HAVE_LAMBDA
@@ -944,7 +946,7 @@ Substructure_Atom::min_nbonds () const
 int
 Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
 {
-  assert (NULL == _current_hold_atom);
+  assert (nullptr == _current_hold_atom);
   assert (0 == already_matched[target.atom_number()]);
 
   int m = Substructure_Atom_Specifier::matches(target);
@@ -1124,12 +1126,12 @@ Substructure_Atom::_ring_closure_bonds_match(Target_Atom * a) const
       cerr << "Substructure_Atom::_ring_closure_bonds_match: bond ordering error\n";
       cerr << "Query atom " << _unique_id << " being placed, but query atom " <<
                s->unique_id() << " not yet matched\n";
-      assert (NULL == "Change bond ordering in query file\n");
+      assert (nullptr == "Change bond ordering in query file\n");
       return 0;
     }
 
     Bond_and_Target_Atom * zbond;
-    if (NULL == (zbond = a->bond_to_atom(s->atom_number_matched())))    // not connected
+    if (nullptr == (zbond = a->bond_to_atom(s->atom_number_matched())))    // not connected
       return 0;
 
     if (! b->matches(*zbond))
@@ -1171,7 +1173,7 @@ Substructure_Atom::prepare_for_matching (Target_Atom * new_anchor)
 void
 Substructure_Atom::_release_hold ()
 {
-  _current_hold_atom = NULL;
+  _current_hold_atom = nullptr;
 
   _preference_value_current_match = 0;
 
@@ -1192,7 +1194,7 @@ Substructure_Atom::set_parent (Substructure_Atom * a,
   _parent = a;
   _bond_to_parent = b;
 
-  if (NULL == b->a())
+  if (nullptr == b->a())
     b->set_atom(a);
 
   if (add_bond_to_bonds_array)
@@ -1223,7 +1225,7 @@ Substructure_Atom::_match_all_ring_ids (Target_Atom * target,
       continue;
 
     Target_Atom * am = a->current_hold_atom();
-    if (NULL == am)     // we have covered all the matched atoms
+    if (nullptr == am)     // we have covered all the matched atoms
       return 1;
 
     if (_ring_id == a->ring_id())
@@ -1268,7 +1270,7 @@ Substructure_Atom::move_to_next_match_from_current_anchor (int * already_matched
   if (_current_hold_atom)
     release_hold(already_matched);
 
-  if (NULL == _anchor)
+  if (nullptr == _anchor)
     return 0;
 
 #ifdef DEBUG_MOVE_TO_NEXT_FROM_ANCHOR
@@ -2142,11 +2144,11 @@ Substructure_Atom::query_atom_with_initial_atom_number(atom_number_t a)
   for (Substructure_Atom* c : _children)
   {
     Substructure_Atom * rc = c->query_atom_with_initial_atom_number(a);
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 Substructure_Atom *
@@ -2158,17 +2160,17 @@ Substructure_Atom::query_atom_with_atom_map_number(atom_number_t a)
   for (Substructure_Atom* c : _children)
   {
     Substructure_Atom * rc = c->query_atom_with_atom_map_number(a);
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
 Substructure_Atom::is_bonded_to(atom_number_t o) const
 {
-  if (NULL == _parent)
+  if (nullptr == _parent)
     ;
   else if (0 == _parent->unique_id())
     return 1;
@@ -2244,17 +2246,17 @@ Substructure_Atom::bond_between_atom_map_numbers(int a1, int a2) const
 
   const Substructure_Bond * rc = _bond_between_atom_map_numbers(a1, a2);
 
-  if (NULL != rc)
+  if (nullptr != rc)
     return rc;
 
   for (const Substructure_Atom* c : _children)  // go looking in the children.
   {
     rc = c->bond_between_atom_map_numbers(a1, a2);
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 const Substructure_Bond *
@@ -2265,7 +2267,7 @@ Substructure_Atom::_bond_between_atom_map_numbers(int a1, int a2) const
   else if (a2 == _atom_map_number)    // make sure a1 is associated with THIS
     iwswap(a1, a2);
   else    // we are neither a1 or a2, caller will check children
-    return NULL;
+    return nullptr;
 
   assert (a1 == _atom_map_number);
 
@@ -2299,7 +2301,7 @@ Substructure_Atom::_bond_between_atom_map_numbers(int a1, int a2) const
       return b;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*
@@ -2311,17 +2313,17 @@ const Substructure_Bond *
 Substructure_Atom::bond_between_atoms (int a1, int a2) const    
 {
   const Substructure_Bond * rc = _bond_between_atoms(a1, a2);
-  if (NULL != rc)
+  if (nullptr != rc)
     return rc;
 
   for (const Substructure_Atom* c : _children)
   {
     rc = c->bond_between_atoms(a1, a2);
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 const Substructure_Bond *
@@ -2333,7 +2335,7 @@ Substructure_Atom::_bond_between_atoms(int a1, int a2) const
     iwswap(a1, a2);
   else
   {
-    return NULL;
+    return nullptr;
   }
  
   for (const Substructure_Atom* c : _children)
@@ -2356,7 +2358,7 @@ Substructure_Atom::_bond_between_atoms(int a1, int a2) const
       return b;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -2501,7 +2503,7 @@ Substructure_Atom::unmatched_atoms_attached_matches(const Query_Atoms_Matched& m
   if (! _unmatched_atoms_attached.is_set())
     return 1;
 
-  if (NULL == _current_hold_atom)  // Not sure if this can happen.
+  if (nullptr == _current_hold_atom)  // Not sure if this can happen.
     return 1;
 
   const atom_number_t matched = _current_hold_atom->atom_number();

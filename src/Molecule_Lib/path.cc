@@ -131,7 +131,7 @@ Ring::set_aromaticity(aromaticity_type_t arom)
 int
 Ring::update_ring_membership(int * ring_membership, int increment, int floor) const
 {
-  assert(NULL != ring_membership);
+  assert(nullptr != ring_membership);
 
   for (int i = 0; i < _number_elements; i++)
   {
@@ -226,8 +226,8 @@ operator<<(std::ostream & os, const Ring & r)
 int
 path_length_comparitor_longer(Path * const * pp1, Path * const * pp2)
 {
-  assert(NULL != pp1);
-  assert(NULL != pp2);
+  assert(nullptr != pp1);
+  assert(nullptr != pp2);
 
   const Path * p1 = *pp1;
   const Path * p2 = *pp2;
@@ -246,8 +246,8 @@ path_length_comparitor_longer(Path * const * pp1, Path * const * pp2)
 int
 path_length_comparitor_shorter(const void * p1, const void * p2)
 {
-  assert(NULL != p1);
-  assert(NULL != p2);
+  assert(nullptr != p1);
+  assert(nullptr != p2);
 
   const Path ** pp1 = (const Path **)p1;
   const Path ** pp2 = (const Path **)p2;

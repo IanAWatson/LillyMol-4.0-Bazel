@@ -61,8 +61,10 @@ bool TestSubstructure::_DoPerumationsTests(const int expected)
 {
   const IWString initial_smiles = _m.smiles();
 
+  cerr << "Begin " << _ntest << " permutation tests\n";
   for (int i = 0; i < _ntest; ++i) {
     const IWString smiles = _m.random_smiles();
+    cerr << "rsmi " << smiles << '\n';
     if (! _m.build_from_smiles(smiles)) 
     {
       cerr << "_DoPerumationsTests:invalid smiles '" << smiles << "'\n";

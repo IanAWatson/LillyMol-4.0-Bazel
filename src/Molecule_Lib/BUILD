@@ -509,8 +509,9 @@ cc_test(
         ":coordinate_box",
         "@googletest//:gtest_main",
     ],
+    timeout="short",
     linkopts = [
-        "-lz",
+        "-lz -lm",
     ],
 )
 

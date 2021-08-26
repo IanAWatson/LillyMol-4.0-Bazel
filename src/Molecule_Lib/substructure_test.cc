@@ -12,6 +12,7 @@ namespace {
 //using google::protobuf::TextFormat::ParseFromString;
 
 using testing::UnorderedElementsAre;
+using testing::ElementsAre;
 
 class TestSubstructure : public testing::Test
 {
@@ -569,6 +570,7 @@ TEST_F(TestSubstructure, TestIncludeAtomInEmbeddingProto)
   EXPECT_EQ(_m.atomic_number(e->item(0)), 9);
 }
 
+#ifdef OR_ID_NOT_IMPLEMENTED
 TEST_F(TestSubstructure, TestAtomOrId)
 {
   _string_proto = R"(query {
@@ -597,6 +599,7 @@ TEST_F(TestSubstructure, TestAtomOrId)
     EXPECT_EQ(e->number_elements(), 1);
   }
 }
+#endif
 
 TEST_F(TestSubstructure, TestInitialAtomNumberSparse)
 {
@@ -2326,5 +2329,154 @@ TEST_F(TestSubstructure, TestRecursiveBenzene)
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
   EXPECT_EQ(_query.substructure_search(_m, _sresults), 6);
 }
+
+TEST_F(TestSubstructure, TestNoSaveMatchedAtoms)
+{
+  _string_proto = R"(query {
+    save_matched_atoms: false
+    smarts: "C!@C"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "CCC";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 4);
+  EXPECT_EQ(_sresults.number_embeddings(), 0);
+}
+
+TEST_F(TestSubstructure, TestOneEmbeddingPerStartAtom)
+{
+  _string_proto = R"(query {
+    one_embedding_per_start_atom: true
+    smarts: "[CD4]C"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "CC(C)(C)C";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+  EXPECT_EQ(_sresults.number_embeddings(), 1);
+}
+
+TEST_F(TestSubstructure, TestMaxMatchesToFind)
+{
+  _string_proto = R"(query {
+    max_matches_to_find: 3
+    smarts: "[CD4]C"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "CC(C)(C)C";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 3);
+  EXPECT_EQ(_sresults.number_embeddings(), 3);
+  EXPECT_EQ(_sresults.embedding(0)->item(0), 1);
+  EXPECT_EQ(_sresults.embedding(1)->item(0), 1);
+  EXPECT_EQ(_sresults.embedding(2)->item(0), 1);
+}
+
+TEST_F(TestSubstructure, TestSubtractFromRc)
+{
+  _string_proto = R"(query {
+    subtract_from_rc: 3
+    smarts: "[$(cF)]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "Fc1c(F)c(F)c(F)c(F)c1F";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 3);
+  EXPECT_EQ(_sresults.number_embeddings(), 6);
+  EXPECT_EQ(_sresults.embedding(0)->item(0), 1);
+  EXPECT_EQ(_sresults.embedding(1)->item(0), 2);
+  EXPECT_EQ(_sresults.embedding(2)->item(0), 4);
+}
+
+TEST_F(TestSubstructure, TestImplicitRingConditionChainOK)
+{
+  _string_proto = R"(query {
+    implicit_ring_condition: 0
+    smarts: "CCC"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "CCC";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 2);
+  EXPECT_EQ(_sresults.number_embeddings(), 2);
+  EXPECT_THAT(*_sresults.embedding(0), ElementsAre(0, 1, 2));
+}
+
+TEST_F(TestSubstructure, TestImplicitRingConditionChainNotMet)
+{
+  _string_proto = R"(query {
+    implicit_ring_condition: 1
+    smarts: "CCC"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "CCC";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+}
+
+#ifdef UNSURE_ABOUT_THIS_TEST_NEEDS_INVESTIGATION
+TEST_F(TestSubstructure, TestImplicitRingConditionRingMet)
+{
+  _string_proto = R"(query {
+    implicit_ring_condition: 1
+    smarts: "CCC"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "CC1CC1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 2);
+  _query.set_do_not_perceive_symmetry_equivalent_matches(1);
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+}
+#endif
 
 }  // namespace

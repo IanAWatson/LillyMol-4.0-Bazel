@@ -30,6 +30,9 @@ cc_library(
          "//Foundational/iwaray:iwaray",
          "//Foundational/iwmisc:iwconfig",
      ],
+     linkopts = [
+         "-lm",
+     ]
 )
 
 cc_binary(
@@ -42,6 +45,9 @@ cc_binary(
     deps = [
         ":iwstring",
         "//Foundational/cmdline:iwcmdline",
+    ],
+    linkopts = [
+        "-lm",
     ],
 )
 

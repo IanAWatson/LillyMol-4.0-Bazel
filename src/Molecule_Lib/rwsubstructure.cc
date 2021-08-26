@@ -1295,8 +1295,10 @@ Substructure_Atom::write_msi(std::ostream & os, int & object_id,
   if (_atom_map_number >= 0)
     os << ind << "  (A I " << NAME_OF_ATOM_MAP_NUMBER_ATTRIBUTE << " " << _atom_map_number << ")\n";
 
+#ifdef OR_ID_NO_LONGER_NEEDED
   if (_or_id)
     os << ind << "  (A I or " << _or_id << ")\n";
+#endif
 
   if (0 == _match_as_match_or_rejection)
     os << ind << "  (A I " << NAME_OF_REJECTION_ATTRIBUTE << " 1)\n";
@@ -1384,11 +1386,12 @@ Substructure_Environment::write_msi(std::ostream & os,
   else
     os << NAME_OF_ENVIRONMENT_OBJECT << endl;
 
+#ifdef OR_ID_NO_LONGER_NEEDED
   if (_or_id)
     os << ind << "  (A I or " << _or_id << ")\n";
-
   if (_and_id)
     os << ind << "  (A I and " << _and_id << ")\n";
+#endif
 
   if (_hits_needed.is_set())
     _hits_needed.write_msi(os, NAME_OF_QUERY_HITS_NEEDED_ATTRIBUTE, indentation + 2);
@@ -2182,6 +2185,7 @@ Substructure_Atom::_construct_from_msi_object (const msi_object & msi,
     }
   }
 
+#ifdef OR_ID_NO_LONGER_NEEDED
   att = msi.attribute(NAME_OF_OR_OPERATOR);
   if (att)
   {
@@ -2191,6 +2195,7 @@ Substructure_Atom::_construct_from_msi_object (const msi_object & msi,
       return 0;
     }
   }
+#endif
 
   att = msi.attribute(NAME_OF_RING_ID_SPECIFIER);
   if (att)
@@ -4436,6 +4441,7 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
     }
   }
 
+#ifdef OR_ID_NO_LONGER_NEEDED
   att = msi.attribute(NAME_OF_AND_OPERATOR);
   if (att)
   {
@@ -4452,6 +4458,7 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
     cerr << "Substructure_Environment::construct_from_msi_object:cannot have both OR and AND specifications\n";
     return 0;
   }
+#endif
 
 // Now construct the structural specification. There can be any number
 

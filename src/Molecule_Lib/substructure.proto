@@ -412,15 +412,15 @@ message SubstructureAtomSpecifier {
   optional uint32 min_aryl = 52;
   optional uint32 max_aryl = 53;
 
-  // Fused System Size.
-  repeated uint32 fused_system_size = 54;
-  optional uint32 min_fused_system_size = 55;
-  optional uint32 max_fused_system_size = 56;
-
   // Number of vinyl neighbors.
-  repeated uint32 vinyl = 57;
-  optional uint32 min_vinyl = 58;
-  optional uint32 max_vinyl = 59;
+  repeated uint32 vinyl = 54;
+  optional uint32 min_vinyl = 55;
+  optional uint32 max_vinyl = 56;
+
+  // Fused System Size.
+  repeated uint32 fused_system_size = 57;
+  optional uint32 min_fused_system_size = 58;
+  optional uint32 max_fused_system_size = 59;
 
   // All aromatic rings containing atom must have Kekule forms.
   optional bool all_rings_kekule = 60;
@@ -489,11 +489,16 @@ message SubstructureAtom {
 
   optional uint32 initial_atom_number = 5;
 
-  optional uint32 or_id = 6;
+  // I do not understand what this is for. As implemented, the functionality
+  // seems strange. omitting for now.
+  // optional uint32 or_id = 6;
+  //optional int32 or_operator = 8;
 
+
+  // A SubstructureAtom can consist of any number of individual choices of properties.
   repeated SubstructureAtomSpecifier atom_properties = 7;
-
-  optional int32 or_operator = 8;
+  // Operators defining the logical relationship among `atom_properties`.
+  repeated Operator ap_operator = 8;
 
   optional int32 ring_id = 9;
 

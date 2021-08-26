@@ -11,3 +11,25 @@ build:debug -c dbg
 build:debug --javacopt="-g"
 build:debug --copt="-g"
 build:debug --strip="never"
+
+build:msam --strip=never
+build:msan --copt -fsanitize=memory
+build:msan --copt -fsanitize-memory-track-origins=2
+build:msan --copt -DMEMORY_SANITIZER
+build:msan --copt -O1
+build:msan --copt -g
+build:msan --copt -fno-omit-frame-pointer
+build:msan --linkopt -fsanitize=memory
+
+#Taken from https://docs.bazel.build/versions/main/tutorial/cc-toolchain-config.html
+build:clang_config --crosstool_top=//toolchain:clang_suite
+
+# Use --cpu as a differentiator.
+
+build:clang_config --cpu=skylake
+
+# Use the default Bazel C++ toolchain to build the tools used during the
+# build.
+
+build:clang_config --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+

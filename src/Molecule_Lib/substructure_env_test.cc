@@ -355,11 +355,8 @@ TEST_F(TestSubstructureEnv, TestHitsNeeded)
   _smiles = "NC(=N)C(C#N)CC";
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
-  cerr << "Built from smiles " << _m.smiles() << endl;
 
   EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
-
-  cerr << "Did the search\n";
 
   EXPECT_TRUE(_DoPerumationsTests(1));
 }

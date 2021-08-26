@@ -50,7 +50,7 @@ Bond::adjust_for_loss_of_atom (atom_number_t i)
   {
     cerr << "Bond::adjust_for_loss_of_atom: involves atom " << i << endl;
     debug_print(cerr);
-    assert(NULL == "This should not happen");
+    assert(nullptr == "This should not happen");
   }
 
   if (_a2 > i)
@@ -59,7 +59,7 @@ Bond::adjust_for_loss_of_atom (atom_number_t i)
   {
     cerr << "Bond::adjust_for_loss_of_atom: involves atom " << i << endl;
     debug_print(cerr);
-    assert(NULL == "This should not happen");
+    assert(nullptr == "This should not happen");
   }
 
   return;
