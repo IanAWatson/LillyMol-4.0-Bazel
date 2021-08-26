@@ -12,6 +12,7 @@
 #include "Foundational/iwmisc/numeric_data_from_file.h"
 
 #include "spread_v2.h"
+#include "sparse_collection.h"
 #include "tversky.h"
 
 static int verbose = 0;
@@ -85,8 +86,6 @@ static IWString nn_id_tag    ("NNID<");
 static float blurr_distances = static_cast<float>(0.0);
 
 static similarity_type_t longest_distance_recognised = static_cast<similarity_type_t>(0.0);
-
-static Sparse_Fingerprint_Collection_Profile not_used_just_to_force_linking;
 
 static int
 get_previously_computed_nearest_neighbour (Spread_Object & p,

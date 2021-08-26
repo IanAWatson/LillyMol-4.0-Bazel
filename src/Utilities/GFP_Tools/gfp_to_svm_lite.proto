@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package GfpToSvmLite;
+
+message BitXref {
+  // The name of the fingerprint that generated this mapping.
+  optional string fp_name = 1;
+  // The actual cross reference of bit number in the original
+  // fingerprint, to what is sent to svm_lite.
+  map<uint64, uint64> gfp_to_svm = 2;
+}
+
+message GfpBitXref {
+  // Multiple mappings from fingerprint names to cross references.
+  map<string, BitXref> xref = 1;
+}

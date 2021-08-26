@@ -9,6 +9,7 @@
 #include "Foundational/iw_tdt/iw_tdt.h"
 
 #include "gfp.h"
+#include "sparse_collection.h"
 #include "tversky.h"
 #include "various_distance_metrics.h"
 

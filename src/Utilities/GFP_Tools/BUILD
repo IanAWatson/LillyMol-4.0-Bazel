@@ -1,3 +1,17 @@
+proto_library(
+    name = "gfp_to_svm_lite_proto",
+    srcs = [
+        "gfp_to_svm_lite.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "gfp_to_svm_lite_cc_proto",
+    deps = [
+        ":gfp_to_svm_lite_proto",
+    ],
+)
+
 cc_binary(
     name = "descriptor_file_to_01_fingerprints",
     srcs = [
@@ -20,7 +34,6 @@ cc_binary(
     ],
     deps = [
         ":gfp",
-        ":sparse_collection",
         "//Foundational/accumulator:accumulator",
         "//Foundational/iwmisc:iwmisc",
     ],
@@ -40,30 +53,14 @@ cc_binary(
     deps = [
         ":gfp",
         ":gfp_standard",
-        ":sparse_collection",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-#   linkopts = [
-#       "-lz",
-#       "-L/usr/lib/llvm-11/lib/",
-#       "-lgomp",
-#   ],
-    linkopts = select({
-        ":gcc_build": ["-lz", "-lgomp"],
-        ":llvm_build": ["-lz",  "-L/usr/lib/llvm-11/lib/", "-lgomp"],
-        "//conditions:default": ["-lz"],
-    }),
-)
-
-config_setting(
-    name = "gcc_build",
-    values = {"iwc": "gcc"}
-)
-
-config_setting(
-    name = "llvm_build",
-    values = {"iwc": "llvm"}
+    linkopts = [
+        "-lz",
+        "-L/usr/lib/llvm-11/lib/",  # clang
+        "-lgomp",
+    ],
 )
 
 cc_binary(
@@ -112,13 +109,12 @@ cc_binary(
     deps = [
         ":gfp",
         ":gfp_standard",
-        ":sparse_collection",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
     linkopts = [
         "-lz",
-        "-L/usr/lib/llvm-11/lib/",
+        "-L/usr/lib/llvm-11/lib/",  # clang
         "-lgomp",
     ],
 )
@@ -133,7 +129,6 @@ cc_binary(
     deps = [
         ":gfp",
         ":neighbour_list",
-        ":sparse_collection",
     ],
     linkopts = [
         "-lz",
@@ -150,7 +145,6 @@ cc_binary(
         ":gfp",
         ":gfp_standard",
         ":neighbour_list",
-        ":sparse_collection",
     ],
     linkopts = [
         "-lz",
@@ -164,7 +158,6 @@ cc_binary(
     ],
     deps = [
         ":gfp",
-        ":sparse_collection",
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
@@ -179,8 +172,21 @@ cc_binary(
     ],
     deps = [
         ":gfp",
-        ":sparse_collection",
         "//Foundational/iwmisc:iwmisc",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
+    name = "gfp_to_svm_lite",
+    srcs = [
+        "gfp_to_svm_lite.cc",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_to_svm_lite_cc_proto",
     ],
     linkopts = [
         "-lz",
@@ -213,7 +219,6 @@ cc_binary(
     deps = [
         ":build_pool",
         ":gfp",
-        ":sparse_collection",
         "//Foundational/histogram:iwhistogram",
         "//Foundational/iwmisc:iwmisc",
     ],
@@ -230,7 +235,6 @@ cc_binary(
     deps = [
         ":build_pool",
         ":gfp",
-        ":sparse_collection",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
         "//Foundational/data_source:iwstring_data_source",
@@ -291,7 +295,6 @@ cc_library(
     deps = [
         ":gfp",
         ":smiles_id_dist",
-        ":sparse_collection",
     ],
 )
 
@@ -333,6 +336,7 @@ cc_library(
         "_fixed_size_counted_fingerprint_uint.cc",
         "multi_conformer.cc",
         "sparsefp.cc",
+        "sparse_collection.cc",
         "tversky.cc",
         "various_distance_metrics.cc",
     ],

@@ -23,6 +23,7 @@
 
 #include "gfp.h"
 #include "neighbour_list.h"
+#include "sparse_collection.h"
 #include "tversky.h"
 
 static int fingerprints_processed = 0;

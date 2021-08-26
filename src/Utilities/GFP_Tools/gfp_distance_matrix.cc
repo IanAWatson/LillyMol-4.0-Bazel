@@ -15,6 +15,7 @@
 #include "Foundational/iwmisc/report_progress.h"
 
 #include "gfp.h"
+#include "sparse_collection.h"
 #include "tversky.h"
 
 static int verbose = 0;
@@ -68,8 +69,6 @@ static char token_separator = ' ';
 */
 
 static int squeeze_multiple_blanks_from_fast_io = 0;
-
-static Sparse_Fingerprint_Collection_Profile not_used_just_to_force_linking;
 
 /*
   C++ I/O is awful.

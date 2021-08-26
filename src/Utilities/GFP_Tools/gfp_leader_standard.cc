@@ -17,6 +17,7 @@ using std::cout;
 
 #include "gfp_standard.h"
 #include "smiles_id_dist.h"
+#include "sparse_collection.h"
 
 const char * prog_name = nullptr;
 
@@ -34,8 +35,6 @@ static IWString mk2_tag ("FPMK2<");
 static IWString iw_tag ("FPIW<");
 
 static float threshold = 0.0;
-
-static Sparse_Fingerprint_Collection_Profile not_used_just_to_force_linking;
 
 class Leader_Item : public Smiles_ID_Dist
 {

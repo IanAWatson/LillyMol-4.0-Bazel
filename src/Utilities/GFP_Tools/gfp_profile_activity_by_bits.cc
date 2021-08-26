@@ -21,6 +21,7 @@
 #include "Foundational/iwmisc/misc.h"
 
 #include "gfp.h"
+#include "sparse_collection.h"
 
 const char * prog_name = nullptr;
 
@@ -80,7 +81,6 @@ static int min_bits_remaining_in_a_subset = max_recursion_depth + 1;
 
 static int search_duration = 20;
 
-static Sparse_Fingerprint_Collection_Profile not_used_just_to_force_linking;
 /*
   I want to be able to handle arbitrary class labels
 */

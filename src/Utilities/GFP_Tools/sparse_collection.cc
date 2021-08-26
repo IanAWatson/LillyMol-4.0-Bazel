@@ -4,6 +4,7 @@
 #include "Foundational/cmdline/cmdline.h"
 
 #include "gfp.h"
+#include "sparse_collection.h"
 
 static int singleton_threshold = 0;
 
@@ -12,7 +13,7 @@ Sparse_Fingerprint_Collection_Profile::Sparse_Fingerprint_Collection_Profile ()
 }
 
 int
-Sparse_Fingerprint_Collection_Profile::report (std::ostream & output) const
+Sparse_Fingerprint_Collection_Profile::report(std::ostream & output) const
 {
   output << "Sparse fingerprint set contains " << _xref.size () << " bits\n";
   if (_nset.n ())
@@ -22,7 +23,7 @@ Sparse_Fingerprint_Collection_Profile::report (std::ostream & output) const
 }
 
 int
-Set_of_Sparse_Fingerprint_Collection_Profile::report (std::ostream & output) const
+Set_of_Sparse_Fingerprint_Collection_Profile::report(std::ostream & output) const
 {
   output << "Sparse fingerprint summary on " << _number_sparse_fingerprints << " sparse fingerprints\n";
 
@@ -34,7 +35,7 @@ Set_of_Sparse_Fingerprint_Collection_Profile::report (std::ostream & output) con
   return output.good ();
 }
 
-Set_of_Sparse_Fingerprint_Collection_Profile::Set_of_Sparse_Fingerprint_Collection_Profile ()
+Set_of_Sparse_Fingerprint_Collection_Profile::Set_of_Sparse_Fingerprint_Collection_Profile()
 {
   _number_sparse_fingerprints = 0;
 
@@ -400,6 +401,7 @@ parse_sparse_to_dense_fingerprint_specifications (Command_Line & cl,
 }
 
 
+#ifdef NOW_IN_HFILE
 int
 Set_of_Sparse_Fingerprint_Collection_Profile::convert_to_fixed_width(int which_fingerprint,
                                         Sparse_Fingerprint const & fpfrom, 
@@ -428,3 +430,4 @@ Set_of_Sparse_Fingerprint_Collection_Profile::convert_to_fixed_width(int which_f
 {
   return _sfcp[which_fingerprint].convert_to_fixed_width (fpfrom, fpto, extra_bits, extra_count);
 }
+#endif

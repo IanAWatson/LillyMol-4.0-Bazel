@@ -16,6 +16,7 @@
 #include "Foundational/iwqsort/iwqsort.h"
 
 #include "leader.h"
+#include "sparse_collection.h"
 #include "tversky.h"
 
 static Tversky tversky;
@@ -93,8 +94,6 @@ static IWString distance_tag("DIST<");
 static similarity_type_t sub_cluster_threshold = static_cast<similarity_type_t>(0.0);
 
 static float sub_cluster_threshold_ratio = static_cast<float>(0.0);
-
-static Sparse_Fingerprint_Collection_Profile not_used_just_to_force_linking;
 
 /*
   A single variable that indicates whether or not any form of cluster clustering

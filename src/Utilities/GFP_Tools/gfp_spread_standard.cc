@@ -22,6 +22,7 @@
 
 #include "gfp_standard.h"
 #include "smiles_id_dist.h"
+#include "sparse_collection.h"
 
 const char * prog_name = nullptr;
 
@@ -56,8 +57,6 @@ static IWString distance_tag("DIST<");
 static IWString mk_tag("FPMK<");
 static IWString mk2_tag("FPMK2<");
 static IWString iw_tag("FPIW<");
-
-static Sparse_Fingerprint_Collection_Profile not_used_just_to_force_linking;
 
 /*
   When we squeeze the pool, we must update the sdistance and nsn arrays, but

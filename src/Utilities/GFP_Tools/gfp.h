@@ -14,6 +14,7 @@
 
 class iwstring_data_source;
 class Tversky;
+class Set_of_Sparse_Fingerprint_Collection_Profile;
 
 typedef float iwproperty_t;
 
@@ -162,8 +163,6 @@ class Molecular_Properties_Continuous : public Molecular_Properties<float>
 };
 
 #include "fixed_size_counted_fingerprint.h"
-
-#include "sparse_collection.h"
 
 class IW_General_Fingerprint
 {
