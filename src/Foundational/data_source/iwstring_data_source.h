@@ -131,6 +131,8 @@ protected:
 
     int do_close ();
 
+    int fd() const { return _fd;}
+
     int is_open () const { return _open;}
 
     int is_pipe () const;

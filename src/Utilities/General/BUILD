@@ -1,3 +1,17 @@
+proto_library(
+    name = "class_label_translation_proto",
+    srcs = [
+        "class_label_translation.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "class_label_translation_cc_proto",
+    deps = [
+        "class_label_translation_proto",
+    ],
+)
+
 cc_binary(
     name = "average",
     srcs = [
@@ -11,6 +25,22 @@ cc_binary(
         "//Foundational/iwstring:iwstring",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:iwre2",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
+    name = "class_label_translation",
+    srcs = [
+        "class_label_translation.cc",
+    ],
+    deps = [
+        ":class_label_translation_cc_proto",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwstring:iwstring",
     ],
     linkopts = [
         "-lz",

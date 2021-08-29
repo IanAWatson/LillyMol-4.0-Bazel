@@ -58,7 +58,7 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
-        "-L/usr/lib/llvm-11/lib/",  # clang
+#       "-L/usr/lib/llvm-11/lib/",  # clang
         "-lgomp",
     ],
 )
@@ -114,7 +114,7 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
-        "-L/usr/lib/llvm-11/lib/",  # clang
+#       "-L/usr/lib/llvm-11/lib/",  # clang
         "-lgomp",
     ],
 )
@@ -187,6 +187,7 @@ cc_binary(
     deps = [
         ":gfp",
         ":gfp_to_svm_lite_cc_proto",
+        "//Foundational/iwmisc:activity_from_file",
     ],
     linkopts = [
         "-lz",

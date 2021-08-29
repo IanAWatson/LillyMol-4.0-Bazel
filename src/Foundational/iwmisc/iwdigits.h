@@ -35,6 +35,7 @@ class IWDigits : public iwaray<IWString>
     const IWString & string_for_digit (int) const;
 
     int set_leading_string (const const_IWSubstring &);
+    int set_leading_string (char s);
 
     int append_to_each_stored_string (const const_IWSubstring &);
 };

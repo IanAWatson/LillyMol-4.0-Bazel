@@ -1,4 +1,19 @@
 cc_library(
+    name = "activity_from_file",
+    visibility = ["//visibility:public"],
+    srcs = [
+    ],
+    hdrs = [
+         "activity_data_from_file.h",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwstring:iwstring",
+    ],
+)
+
+cc_library(
     name = "iwmisc",
     visibility = ["//visibility:public"],
     srcs = [
