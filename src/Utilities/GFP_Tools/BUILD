@@ -12,6 +12,37 @@ cc_proto_library(
     ],
 )
 
+proto_library(
+    name = "svm_lite_model",
+    srcs = [
+        "svm_lite_model.proto",
+    ],
+    deps = [
+        ":gfp_to_svm_lite_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "svm_lite_model_cc_proto",
+    deps = [
+        ":svm_lite_model",
+    ],
+)
+
+proto_library(
+    name = "svmfp_model_proto",
+    srcs = [
+        "svmfp_model.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "svmfp_model_cc_proto",
+    deps = [
+        ":svmfp_model_proto",
+    ],
+)
+
 cc_binary(
     name = "descriptor_file_to_01_fingerprints",
     srcs = [
@@ -222,6 +253,24 @@ cc_binary(
         ":gfp",
         "//Foundational/histogram:iwhistogram",
         "//Foundational/iwmisc:iwmisc",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
+    name = "gfp_svmfp_evaluate",
+    srcs = [
+        "gfp_svmfp_evaluate.cc",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_to_svm_lite_cc_proto",
+        ":svmfp_model_cc_proto",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Utilities/General:class_label_translation_cc_proto",
     ],
     linkopts = [
         "-lz",

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package SvmfpModel;
+
+message SvmfpModel{
+    // A name for this model.
+    optional string response_name = 1;
+
+    // Options to gfp_make to generate the fingerprints.
+    optional string fingerprints = 2;
+
+    // Proto file containing the cross reference from
+    // gfp bit numbers to svm lite feature numbers.
+    optional string bit_xref = 3;
+
+    // GFP file containing support vectors and weights.
+    optional string support_vectors = 4;
+
+    // The threshold_b bias parameter
+    optional double threshold_b = 5;
+
+    // If this is a classification model, this file may be present.
+    optional string class_label_translation = 6;
+
+    // When was this file created.
+    optional string date_built = 7;
+}

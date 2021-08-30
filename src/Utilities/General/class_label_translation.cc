@@ -216,14 +216,14 @@ ProfileLabels(const char * fname,
   return ProfileLabels(input, count);
 }
 
-int
+std::optional<ClassLabelTranslation::ClassLabelTranslation>
 CreateCrossReference(const Command_Line_v2& cl,
                      IWString& output_fname) {
   IW_STL_Hash_Map_int count;
   for (const char * fname : cl) {
     if (! ProfileLabels(fname, count)) {
       cerr << "Fatal error profiling '" << fname << "'\n";
-      return 0;
+      return std::nullopt;
     }
   }
 
@@ -240,12 +240,12 @@ CreateCrossReference(const Command_Line_v2& cl,
 
   if (nclasses == 0) {
     cerr << "No data\n";
-    return 0;
+    return std::nullopt;
   }
 
   if (nclasses > too_many_classes) {
     cerr << "Too many classes " << nclasses << '\n';
-    return 0;
+    return std::nullopt;
   }
 
   if (nclasses == 1) {
@@ -253,7 +253,7 @@ CreateCrossReference(const Command_Line_v2& cl,
     for (const auto& [key, value] : count) {
       cerr << value << " instances of '" << key << "'\n";
     }
-    return 0;
+    return std::nullopt;
   }
 
 //using std::tuple<IWString, int> = ClassCount;
@@ -276,7 +276,7 @@ CreateCrossReference(const Command_Line_v2& cl,
     class_delta = 1;
   }
 
-  ClassLabelTranslation::ClassLabelTranslation mapping;
+  ClassLabelTranslation::ClassLabelTranslation mapping;  // to be returned.
 
   for (int i = 0; i < nclasses; ++i, class_number += class_delta) {
     const auto [label, _] = label_count[i];
@@ -292,7 +292,11 @@ CreateCrossReference(const Command_Line_v2& cl,
     mapping.mutable_class_count()->insert(to_insert);
   }
 
-  return WriteMapping(mapping, output_fname);
+  if (! WriteMapping(mapping, output_fname)) {
+    return std::nullopt;
+  }
+
+  return mapping;
 }
 
 int
@@ -336,13 +340,18 @@ ClassLabelTranslation(int argc, char** argv) {
     Usage(1);
   }
 
+  IWString_and_File_Descriptor output(1);
   int rc = 0;
   if (cl.option_present('C')) {
     IWString cfile = cl.string_value('C');
-    rc = CreateCrossReference(cl, cfile);
+    std::optional<ClassLabelTranslation::ClassLabelTranslation> mapping = CreateCrossReference(cl, cfile);
+    if (! mapping) {
+      cerr << "Cannot create cross reference file '" << cfile << "'\n";
+      return 1;
+    }
+    rc = UseCrossReference(cl, *mapping, output);
   } else if (cl.option_present('U')) {
     IWString ufile = cl.string_value('U');
-    IWString_and_File_Descriptor output(1);
     rc = UseCrossReference(cl, ufile, output);
   } else {
     cerr << "Must specify one of -C (create) or -U (use) options\n";

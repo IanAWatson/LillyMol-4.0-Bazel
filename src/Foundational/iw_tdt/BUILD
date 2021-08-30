@@ -4,6 +4,7 @@ cc_library(
     srcs = [
         "iw_tdt.cc",
         "_iw_tdt_float.cc",
+        "_iw_tdt_double.cc",
         "_iw_tdt_int.cc",
         "_iw_tdt_iwstring.cc",
     ],

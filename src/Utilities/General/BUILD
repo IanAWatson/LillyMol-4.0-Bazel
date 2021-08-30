@@ -10,6 +10,9 @@ cc_proto_library(
     deps = [
         "class_label_translation_proto",
     ],
+    visibility = [
+        "//visibility:public",
+    ],
 )
 
 cc_binary(

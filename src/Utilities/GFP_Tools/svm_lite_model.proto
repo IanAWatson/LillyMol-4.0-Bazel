@@ -2,20 +2,8 @@ syntax = "proto3";
 
 package SvmLiteModel;
 
-// Feature and weight.
-message FeatureCount {
-  uint32 feature_number = 1;
-  uint32 count = 2;
-}
+import "Utilities/GFP_Tools/gfp_to_svm_lite.proto";
 
-message SupportVector {
-  // The weight of this support vector.
-  double weight = 1;
-  // Each feature
-  repeated FeatureCount feature = 2;
-  // ID
-  optional string id = 3;
-}
 
 message SvmLiteModel {
   optional int32 kernel_type = 1;

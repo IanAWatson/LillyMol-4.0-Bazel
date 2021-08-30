@@ -44,7 +44,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
 
       break if opt == '-' && iptr == ARGV.size - 1
 
-      opt.gsub!(/^-+/, '')
+      opt = opt.gsub(/^-+/, '')
 
       unless okargs.key?(opt)
         @_unrecognised_options.push(opt)
@@ -66,13 +66,13 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       next unless qualifiers.length.positive?
 
       if qualifiers == 's'
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         @_option_value[opt].push(tmp)
         next
       end
 
       if %w[i int].include?(qualifiers)
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         raise "Invalid integer qualifier for -#{opt} option '#{tmp}'" unless tmp =~ /^-*\d+$/
 
         @_option_value[opt].push(tmp.to_i)
@@ -80,7 +80,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if %w[u uint].include?(qualifiers)
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         raise "Invalid unsigned integer qualifier for -#{opt} option '#{tmp}'" unless tmp =~ /^\d+$/
 
         @_option_value[opt].push(tmp.to_i)
@@ -88,7 +88,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if qualifiers == 'ipos'
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         unless tmp =~ /^\d+$/ && tmp.to_i.positive?
           raise "Invalid positive integer qualifier for -#{opt} option '#{tmp}'"
         end
@@ -98,7 +98,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if %w[f float].include?(qualifiers)
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         begin
           f = Float(tmp)
         rescue ArgumentError
@@ -109,7 +109,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if qualifiers == 'fraction'
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         begin
           f = Float(tmp)
         rescue ArgumentError
@@ -122,7 +122,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if qualifiers == 'sfile'
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         raise "Must specify file name for option '-#{opt}'" unless tmp
         raise "Missing or empty file '#{tmp}'" unless FileTest.size?(tmp)
 
@@ -131,7 +131,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if qualifiers == 'xfile'
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         raise "Must specify file name for option '-#{opt}'" unless tmp
         raise "Missing or empty file '#{tmp}'" unless FileTest.executable_real?(tmp)
 
@@ -140,7 +140,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
       end
 
       if qualifiers == 'dir'
-        tmp = ARGV[iptr].delete_at(iptr)
+        tmp = ARGV.delete_at(iptr)
         raise "Must specify file name for option '-#{opt}'" unless tmp
         raise "Missing or invalid directory file '#{tmp}'" unless FileTest.directory?(tmp)
 
@@ -174,7 +174,7 @@ class IWCmdline # rubocop:disable Metrics/ClassLength
   def debug_print; end
 
   def unrecognised_options_encountered
-    !@_unrecognised_options.empty
+    !@_unrecognised_options.empty?
   end
 
   def unrecognised_options
