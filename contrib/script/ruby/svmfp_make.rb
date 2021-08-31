@@ -10,6 +10,14 @@ require_relative 'lib/iwcmdline'
 require_relative 'lib/svmfp_model_pb'
 
 def usage(retcod)
+  $stderr << "Builds an svmfp model from smiles and activity\n"
+  $stderr << " -mdir <dir>   model directory to create\n"
+  $stderr << " -A <fname>    file containing activity data\n"
+  $stderr << " -C            classification model\n"
+  $stderr << " -gfp ... -gfp fingerprint specification (to gfp_make)\n"
+  $stderr << " -p <support>  support level for bit inclusion\n"
+  $stderr << " -v            verbose output\n";
+
   exit retcod
 end
 
@@ -49,7 +57,8 @@ def get_response_name(activity_file)
   header.split[1]
 end
 
-cmdline = IWCmdline.new('-v-mdir=s-A=sfile-c-gfp=close-svml=close-p=ipos-gfp_make=xfile')
+cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-gfp_make=xfile' + 
+                        '-svm_learn=xfile-gfp_to_svm_lite=xfile')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
   usage(1)
@@ -122,10 +131,12 @@ cmd = "#{gfp_make} #{fingerprints} #{smiles} > #{train_gfp}"
 execute_cmd(cmd, verbose, [train_gfp])
 
 FileUtils.cp(smiles, train_smi)
-if cmdline.option_present('c')
+if cmdline.option_present('C')
   perform_class_label_translation(activity_file, mdir, train_activity, verbose)
+  svm_learn_options = svm_learn_options + ' -z c'
 else
   FileUtils.cp(activity_file, train_activity)
+  svm_learn_options = svm_learn_options + ' -z r'
 end
 
 bit_xref = "#{mdir}/bit_xref"
@@ -153,7 +164,7 @@ model.fingerprints = fingerprints
 model.support_vectors = 'support_vectors.gfp'
 model.date_built = Time.now.to_s
 model.response_name = get_response_name(train_activity)
-model.class_label_translation = 'class_label_translation' if cmdline.option_present('c')
+model.class_label_translation = 'class_label_translation' if cmdline.option_present('C')
 
 model_description_file = "#{mdir}/model.dat"
 File.write(model_description_file, SvmfpModel::SvmfpModel.encode(model))

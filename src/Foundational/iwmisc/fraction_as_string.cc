@@ -2,7 +2,7 @@
 
 #include "iwdigits.h"
 
-Fraction_as_String::Fraction_as_String ()
+Fraction_as_String::Fraction_as_String()
 {
   _fraction = NULL;
 
@@ -11,7 +11,7 @@ Fraction_as_String::Fraction_as_String ()
   return;
 }
 
-Fraction_as_String::~Fraction_as_String ()
+Fraction_as_String::~Fraction_as_String()
 {
   if (NULL != _fraction)
     delete [] _fraction;
@@ -20,12 +20,12 @@ Fraction_as_String::~Fraction_as_String ()
 }
 
 int
-Fraction_as_String::initialise (float minvl, float maxvl, int digits)
+Fraction_as_String::initialise(float minvl, float maxvl, int digits)
 {
   if (NULL != _fraction)
     delete [] _fraction;
 
-  assert (digits > 0);
+  assert(digits > 0);
 
   _nbuckets = 1;
   for (int i = 0; i < digits; i++)
@@ -52,9 +52,9 @@ Fraction_as_String::initialise (float minvl, float maxvl, int digits)
 }
 
 int
-Fraction_as_String::_fill_string_data ()
+Fraction_as_String::_fill_string_data()
 {
-  assert (NULL != _fraction);
+  assert(NULL != _fraction);
 
 //std::cerr << "Fraction_as_String:_fill_string_data:leading space '" << _leading_space << "'\n";
 
@@ -93,8 +93,8 @@ Fraction_as_String::_fill_string_data ()
 }
 
 void
-Fraction_as_String::_append_number_no_string_rep (IWString & s,
-                                                  float f) const
+Fraction_as_String::_append_number_no_string_rep(IWString & s,
+                                                 float f) const
 {
   if (_leading_space.length())
     s += _leading_space;
@@ -108,8 +108,8 @@ Fraction_as_String::_append_number_no_string_rep (IWString & s,
 }
 
 void
-Fraction_as_String::append_number (IWString & s,
-                                   float f) const
+Fraction_as_String::append_number(IWString & s,
+                                  float f) const
 {
   if (NULL == _fraction)
   {
@@ -133,7 +133,7 @@ Fraction_as_String::append_number (IWString & s,
 }
 
 int
-Fraction_as_String::set_include_leading_space (int s)
+Fraction_as_String::set_include_leading_space(int s)
 {
   if (s && ' ' == _leading_space)    // no change
     return 1;
@@ -154,7 +154,7 @@ Fraction_as_String::set_include_leading_space (int s)
 
 
 int
-Fraction_as_String::set_leading_string (const const_IWSubstring & s)
+Fraction_as_String::set_leading_string(const const_IWSubstring & s)
 {
   if (_leading_space == s)   // no change
     return 1;
@@ -173,10 +173,10 @@ Fraction_as_String::set_leading_string (const const_IWSubstring & s)
 }
 
 const IWString &
-Fraction_as_String::string_for_fraction (float f) const
+Fraction_as_String::string_for_fraction(float f) const
 {
-  assert (f >= _minval && f <= _maxval);
-  assert (NULL != _fraction);
+  assert(f >= _minval && f <= _maxval);
+  assert(NULL != _fraction);
 
   int i = static_cast<int>( (f - _minval) / _dx + 0.49999);
 
@@ -184,7 +184,7 @@ Fraction_as_String::string_for_fraction (float f) const
 }
 
 int
-Fraction_as_String::append_to_each_stored_string (const const_IWSubstring & s)
+Fraction_as_String::append_to_each_stored_string(const const_IWSubstring & s)
 {
   if (NULL == _fraction)
   {

@@ -13,23 +13,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "svm_lite_model",
-    srcs = [
-        "svm_lite_model.proto",
-    ],
-    deps = [
-        ":gfp_to_svm_lite_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "svm_lite_model_cc_proto",
-    deps = [
-        ":svm_lite_model",
-    ],
-)
-
-proto_library(
     name = "svmfp_model_proto",
     srcs = [
         "svmfp_model.proto",
@@ -79,7 +62,8 @@ cc_binary(
         "gfp_leader_standard.cc",
     ],
     copts = [
-        "-fopenmp=libiomp5",
+#       "-fopenmp=libiomp5",  llvm
+        "-fopenmp",
     ],
     deps = [
         ":gfp",
@@ -135,7 +119,8 @@ cc_binary(
         "gfp_spread_standard.cc",
     ],
     copts = [
-        "-fopenmp=libiomp5",
+#       "-fopenmp=libiomp5", llvm
+        "-fopenmp",
     ],
     deps = [
         ":gfp",

@@ -34,11 +34,30 @@ char output_separator = ' ';
 bool write_label = true;
 bool write_score = false;
 
+Fraction_as_String fraction_as_string;
+
 void
 Usage(int rc) {
+  cerr << "Evaluates svmfp model(s)\n";
+  cerr << " -mdir <dir>     one or more model directories\n";
+  cerr << " -cwrite ...     what to write for classification models, '-cwrite help' for info\n";
+  cerr << " -sas <n>        write the score as string with <n> digits of accuracy\n";
+  cerr << " -v              verbose output\n";
+
   exit(rc);
 }
 
+void
+DisplayCWriteOptions(std::ostream& output) {
+  output << "The -cwrite option controls output from classification models\n";
+  output << " -cwrite label      write the label\n";
+  output << " -cwrite score      write the score\n";
+
+  exit(0);
+}
+
+// Read a textproto from `fname` into `proto`.
+// The iwstring_data_source is just used to get a file descriptor.
 template <typename Proto>
 int
 ReadProto(IWString& fname,
@@ -59,6 +78,7 @@ ReadProto(IWString& fname,
   return 1;
 }
 
+// Read a binary encoded proto from `fname` into `proto`.
 template <typename Proto>
 int
 ReadBinaryProto(IWString& fname,
@@ -84,6 +104,7 @@ PathName(const IWString& dirname, const IWString& fname) {
   return result;
 }
 
+// Read a textproto of type `Proto` from `dir/fname`.
 template <typename Proto>
 std::optional<Proto>
 ReadProto(const IWString& dirname, const std::string& fname) {
@@ -95,6 +116,7 @@ ReadProto(const IWString& dirname, const std::string& fname) {
   return result;
 }
 
+// Read a binary encoded proto of type `Proto` from `dirname/fname`.
 template <typename Proto>
 std::optional<Proto>
 ReadBinaryProto(const IWString& dirname, const std::string& fname) {
@@ -106,9 +128,11 @@ ReadBinaryProto(const IWString& dirname, const std::string& fname) {
   return result;
 }
 
+// Fingerprint and associated weight.
 class WeightedFingerprint : public IW_General_Fingerprint {
   private:
     double _weight;
+
   public:
     WeightedFingerprint();
 
@@ -145,6 +169,7 @@ WeightedFingerprint::Tanimoto(IW_General_Fingerprint& fp) {
   return me->tanimoto(fp) * _weight;
 }
 
+// Model class populated from a svmfp_model proto.
 class SvmModel {
   private:
     int _nfingerprints;
@@ -169,7 +194,7 @@ class SvmModel {
                 const GfpBitToFeatureMap::GfpBitXref& bit_xref);
     int ReadSupportVectors(const IWString& dir, const IWString& fname);
     int ReadSupportVectors(iwstring_data_source& input);
-    int ReadClassLabelTranslation(const IWString& dir, const IWString& fname);
+    int ReadClassLabelTranslation(const IWString& dir, const std::string& fname);
 
   public:
     SvmModel();
@@ -210,6 +235,7 @@ SvmModel::~SvmModel() {
   _weight = 0.0;
 }
 
+// Read information from `model_proto` to build state.
 int
 SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
                       const IWString& dir) {
@@ -245,7 +271,7 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
   }
 
   if (model_proto.has_class_label_translation()) {
-    IWString fname = model_proto.class_label_translation();
+    const std::string fname = model_proto.class_label_translation();
     if (!ReadClassLabelTranslation(dir, fname)) {
       cerr << "SvmModel:cannot read class_label_translation " << fname << '\n';
       return 0;
@@ -256,6 +282,8 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
   return Initialise(model_proto, *bit_xref);
 }
 
+// `fname` contains the name of the file containing the weighted support vectors.
+// Read that file and populate _gfp.
 int
 SvmModel::ReadSupportVectors(const IWString& dir, const IWString& fname) {
   IWString path_name = PathName(dir, fname);
@@ -274,9 +302,14 @@ SvmModel::ReadSupportVectors(const IWString& dir, const IWString& fname) {
 
   _gfp = new WeightedFingerprint[_nfingerprints];
 
+  if (verbose) {
+    cerr << "Reading " << _nfingerprints << " support vectors\n";
+  }
+
   return ReadSupportVectors(input);
 }
 
+// Populate the already allocated _gfp array with the contents of `input`.
 int
 SvmModel::ReadSupportVectors(iwstring_data_source& input) {
   IW_TDT tdt;
@@ -287,19 +320,25 @@ SvmModel::ReadSupportVectors(iwstring_data_source& input) {
     }
   }
 
+  if (verbose) {
+    cerr << "Support vectors initialized\n";
+  }
+
   return 1;
 }
 
+// The file `dir/fname` is a ClassLabelTranslation proto. Read that file
+// and use it to establish the _class_labels array.
 int
-SvmModel::ReadClassLabelTranslation(const IWString& dir, const IWString& fname) {
-  IWString path_name = PathName(dir, fname);
-  ClassLabelTranslation::ClassLabelTranslation mapping;
-  if (! ReadProto(path_name, mapping)) {
+SvmModel::ReadClassLabelTranslation(const IWString& dir, const std::string& fname) {
+  std::optional<ClassLabelTranslation::ClassLabelTranslation> mapping =
+    ReadProto<ClassLabelTranslation::ClassLabelTranslation>(dir, fname);
+  if (! mapping) {
     cerr << "SvmModel::ReadClassLabelTranslation:cannot read '" << fname << "'\n";
     return 0;
   }
 
-  for (auto [key, value] : mapping.to_numeric()) {
+  for (auto [key, value] : mapping->to_numeric()) {
     if (value == -1) {
       _class_labels[0] = key;
     } else if (value == 1) {
@@ -311,13 +350,14 @@ SvmModel::ReadClassLabelTranslation(const IWString& dir, const IWString& fname) 
   }
 
   if (_class_labels[0].empty() || _class_labels[1].empty()) {
-    cerr << "SvmModel::ReadClassLabelTranslation:incomplete specification " << mapping.ShortDebugString() << '\n';
+    cerr << "SvmModel::ReadClassLabelTranslation:incomplete specification " << mapping->ShortDebugString() << '\n';
     return 0;
   }
 
   return 1;
 }
 
+// Score a single fingerprint. The weighted similarity to our support vectors.
 double
 SvmModel::Score(IW_General_Fingerprint& fp) const {
   double result = _threshold_b;
@@ -327,16 +367,22 @@ SvmModel::Score(IW_General_Fingerprint& fp) const {
   return result;
 }
 
+#ifdef NOT_NEEDED_ANY_MORE
 IWString
 SvmModel::StringScore(IW_General_Fingerprint& fp) const {
   double score = Score(fp);
   if (_is_regression) {
     IWString result;
-    result << static_cast<float>(score);
+    if (fraction_as_string.active()) {
+      return fraction_as_string.string_for_fraction(score);
+    } else {
+      result << static_cast<float>(score);
+    }
     return result;
   }
   return ClassLabelForScore(score);
 }
+#endif
 
 const IWString&
 SvmModel::ClassLabelForScore(double score) const {
@@ -348,6 +394,19 @@ SvmModel::ClassLabelForScore(double score) const {
   }
 }
 
+// Append a string representation of `score` to `output`.
+// If fraction_as_string is active, use it.
+void
+AppendScore(float score,
+            IWString_and_File_Descriptor& output) {
+  if (fraction_as_string.active()) {
+    fraction_as_string.append_number(output, score);
+  } else {
+    output << output_separator << score;
+  }
+}
+
+// Seemingly nothing left to do. Maybe remove...
 int
 SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
                 const GfpBitToFeatureMap::GfpBitXref& bit_xref) {
@@ -363,15 +422,14 @@ GfpSvmfpEvaluate(IW_General_Fingerprint& fp,
 
   for (int i = 0; i < nmodels; ++i) {
     if (models[i].is_regression()) {
-      output << output_separator;
-      output << models[i].StringScore(fp);
+      AppendScore(models[i].Score(fp), output);
     } else {
       const auto score = models[i].Score(fp);
       if (write_label) {
         output << output_separator << models[i].ClassLabelForScore(score);
       }
       if (write_score) {
-        output << output_separator << static_cast<float>(score);
+        AppendScore(score, output);
       }
     }
   }
@@ -440,7 +498,7 @@ GfpSvmfpEvaluate(const char * fname,
 
 int
 GfpSvmfpEvaluate(int argc, char** argv) {
-  Command_Line_v2 cl(argc, argv, "-v-M=sfile-cwrite=s");
+  Command_Line_v2 cl(argc, argv, "-v-M=sfile-cwrite=s-sas=ipos");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -474,22 +532,34 @@ GfpSvmfpEvaluate(int argc, char** argv) {
     cerr << "Read " << nmodels << " model protos\n";
   }
 
+  // Either csv or separate options.
   if (cl.option_present("cwrite")) {
     write_label = false;
     write_score = false;
-    const IWString cwrite = cl.string_value("cwrite");
-    int i = 0;
-    const_IWSubstring token;
-    while (cwrite.nextword(token, i, ',')) {
-      if (token == "label") {
-        write_label = true;
-      } else if (token == "score") {
-        write_score = true;
-      } else {
-        cerr << "Unrecognised -cwrite qualifier '" << cwrite << "\n";
-        Usage(1);
+    IWString cwrite;
+    for (int i = 0; cl.value("cwrite", cwrite, i); ++i) {
+      int j = 0;
+      const_IWSubstring token;
+      while (cwrite.nextword(token, j, ',')) {
+        if (token == "label") {
+          write_label = true;
+        } else if (token == "score") {
+          write_score = true;
+        } else if (token == "help") {
+          DisplayCWriteOptions(cerr);
+        } else {
+          cerr << "Unrecognised -cwrite qualifier '" << cwrite << "\n";
+          Usage(1);
+        }
       }
     }
+  }
+
+  if (cl.option_present("sas")) {
+    int npoints;
+    cl.value("sas", npoints);
+    fraction_as_string.set_leading_string(IWString(output_separator));
+    fraction_as_string.initialise(-1.2, 1.2, npoints);
   }
 
   if (cl.empty()) {

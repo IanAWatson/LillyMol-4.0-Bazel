@@ -33,6 +33,15 @@ IWDigits class_numbers;
 
 void
 Usage(int rc) {
+  cerr << "Performs multi-directional class label translations\n";
+  cerr << " -C <fnmame>    create a cross lab4el cross reference proto\n";
+  cerr << " -H <fnmame>    use    a cross lab4el cross reference proto\n";
+  cerr << " -desc          input is a descriptor file - activity in col 2\n";
+  cerr << " -smi           input is a smiles file - activity in col 3\n";
+  cerr << " -c <col>       activity values are in column <col>\n";
+  cerr << " -hdr <n>       number of header records in the input\n";
+  cerr << " -v             verbose output\n";
+
   exit(rc);
 }
 
