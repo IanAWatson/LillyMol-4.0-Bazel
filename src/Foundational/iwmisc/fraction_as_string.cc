@@ -172,6 +172,12 @@ Fraction_as_String::set_leading_string(const const_IWSubstring & s)
   return _fill_string_data();
 }
 
+int
+Fraction_as_String::set_leading_string(char c) {
+  IWString tmp(c);
+  return set_leading_string(tmp);
+}
+
 const IWString &
 Fraction_as_String::string_for_fraction(float f) const
 {

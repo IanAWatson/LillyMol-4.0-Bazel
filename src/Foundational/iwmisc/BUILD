@@ -49,6 +49,7 @@ cc_library(
         "msi_object.h",
         "numeric_data_from_file.h",
         "primes.h",
+        "proto_support.h",
         "report_progress.h",
         "set_or_unset.h",
         "timsort.hpp",

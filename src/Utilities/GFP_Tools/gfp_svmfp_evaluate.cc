@@ -18,6 +18,8 @@
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #include "Utilities/GFP_Tools/svmfp_model.pb.h"
 #include "Utilities/General/class_label_translation.pb.h"
+#define FEATURE_SCALER_IMPLEMENTATION
+#include "Utilities/General/scaler.h"
 
 namespace gfp_svmfp_evaluate {
 using std::cerr;
@@ -188,6 +190,8 @@ class SvmModel {
     // If we have a classification problem, the class labels to apply.
     IWString _class_labels[2];
 
+    feature_scaler::FeatureScaler<float> _response_scaler;
+
   // private functions
 
     int Initialise(const SvmfpModel::SvmfpModel& model_proto,
@@ -195,6 +199,7 @@ class SvmModel {
     int ReadSupportVectors(const IWString& dir, const IWString& fname);
     int ReadSupportVectors(iwstring_data_source& input);
     int ReadClassLabelTranslation(const IWString& dir, const std::string& fname);
+    int ReadRegressionScaling(const IWString& dir, const std::string& fname);
 
   public:
     SvmModel();
@@ -279,6 +284,17 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
     _is_regression = false;
   }
 
+  if (model_proto.has_response_scaling()) {
+    if (_is_regression) {
+      cerr << "SvmModel::Initialise:classification model cannot also have response scaling\n";
+      return 0;
+    }
+    if (! ReadRegressionScaling(dir, fname)) {
+      cerr << "SvmModel::Initialise:cannot read response scaling '" << fname << "'\n";
+      return 0;
+    }
+  }
+
   return Initialise(model_proto, *bit_xref);
 }
 
@@ -357,6 +373,23 @@ SvmModel::ReadClassLabelTranslation(const IWString& dir, const std::string& fnam
   return 1;
 }
 
+int
+SvmModel::ReadRegressionScaling(const IWString& dir, const std::string& fname) {
+  std::optional<FeatureScaling::FeatureScaling> proto =
+    ReadProto<FeatureScaling::FeatureScaling>(dir, fname);
+  if (! proto) {
+    cerr << "SvmModel::ReadRegressionScaling:cannot read '" << fname << "'\n";
+    return 0;
+  }
+
+  if (! _response_scaler.Initialise(*proto)) {
+    cerr << "SvmModel::ReadRegressionScaling:cannot parse " << proto->ShortDebugString() << '\n';
+    return 0;
+  }
+
+  return 1;
+}
+
 // Score a single fingerprint. The weighted similarity to our support vectors.
 double
 SvmModel::Score(IW_General_Fingerprint& fp) const {
@@ -364,6 +397,12 @@ SvmModel::Score(IW_General_Fingerprint& fp) const {
   for (int i = 0; i < _nfingerprints; ++i) {
     result += _gfp[i].Tanimoto(fp) ;
   }
+
+  // If needed, convert back to the original range of the model data.
+  if (_response_scaler.Active()) {
+    result = _response_scaler.ScaleBackToOrignalRange(result);
+  }
+
   return result;
 }
 
@@ -399,6 +438,7 @@ SvmModel::ClassLabelForScore(double score) const {
 void
 AppendScore(float score,
             IWString_and_File_Descriptor& output) {
+
   if (fraction_as_string.active()) {
     fraction_as_string.append_number(output, score);
   } else {

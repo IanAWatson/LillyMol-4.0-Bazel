@@ -13,6 +13,7 @@
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 #include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/proto_support.h"
 
 #include "Utilities/General/class_label_translation.pb.h"
 
@@ -265,7 +266,10 @@ CreateCrossReference(const Command_Line_v2& cl,
     return std::nullopt;
   }
 
-//using std::tuple<IWString, int> = ClassCount;
+  if (nclasses != 2) {
+    cerr << "Warning, " << nclasses << " classes encountered\n";
+  }
+
   using ClassCount = std::tuple<IWString, int>;
   std::unique_ptr<ClassCount[]> label_count(new ClassCount[nclasses]);
 
@@ -301,9 +305,11 @@ CreateCrossReference(const Command_Line_v2& cl,
     mapping.mutable_class_count()->insert(to_insert);
   }
 
-  if (! WriteMapping(mapping, output_fname)) {
+  if (! iwmisc::WriteProtoAsText(mapping, output_fname)) {
     return std::nullopt;
   }
+//if (! WriteMapping(mapping, output_fname)) {
+//}
 
   return mapping;
 }

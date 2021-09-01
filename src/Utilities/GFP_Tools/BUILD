@@ -256,6 +256,7 @@ cc_binary(
         "//Foundational/cmdline_v2:cmdline_v2",
         "//Foundational/data_source:iwstring_data_source",
         "//Utilities/General:class_label_translation_cc_proto",
+        "//Utilities/General:scaler",
     ],
     linkopts = [
         "-lz",

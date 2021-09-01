@@ -22,6 +22,9 @@ message SvmfpModel{
     // If this is a classification model, this file may be present.
     optional string class_label_translation = 6;
 
+    // A FeatureScaling proto if this is a regression model.
+    optional string response_scaling = 7;
+
     // When was this file created.
-    optional string date_built = 7;
+    optional string date_built = 8;
 }

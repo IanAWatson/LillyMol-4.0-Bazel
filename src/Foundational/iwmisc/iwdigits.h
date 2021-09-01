@@ -83,6 +83,7 @@ class Fraction_as_String
     int append_to_each_stored_string(const const_IWSubstring &);
 
     int set_leading_string(const const_IWSubstring &);
+    int set_leading_string(char c);
 
     const IWString & string_for_fraction(float f) const;
 
