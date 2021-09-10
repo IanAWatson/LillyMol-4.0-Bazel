@@ -22,7 +22,10 @@ class MK
     m = /^MK(\d+)*/.match(fp)
     raise "Unrecognized MK fp form '#{fp}'" unless m
 
-    FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
-                                               extra_qualifiers: extra_qualifiers)
+    $stderr << "IN MK\n"
+    cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
+                                        extra_qualifiers: extra_qualifiers)
+    cmd << " -J MK"
+    cmd
   end
 end

@@ -48,22 +48,23 @@ end
 def parse_fp_token(fp)
   return nil, nil if fp.empty?
   f = fp.split(':')
-  if f.length == 1
-    ust_atype = nil
-  else
-    ust_atype = f[1]
-  end
+  ust_atype = if f.length == 1
+               nil
+             else
+               f[1]
+             end
   m = /^([A-Z]*)(\d*)/.match(f[0])
-  if m[1].empty?
-    predefined = nil
-  else
-    predefined = m[1]
-  end
-  if m[2].empty?
-    radius = nil
-  else
-    radius = m[2]
-  end
+  predefined = if m[1].empty?
+                 nil
+               else
+                 m[1]
+               end
+
+  radius = if m[2].empty?
+             nil
+           else
+              m[2]
+           end
 
   if predefined && ust_atype
     raise "Cannot specify both predefined #{predefined} and ust_atype #{ust_atype} from #{fp}"

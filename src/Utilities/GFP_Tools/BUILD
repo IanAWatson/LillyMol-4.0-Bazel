@@ -365,6 +365,7 @@ cc_library(
     name = "gfp",
     srcs = [
         "bic_table.cc",
+        "bit_subset.cc",
         "gfp.cc",
         "dyfp.cc",
         "fixed_size_counted_fingerprint_uchar.cc",
@@ -377,6 +378,7 @@ cc_library(
         "various_distance_metrics.cc",
     ],
     hdrs = [
+        "bit_subset.h",
         "gfp.h",
         "dyfp.h",
         "fixed_size_counted_fingerprint.h",
@@ -387,6 +389,7 @@ cc_library(
         "various_distance_metrics.h",
     ],
     deps = [
+        "gfp_to_svm_lite_cc_proto",
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwstring_data_source",
@@ -486,5 +489,41 @@ cc_library(
     ],
     deps = [
         "//Foundational/accumulator:accumulator"
+    ],
+)
+
+cc_binary(
+    name = "sparsefp_benchmark",
+    srcs = [
+        "sparsefp_benchmark.cc",
+    ],
+    deps = [
+        "@benchmark//:benchmark",
+        ":gfp",
+        "//Foundational/iwmisc:sparse_fp_creator",
+    ],
+)
+
+
+cc_test(
+    name = "bit_subset_test",
+    srcs = [
+        "bit_subset_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":gfp",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "sparsefp_test",
+    srcs = [
+        "sparsefp_test.cc",
+    ],
+    deps = [
+        ":gfp",
+        "@googletest//:gtest_main",
     ],
 )

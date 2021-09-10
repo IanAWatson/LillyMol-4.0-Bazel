@@ -256,6 +256,27 @@ cc_binary(
 )
 
 cc_binary(
+    name = "iwecfp",
+    srcs = [
+        "iwecfp.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmfingerprint",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:sparse_fp_creator",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "iwfp",
     srcs = [
         "iwfp.cc",

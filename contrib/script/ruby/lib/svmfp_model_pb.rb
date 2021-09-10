@@ -8,11 +8,15 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     add_message "SvmfpModel.SvmfpModel" do
       proto3_optional :response_name, :string, 1
       proto3_optional :fingerprints, :string, 2
-      proto3_optional :bit_xref, :string, 3
-      proto3_optional :support_vectors, :string, 4
-      proto3_optional :threshold_b, :double, 5
-      proto3_optional :class_label_translation, :string, 6
-      proto3_optional :date_built, :string, 7
+      proto3_optional :bit_subset, :string, 3
+      proto3_optional :bit_xref, :string, 4
+      proto3_optional :train_gfp, :string, 5
+      proto3_optional :support_vectors, :string, 6
+      proto3_optional :threshold_b, :double, 7
+      proto3_optional :class_label_translation, :string, 8
+      proto3_optional :response_scaling, :string, 9
+      proto3_optional :date_built, :string, 10
+      proto3_optional :flatten_sparse_fingerprints, :bool, 11
     end
   end
 end

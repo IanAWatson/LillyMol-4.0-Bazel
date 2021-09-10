@@ -54,8 +54,8 @@ class IW_TDT
 
     int next (iwstring_data_source &);
 
-    int build (const const_IWSubstring &);    // build from string with embedded newlines
-    int build (const char *, int);    // build from string with embedded newlines
+    int Build(const const_IWSubstring & s);    // build from string with embedded newlines
+    int Build(const char *, int);    // build from string with embedded newlines
 
     int next_dataitem (const_IWSubstring &, int &) const;
 

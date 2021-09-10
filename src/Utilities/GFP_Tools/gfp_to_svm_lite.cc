@@ -1,6 +1,8 @@
-// Converts GFP files to svm lite.
+// Converts GFP files to svm lite.output_sparse_fp_tag, tmp);
 // Primary function is to assign a unique feature number to each
 // bit in the gfp file(s).
+// Output can be either to an svm_lite input file format, or to
+// a .gfp file with a single, sparse, fingerprint.
 
 #include <algorithm>
 #include <memory>
@@ -15,8 +17,11 @@
 #define ACTIVITY_DATA_IMPLEMENATION_H
 #include "Foundational/iwmisc/activity_data_from_file.h"
 #include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/proto_support.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 
+#include "Utilities/GFP_Tools/bit_subset.h"
 #include "Utilities/GFP_Tools/gfp.h"
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 
@@ -33,6 +38,7 @@ int verbose = 0;
 
 IWString smiles_tag = "$SMI<";
 IWString identifier_tag = "PCN<";
+IWString activity_tag = "ACT<";
 
 // The activity can be part of the name.
 int activity_column = -1;
@@ -40,46 +46,75 @@ int activity_column = -1;
 IWDigits bit_number;
 IWDigits count;
 
-char sep = ' ';
-
-int support = 0;
+// Output can be svm_lite form, or a gfp subset.
+// by default, only svm_lite produced.
+bool output_as_svm_lite = true;
+bool output_as_gfp_subset = false;
 
 int flatten_sparse_fingerprints = 0;
 
-// We operate in one of two modes. Creating or using
-// a proto file.
-bool create_bit_map = false;
+char sep = ' ';
+
 // If we are using an existing proto map file, it can only
 // be processed after we have read the first gfp item.
 bool use_bit_map = false;
 IWString input_proto_fname;
 
+int fingerprints_read = 0;
+
+int write_counts_as_float = 0;
+
 void
 Usage(int rc) {
+  cerr << "Convert a gfp file to form(s) useful for svm_lite\n";
+  cerr << " -A <fname>        activity data in <fname>\n";
+  cerr << " -c <col>          activity is column <col> in the name in the input .gfp file\n";
+  cerr << " -C <fname>        create GfpBitXref and GfpBitSubset protos and use for the current input\n";
+  cerr << " -X <fname>        use a previously generated GfpBitXref proto for the current input\n";
+  cerr << " -U <fname>        use a previously generated GfpBitSubset proto for the current input\n";
+  cerr << " -O <type>         output type, 'svml, gfp'\n";
+  cerr << " -S <stem>         output file name stem, <stem>.gfp and/or <stem>.svml\n";
+  cerr << " -p <n>            support level, discard bits found in <n> or fewer fingerprints\n";
+  cerr << " -f                flatten counted bits to 1\n";
+  cerr << " -d                write counts as floating point values - ordinal rather than categorical values\n";
+  cerr << " -v                verbose output\n";
+
   exit(rc);
 }
 
-// Class to enable conversion from GFP bit numbers to feature
-// numbers used by svm-lite.
-// It operates in two phases.
-// 1. Discern the bits in the input and a conversion to feature number.
-// 2. Use that conversion table to do the conversion.
-// Step 1 can be done either by looking at the input, the ProfileBits functions
-// below (create_bit_map), or by reading a precomputed conversion table (use_bit_map).
-class GfpToFeature {
+struct FeatureCount {
+  feature_type_t feature;
+  uint32_t count;
+};
+
+// A class to facilitate bit subsetting and cross referencing.
+// During the formation phase, the ProfileBits* methods are
+// called and ProfileBits() is called for eahc fingerprint.
+// This populates the _dense_count and _sparse_count hashes.
+//
+// Once the input fingerprints are read,feature subset and feature
+// cross reference protos are written.
+//
+// Then one or more output files can be created.
+//   *  Subset of the GFP
+//   *  svm-lite output
+//   *  a single, sparse, gfp fingerprint.
+
+// During output, the subset of bits to be written is then either
+// converted from the _dense_count and _sparse_count hashes, which
+// are re-used, or read from protos.
+
+class GfpBitsRetained {
   private:
-    // As new GFP bits are encountered, we assign a globally unique feature
-    // number;
-    feature_type_t _next_feature;
-    // 
-    resizable_array<std::unordered_map<gfp_bit_type_t, feature_type_t>> _dense_gfp_to_bit;
-    resizable_array<std::unordered_map<gfp_bit_type_t, feature_type_t>> _sparse_gfp_to_bit;
+    // A mapping from bit number in each fingerprint, to the number of molecules
+    // that have that bit set. For each fingerprint.
+    // By having a count, we can enable the support functionality.
+    resizable_array<std::unordered_map<gfp_bit_type_t, uint32_t>> _dense_count;
+    resizable_array<std::unordered_map<gfp_bit_type_t, uint32_t>> _sparse_count;
 
     // The names of the fingerprints - used when writing the proto.
     resizable_array<IWString> _dense_gfp_name;
     resizable_array<IWString> _sparse_gfp_name;
-
-    extending_resizable_array<int> _molecules_containing_feature;
 
     // If a support requirement is imposed, we store it and write with
     // the proto.
@@ -87,380 +122,473 @@ class GfpToFeature {
 
     // private functions
 
-    // Generic function that tries to lookup `gfp_bit` in `xref`.
-    // If successful, it returns xref[gfp_bit]. If not, it increments
-    // _next_feature, sets xref[gfp_bit] = _next_feature.
-    feature_type_t _FeatureForBit(std::unordered_map<gfp_bit_type_t, feature_type_t>& xref, gfp_bit_type_t gfp_bit);
-    std::optional<feature_type_t> _FeatureForBit(const std::unordered_map<gfp_bit_type_t, feature_type_t>& xref, gfp_bit_type_t gfp_bit) const;
+    GfpBitSubset::BitSubset MakeProto(const std::unordered_map<gfp_bit_type_t, uint32_t>& count) const;
 
-    GfpBitToFeatureMap::BitXref MakeProto(const std::unordered_map<gfp_bit_type_t, feature_type_t>& xref) const;
+    // Remove all features that occur in fewer than `_support` molecules.
+    // Returns the number of features discarded.
+    int ImposeSupport();
 
-    void MakeXref(const GfpBitToFeatureMap::BitXref& proto, std::unordered_map<gfp_bit_type_t, feature_type_t>& xref);
+    // Both of the protos produced need to have their `params` attributes filled.
+    template <typename Proto> void SetParams(Proto& proto) const;
 
   public:
-    GfpToFeature();
+    GfpBitsRetained();
 
     // Uses the globally available counts of dense and sparse fingerprints
     // to initialize.
     int Initialize();
 
     // Building from protos.
-    int FromProto(const char * fname);
-    int FromProto(const GfpBitToFeatureMap::GfpBitXref& proto);
+    int FromProto(IWString& fname);
 
     int DebugPrint(std::ostream& output) const;
 
-    // Given a feature coming from either dense fingerprint `ndx` or
-    // sparse fingerprint `ndx`, return the corresponding bit number.
-    // Updates internal hashes
-    feature_type_t FetchOrAssignFeatureForDenseBit(int ndx, gfp_bit_type_t gfp_bit);
-    feature_type_t FetchOrAssignFeatureForSparseBit(int ndx, gfp_bit_type_t gfp_bit);
+    void set_support(int s) {
+      _support = s;
+    }
 
-    // Const version that only returns a valid feature number if
-    // `gfp_bit` is in the hashes.
-    std::optional<feature_type_t> FeatureForDenseBit(int ndx, gfp_bit_type_t gfp_bit) const;
-    std::optional<feature_type_t> FeatureForSparseBit(int ndx, gfp_bit_type_t gfp_bit) const;
+    // Iterate through fingerprints, collecting the bits set into
+    // _dense_count and _sparse_count.
+    int ProfileBits(const IWDYFP& fp, int fpnum);
+    int ProfileBits(const Sparse_Fingerprint& fp, int fpnum);
 
-    // Remove all features that occur in fewer than `support` molecules.
-    // Returns the number of features discarded.
-    int ImposeSupport(int support);
+    // In the case of having called ProfileBits to identify the bits
+    // present in the inputs, convert the _dense_count and _sparse_count
+    // hashes to cross references from gfp bit number to globally
+    // unique feature number. During this phase any support requirement
+    // is imposed.
+    // Returns the maximum feature number.
+    int ConvertToCrossReference();
+
+    // During the output phase, convert the retained bit numbers in `fp` to
+    // feature/count pairs in `features`, starting at position `ndx`, which is
+    // incremented.
+    int BitsToFeatures(const IWDYFP& fp, int fpnum, FeatureCount* features, int & ndx);
+    int BitsToFeatures(const Sparse_Fingerprint& fp, int fpnum, FeatureCount* features, int & ndx);
 
     // Convert to proto form.
-    GfpBitToFeatureMap::GfpBitXref ToProto() const;
+    GfpBitSubset::GfpBitSubset ToBitSubsetProto() const;
+    GfpBitSubset::GfpBitToFeature ToBitXrefProto() const;
 
-    // Write the bit cross reference data in proto form.
-    int WriteProto(const char * fname) const;
+    // Write the bit cross reference and bit subset data in proto form.
+    int WriteBitSubsetProto(IWString& fname) const;
+    int writeBitXrefProto(IWString& fname) const;
 };
 
-GfpToFeature::GfpToFeature() {
-  _next_feature = 0;
+GfpBitsRetained::GfpBitsRetained() {
   _support = 0;
 }
 
-int
-GfpToFeature::Initialize() {
-  const int nfixed = number_fingerprints();
-  const int nsparse = number_sparse_fingerprints();
+std::tuple<int, int>
+GetNumberFingerprints() {
+  return {number_fingerprints(), number_sparse_fingerprints()};
+}
 
-  _dense_gfp_to_bit.extend(nfixed, std::unordered_map<gfp_bit_type_t, feature_type_t>());
-  _sparse_gfp_to_bit.extend(nsparse, std::unordered_map<gfp_bit_type_t, feature_type_t>());
+int
+GfpBitsRetained::Initialize() {
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
+
+  _dense_count.extend(nfixed, std::unordered_map<gfp_bit_type_t, uint32_t>());
+  _sparse_count.extend(nsparse, std::unordered_map<gfp_bit_type_t, uint32_t>());
   _dense_gfp_name.extend(nfixed, IWString());
   _sparse_gfp_name.extend(nsparse, IWString());
+
   for (int i = 0; i < nfixed; ++i) {
     _dense_gfp_name[i] = fixed_fingerprint_tag(i);
   }
   for (int i = 0; i < nsparse; ++i) {
     _sparse_gfp_name[i] = sparse_fingerprint_tag(i);
   }
+
   if (verbose) {
     cerr << "Initialised for " << nfixed << " fixed and " << nsparse << " sparse fingerprints\n";
   }
+
   return 1;
 }
 
 int
-GfpToFeature::DebugPrint(std::ostream& output) const {
-  output << "GfpToFeature: with " << _dense_gfp_to_bit.number_elements() << " fixed and " << _sparse_gfp_to_bit.number_elements() << " fingerprints\n";
-  output << "_molecules_containing_feature contains " << _molecules_containing_feature.number_elements() << " items\n";
-  for (int i = 0; i < _molecules_containing_feature.number_elements(); ++i) {
-    if (_molecules_containing_feature[i] > 0) {
-      cerr << "  count " << i << '\n';
-    }
-  }
+GfpBitsRetained::DebugPrint(std::ostream& output) const {
+  output << "GfpBitsRetained: with " << _dense_count.number_elements() << " fixed and " << _sparse_count.number_elements() << " fingerprints\n";
   return output.good();
 }
 
-int
-GfpToFeature::FromProto(const char * fname) {
-  iwstring_data_source input(fname);
-  if (! input.good()) {
-    cerr << "GfpToFeature::FromProto:cannot open '" << fname << "'\n";
-    return 0;
-  }
- 
-  google::protobuf::io::FileInputStream file_input_stream(input.fd());
-
-  GfpBitToFeatureMap::GfpBitXref proto;
-
-  if (! google::protobuf::TextFormat::Parse(&file_input_stream, &proto)) {
-    cerr << "GfpToFeature::FromProto:cannot parse '" << fname << "'\n";
-    return 0;
-  }
-
-  return FromProto(proto);
-}
-
-// Given a mapping from gfp bit number in `proto`, fill in the
-// corresponding unordered_map `xref`. It is really just a copy.
+// Given a list of bits to retain in `proto.bits`, populate `retain`.
 void
-GfpToFeature::MakeXref(const GfpBitToFeatureMap::BitXref& proto,
-                               std::unordered_map<gfp_bit_type_t, feature_type_t>& xref) {
-  for (const auto& [key, value] : proto.gfp_to_svm()) {
-    xref.emplace(key, value);
-    _molecules_containing_feature[value] = 1;
+ExtractBitsToRetain(const GfpBitSubset::BitSubset& proto,
+                    std::unordered_map<gfp_bit_type_t, uint32_t>& retain) {
+  for (uint32_t bit : proto.bits()) {
+    retain.emplace(bit, 1);  // 1 is an arbitrary choice, could be any number.
   }
 }
 
 int
-GfpToFeature::FromProto(const GfpBitToFeatureMap::GfpBitXref& proto) {
+GfpBitsRetained::FromProto(IWString & fname) {
+  std::optional<GfpBitSubset::GfpBitSubset> proto = iwmisc::ReadBinaryProto<GfpBitSubset::GfpBitSubset>(fname);
+  if (! proto) {
+    cerr << "GfpBitSubset::FromProto:cannot read '" << fname << "'\n";
+    return 0;
+  }
+
   Initialize();
-  const int nfixed = number_fingerprints();
-  const int nsparse = number_sparse_fingerprints();
+
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
+
   for (int i = 0; i < nfixed; ++i) {
     const std::string tag(_dense_gfp_name[i].data(), _dense_gfp_name[i].length());
-    auto iter = proto.xref().find(tag);
-    if (iter == proto.xref().end()) {
-      cerr << "GfpToFeature::FromProto:no data for " << _dense_gfp_name[i] << "'\n";
+    auto iter = proto->xref().find(tag);
+    if (iter == proto->xref().end()) {
+      cerr << "GfpBitsRetained::FromProto:no data for " << _dense_gfp_name[i] << "'\n";
       return 0;
     }
-    MakeXref(iter->second, _dense_gfp_to_bit[i]);
+    ExtractBitsToRetain(iter->second, _dense_count[i]);
   }
 
   for (int i = 0; i < nsparse; ++i) {
     const std::string tag(_sparse_gfp_name[i].data(), _sparse_gfp_name[i].length());
-    auto iter = proto.xref().find(tag);
-    if (iter == proto.xref().end()) {
-      cerr << "GfpToFeature::FromProto:no data for " << _sparse_gfp_name[i] << "'\n";
+    auto iter = proto->xref().find(tag);
+    if (iter == proto->xref().end()) {
+      cerr << "GfpBitsRetained::FromProto:no data for " << _sparse_gfp_name[i] << "'\n";
       return 0;
     }
-    MakeXref(iter->second, _sparse_gfp_to_bit[i]);
+    ExtractBitsToRetain(iter->second, _sparse_count[i]);
   }
 
   return 1;
 }
 
-feature_type_t
-GfpToFeature::_FeatureForBit(std::unordered_map<gfp_bit_type_t, feature_type_t>& xref,
-                               gfp_bit_type_t gfp_bit) {
-  const auto iter = xref.find(gfp_bit);
-  if (iter != xref.end()) {
-    _molecules_containing_feature[iter->second]++;
-    return iter->second;
+void
+UpdateHash(std::unordered_map<uint32_t, uint32_t>& bit_count,
+           uint32_t bit) {
+  auto iter = bit_count.find(bit);
+  if (iter == bit_count.end()) {
+    bit_count.emplace(bit, 1);
+  } else {
+    iter->second++;
   }
-
-  _next_feature++;
-  xref.emplace(gfp_bit, _next_feature);
-  _molecules_containing_feature[_next_feature]++;
-  return _next_feature;
 }
 
-std::optional<feature_type_t>
-GfpToFeature::_FeatureForBit(const std::unordered_map<gfp_bit_type_t, feature_type_t>& xref,
-                               gfp_bit_type_t gfp_bit) const {
-  const auto iter = xref.find(gfp_bit);
-  if (iter == xref.end()) {
-    return std::nullopt;
-  }
-
-  if (_molecules_containing_feature[iter->second] == 0) {
-    return std::nullopt;
-  }
-
-  return iter->second;
-}
-
-feature_type_t
-GfpToFeature::FetchOrAssignFeatureForDenseBit(int ndx, gfp_bit_type_t gfp_bit) {
-  return _FeatureForBit(_dense_gfp_to_bit[ndx], gfp_bit);
-}
-
-feature_type_t
-GfpToFeature::FetchOrAssignFeatureForSparseBit(int ndx, gfp_bit_type_t feature) {
-  return _FeatureForBit(_sparse_gfp_to_bit[ndx], feature);
-}
-
-std::optional<feature_type_t>
-GfpToFeature::FeatureForDenseBit(int ndx, gfp_bit_type_t gfp_bit) const {
-  return _FeatureForBit(_dense_gfp_to_bit[ndx], gfp_bit);
-}
-
-std::optional<feature_type_t>
-GfpToFeature::FeatureForSparseBit(int ndx, gfp_bit_type_t feature) const {
-  return _FeatureForBit(_sparse_gfp_to_bit[ndx], feature);
-}
-
+// Until C++ 20
+// https://en.cppreference.com/w/cpp/container/unordered_map/erase_if
+//  rc += std::erase_if(mapping, [support] (const auto& kv) {
+//    const auto [bit, count] = kv;
+//    return count < support;
+//  })
 int
-GfpToFeature::ImposeSupport(int support) {
-  _support = support;
+RemoveLowSupport(std::unordered_map<gfp_bit_type_t, uint32_t> & mapping,
+                 uint32_t support) {
   int rc = 0;
-  for (int f = 0; f < _molecules_containing_feature.number_elements(); ++f) {
-    const int c = _molecules_containing_feature[f];
-    if (c >= support) {
-      continue;
+  for (auto iter = mapping.begin(), last = mapping.end(); iter != last; ) {
+    if (iter->second < support) {
+      mapping.erase(iter);
+      rc++;
+    } else {
+      ++iter;
     }
-    _molecules_containing_feature[f] = 0;
-    rc++;
   }
   return rc;
 }
 
+int
+GfpBitsRetained::ImposeSupport() {
+  int rc = 0;
+  for (auto & dense : _dense_count) {
+    rc += RemoveLowSupport(dense, _support);
+  }
+
+  for (auto & sparse : _sparse_count) {
+    rc += RemoveLowSupport(sparse, _support);
+  }
+
+  return rc;
+}
+
 // Convert an unordered_map to a BitXref proto.
-GfpBitToFeatureMap::BitXref
-GfpToFeature::MakeProto(const std::unordered_map<gfp_bit_type_t, feature_type_t>& xref) const {
-  GfpBitToFeatureMap::BitXref result;
-  for (const auto& [key, value] : xref) {
-    if (_molecules_containing_feature[value] == 0) {
-      continue;
-    }
-    google::protobuf::MapPair<uint64_t, uint64_t> to_insert(key, value);
-    result.mutable_gfp_to_svm()->insert(to_insert);
+GfpBitSubset::BitSubset
+MakeSubsetProto(const std::unordered_map<gfp_bit_type_t, uint32_t>& count) {
+  GfpBitSubset::BitSubset result;
+  for (const auto& [key, value] : count) {
+    result.add_bits(key);
   }
   return result;
 }
 
-GfpBitToFeatureMap::GfpBitXref
-GfpToFeature::ToProto() const {
-  GfpBitToFeatureMap::GfpBitXref result;
-  const int nfixed = number_fingerprints();
-  const int nsparse = number_sparse_fingerprints();
+GfpBitSubset::GfpBitSubset
+GfpBitsRetained::ToBitSubsetProto() const {
+  GfpBitSubset::GfpBitSubset result;
+
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
+
   for (int i = 0; i < nfixed; ++i) {
-    GfpBitToFeatureMap::BitXref xref = MakeProto(_dense_gfp_to_bit[i]);
+    GfpBitSubset::BitSubset counts = MakeSubsetProto(_dense_count[i]);
 
     const std::string tag_name(_dense_gfp_name[i].data(), _dense_gfp_name[i].length());
-    google::protobuf::MapPair<std::string, GfpBitToFeatureMap::BitXref> to_insert(tag_name, xref);
+    google::protobuf::MapPair<std::string, GfpBitSubset::BitSubset> to_insert(tag_name, counts);
 
     result.mutable_xref()->insert(to_insert);
   }
 
   for (int i = 0; i < nsparse; ++i) {
-    GfpBitToFeatureMap::BitXref xref = MakeProto(_sparse_gfp_to_bit[i]);
+    GfpBitSubset::BitSubset counts = MakeSubsetProto(_sparse_count[i]);
 
     const std::string tag_name(_sparse_gfp_name[i].data(), _sparse_gfp_name[i].length());
-    google::protobuf::MapPair<std::string, GfpBitToFeatureMap::BitXref> to_insert(tag_name, xref);
+    google::protobuf::MapPair<std::string, GfpBitSubset::BitSubset> to_insert(tag_name, counts);
 
     result.mutable_xref()->insert(to_insert);
   }
 
-  if (_support > 0) {
-    result.set_support(_support);
+  SetParams(result);
+
+  return result;
+}
+
+GfpBitSubset::BitXref
+MakeXrefProto(const std::unordered_map<gfp_bit_type_t, uint32_t>& count) {
+  GfpBitSubset::BitXref result;
+
+  for (const auto [key, value] : count) {
+    google::protobuf::MapPair<uint32_t, uint32_t> to_insert(key, value);
+    result.mutable_bit_to_feature()->insert(to_insert);
   }
 
   return result;
 }
 
-int
-GfpToFeature::WriteProto(const char * fname) const {
-  const GfpBitToFeatureMap::GfpBitXref proto = ToProto();
-  IWString_and_File_Descriptor output;
-  if (! output.open(fname)) {
-    cerr << "GfpToFeature::WriteProto:cannot open '" << fname << "'\n";
-    return 0;
+template <typename Proto>
+void
+GfpBitsRetained::SetParams(Proto& proto) const {
+  if (_support > 0) {
+    proto.mutable_params()->set_support(_support);
   }
 
-  using google::protobuf::io::ZeroCopyOutputStream;
-  using google::protobuf::io::FileOutputStream;
-  std::unique_ptr<ZeroCopyOutputStream> zero_copy_output(new FileOutputStream(output.fd()));
-  if (! google::protobuf::TextFormat::Print(proto, zero_copy_output.get())) {
-    cerr << "GfpToFeature::WriteProto:cannot write " << fname << "\n";
-    return 0;
+  if (flatten_sparse_fingerprints) {
+    proto.mutable_params()->set_flatten_sparse_fingerprints(true);
+  }
+}
+
+GfpBitSubset::GfpBitToFeature
+GfpBitsRetained::ToBitXrefProto() const {
+  GfpBitSubset::GfpBitToFeature result;
+
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
+
+  for (int i = 0; i < nfixed; ++i) {
+    GfpBitSubset::BitXref xref = MakeXrefProto(_dense_count[i]);
+
+    const std::string tag_name(_dense_gfp_name[i].data(), _dense_gfp_name[i].length());
+    google::protobuf::MapPair<std::string, GfpBitSubset::BitXref> to_insert(tag_name, xref);
+
+    result.mutable_xref()->insert(to_insert);
+  }
+
+  for (int i = 0; i < nsparse; ++i) {
+    GfpBitSubset::BitXref xref = MakeXrefProto(_sparse_count[i]);
+
+    const std::string tag_name(_sparse_gfp_name[i].data(), _sparse_gfp_name[i].length());
+    google::protobuf::MapPair<std::string, GfpBitSubset::BitXref> to_insert(tag_name, xref);
+
+    result.mutable_xref()->insert(to_insert);
+  }
+
+  SetParams(result);
+
+  return result;
+}
+
+int
+GfpBitsRetained::WriteBitSubsetProto(IWString& fname) const {
+  const GfpBitSubset::GfpBitSubset proto = ToBitSubsetProto();
+  return iwmisc::WriteBinaryProto(proto, fname);
+}
+
+int
+GfpBitsRetained::writeBitXrefProto(IWString& fname) const {
+  const GfpBitSubset::GfpBitToFeature proto = ToBitXrefProto();
+  return iwmisc::WriteBinaryProto(proto, fname);
+}
+
+int
+GfpBitsRetained::ProfileBits(const IWDYFP& fp,
+                int fpnum) {
+  int bit = 0;
+  while (fp.next_on_bit(bit)) {
+    UpdateHash(_dense_count[fpnum], bit);
+  }
+  return 1;
+}
+
+int
+GfpBitsRetained::ProfileBits(const Sparse_Fingerprint& fp,
+                int fpnum) {
+  int i = 0;
+  gfp_bit_type_t bit = 0;
+  int c = 0;
+  while (fp.next_bit_set(i, bit, c)) {
+    UpdateHash(_sparse_count[fpnum], bit);
+  }
+  return 1;
+}
+
+void
+ToCrossReference(std::unordered_map<gfp_bit_type_t, uint32_t>& xref,
+                 int & feature_number) {
+  for (auto iter = xref.begin(); iter != xref.end(); ++iter) {
+    iter->second = feature_number;
+    feature_number++;
+  }
+}
+
+int
+GfpBitsRetained::ConvertToCrossReference() {
+  if (_support > 0) {
+    ImposeSupport();
+  }
+
+  // Globally unique feature number.
+  int feature_number = 1;
+
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
+  for (int i = 0; i < nfixed; ++i) {
+    ToCrossReference(_dense_count[i], feature_number);
+  }
+  for (int i = 0; i < nsparse; ++i) {
+    ToCrossReference(_sparse_count[i], feature_number);
+  }
+
+  return feature_number;
+}
+
+int
+GfpBitsRetained::BitsToFeatures(const IWDYFP& fp, int fpnum,
+                        FeatureCount* features, int & ndx) {
+  int rc = 0;
+  int bit = 0;
+  while (fp.next_on_bit(bit)) {
+    const auto iter = _dense_count[fpnum].find(bit);
+    if (iter == _dense_count[fpnum].end()) {
+      continue;
+    }
+    features[ndx].feature = iter->second;
+    features[ndx].count = 1;
+    ndx++;
+    rc++;
+  }
+
+  return rc;
+}
+
+int
+GfpBitsRetained::BitsToFeatures(const Sparse_Fingerprint& fp, int fpnum,
+                        FeatureCount* features, int & ndx) {
+  int rc = 0;
+  int i = 0;
+  uint32_t bit = 0;
+  int count = 0;
+  while (fp.next_bit_set(i, bit, count)) {
+    const auto iter = _sparse_count[fpnum].find(bit);
+    if (iter == _sparse_count[fpnum].cend()) {
+      continue;
+    }
+    features[ndx].feature = iter->second;
+    if (flatten_sparse_fingerprints) {
+      features[ndx].count = 1;
+    } else {
+      features[ndx].count = count;
+    }
+    ndx++;
+    rc++;
+  }
+
+  return rc;
+}
+
+// Write the `nfeatures` feature/count data in `features` in svm_lite
+// form to `output`.
+template <typename Activity>
+int
+WriteSvmLite(FeatureCount* features,
+             int nfeatures,
+             const IWString& name,
+             Activity activity,
+             IWString_and_File_Descriptor& output) {
+  std::sort(features, features + nfeatures, [](const FeatureCount& fc1, const FeatureCount& fc2) {
+    return fc1.feature < fc2.feature;
+  });
+
+  output << activity;
+  for (int i = 0; i < nfeatures; ++i) {
+    bit_number.append_number(output, features[i].feature);
+    count.append_number(output, features[i].count);
+  }
+  output << " # " << name << '\n';
+
+  output.write_if_buffer_holds_more_than(8192);
+
+  return 1;
+}
+
+// In order to reduce the number of arguments passed, put some
+// arguments to GfpToSvmLite that are commonly passed.
+struct Args {
+  // The objects that enable conversion to the output forms.
+  // EIther a subset or a mapping from gfp bits to svm lite feature numbers.
+  bit_subset::BitSubset bit_subset;
+  bit_subset::BitXref bit_xref;
+
+  // The output stream for svml output.
+  IWString_and_File_Descriptor svml_output;
+  // The output stream for gfp output.
+  IWString_and_File_Descriptor gfp_output;
+};
+
+template <typename Activity>
+int
+SvmLiteOutput(IW_General_Fingerprint& gfp,
+              const IWString& id,
+              Activity activity,
+              Args& args) {
+  args.svml_output << activity;
+  args.bit_xref.WriteSvmlFeatures(gfp, args.svml_output);
+  args.svml_output << " # " << id << '\n';
+
+  args.svml_output.write_if_buffer_holds_more_than(8192);
+
+  return 1;
+}
+
+template <typename Activity>
+int
+GfpSubsetOutput(IW_General_Fingerprint& gfp,
+                const IWString& id,
+                Activity activity,
+                Args& args) {
+  args.bit_subset.MakeSubset(gfp);
+
+  cerr << "Gfp subset output not implemented\n";
+
+  return 1;
+}
+
+// Initialise the two bit_subset objects in `args`.
+int
+InitialiseGfpKnown(IW_General_Fingerprint& gfp, Args& args) {
+  if (args.bit_xref.Active()) {
+    if (! args.bit_xref.InitialiseGfpKnown(gfp)) {
+      return 0;
+    }
+  }
+  if (args.bit_subset.Active()) {
+    if (! args.bit_subset.InitialiseGfpKnown(gfp)) {
+      return 0;
+    }
   }
 
   return 1;
 }
 
-struct FeatureCount {
-  feature_type_t feature;
-  int count;
-};
-
-void
-CollectFeatures(const IWDYFP& fp,
-                int fpnum,
-                const GfpToFeature& bit_xref,
-                FeatureCount* feature_count,
-                int & ndx) {
-  int b = 0;
-  while (fp.next_on_bit(b)) {
-    std::optional<feature_type_t> feature = bit_xref.FeatureForDenseBit(fpnum, b);
-    if (! feature) {
-      continue;
-    }
-    feature_count[ndx].feature = *feature;
-    feature_count[ndx].count = 1;
-    ndx++;
-  }
-}
-
-void
-CollectFeatures(const IWDYFP& fp,
-                int ndx,
-                const GfpToFeature& bit_xref,
-                extending_resizable_array<int>& feature_count) {
-  int b = 0;
-  while (fp.next_on_bit(b)) {
-    std::optional<feature_type_t> feature = bit_xref.FeatureForDenseBit(ndx, b);
-    if (! feature) {
-      continue;
-    }
-    feature_count[*feature] = 1;
-  }
-}
-
-void
-CollectFeatures(const Sparse_Fingerprint& fp,
-                int fpnum,
-                const GfpToFeature& bit_xref,
-                FeatureCount* feature_count,
-                int& ndx) {
-  int i = 0;
-  gfp_bit_type_t b = 0;
-  int c = 0;
-  while (fp.next_bit_set(i, b, c)) {
-    std::optional<feature_type_t> feature = bit_xref.FeatureForSparseBit(fpnum, b);
-    if (! feature) {
-      continue;
-    }
-    feature_count[ndx].feature = *feature;
-    if (flatten_sparse_fingerprints) {
-      feature_count[ndx].count = 1;
-    } else {
-      feature_count[ndx].count = c;
-    }
-    ndx++;
-  }
-}
-
-void
-CollectFeatures(const Sparse_Fingerprint& fp,
-                int ndx,
-                const GfpToFeature& bit_xref,
-                extending_resizable_array<int>& feature_count) {
-  int i = 0;
-  gfp_bit_type_t b = 0;
-  int c = 0;
-  while (fp.next_bit_set(i, b, c)) {
-    std::optional<feature_type_t> feature = bit_xref.FeatureForSparseBit(ndx, b);
-    if (! feature) {
-      continue;
-    }
-    if (flatten_sparse_fingerprints) {
-      feature_count[*feature] = 1;
-    } else {
-      feature_count[*feature] += c;
-    }
-  }
-}
-
-template <typename Activity>
 int
-GfpToSvmLite(const IW_General_Fingerprint& gfp,
-             const IWString& id,
-             Activity activity,
-             GfpToFeature& bit_xref,
-             IWString_and_File_Descriptor& output) {
-  static bool first_call = true;
-  if (first_call) {
-    first_call = false;
-    if (use_bit_map) {
-      if (! bit_xref.FromProto(input_proto_fname)) {
-        cerr << "GfpToSvmLite:cannot read proto " << input_proto_fname << "\n";
-        return 0;
-      }
-    }
-  }
-
-  const int nfixed = number_fingerprints();
-  const int nsparse = number_sparse_fingerprints();
+NFeatures(const IW_General_Fingerprint& gfp) {
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
   int nfeatures = 0;
 
   for (int i = 0; i < nfixed; ++i) {
@@ -470,59 +598,48 @@ GfpToSvmLite(const IW_General_Fingerprint& gfp,
     nfeatures += gfp.sparse_fingerprint(i).nset();
   }
 
-  std::unique_ptr<FeatureCount[]> features(new FeatureCount[nfeatures]);
-  int ndx = 0;
-  for (int i = 0; i < nfixed; ++i) {
-    CollectFeatures(gfp[i], i, bit_xref, features.get(), ndx);
-  }
-  for (int i = 0; i < nsparse; ++i) {
-    CollectFeatures(gfp.sparse_fingerprint(i), i, bit_xref, features.get(), ndx);
-  }
-  std::sort(features.get(), features.get() + ndx, [](const FeatureCount& fc1, const FeatureCount& fc2) {
-    return fc1.feature < fc2.feature;
-  });
-
-  output << activity;
-  for (int i = 0; i < ndx; ++i) {
-    bit_number.append_number(output, features[i].feature);
-    count.append_number(output, features[i].count);
-  }
-
-  output << " # " << id << '\n';
-  output.write_if_buffer_holds_more_than(8192);
-
-  return 1;
+  return nfeatures;
 }
 
-void
-ProfileBits(const IWDYFP& fp, int ndx, GfpToFeature& bit_xref) {
-  int bit = 0;
-  while (fp.next_on_bit(bit)) {
-    bit_xref.FeatureForDenseBit(ndx, bit);
+template <typename Activity>
+int
+GfpToSvmLite(IW_General_Fingerprint& gfp,
+             const IWString& id,
+             Activity activity,
+             Args& args) {
+  static bool first_call = true;
+  if (first_call) {
+    first_call = false;
+    if (! InitialiseGfpKnown(gfp, args)) {
+      return 0;
+    }
   }
-}
 
-void
-ProfileBits(const Sparse_Fingerprint& fp, int ndx, GfpToFeature& bit_xref) {
-  int i = 0;
-  gfp_bit_type_t b = 0;
-  int c = 0;
-  while (fp.next_bit_set(i, b, c)) {
-    bit_xref.FetchOrAssignFeatureForSparseBit(ndx, b);
+  int rc = 1;
+  if (output_as_svm_lite) {
+    if (! SvmLiteOutput(gfp, id, activity, args)) {
+      rc = 0;
+    }
   }
+  if (output_as_gfp_subset) {
+    if (! GfpSubsetOutput(gfp, id, activity, args)) {
+      rc = 0;
+    }
+  }
+
+  return rc;
 }
 
 int
 ProfileBits(const IW_General_Fingerprint& gfp,
-             GfpToFeature& bit_xref) {
-  const int nfixed = number_fingerprints();
-  for (int i = 0; i < nfixed; ++i) {
-    ProfileBits(gfp[i], i, bit_xref);
-  }
+             GfpBitsRetained& bit_xref) {
+  const auto [nfixed, nsparse] = GetNumberFingerprints();
 
-  const int nsparse = number_sparse_fingerprints();
+  for (int i = 0; i < nfixed; ++i) {
+    bit_xref.ProfileBits(gfp[i], i);
+  }
   for (int i = 0; i < nsparse; ++i) {
-    ProfileBits(gfp.sparse_fingerprint(i), i, bit_xref);
+    bit_xref.ProfileBits(gfp.sparse_fingerprint(i), i);
   }
 
   return 1;
@@ -603,8 +720,7 @@ template <typename Activity>
 int
 GfpToSvmLite(IW_TDT& tdt,
              const Activity_Data_From_File<Activity>& activity,
-             GfpToFeature& bit_xref,
-             IWString_and_File_Descriptor& output) {
+             Args& args) {
   IW_General_Fingerprint gfp;
   int fatal = 0;
   if (! gfp.construct_from_tdt(tdt, fatal)) {
@@ -625,12 +741,12 @@ GfpToSvmLite(IW_TDT& tdt,
     return 0;
   }
 
-  return GfpToSvmLite(gfp, id, *act, bit_xref, output);
+  return GfpToSvmLite(gfp, id, *act, args);
 }
 
 int
 ProfileBits(IW_TDT& tdt,
-            GfpToFeature& bit_xref) {
+            GfpBitsRetained& bit_xref) {
   IW_General_Fingerprint gfp;
   int fatal = 0;
   if (! gfp.construct_from_tdt(tdt, fatal)) {
@@ -646,6 +762,8 @@ ProfileBits(IW_TDT& tdt,
     bit_xref.Initialize();
   }
 
+  fingerprints_read++;
+
   return ProfileBits(gfp, bit_xref);
 }
 
@@ -653,11 +771,10 @@ template <typename Activity>
 int
 GfpToSvmLite(iwstring_data_source& input,
              const Activity_Data_From_File<Activity>& activity,
-             GfpToFeature& bit_xref,
-             IWString_and_File_Descriptor& output) {
+             Args& args) {
   IW_TDT tdt;
   while (tdt.next(input)) {
-    if (! GfpToSvmLite(tdt, activity, bit_xref, output)) {
+    if (! GfpToSvmLite(tdt, activity, args)) {
       cerr << "Cannot process " << tdt << '\n';
       return 0;
     }
@@ -668,7 +785,7 @@ GfpToSvmLite(iwstring_data_source& input,
 
 int
 ProfileBits(iwstring_data_source& input,
-            GfpToFeature& bit_xref) {
+            GfpBitsRetained& bit_xref) {
   IW_TDT tdt;
   while (tdt.next(input)) {
     if (! ProfileBits(tdt, bit_xref)) {
@@ -684,20 +801,19 @@ template <typename Activity>
 int
 GfpToSvmLite(const char * fname,
              const Activity_Data_From_File<Activity>& activity,
-             GfpToFeature& bit_xref,
-             IWString_and_File_Descriptor& output) {
+             Args& args) {
   iwstring_data_source input(fname);
   if (! input.good()) {
     cerr << "Cannot open " << fname << '\n';
     return 0;
   }
 
-  return GfpToSvmLite(input, activity, bit_xref, output);
+  return GfpToSvmLite(input, activity, args);
 }
 
 int
 ProfileBits(const char * fname,
-             GfpToFeature& bit_xref) {
+             GfpBitsRetained& bit_xref) {
   iwstring_data_source input(fname);
   if (! input.good()) {
     cerr << "Cannot open " << fname << '\n';
@@ -707,9 +823,24 @@ ProfileBits(const char * fname,
   return ProfileBits(input, bit_xref);
 }
 
+// Write both GfpBitSubset and GfpBitToFeature protos formed from
+// `bit_xref` to files with stem `output_proto_stem`.
+int
+WriteProtos(GfpBitsRetained& bit_xref,
+            const IWString& output_proto_stem) {
+  IWString fname;
+  fname << output_proto_stem << "_subset.pdat";
+  bit_xref.WriteBitSubsetProto(fname);
+  fname = output_proto_stem;
+  fname << "_xref.pdat";
+  bit_xref.writeBitXrefProto(fname);
+
+  return 1;
+}
+
 int
 GfpToSvmLite(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vF:P:C:U:A:p:fc:");
+  Command_Line cl(argc, argv, "vF:P:C:X:U:A:p:fc:S:d");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -724,6 +855,11 @@ GfpToSvmLite(int argc, char** argv) {
       cerr << "Cannot initialise fingerprints\n";
       return 1;
     }
+  }
+
+  if (! cl.option_present('S')) {
+    cerr << "Must specify output file name stem via the -S option\n";
+    Usage(1);
   }
 
   Activity_Data_From_File<float> activity;
@@ -750,77 +886,144 @@ GfpToSvmLite(int argc, char** argv) {
     Usage(1);
   }
 
-  if (cl.option_present('p')) {
-    if (! cl.value('p', support) || support < 1) {
-      cerr << "Invalid support value (-p)\n";
-      Usage(1);
-    }
-
-    if (verbose)
-      cerr << "WIll only output features found in " << support << " molecules\n";
-  }
-
   if (cl.option_present('f')) {
     flatten_sparse_fingerprints = 1;
-    if (verbose)
-      cerr << "Sparse fingerprints flattened to binary\n";
+    if (verbose) {
+      cerr << "Will flatten sparse fingerprints\n";
+    }
   }
+
+  const IWString output_file_name_stem = cl.string_value('S');
 
   if (cl.empty()) {
     cerr << "Must specify input file(s)\n";
     Usage(1);
   }
 
-  GfpToFeature bit_xref;
+  // Specifying a support level only makes sense if creating a profile.
+  if (cl.option_present('p') && ! cl.option_present('C')) {
+    cerr << "Specifying a support level only makes sense with the -C option\n";
+    Usage(1);
+  }
 
-  // Branching depending on whether we are creating or using a bit
-  // to feature cross reference.
-  IWString output_proto_fname;
+  if (cl.option_present('U') && cl.option_present('X')) {
+    cerr << "The subset (-U) and cross reference (-X) options are mutually exclusive\n";
+    Usage(1);
+  }
+
+  if (cl.option_present('O')) {
+    output_as_gfp_subset = false;
+    output_as_svm_lite = false;
+
+    const_IWSubstring o;
+    for (int i = 0; cl.value('O', o, i); ++i) {
+      int j = 0;
+      const_IWSubstring token;
+      while (o.nextword(token, j, ',')) {
+        if (token == "svml") {
+          output_as_svm_lite = true;
+        } else if (token == "gfp") {
+          output_as_gfp_subset = true;
+        } else {
+          cerr << "Unrecognised -O directive '" << o << "'\n";
+          return 1;
+        }
+      }
+    }
+  }
+
+  // If we are creating the subset/cross reference here.
+  GfpBitsRetained bit_xref;
+
+  if (cl.option_present('p')) {
+    int support;
+    if (! cl.value('p', support) || support < 1) {
+      cerr << "Invalid support value (-p)\n";
+      Usage(1);
+    }
+
+    bit_xref.set_support(support);
+    if (verbose)
+      cerr << "WIll only output features found in " << support << " molecules\n";
+  }
+
+  // Fill in one or both of the protos in `args`.
+  Args args;
+
   if (cl.option_present('C')) {
-    cl.value('C', output_proto_fname);
-    create_bit_map = true;
+    IWString fname = cl.string_value('C');
     for (const char * fname : cl) {
       cerr << "Profiling " << fname << '\n';
       if (! ProfileBits(fname, bit_xref)) {
         cerr << "Cannot profile bits in " << fname << '\n';
         return 1;
       }
+      bit_xref.ConvertToCrossReference();
+      WriteProtos(bit_xref, fname);
+      // Generate both protos, even if only one needed. Should be cheap.
+      args.bit_subset.Build(bit_xref.ToBitSubsetProto());
+      args.bit_xref.Build(bit_xref.ToBitXrefProto());
     }
   } else if (cl.option_present('U')) {
-    cl.value('U', input_proto_fname);
-    use_bit_map = true;
+    IWString fname = cl.string_value('U');
+    if (! args.bit_subset.Build(fname)) {
+      cerr << "GfpToSvmLite::cannot initialise bit subset proto '" << fname << "'\n";
+      return 1;
+    }
+  } else if (cl.option_present('X')) {
+    IWString fname = cl.string_value('X');
+    if (! args.bit_xref.Build(fname)) {
+      cerr << "GfpToSvmLite::cannot initialise bit xref proto '" << fname << "'\n";
+      return 1;
+    }
   } else {
-    cerr << "Must specify whether creating (-C) or using (-U) a cross reference\n";
+    cerr << "Must specify whether creating a new (-C) or using (-U, -X) an existing proto\n";
     Usage(1);
   }
 
-  if (use_bit_map && support > 0) {
-    cerr << "Specifying support and using an existing profile not supported\n";
-    Usage(1);
+  if (output_as_svm_lite) {
+    IWString fname;
+    fname << output_file_name_stem << ".svml";
+    if (! args.svml_output.open(fname.null_terminated_chars())) {
+      cerr << "Cannot open svm lite output '" << fname << "'\n";
+      return 1;
+    }
+    if (verbose) {
+      cerr << "svm_lite output to '" << fname << "'\n";
+    }
   }
-  if (create_bit_map && support > 0) {
-    int features_removed = bit_xref.ImposeSupport(support);
-    if (verbose)
-      cerr << "Support requirement " << support << " suppressed " << features_removed << " features\n";
+  if (output_as_gfp_subset) {
+    IWString fname;
+    fname << output_file_name_stem << ".gfp";
+    if (! args.gfp_output.open(fname.null_terminated_chars())) {
+      cerr << "Cannot open gfpite output '" << fname << "'\n";
+      return 1;
+    }
+    if (verbose) {
+      cerr << "gfp output to '" << fname << "'\n";
+    }
   }
 
-  IWString_and_File_Descriptor output(1);
-
+  // Memoized output helpers for svml lite outputs.
   bit_number.set_include_leading_space(1);
   bit_number.initialise(10000);
   count.set_leading_string(':');
   count.initialise(256);
+  if (cl.option_present('d')) {
+    count.append_to_each_stored_string(".");
+  }
 
   for (const char * fname : cl) {
     cerr << "Begin processing " << fname << '\n';
-    if (! GfpToSvmLite(fname, activity, bit_xref, output)) {
+    if (! GfpToSvmLite(fname, activity, args)) {
       cerr << "Fatal error processing " << fname << '\n';
       return 1;
     }
   }
 
-  if (create_bit_map)
-    bit_xref.WriteProto(output_proto_fname);
+  if (verbose) {
+    cerr << "Processed " << fingerprints_read << " fingerprints\n";
+  }
 
   return 0;
 }

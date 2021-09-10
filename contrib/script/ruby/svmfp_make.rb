@@ -16,6 +16,7 @@ def usage(retcod)
   $stderr << " -C            classification model\n"
   $stderr << " -gfp ... -gfp fingerprint specification (to gfp_make)\n"
   $stderr << " -p <support>  support level for bit inclusion\n"
+  $stderr << " -flatten      flatten sparse fingerprint counts to 1\n"
   $stderr << " -v            verbose output\n";
 
   exit retcod
@@ -50,6 +51,11 @@ def perform_class_label_translation(activity_file, mdir, train_activity, verbose
   execute_cmd(cmd, verbose, [train_activity])
 end
 
+def perform_response_scaling(activity_file, mdir, train_activity, verbose)
+  cmd = "feature_scaling -C #{mdir}/response_scaling.pdat #{activity_file} > #{train_activity}"
+  execute_cmd(cmd, verbose, [train_activity])
+end
+
 def get_response_name(activity_file)
   input = File.open(activity_file, 'r')
   header = input.readline
@@ -57,7 +63,7 @@ def get_response_name(activity_file)
   header.split[1]
 end
 
-cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-gfp_make=xfile' + 
+cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' + 
                         '-svm_learn=xfile-gfp_to_svm_lite=xfile')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
@@ -119,6 +125,7 @@ fingerprints = if cmdline.option_present('gfp')
                else
                  '-EC3:ACHRY'
                end
+flatten_sparse_fingerprints = cmdline.option_present('flatten')
 
 smiles = ARGV[0]
 activity_file = cmdline.value('A')
@@ -135,16 +142,23 @@ if cmdline.option_present('C')
   perform_class_label_translation(activity_file, mdir, train_activity, verbose)
   svm_learn_options = svm_learn_options + ' -z c'
 else
-  FileUtils.cp(activity_file, train_activity)
+  perform_response_scaling(activity_file, mdir, train_activity, verbose)
   svm_learn_options = svm_learn_options + ' -z r'
 end
 
-bit_xref = "#{mdir}/bit_xref"
-cmd = "#{gfp_to_svm_lite} -C #{bit_xref} -A #{train_activity}"
+bit_xref = "train_gfp_subset.pdat"
+bit_subset = "train.gfp_xref.pdat"
+
+f = if flatten_sparse_fingerprints
+      "-f"
+    else
+      ""
+    end
+cmd = "#{gfp_to_svm_lite} #{f} -C #{bit_xref} -A #{train_activity} -S #{mdir}/train "
 cmd << ' -p ' << cmdline.value('p') if cmdline.option_present('p')
 
 train_svml = "#{mdir}/train.svml"
-cmd = "#{cmd} #{train_gfp} > #{train_svml}"
+cmd = "#{cmd} #{train_gfp}"
 execute_cmd(cmd, verbose, [train_svml])
 
 model_file = "#{mdir}/train.model"
@@ -159,12 +173,18 @@ execute_cmd(cmd, verbose, [support_vectors])
 
 model = SvmfpModel::SvmfpModel.new
 model.threshold_b = get_threshold_b(model_file)
-model.bit_xref = 'bit_xref'
+model.bit_subset = bit_subset
+model.bit_xref = bit_xref
 model.fingerprints = fingerprints
+model.train_gfp = train_gfp
 model.support_vectors = 'support_vectors.gfp'
 model.date_built = Time.now.to_s
 model.response_name = get_response_name(train_activity)
-model.class_label_translation = 'class_label_translation' if cmdline.option_present('C')
+if cmdline.option_present('C')
+  model.class_label_translation = 'class_label_translation'
+else
+  model.response_scaling = 'response_scaling.pdat'
+end
 
 model_description_file = "#{mdir}/model.dat"
 File.write(model_description_file, SvmfpModel::SvmfpModel.encode(model))

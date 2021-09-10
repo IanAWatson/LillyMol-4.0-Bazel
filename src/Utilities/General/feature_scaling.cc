@@ -217,6 +217,9 @@ GatherRange(iwstring_data_source& input,
     }
   }
 
+  scaling.set_min(std::numeric_limits<double>::max());
+  scaling.set_max(-std::numeric_limits<double>::max());
+
   while (input.next_record(buffer)) {
     if (! GatherRangeLine(buffer, scaling)) {
       cerr << "Cannot process '" << buffer << "'\n";

@@ -75,7 +75,7 @@ models = []
 model_dirs.each do |dir|
   models << Model.new(dir)
 end
-$stderr << models
+$stderr << models << "\n"
 
 if ARGV.empty?
   $stderr << "Insufficient arguments\n"
@@ -97,12 +97,21 @@ evaluate = if cmdline.option_present('evaluate')
 if cmdline.option_present('eval_opts')
   opts = cmdline.value('eval_opts')
   evaluate = "#{evaluate} #{opts}"
+elsif verbose
+  evaluate = "#{evaluate} -v"
 end
 
 smiles_files = ARGV.join(' ')
 
 # For now, multiple models are not combined, the output will contain
 # a column for each model.
+
+mnames = []
+models.each do |model|
+  mnames << '-M ' << model.model_data_fname
+end
+mnames = mnames.join(' ')
+$stderr << mnames << "\n"
 
 models.each do |model|
   cmd = "#{gfp_make}  #{model.gfp} #{smiles_files} | #{evaluate} -M #{model.model_data_fname} -"

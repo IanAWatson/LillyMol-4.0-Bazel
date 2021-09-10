@@ -672,3 +672,48 @@ IW_TDT::operator == (const IW_TDT & rhs) const
 
   return _end == rhs._end;
 }
+
+int
+IW_TDT::Build(const const_IWSubstring& input) {
+
+  _zdata.resize_keep_storage(0);
+  _end.resize_keep_storage(0);
+
+  int got_vbar = 0;
+
+  const_IWSubstring line;
+  int i = 0;
+  while (input.nextword(line, i, '\n'))
+  {
+//  cerr << "Read ---'" << buffer << "'---\n";
+    if (_zdata.length())
+      _end.add(_zdata.length());
+      
+    _zdata += line;
+
+//  cerr << "Data now '" << _zdata << "'\n";
+
+    if (_include_newlines_in_tdt)
+      _zdata += '\n';
+
+    if ('|' == line)
+    {
+      got_vbar = 1;
+      break;
+    }
+
+    if (iwtdt_careful_mode && ! valid_tdt_form(line))
+    {
+      cerr << "Invalid tdt form '" << line << "'\n";
+      return 0;
+    }
+  }
+
+  if (_zdata.length() > 0 && ! got_vbar)
+  {
+    cerr << "IW_TDT::Build:improperly terminated TDT, " << input << "\n";
+    return 0;
+  }
+
+  return _end.number_elements();
+}

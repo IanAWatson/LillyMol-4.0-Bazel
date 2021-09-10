@@ -13,6 +13,7 @@ using std::endl;
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwdigits.h"
 #include "Foundational/iwmisc/set_or_unset.h"
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwmisc/sparse_fp_creator.h"
@@ -140,6 +141,9 @@ static int fsdrng_descriptors_consider_just_two_ring_systems = 1;
 static Molecular_Weight_Control mwc;
 
 static int ignore_molecules_with_no_atoms = 0;
+
+// Many of the features are int forms.
+static IWDigits iwdigits;
 
 enum IWDescr_Enum
 {
@@ -451,25 +455,24 @@ class Descriptor : public Set_or_Unset<float>, public Accumulator<float>
 
     void set_name(const char * newname);
 
-    void set_best_fingerprint (int s) { _best_fingerprint = s;}
-    int  best_fingerprint () const { return _best_fingerprint;}
+    void set_best_fingerprint(int s) { _best_fingerprint = s;}
+    int  best_fingerprint() const { return _best_fingerprint;}
 
-    void set_min_max_dy (float v1, float v2, float v3) { _min = v1; _max = v2; _dy = v3;}
-    void set_min_max_resolution (float v1, float v2, int r);
+    void set_min_max_dy(float v1, float v2, float v3) { _min = v1; _max = v2; _dy = v3;}
+    void set_min_max_resolution(float v1, float v2, int r);
 
-    int produce_fingerprint () const { return _fingerprint_replicates;}
-    void set_produce_fingerprint (int s) { _fingerprint_replicates = s;}
+    int produce_fingerprint() const { return _fingerprint_replicates;}
+    void set_produce_fingerprint(int s) { _fingerprint_replicates = s;}
 
-    int bit_replicates () const {return _fingerprint_replicates;}
+    int bit_replicates() const {return _fingerprint_replicates;}
 
-    void produce_fingerprint (int bitnum, Sparse_Fingerprint_Creator &) const;
-
+    void produce_fingerprint(int bitnum, Sparse_Fingerprint_Creator &) const;
 
     const IWString & descriptor_name() const { return _name;}
 
     int active() const { return _active;}
 
-    int report_statistics (std::ostream &) const;
+    int report_statistics(std::ostream &) const;
 
     void update_statistics();
 
@@ -477,9 +480,9 @@ class Descriptor : public Set_or_Unset<float>, public Accumulator<float>
 
     void reset();
 
-    void set (int s);
-    void set (float s) { Set_or_Unset<float>::set(s);}
-    void set (double s) { Set_or_Unset<float>::set(static_cast<float>(s));}
+    void set(int s);
+    void set(float s) { Set_or_Unset<float>::set(s);}
+    void set(double s) { Set_or_Unset<float>::set(static_cast<float>(s));}
 
     Descriptor operator++ (int);
 };
@@ -1551,8 +1554,8 @@ create_header (IWString & header,
 
 
 static int
-write_header (IWString_and_File_Descriptor & output,
-              const char output_separator)
+write_header(IWString_and_File_Descriptor & output,
+             const char output_separator)
 {
   IWString header;
 
@@ -1570,8 +1573,8 @@ write_header (IWString_and_File_Descriptor & output,
 }
 
 static int
-do_filtering (Molecule & m,
-              IWString_and_File_Descriptor & output)
+do_filtering(Molecule & m,
+             IWString_and_File_Descriptor & output)
 {
   for (int i = 0; i < number_filters; i++)
   {
@@ -1587,10 +1590,23 @@ do_filtering (Molecule & m,
   return 1;
 }
 
+// If `v` is close to being a whole number, write as an integer to `output`.
+int
+OutputAsWholeNumber(float v,
+                    IWString& output) {
+  if (fabs(static_cast<int>(v) - v) > 1.0e-05) {
+    return 0;
+  }
+
+  iwdigits.append_number(output, static_cast<int>(v));
+
+  return 1;
+}
+
 static int
-write_the_output (Molecule & m,
-                  const char output_separator,
-                  IWString_and_File_Descriptor & output)
+write_the_output(Molecule & m,
+                 const char output_separator,
+                 IWString_and_File_Descriptor & output)
 {
   if (ntest)     // no output in test mode
     return 1;
@@ -1617,17 +1633,19 @@ write_the_output (Molecule & m,
     if (! descriptor[i].active())
       continue;
 
+    output << output_separator;
+
     float v;
     if (descriptor[i].value(v))
     {
-      output << output_separator;
-      if (v > 100.0f)
+      if (OutputAsWholeNumber(v, output)) {
+      } else if (v > 100.0f)
         output.append_number(v, 5);
       else
         output << v;
     }
     else
-      output << output_separator << undefined_value;
+      output << undefined_value;
   }
 
   output << '\n';
@@ -7937,6 +7955,7 @@ usage (int rc)
   cerr << "  -B ...         other optional features\n";
   cerr << "  -s .           include the smiles as a descriptor - for now . means first descriptor\n";
   cerr << "  -S             zero value for SD2 in Polar Surface Area computations\n";
+  cerr << "  -d             write normally integer descriptors as floats\n";
   cerr << "  -z             write empty descriptors for zero atom molecules\n";
   cerr << "  -i <type>      specify input file type\n";
   cerr << "  -l             reduce to largest fragment\n";
@@ -7967,7 +7986,7 @@ parse_replicates_specification (const_IWSubstring & dname,
 int
 iwdescr (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:szSB:");
+  Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:szSB:d");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -8125,6 +8144,14 @@ iwdescr (int argc, char ** argv)
 
     if (verbose)
       cerr << "Will perceive H-Bond features separated by more than " << min_hbond_feature_separation << " bonds or more\n";
+  }
+
+  iwdigits.initialise(1024);
+  if (cl.option_present('d')) {
+    iwdigits.append_to_each_stored_string(".");
+    if (verbose) {
+      cerr << "Whole numbers written as floats\n";
+    }
   }
 
   int nfiles = cl.number_elements();

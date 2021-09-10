@@ -279,7 +279,7 @@ CreateCrossReference(const Command_Line_v2& cl,
     ndx++;
   }
   std::sort(label_count.get(), label_count.get() + nclasses, [](const ClassCount& c1, const ClassCount& c2) {
-    return std::get<1>(c1) < std::get<1>(c2);
+    return std::get<1>(c1) > std::get<1>(c2);
   });
 
   int class_number = -1;
@@ -300,7 +300,7 @@ CreateCrossReference(const Command_Line_v2& cl,
 
   for (int i = 0; i < nclasses; ++i) {
     const auto [label, n] = label_count[i];
-    const std::string tmp(label.data(), label.length());
+    Const std::string tmp(label.data(), label.length());
     google::protobuf::MapPair<std::string, uint32_t> to_insert(tmp, n);
     mapping.mutable_class_count()->insert(to_insert);
   }

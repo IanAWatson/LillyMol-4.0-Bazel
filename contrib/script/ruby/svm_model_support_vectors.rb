@@ -37,12 +37,16 @@ def support_vectors_and_weights(input)
 
   # The rest of the records are support vectors.
   weights = {}
-  sv_rx = Regexp.new('^(\\S+) .*# (.+)')
+  sv_rx = Regexp.new('^(\\S+) .*# (\S+)')
   input.each do |line|
     m = sv_rx.match(line.chomp)
     raise "Invalid SV record #{line}" unless m
 
-    weights[m[2]] = m[1]
+    if m[1].length > 20
+      weights[m[2]] = m[1][...-5]
+    else
+      weights[m[2]] = m[1]
+    end
   end
 
   $stderr << "threshold_b #{threshold_b} #{weights.size} sv->weight values\n"
@@ -77,6 +81,7 @@ def gfp_subset(id_to_weight, input, output)
       $stderr << "No identifier in #{tdt}\n"
       exit(1)
     end
+    id = id.split[0]
     next unless id_to_weight.key?(id)
 
     output << tdt[0...-3] + "\nWEIGHT<#{id_to_weight[id]}>\n|\n"

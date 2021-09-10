@@ -107,7 +107,7 @@ Dense_Subset<T>::Dense_Subset()
 template <typename T>
 Dense_Subset<T>::~Dense_Subset()
 {
-   return;
+  return;
 }
 
 template <typename T>

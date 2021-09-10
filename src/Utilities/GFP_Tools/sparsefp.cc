@@ -7,8 +7,8 @@
 #include <netinet/in.h>
 #endif
 
-#include <limits>
 #include <algorithm>
+#include <limits>
 
 #define IWQSORT_FO_IMPLEMENTATION 1
 
@@ -21,8 +21,8 @@
 #include "dyfp.h"
 #include "various_distance_metrics.h"
 
-extern unsigned char bic_table[256*256];
-
+// Whether or not to issue a warning when an empty Sparse_Fingerprint is
+// built from a Daylight represetation.
 static int warn_empty_data = 0;
 
 void
@@ -40,7 +40,7 @@ set_continuous_tanimoto_exponent(double s)
 }
 
 int 
-Sparse_Fingerprint::check_sorted () const
+Sparse_Fingerprint::check_sorted() const
 {
   unsigned int prev = _bit[0];
   int need_to_die = 0;
@@ -66,7 +66,7 @@ Sparse_Fingerprint::check_sorted () const
   return 1;
 }
 
-Sparse_Fingerprint::Sparse_Fingerprint ()
+Sparse_Fingerprint::Sparse_Fingerprint()
 {
   _nbits = 0;
   _nset = 0;
@@ -79,7 +79,7 @@ Sparse_Fingerprint::Sparse_Fingerprint ()
   return;
 }
 
-Sparse_Fingerprint::Sparse_Fingerprint (const Sparse_Fingerprint & rhs)
+Sparse_Fingerprint::Sparse_Fingerprint(const Sparse_Fingerprint & rhs)
 {
   _nbits = rhs._nbits;
   _nset  = rhs._nset;
@@ -105,7 +105,7 @@ Sparse_Fingerprint::Sparse_Fingerprint (const Sparse_Fingerprint & rhs)
   return;
 }
 
-Sparse_Fingerprint::~Sparse_Fingerprint ()
+Sparse_Fingerprint::~Sparse_Fingerprint()
 {
   assert (-15 != _nbits);
 
@@ -120,8 +120,22 @@ Sparse_Fingerprint::~Sparse_Fingerprint ()
   return;
 }
 
+// Recompute various aggregate variables.
+void
+Sparse_Fingerprint::_recompute_sums() {
+  _nset = 0;
+  _sum_squared = 0;
+  for (int i = 0; i < _nbits; i++)
+  {
+    _nset += _count[i];
+    _sum_squared += _count[i] * _count[i];
+  }
+
+  _norm = sqrt(static_cast<double>(_sum_squared));
+}
+
 int
-Sparse_Fingerprint::resize (int n)
+Sparse_Fingerprint::resize(int n)
 {
   if (nullptr != _bit)
     delete [] _bit;
@@ -135,6 +149,7 @@ Sparse_Fingerprint::resize (int n)
     _bit = nullptr;
     _nset = 0;
     _count = nullptr;
+    _sum_squared = 0;
     return 1;
   }
 
@@ -151,6 +166,7 @@ Sparse_Fingerprint::resize (int n)
 
   _nbits = n;
   _nset = 0;
+  _sum_squared = 0;
 
   return 1;
 }
@@ -172,12 +188,13 @@ Sparse_Fingerprint::operator = (const Sparse_Fingerprint & rhs)
 
   _nset = rhs._nset;
   _norm = rhs._norm;
+  _sum_squared = rhs._sum_squared;
 
   return *this;
 }
 
 int
-Sparse_Fingerprint::construct_from_tdt_record (const const_IWSubstring & buffer)
+Sparse_Fingerprint::construct_from_tdt_record(const const_IWSubstring & buffer)
 {
   const_IWSubstring daylight = buffer;
 
@@ -198,9 +215,9 @@ Sparse_Fingerprint::construct_from_tdt_record (const const_IWSubstring & buffer)
 }
 
 int
-Sparse_Fingerprint::debug_print (std::ostream & os) const
+Sparse_Fingerprint::debug_print(std::ostream & os) const
 {
-  os << "Sparse fingerprint with " << _nbits << " bits\n";
+  os << "Sparse fingerprint with " << _nbits << " bits, nset " << _nset << " sum_squared " << _sum_squared << '\n';
   for (int i = 0; i < _nbits; i++)
   {
     os << ' ' << i << " bit " << _bit[i];
@@ -219,14 +236,14 @@ Sparse_Fingerprint::tanimoto(const Sparse_Fingerprint & rhs) const
 }
 
 similarity_type_t
-Sparse_Fingerprint::distance (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::distance(const Sparse_Fingerprint & rhs) const
 {
   return static_cast<similarity_type_t>(1.0) - tanimoto(rhs);
 }
 
 similarity_type_t
-Sparse_Fingerprint::optimistic_distance (const Sparse_Fingerprint & rhs,
-                                         const Tversky & tv) const
+Sparse_Fingerprint::optimistic_distance(const Sparse_Fingerprint & rhs,
+                                        const Tversky & tv) const
 {
   similarity_type_t d = distance(rhs);
 
@@ -243,8 +260,8 @@ Sparse_Fingerprint::optimistic_distance (const Sparse_Fingerprint & rhs,
 }
 
 similarity_type_t
-Sparse_Fingerprint::tversky_distance (const Sparse_Fingerprint & rhs, 
-                                      const Tversky & tv) const
+Sparse_Fingerprint::tversky_distance(const Sparse_Fingerprint & rhs, 
+                                     const Tversky & tv) const
 {
   if (tv.treat_non_colliding_as_01())
     return tversky_distance01(rhs, tv);
@@ -257,8 +274,8 @@ Sparse_Fingerprint::tversky_distance (const Sparse_Fingerprint & rhs,
 */
 
 similarity_type_t
-Sparse_Fingerprint::tversky_distance01 (const Sparse_Fingerprint & rhs,
-                                        const Tversky & tv) const
+Sparse_Fingerprint::tversky_distance01(const Sparse_Fingerprint & rhs,
+                                       const Tversky & tv) const
 {
   if (0 == _nbits || 0 == rhs._nbits)
   {
@@ -313,8 +330,8 @@ Sparse_Fingerprint::tversky_distance01 (const Sparse_Fingerprint & rhs,
 }
 
 similarity_type_t
-Sparse_Fingerprint::tversky (const Sparse_Fingerprint & rhs,
-                             const Tversky & tv) const
+Sparse_Fingerprint::tversky(const Sparse_Fingerprint & rhs,
+                            const Tversky & tv) const
 {
   if (tv.treat_non_colliding_as_01())
     return static_cast<similarity_type_t>(1.0) - tversky_distance01(rhs, tv);
@@ -413,7 +430,7 @@ operator << (std::ostream & os, const Sparse_Fingerprint & sfp)
 }
 
 int
-Sparse_Fingerprint::is_set (unsigned int b) const
+Sparse_Fingerprint::is_set(unsigned int b) const
 {
 #ifdef IS_SET_SLOW
   for (int i = 0; i < _nbits; i++)
@@ -425,42 +442,7 @@ Sparse_Fingerprint::is_set (unsigned int b) const
   return 0;
 #endif
 
-#ifdef DEBUG_IS_SET
-  cerr << "Looking for bit " << b << endl;
-#endif
-
-  if (0 == _nbits)
-    return 0;
-
-  if (b < _bit[0])
-    return 0;
-
-  if (b > _bit[_nbits - 1])
-    return 0;
-
-  if (b == _bit[0] || b == _bit[_nbits - 1])
-    return 1;
-
-  int left = 0;
-  int right = _nbits - 1;
-  int middle;
-  while ( (middle = (left + right) / 2) > left)
-  {
-    unsigned int mb = _bit[middle];
-
-#ifdef DEBUG_IS_SET
-    cerr << "left " << left << " middle " << middle << " bit " << mb << " right " << right << endl;
-#endif
-
-    if (b < mb)
-      right = middle;
-    else if (b > mb)
-      left = middle;
-    else
-      return 1;
-  }
-
-  return 0;
+  return std::binary_search(_bit, _bit + _nbits, b);
 }
 
 #ifdef SLOWER_VERSION_AA
@@ -617,8 +599,6 @@ Sparse_Fingerprint::_tanimoto_with_counts(const Sparse_Fingerprint & rhs) const
 
     if (b2[j] == b)
     {
-//    bits_in_common += bic_table[c1[i] * 256 + c2[j]];
-//    cerr << " BIT IN COMMON " << b << " counts " << c1[i] << ' ' << c2[j] << '\n';
       if (c1[i] <= c2[j])
         bits_in_common += c1[i];
       else 
@@ -639,94 +619,13 @@ Sparse_Fingerprint::_tanimoto_with_counts(const Sparse_Fingerprint & rhs) const
 
 /*
   Version that does not depend on bic_table
+  No longer needed, the default version does not use bic_table.
 */
 
 similarity_type_t
 Sparse_Fingerprint::tanimoto_with_unlimited_counts(const Sparse_Fingerprint & rhs) const
 {
-  if (0 == _nbits || 0 == rhs._nbits)
-  {
-    if (0 == _nbits && 0 == rhs._nbits)
-      return static_cast<similarity_type_t>(1.0);
-
-    return static_cast<similarity_type_t>(0.0);
-  }
-
-  assert (nullptr != _count);
-  assert (_nset > 0 && rhs._nset > 0);
-
-//#define DEBUG_SPARSE_TANIMOTO_COUNT
-#ifdef DEBUG_SPARSE_TANIMOTO_COUNT
-  cerr << "Comparing non colliding counted fingerprint with " << _nbits << " bits " << _nset << " set\n";
-  int bic = 0;
-  for (int i = 0; i < _nbits; i++)
-  {
-    unsigned int b = _bit[i];
-    cerr << ' ' << i << " bit " << b << " set " << _count[i] << " times";
-    if (rhs.is_set(b))
-    {
-      bic++;
-      cerr << " *";
-    }
-    cerr << endl;
-  }
-  cerr << bic << " bits in common, and       " << rhs;
-#endif
-
-  const unsigned int * b1;
-  const int * c1;
-  int n1;
-  const unsigned int * b2;
-  const int * c2;
-
-// Make sure the last item in b2 is greater than the last item in b1
-
-  if (_bit[_nbits - 1] < rhs._bit[rhs._nbits - 1])
-  {
-    n1 = _nbits;
-    c1 = _count;
-    b1 = _bit;
-    c2 = rhs._count;
-    b2 = rhs._bit;
-  }
-  else
-  {
-    n1 = rhs._nbits;
-    c1 = rhs._count;
-    b1 = rhs._bit;
-    c2 = _count;
-    b2 = _bit;
-  }
-
-  int bits_in_common = 0;
-
-  unsigned int b;
-  for (int i = 0, j = 0; i < n1; i++)
-  {
-    b = b1[i];
-    while (*b2 < b)
-    {
-      b2++;
-    }
-
-    if (*b2 == b)
-    {
-      if (c1[i] <= c2[j])
-        bits_in_common += c1[i];
-      else 
-        bits_in_common += c2[j];
-
-      j++;
-    }
-  }
-
-  similarity_type_t rc = static_cast<similarity_type_t>(bits_in_common) / static_cast<similarity_type_t>(_nset + rhs._nset - bits_in_common);
-
-#ifdef DEBUG_SPARSE_TANIMOTO_COUNT
-  cerr << _nset << " bits and " << rhs._nset << " bits, " << bits_in_common << " bits_in_common, similarity " << rc << endl;
-#endif
-
-  return rc;
+  return tanimoto(rhs);
 }
 
 similarity_type_t
@@ -813,8 +712,12 @@ Sparse_Fingerprint::tanimoto_binary(const Sparse_Fingerprint & rhs) const
 */
 
 similarity_type_t
-Sparse_Fingerprint::cosine_measure (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::cosine_measure(const Sparse_Fingerprint & rhs) const
 {
+  // Not sure why there were ever two variants of cosine. Consolidate.
+  return cosine_coefficient(rhs);
+
+#ifdef NO_LONGER_NEEDED
   assert (nullptr != _count);
 
 //#define DEBUG_SPARSE_TANIMOTO_COUNT
@@ -882,10 +785,11 @@ Sparse_Fingerprint::cosine_measure (const Sparse_Fingerprint & rhs) const
   similarity_type_t rc = static_cast<double>(d1d2) / (_norm * rhs._norm);
 
   return rc;
+#endif
 }
 
-int
-Sparse_Fingerprint::dot_product (const Sparse_Fingerprint & rhs) const
+uint32_t
+Sparse_Fingerprint::dot_product(const Sparse_Fingerprint & rhs) const
 {
   assert (nullptr != _count);
 
@@ -914,7 +818,7 @@ Sparse_Fingerprint::dot_product (const Sparse_Fingerprint & rhs) const
     b2 = _bit;
   }
 
-  int d1d2 = 0;
+  uint32_t d1d2 = 0;  // To be returned.
 
   unsigned int b;
   for (int i = 0, j = 0; i < n1; i++)
@@ -1021,7 +925,7 @@ Sparse_Fingerprint::construct_from_daylight_ascii_representation(const const_IWS
 }
 
 int
-Sparse_Fingerprint::_counted_form_construct_from_array_of_bits (const void * voidb)
+Sparse_Fingerprint::_counted_form_construct_from_array_of_bits(const void * voidb)
 {
   assert (_nbits > 0);
 
@@ -1080,15 +984,7 @@ Sparse_Fingerprint::_counted_form_construct_from_array_of_bits (const void * voi
     break;
   }
 
-  _nset = sum_vector(_count, _nbits);
-  
-  _sum_squared = 0;
-  for (int i = 0; i < _nbits; i++)
-  {
-    _sum_squared += _count[i] * _count[i];
-  }
-
-  _norm = sqrt(static_cast<double>(_sum_squared));
+  _recompute_sums();
 
   check_sorted();
 
@@ -1101,9 +997,9 @@ Sparse_Fingerprint::_counted_form_construct_from_array_of_bits (const void * voi
 }
 
 int
-Sparse_Fingerprint::next_bit_set (int & istart,
-                                  unsigned int & zbit,
-                                  int & hits) const
+Sparse_Fingerprint::next_bit_set(int & istart,
+                                 unsigned int & zbit,
+                                 int & hits) const
 {
   if (istart >= _nbits)
     return 0;
@@ -1120,7 +1016,7 @@ int
 Sparse_Fingerprint::_build_bit(int ndx,
                                const const_IWSubstring & s)
 {
-  const char sep = ',';
+  const char sep = ':';
 
   int i = 0;
   const_IWSubstring token;
@@ -1160,7 +1056,7 @@ Sparse_Fingerprint::_build_bit(int ndx,
 */
 
 int
-Sparse_Fingerprint::construct_from_sparse_ascii_representation (const const_IWSubstring & fp)
+Sparse_Fingerprint::construct_from_sparse_ascii_representation(const const_IWSubstring & fp)
 {
   if (0 == fp.length())
   {
@@ -1184,14 +1080,17 @@ Sparse_Fingerprint::construct_from_sparse_ascii_representation (const const_IWSu
       return 0;
     }
 
-//  cerr << "Bit " << ndx << " set to " << _bit[ndx] << " count " << _count[ndx] << endl;
-
-    _nset += _count[ndx];
-
     ndx++;
   }
 
+  _recompute_sums();
+
   assert (ndx == _nbits);
+
+  if (! check_sorted()) {
+    cerr << "Sparse_Fingerprint::construct_from_sparse_ascii_representation:not sorted\n";
+    return 0;
+  }
 
   return 1;
 }
@@ -1205,7 +1104,7 @@ Sparse_Fingerprint::construct_from_sparse_ascii_representation (const const_IWSu
 */
 
 similarity_type_t
-Sparse_Fingerprint::fvb_modified_tanimoto (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::fvb_modified_tanimoto(const Sparse_Fingerprint & rhs) const
 {
 //cerr << "NBITS " << _nbits << " nset " << _nset << " and rhs nbits " << rhs._nbits << " set " << rhs._nset << endl;
 
@@ -1275,7 +1174,7 @@ Sparse_Fingerprint::fvb_modified_tanimoto (const Sparse_Fingerprint & rhs) const
 */
 
 similarity_type_t
-Sparse_Fingerprint::manhattan_distance (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::manhattan_distance(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _nbits || 0 == rhs._nbits)
   {
@@ -1385,7 +1284,7 @@ Sparse_Fingerprint::manhattan_distance (const Sparse_Fingerprint & rhs) const
 */
 
 similarity_type_t
-Sparse_Fingerprint::soergel_variant_similarity (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::soergel_variant_similarity(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _nbits || 0 == rhs._nbits)
   {
@@ -1498,7 +1397,7 @@ Sparse_Fingerprint::soergel_variant_similarity (const Sparse_Fingerprint & rhs) 
 
 
 similarity_type_t
-Sparse_Fingerprint::soergel_similarity (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::soergel_similarity(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _nbits || 0 == rhs._nbits)
   {
@@ -1614,7 +1513,7 @@ Sparse_Fingerprint::soergel_similarity (const Sparse_Fingerprint & rhs) const
 #ifdef MIGHT_BE_SLIGHTLY_SLOWER
 
 int
-Sparse_Fingerprint::bits_in_common (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::bits_in_common(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _nbits || 0 == rhs._nbits)
     return 0;
@@ -1671,7 +1570,7 @@ Sparse_Fingerprint::bits_in_common (const Sparse_Fingerprint & rhs) const
 #endif
 
 int
-Sparse_Fingerprint::bits_in_common (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::bits_in_common(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _nbits || 0 == rhs._nbits)
     return 0;
@@ -1730,18 +1629,27 @@ Sparse_Fingerprint::bits_in_common (const Sparse_Fingerprint & rhs) const
 }
 
 int
-Sparse_Fingerprint::truncate_counts_at (int c)
+Sparse_Fingerprint::truncate_counts_at(int c)
 {
   int rc = 0;
 
+  _nset = 0;
+  _sum_squared = 0;
   for (int i = 0; i < _nbits; i++)
   {
     if (_count[i] > c)
     {
       _count[i] = c;
+      _nset += c;
+      _sum_squared += c * c;
       rc++;
+    } else {
+      _nset += _count[i];
+      _sum_squared += _count[i] * _count[i];
     }
   }
+
+  _norm = sqrt(static_cast<double>(_sum_squared));
 
   return rc;
 }
@@ -1751,8 +1659,8 @@ Sparse_Fingerprint::truncate_counts_at (int c)
 */
 
 void
-Sparse_Fingerprint::vector_difference (const Sparse_Fingerprint & fp1, 
-                                       const Sparse_Fingerprint & fp2)
+Sparse_Fingerprint::vector_difference(const Sparse_Fingerprint & fp1, 
+                                      const Sparse_Fingerprint & fp2)
 {
   resize(fp1._nbits + fp2._nbits);   // worst case, no bits in common
 
@@ -1805,12 +1713,14 @@ Sparse_Fingerprint::vector_difference (const Sparse_Fingerprint & fp1,
 // we don't set _nset, not sure what it would mean
 
   _nset = 0;
+  _sum_squared = 0;
+  _norm = 0.0;
 
   return;
 }
 
 double
-Sparse_Fingerprint::cosine_coefficient (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::cosine_coefficient(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _sum_squared || 0 == rhs._sum_squared)
     return 0.0;
@@ -1833,7 +1743,7 @@ Sparse_Fingerprint::cosine_coefficient (const Sparse_Fingerprint & rhs) const
       i1++;
     else if (_bit[i1] == rhs._bit[i2])
     {
-      sum_product += _count[i1] * _count[i1];
+      sum_product += _count[i1] * rhs._count[i2];
       i1++;
       i2++;
     }
@@ -1848,11 +1758,16 @@ Sparse_Fingerprint::cosine_coefficient (const Sparse_Fingerprint & rhs) const
   cerr << " sum_product " << sum_product << " sum2 " << _sum_squared << " sum2 " << rhs._sum_squared << endl;
 #endif
 
-  return (static_cast<double>(sum_product) / sqrt(static_cast<double>(_sum_squared) * static_cast<double>(rhs._sum_squared)) + 1.0) * 0.5;
+  return static_cast<double>(sum_product) /
+          sqrt(static_cast<double>(_sum_squared) * static_cast<double>(rhs._sum_squared));
+
+// Original version, not sure where this came from. Prefer standard form above.
+//return (static_cast<double>(sum_product) /
+//        sqrt(static_cast<double>(_sum_squared) * static_cast<double>(rhs._sum_squared)) + 1.0) * 0.5;
 }
 
 similarity_type_t
-Sparse_Fingerprint::continuous_tanimoto (const Sparse_Fingerprint & rhs) const
+Sparse_Fingerprint::continuous_tanimoto(const Sparse_Fingerprint & rhs) const
 {
   if (0 == _sum_squared || 0 == rhs._sum_squared)
     return 0.0;
@@ -1888,7 +1803,7 @@ Sparse_Fingerprint::continuous_tanimoto (const Sparse_Fingerprint & rhs) const
 }
 
 int
-Sparse_Fingerprint::append_daylight_ascii_form_with_counts_encoded (IWString & s) const
+Sparse_Fingerprint::append_daylight_ascii_form_with_counts_encoded(IWString & s) const
 {
   if (0 == _nbits)
     return 1;
@@ -1944,15 +1859,28 @@ Sparse_Fingerprint::append_daylight_ascii_form_with_counts_encoded (IWString & s
 }
 
 int
-Sparse_Fingerprint::count_for_bit (unsigned int b) const
+Sparse_Fingerprint::count_for_bit(unsigned int b) const
 {
+  const auto iter = std::lower_bound(_bit, _bit + _nbits, b);
+  // If bit not present, return 0;
+  if (iter == (_bit + _nbits) || *iter != b) {    // bit not present
+    return 0;
+  }
+  const int ndx = iter - _bit;
+  return _count[ndx];
+
+#ifdef EQUIVALENT_VERSION
   for (int i = 0; i < _nbits; i++)
   {
     if (b == _bit[i])
       return _count[i];
+    if (_bit[i] > b) {
+      return 0;
+    }
   }
 
   return 0;
+#endif
 }
 
 class UnsignedIntComparator
@@ -1975,7 +1903,7 @@ UnsignedIntComparator::operator () (unsigned int i1, unsigned int i2) const
 }
 
 int
-Sparse_Fingerprint::build_from_sparse_fingerprint_creator (Sparse_Fingerprint_Creator & sfc)
+Sparse_Fingerprint::build_from_sparse_fingerprint_creator(Sparse_Fingerprint_Creator & sfc)
 {
   int n = sfc.nbits();
 
@@ -1995,6 +1923,8 @@ Sparse_Fingerprint::build_from_sparse_fingerprint_creator (Sparse_Fingerprint_Cr
 
   sfc.fill_count_array(_bit, _count, n);
 
+  _recompute_sums();
+
   return 1;
 }
 
@@ -2008,7 +1938,7 @@ template void move_in_from_left<unsigned, UnsignedIntComparator>(unsigned*, int&
 #endif
 
 void *
-Sparse_Fingerprint::copy_to_contiguous_storage (void * p) const
+Sparse_Fingerprint::copy_to_contiguous_storage(void * p) const
 {
   memcpy(p, this, sizeof(Sparse_Fingerprint));
 
@@ -2026,7 +1956,7 @@ Sparse_Fingerprint::copy_to_contiguous_storage (void * p) const
 }
 
 void *
-Sparse_Fingerprint::copy_to_contiguous_storage_gpu (void * p) const
+Sparse_Fingerprint::copy_to_contiguous_storage_gpu(void * p) const
 {
   memcpy(p, &_nbits, sizeof(int));
 
@@ -2054,7 +1984,7 @@ Sparse_Fingerprint::copy_to_contiguous_storage_gpu (void * p) const
 }
 
 const void *
-Sparse_Fingerprint::build_from_contiguous_storage (const void * p,
+Sparse_Fingerprint::build_from_contiguous_storage(const void * p,
                                         int allocate_arrays)
 {
   if (allocate_arrays && nullptr != _bit)
@@ -2089,7 +2019,7 @@ Sparse_Fingerprint::build_from_contiguous_storage (const void * p,
 }
 
 int
-Sparse_Fingerprint::remove_bit (unsigned int b)
+Sparse_Fingerprint::remove_bit(unsigned int b)
 {
   auto f = std::lower_bound(_bit, _bit + _nbits, b);
 
@@ -2097,6 +2027,8 @@ Sparse_Fingerprint::remove_bit (unsigned int b)
     return 0;
 
   _nset -= _count[f - _bit];
+  _sum_squared -= (_count[f - _bit] * _count[f - _bit]);
+  _norm = sqrt(static_cast<double>(_sum_squared));
 
   _nbits--;
 
@@ -2111,16 +2043,21 @@ Sparse_Fingerprint::remove_bit (unsigned int b)
 }
 
 int
-Sparse_Fingerprint::set_count (unsigned int b, int c)
+Sparse_Fingerprint::set_count(unsigned int b, int c)
 {
   auto f = std::lower_bound(_bit, _bit + _nbits, b);
 
-  if (f == (_bit + _nbits) || *f != b)    // bit not present to be removed
+  if (f == (_bit + _nbits) || *f != b)    // bit not present.
     return 0;
 
   const auto ndx = f - _bit;
 
+  int old_count = _count[ndx];
+
   _count[ndx] = c;
+  _nset += (c - old_count);
+  _sum_squared = _sum_squared - (old_count * old_count) + (c * c);
+  _norm = sqrt(static_cast<double>(_sum_squared));
 
   return 1;
 }

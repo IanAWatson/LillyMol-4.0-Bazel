@@ -9,22 +9,34 @@ message SvmfpModel{
     // Options to gfp_make to generate the fingerprints.
     optional string fingerprints = 2;
 
-    // Proto file containing the cross reference from
-    // gfp bit numbers to svm lite feature numbers.
-    optional string bit_xref = 3;
+    // Proto file containing the list of gfp bits that
+    // are included in the model.
+    optional string bit_subset = 3;
+
+    // Proto file containing a mapping from gfp bits to
+    // svm_lite feature numbers
+    optional string bit_xref = 4;
+
+    // The full .gfp file from train.smi
+    optional string train_gfp = 5;
 
     // GFP file containing support vectors and weights.
-    optional string support_vectors = 4;
+    // Contains only a single sparse fingerprint with
+    // translated bit numbers.
+    optional string support_vectors = 6;
 
     // The threshold_b bias parameter
-    optional double threshold_b = 5;
+    optional double threshold_b = 7;
 
     // If this is a classification model, this file may be present.
-    optional string class_label_translation = 6;
+    optional string class_label_translation = 8;
 
     // A FeatureScaling proto if this is a regression model.
-    optional string response_scaling = 7;
+    optional string response_scaling = 9;
 
     // When was this file created.
-    optional string date_built = 8;
+    optional string date_built = 10;
+
+    // If sparse counted fingerprints are flattened.
+    optional bool flatten_sparse_fingerprints = 11;
 }

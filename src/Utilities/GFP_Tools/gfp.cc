@@ -80,6 +80,7 @@ static int * _bits_in_fingerprint = nullptr;
 /*
   When we read fingerprints in Daylight ascii representation, the counts are truncated at 255.
   But if we read the ascii form 'b,c', then counts are not limited
+  This is no longer needed, the bic table is not used in Sparse_Fingerprint.
 */
 
 static int sparse_fingerprint_counts_limited = 1;   
@@ -87,13 +88,13 @@ static int sparse_fingerprint_counts_limited = 1;
 static int report_fingerprint_status = 1;
 
 void
-set_report_fingerprint_status (int s)
+set_report_fingerprint_status(int s)
 {
   report_fingerprint_status = s;
 }
 
 void
-set_fixed_width_fingerprint_weight (int ndx, double w)
+set_fixed_width_fingerprint_weight(int ndx, double w)
 {
   assert (nullptr != _fingerprint_weight);
   assert (ndx >= 0 && ndx < bit_fingerprints_in_file);
@@ -104,7 +105,7 @@ set_fixed_width_fingerprint_weight (int ndx, double w)
 }
 
 void
-set_sparse_fingerprint_weight (int ndx, double w)
+set_sparse_fingerprint_weight(int ndx, double w)
 {
   assert (nullptr != _sparse_fingerprint_weight);
   assert (ndx >= 0 && ndx < _number_sparse_fingerprints);
@@ -243,7 +244,7 @@ static IWString * _multiconformer_sparse_fingerprint_tag = nullptr;
 static int convert_sparse_fingerprint_to_bits = 0;
 
 void
-set_convert_sparse_fingerprint_to_bits (int s)
+set_convert_sparse_fingerprint_to_bits(int s)
 {
   convert_sparse_fingerprint_to_bits = s;
 }
@@ -251,7 +252,7 @@ set_convert_sparse_fingerprint_to_bits (int s)
 static int convert_sparse_fingerprint_to_fixed_width_counted = 0;
 
 void
-set_convert_sparse_fingerprint_to_fixed_width_counted (int s)
+set_convert_sparse_fingerprint_to_fixed_width_counted(int s)
 {
   convert_sparse_fingerprint_to_fixed_width_counted = s;
 }
@@ -299,10 +300,10 @@ static int * _fingerprint_type = nullptr;
 static int * _sparse_fingerprint_type = nullptr;
 
 static int
-set_nfingerprints (int nfp, int sfp, int cfp,
-                   int mc01,     // multiconformer01
-                   int mcfsc,    // multiconformer fixed size counted
-                   int mcsparse) // multiconformer, sparse
+set_nfingerprints(int nfp, int sfp, int cfp,
+                  int mc01,     // multiconformer01
+                  int mcfsc,    // multiconformer fixed size counted
+                  int mcsparse) // multiconformer, sparse
 {
   assert (nfp > 0 || sfp > 0 || cfp > 0 || mc01 > 0 || mcfsc > 0 || mcsparse > 0);
 
@@ -495,7 +496,7 @@ number_sparse_fingerprints()
 static IWString identifier_tag("PCN<");
 
 void
-set_identifier_tag (const_IWSubstring const & id)
+set_identifier_tag(const_IWSubstring const & id)
 {
   identifier_tag = id;
 
@@ -528,14 +529,14 @@ static float _property_weight_integer = -1.0;
 static float _property_weight_continuous = -1.0;
 
 const IWString &
-property_tag ()
+property_tag()
 {
   return molecular_property_integer_tag;
 }
 
 
 void
-set_property_weight_integer (double w)
+set_property_weight_integer(double w)
 {
   _property_weight_integer = w;
 
@@ -636,7 +637,7 @@ static int file_scope_number_integer_molecular_properties = 0;
 static int number_continuous_molecular_properties = 0;
 
 int
-set_number_integer_molecular_properties (int n)
+set_number_integer_molecular_properties(int n)
 {
   assert (n > 0);
 
@@ -652,7 +653,7 @@ number_integer_molecular_properties()
 }
 
 int
-set_number_continuous_molecular_properties (int n)
+set_number_continuous_molecular_properties(int n)
 {
   assert (n > 0);
 
@@ -690,7 +691,7 @@ Molecular_Properties_Continuous::Molecular_Properties_Continuous()
 }
 
 int
-Molecular_Properties_Continuous::construct_from_descriptor_record (const const_IWSubstring & buffer)
+Molecular_Properties_Continuous::construct_from_descriptor_record(const const_IWSubstring & buffer)
 {
   const_IWSubstring tmp = buffer;
 
@@ -758,7 +759,7 @@ Molecular_Properties_Integer::Molecular_Properties_Integer()
 }
 
 int
-Molecular_Properties_Integer::construct_from_tdt_fp_record (const const_IWSubstring & buffer)
+Molecular_Properties_Integer::construct_from_tdt_fp_record(const const_IWSubstring & buffer)
 {
   IWDYFP fp;
 
@@ -932,7 +933,7 @@ Ratio_Deallocator::~Ratio_Deallocator()
 static Ratio_Deallocator rd;
 
 similarity_type_t
-Molecular_Properties_Integer::similarity (const Molecular_Properties_Integer & rhs) const
+Molecular_Properties_Integer::similarity(const Molecular_Properties_Integer & rhs) const
 {
   if (INTEGER_PROPERTY_DISTANCE_METRIC_RATIO == _integer_property_distance_metric)
     ;
@@ -959,7 +960,7 @@ Molecular_Properties_Integer::similarity (const Molecular_Properties_Integer & r
 #ifdef VERSION_WITHOUT_PRECOMPUTED_RATIOS
 
 similarity_type_t
-Molecular_Properties_Integer::similarity (const Molecular_Properties_Integer & rhs) const
+Molecular_Properties_Integer::similarity(const Molecular_Properties_Integer & rhs) const
 {
   if (INTEGER_PROPERTY_DISTANCE_METRIC_RATIO == _integer_property_distance_metric)
     ;
@@ -993,7 +994,7 @@ Molecular_Properties_Integer::similarity (const Molecular_Properties_Integer & r
 
 
 similarity_type_t
-Molecular_Properties_Integer::dice_coefficient (const Molecular_Properties_Integer & rhs) const
+Molecular_Properties_Integer::dice_coefficient(const Molecular_Properties_Integer & rhs) const
 {
   int bits_in_common = 0;
   int na = 0;
@@ -1014,7 +1015,7 @@ Molecular_Properties_Integer::dice_coefficient (const Molecular_Properties_Integ
 }
 
 int
-Molecular_Properties_Integer::bits_in_common (const Molecular_Properties_Integer & rhs) const
+Molecular_Properties_Integer::bits_in_common(const Molecular_Properties_Integer & rhs) const
 {
   int bic = 0;
 
@@ -1030,7 +1031,7 @@ Molecular_Properties_Integer::bits_in_common (const Molecular_Properties_Integer
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::similarity (const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::similarity(const Molecular_Properties_Continuous & rhs) const
 {
   assert (nullptr != _property && nullptr != rhs._property);
 
@@ -1094,7 +1095,7 @@ Molecular_Properties_Continuous::similarity (const Molecular_Properties_Continuo
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::cartesian_distance (const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::cartesian_distance(const Molecular_Properties_Continuous & rhs) const
 {
   similarity_type_t rc = static_cast<similarity_type_t>(0.0);
 
@@ -1110,7 +1111,7 @@ Molecular_Properties_Continuous::cartesian_distance (const Molecular_Properties_
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::exp1_distance (const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::exp1_distance(const Molecular_Properties_Continuous & rhs) const
 {
   double rc = 0.0;
 
@@ -1123,7 +1124,7 @@ Molecular_Properties_Continuous::exp1_distance (const Molecular_Properties_Conti
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::exp2_distance (const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::exp2_distance(const Molecular_Properties_Continuous & rhs) const
 {
   double rc = 0.0;
 
@@ -1136,7 +1137,7 @@ Molecular_Properties_Continuous::exp2_distance (const Molecular_Properties_Conti
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::dice_coefficient (const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::dice_coefficient(const Molecular_Properties_Continuous & rhs) const
 {
   float bits_in_common = static_cast<float>(0.0);
   float na = static_cast<float>(0.0);
@@ -1165,7 +1166,7 @@ IW_General_Fingerprint::operator [] (int i) const
 }
 
 IWDYFP &
-IW_General_Fingerprint::item (int i) const
+IW_General_Fingerprint::item(int i) const
 {
   assert (i >= 0 && i < bit_fingerprints_in_file);
 
@@ -1179,7 +1180,7 @@ IW_General_Fingerprint::nfingerprints() const
 }
 
 IW_General_Fingerprint &
-IW_General_Fingerprint::operator = (const IW_General_Fingerprint & rhs)
+IW_General_Fingerprint::operator =(const IW_General_Fingerprint & rhs)
 {
   int need_to_allocate = 0;
 
@@ -1438,8 +1439,8 @@ IW_General_Fingerprint::tanimoto(IW_General_Fingerprint & rhs)
 //#define DEBUG_TVERSKY
 
 similarity_type_t
-IW_General_Fingerprint::tversky (IW_General_Fingerprint & rhs,
-                                 const Tversky & t)
+IW_General_Fingerprint::tversky(IW_General_Fingerprint & rhs,
+                                const Tversky & t)
 {
   if (t.optimistic_mode())
     return static_cast<similarity_type_t>(1.0) - optimistic_distance(rhs, t);
@@ -1482,8 +1483,8 @@ IW_General_Fingerprint::tversky (IW_General_Fingerprint & rhs,
 //#define DEBUG_OPTIMISTIC_DISTANCE
 
 similarity_type_t
-IW_General_Fingerprint::optimistic_distance (IW_General_Fingerprint & rhs,
-                                             const Tversky & tv)
+IW_General_Fingerprint::optimistic_distance(IW_General_Fingerprint & rhs,
+                                            const Tversky & tv)
 {
   similarity_type_t result = static_cast<similarity_type_t>(0.0);
 
@@ -1608,7 +1609,7 @@ IW_General_Fingerprint::IW_General_Fingerprint()
   return;
 }
 
-IW_General_Fingerprint::IW_General_Fingerprint (const IW_General_Fingerprint & rhs)
+IW_General_Fingerprint::IW_General_Fingerprint(const IW_General_Fingerprint & rhs)
 {
   _default_values();
 
@@ -1983,8 +1984,8 @@ Molecular_Properties_Continuous::construct_from_tdt_record (const const_IWSubstr
 }
 
 int
-IW_General_Fingerprint::_read_molecular_properties_continuous (IW_TDT & tdt,
-                                                               const IWString & tag)
+IW_General_Fingerprint::_read_molecular_properties_continuous(IW_TDT & tdt,
+                                                              const IWString & tag)
 {
   const_IWSubstring mpr;
   if (! tdt.dataitem(tag, mpr))
@@ -2003,7 +2004,7 @@ IW_General_Fingerprint::_read_molecular_properties_continuous (IW_TDT & tdt,
 */
 
 static int
-looks_like_descriptors (const const_IWSubstring & buffer)
+looks_like_descriptors(const const_IWSubstring & buffer)
 {
   int i = buffer.index('<');
 
@@ -2028,7 +2029,7 @@ looks_like_descriptors (const const_IWSubstring & buffer)
 }
 
 static void
-remove_tdt_stuff (const_IWSubstring & buffer)
+remove_tdt_stuff(const_IWSubstring & buffer)
 {
   assert (buffer.ends_with('>'));
 
@@ -2040,8 +2041,8 @@ remove_tdt_stuff (const_IWSubstring & buffer)
 }
 
 int
-IW_General_Fingerprint::_construct_from_tdt (IW_TDT & tdt,
-                                             int & fatal)
+IW_General_Fingerprint::_construct_from_tdt(IW_TDT & tdt,
+                                            int & fatal)
 {
   if (! tdt.dataitem_value(identifier_tag, _id))
   {
@@ -2332,8 +2333,8 @@ IW_General_Fingerprint::_construct_from_tdt (IW_TDT & tdt,
 }
 
 int
-IW_General_Fingerprint::construct_from_tdt (IW_TDT & tdt,
-                                           int & fatal)
+IW_General_Fingerprint::construct_from_tdt(IW_TDT & tdt,
+                                          int & fatal)
 {
 
   fatal = 0;    // errors can be ignored unless we say so.
@@ -2347,7 +2348,7 @@ IW_General_Fingerprint::construct_from_tdt (IW_TDT & tdt,
 }
 
 void
-IW_General_Fingerprint::iwor (const IW_General_Fingerprint & rhs)
+IW_General_Fingerprint::iwor(const IW_General_Fingerprint & rhs)
 {
   if (_molecular_properties_continuous.active() || _molecular_properties_integer.active())
     cerr << "IW_General_Fingerprint::or: properties present, ignored\n";
@@ -2506,7 +2507,7 @@ no_ring_count_cutoffs()
 }*/
 
 int
-set_atom_count_window (int w, int verbose)
+set_atom_count_window(int w, int verbose)
 {
   assert (w > 1 && w <= 100);     // must be a percentage
 
@@ -2531,7 +2532,7 @@ set_atom_count_window (int w, int verbose)
 }
 
 static int
-set_atom_count_delta_window (int min_extra_atoms, int max_extra_atoms)
+set_atom_count_delta_window(int min_extra_atoms, int max_extra_atoms)
 {
   for (int i = 1; i < MAX_NATOMS; i++)
   {
@@ -2552,7 +2553,7 @@ set_atom_count_delta_window (int min_extra_atoms, int max_extra_atoms)
 }
 
 static int
-set_aromatic_atom_count_window (int w)
+set_aromatic_atom_count_window(int w)
 {
   for (int i = 0; i < MAX_NATOMS; i++)
   {
@@ -2578,7 +2579,7 @@ static int lower_ring_count_cutoff[MAX_NRINGS];
 static int upper_ring_count_cutoff[MAX_NRINGS];
 
 int
-set_ring_count_window (int w, int verbose)
+set_ring_count_window(int w, int verbose)
 {
   assert (w > 1 && w <= 100);     // must be a percentage
 
@@ -2610,8 +2611,8 @@ set_ring_count_window (int w, int verbose)
 */
 
 int
-can_be_compared (const IW_General_Fingerprint & fp1,
-                 const IW_General_Fingerprint & fp2)
+can_be_compared(const IW_General_Fingerprint & fp1,
+                const IW_General_Fingerprint & fp2)
 {
   if (0 == windows_present)
     return 1;
@@ -2680,7 +2681,7 @@ can_be_compared (const IW_General_Fingerprint & fp1,
 }
 
 int
-display_standard_gfp_options (std::ostream & os)
+display_standard_gfp_options(std::ostream & os)
 {
   os << " -F <TAG>         fingerprint tag 'TAG'\n";
   os << " -F <TAG,w=0.2>   fingerprint 'TAG' weight 0.2\n";
@@ -2715,7 +2716,7 @@ display_standard_gfp_options (std::ostream & os)
 }
 
 static int
-parse_guard_fingerprint_specification (const const_IWSubstring & g)
+parse_guard_fingerprint_specification(const const_IWSubstring & g)
 {
   IWString tmp;
 
@@ -2757,7 +2758,7 @@ fetch_numeric (const const_IWSubstring & buffer,
 }*/
 
 static int
-display_dash_p_options (std::ostream & output)
+display_dash_p_options(std::ostream & output)
 {
   output << "There are two kinds of properties in gfp programmes, integer and continuous\n";
   output << "The integer properties are generated by default by gfp_make.sh, and are in the tag MPR\n";
@@ -2823,9 +2824,9 @@ Parse_Tag_Weight_Args::Parse_Tag_Weight_Args()
 }
 
 static int
-parse_tag_weight (const const_IWSubstring & f,
-                  const_IWSubstring & tag,
-                  Parse_Tag_Weight_Args & ptwa)
+parse_tag_weight(const const_IWSubstring & f,
+                 const_IWSubstring & tag,
+                 Parse_Tag_Weight_Args & ptwa)
 {
   tag = f;
 
@@ -2971,13 +2972,13 @@ parse_tag_weight (const const_IWSubstring & f,
 */
 
 static int
-parse_tag_weight (const const_IWSubstring & f,
-                  const_IWSubstring & tag,
-                  float & weight,
-                  int & nfold,
-                  int & ztype,
-                  double & ncscale,
-                  int & distance_metric)
+parse_tag_weight(const const_IWSubstring & f,
+                 const_IWSubstring & tag,
+                 float & weight,
+                 int & nfold,
+                 int & ztype,
+                 double & ncscale,
+                 int & distance_metric)
 {
   tag = f;
   ztype = DAYLIGHT_COMPRESSED_FORM;
@@ -3106,8 +3107,8 @@ parse_tag_weight (const const_IWSubstring & f,
 */
 
 static int
-parse_desc_specification (const const_IWSubstring & p,
-                          int verbose)
+parse_desc_specification(const const_IWSubstring & p,
+                         int verbose)
 {
   assert (p.contains("desc="));
 
@@ -3222,7 +3223,7 @@ parse_desc_specification (const const_IWSubstring & p,
 }
 
 int
-initialise_fingerprints (Command_Line & cl, int verbose)
+initialise_fingerprints(Command_Line & cl, int verbose)
 {
   bool options_specified_by_user = 0;
   if (cl.option_present('Q'))
@@ -3806,7 +3807,7 @@ initialise_fingerprints (Command_Line & cl, int verbose)
 }
 
 int
-need_to_call_initialise_fingerprints (const Command_Line & cl)
+need_to_call_initialise_fingerprints(const Command_Line & cl)
 {
   if (cl.option_present('F'))
     return 1;
@@ -3834,8 +3835,8 @@ IW_GFP_D::IW_GFP_D()
 }
 
 static int
-initialise_fingerprints_2 (iwstring_data_source & input,
-                           int verbose)
+initialise_fingerprints_2(iwstring_data_source & input,
+                          int verbose)
 {
   IW_TDT tdt;
   while (tdt.next(input))
@@ -3879,8 +3880,8 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static int
-initialise_fingerprints (iwstring_data_source & input,
-                         int verbose)
+initialise_fingerprints(iwstring_data_source & input,
+                        int verbose)
 {
 #ifdef GFP_PARALLEL
   int need_to_unlock_mutex = 0;
@@ -3906,7 +3907,7 @@ initialise_fingerprints (iwstring_data_source & input,
 }
 
 int
-initialise_fingerprints (const char * fname, int verbose)
+initialise_fingerprints(const char * fname, int verbose)
 {
   iwstring_data_source input(fname);
 
@@ -3920,7 +3921,7 @@ initialise_fingerprints (const char * fname, int verbose)
 }
 
 int
-initialise_fingerprints (const IWString & fname, int verbose)
+initialise_fingerprints(const IWString & fname, int verbose)
 {
   iwstring_data_source input(fname);
 
@@ -3934,7 +3935,7 @@ initialise_fingerprints (const IWString & fname, int verbose)
 }
 
 int
-IW_General_Fingerprint::print_all_bits (std::ostream & output) const
+IW_General_Fingerprint::print_all_bits(std::ostream & output) const
 {
   output << _id << " has ";
   if (bit_fingerprints_in_file)
@@ -3976,7 +3977,7 @@ IW_General_Fingerprint::print_all_bits (std::ostream & output) const
 }
 
 int
-IW_General_Fingerprint::convert_to_non_sparse_forms (const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp)
+IW_General_Fingerprint::convert_to_non_sparse_forms(const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp)
 {
   if (convert_sparse_fingerprint_to_bits)
     _convert_sparse_fingerprints_to_bits(sfpcp);
@@ -3991,7 +3992,7 @@ IW_General_Fingerprint::convert_to_non_sparse_forms (const Set_of_Sparse_Fingerp
 }
 
 int
-IW_General_Fingerprint::_convert_sparse_fingerprints_to_bits (const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp)
+IW_General_Fingerprint::_convert_sparse_fingerprints_to_bits(const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp)
 {
   for (int i = 0; i < _number_sparse_fingerprints; i++)
   {
@@ -4011,7 +4012,7 @@ IW_General_Fingerprint::_convert_sparse_fingerprints_to_bits (const Set_of_Spars
 }
 
 int
-IW_General_Fingerprint::_convert_sparse_fingerprints_to_fixed_width_counted (const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp)
+IW_General_Fingerprint::_convert_sparse_fingerprints_to_fixed_width_counted(const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp)
 {
   for (int i = 0; i < _number_sparse_fingerprints; i++)
   {
@@ -4101,13 +4102,13 @@ IW_General_Fingerprint::equal_weight_dot_product(IW_General_Fingerprint & rhs)
 
 
 const IWString &
-fixed_fingerprint_tag (int i)
+fixed_fingerprint_tag(int i)
 {
   return _fingerprint_tag[i];
 }
 
 const IWString & 
-sparse_fingerprint_tag (int i)
+sparse_fingerprint_tag(int i)
 {
   return _sparse_fingerprint_tag[i];
 }
@@ -4161,7 +4162,7 @@ Molecular_Properties_Integer::construct_from_bit_vector (const IWDYFP & fp)
 #endif
 
 int
-IW_General_Fingerprint::fixed_fingerprints_as_hex (IWString & s) const
+IW_General_Fingerprint::fixed_fingerprints_as_hex(IWString & s) const
 {
   for (int i = 0; i < bit_fingerprints_in_file; i++)
   {

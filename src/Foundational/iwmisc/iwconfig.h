@@ -53,7 +53,7 @@
 #define IW_GETPID ::getpid
 
 #define	String2I64(cTmp) atoll(cTmp);
-typedef long long INT64;
+//typedef long long INT64;
 
 #endif
 

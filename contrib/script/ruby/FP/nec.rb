@@ -5,13 +5,13 @@
 require_relative 'lib/fp_common'
 
 # EC fingerprint.
-class EC
+class NEC
   attr_reader :description
 
   def initialize
-    @rx = Regexp.new('^EC')
-    @description = 'Circular fingerprints'
-    @executable = 'iwecfp'
+    @rx = Regexp.new('^NEC')
+    @description = 'Circular fingerprints (new)'
+    @executable = 'ec_fingerprint'
   end
 
   def match?(fp) # rubocop:disable Naming/MethodParameterName
@@ -19,17 +19,17 @@ class EC
   end
 
   def expand(fp, first_in_pipeline:, extra_qualifiers:) # rubocop:disable Naming/MethodParameterName
-    m = /^EC([A-Z]*)(\d+)*:*(\S+)*/.match(fp)
-    raise "Unrecognized EC fp form '#{fp}'" unless m
+    m = /^NEC([A-Z]*)(\d+)*:*(\S+)*/.match(fp)
+    raise "Unrecognized NEC fp form '#{fp}'" unless m
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    radius, atype = FpCommon.parse_fp_token(fp[2..])
+    radius, atype = FpCommon.parse_fp_token(fp[3..])
     # $stderr << "Radius #{radius} predefined '#{predefined}' ust_atype #{ust_atype}\n"
 
     radius ||= '3'
 
-    cmd << " -J NCEC#{radius}" unless /-J /.match(extra_qualifiers)
+    cmd << " -J NCEX#{radius}" unless /-J /.match(extra_qualifiers)
     cmd << " -R #{radius}" unless /-R \d/.match(extra_qualifiers)
 
     atype ||= 'UST:Y'

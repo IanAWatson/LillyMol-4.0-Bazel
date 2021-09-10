@@ -31,6 +31,7 @@ cc_library(
         "msi_object.cc",
         "new_int.cc",
         "new_float.cc",
+        "proto_support.cc",
         "report_progress.cc",
         "write_space_suppressed_string.cc",
         "_numeric_data_from_file_int.cc",
@@ -156,6 +157,21 @@ cc_binary(
         "//Foundational/cmdline_v2:cmdline_v2",
     ],
     linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test  (
+    name = "iwdigits_test",
+    srcs = [
+        "iwdigits_test.cc",
+    ],
+    deps = [
+        ":iwmisc",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lm",
         "-lz",
     ],
 )

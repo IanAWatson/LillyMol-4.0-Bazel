@@ -1,23 +1,31 @@
 // Score an svmfp model.
 // A model is described by a set of weighted fingerprints
 // and a bias term.
+// The support vectors, and weights, are read, and then reduced
+// to the subset used by the model.
 
 #include <fstream>
+#include <tuple>
 
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 
 #include "Foundational/cmdline_v2/cmdline_v2.h"
+#include "Foundational/accumulator/accumulator.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/proto_support.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 
+#include "Utilities/GFP_Tools/bit_subset.h"
 #include "Utilities/GFP_Tools/gfp.h"
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #include "Utilities/GFP_Tools/svmfp_model.pb.h"
 #include "Utilities/General/class_label_translation.pb.h"
+#include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #define FEATURE_SCALER_IMPLEMENTATION
 #include "Utilities/General/scaler.h"
 
@@ -26,6 +34,9 @@ using std::cerr;
 
 int verbose = 0;
 
+// This tag is hard coded, should be command line settable.
+IWString support_vector_tag = "NCSV<";
+// The tag holding the support vector weight.
 IWString weight_tag = "WEIGHT<";
 
 char output_separator = ' ';
@@ -58,28 +69,6 @@ DisplayCWriteOptions(std::ostream& output) {
   exit(0);
 }
 
-// Read a textproto from `fname` into `proto`.
-// The iwstring_data_source is just used to get a file descriptor.
-template <typename Proto>
-int
-ReadProto(IWString& fname,
-          Proto& proto) {
-  iwstring_data_source input(fname.null_terminated_chars());
-  if (! input.good()) {
-    cerr << "Cannot open '" << fname << "'\n";
-    return 0;
-  }
-
-  google::protobuf::io::FileInputStream file_input_stream(input.fd());
-
-  if (! google::protobuf::TextFormat::Parse(&file_input_stream, &proto)) {
-    cerr << "GfpToFeature::FromProto:cannot parse '" << fname << "'\n";
-    return 0;
-  }
-
-  return 1;
-}
-
 // Read a binary encoded proto from `fname` into `proto`.
 template <typename Proto>
 int
@@ -99,6 +88,35 @@ ReadBinaryProto(IWString& fname,
   return 1;
 }
 
+// Read a single gfp from train.gfp in order that the global
+// gfp conditions get set up.
+// This does not really work for multiple models since they
+// may have different fingerprints. Need to wait till we can 
+// handle multiple gfp configs at once.
+int
+ReadSingleGfp(const std::string& fname) {
+  iwstring_data_source input(fname);
+  if (! input.good()) {
+    cerr << "ReadSingleGfp:cannot open '" << fname << "'\n";
+    return 0;
+  }
+
+  IW_TDT tdt;
+  if (! tdt.next(input)) {
+    cerr << "ReadSingleGfp:cannot read '" << fname << "'\n";
+    return 0;
+  }
+
+  IW_General_Fingerprint notused;
+  int fatal = 0;
+  if (! notused.construct_from_tdt(tdt, fatal)) {
+    cerr << "ReadSingleGfp:bad gfp data in '" << fname << "'\n";
+    return 0;
+  }
+
+  return 1;
+}
+
 IWString
 PathName(const IWString& dirname, const IWString& fname) {
   IWString result;
@@ -111,11 +129,7 @@ template <typename Proto>
 std::optional<Proto>
 ReadProto(const IWString& dirname, const std::string& fname) {
   IWString path_name = PathName(dirname, fname);
-  Proto result;
-  if (! ReadProto(path_name, result)) {
-    return std::nullopt;
-  }
-  return result;
+  return iwmisc::ReadTextProto<Proto>(path_name);
 }
 
 // Read a binary encoded proto of type `Proto` from `dirname/fname`.
@@ -123,16 +137,33 @@ template <typename Proto>
 std::optional<Proto>
 ReadBinaryProto(const IWString& dirname, const std::string& fname) {
   IWString path_name = PathName(dirname, fname);
-  Proto result;
-  if (! ReadBinaryProto(path_name, result)) {
-    return std::nullopt;
-  }
-  return result;
+  return iwmisc::ReadBinaryProto<Proto>(path_name);
 }
 
-// Fingerprint and associated weight.
-class WeightedFingerprint : public IW_General_Fingerprint {
+#ifdef NOT_NEEDED
+std::optional<IW_General_Fingerprint>
+CreateSubset(const IW_General_Fingerprint& gfp,
+                const GfpBitToFeatureMap::GfpBitXref& bit_xref) {
+  IW_General_Fingerprint result;
+
+  for (int i = 0; i < number_sparse_fingerprints(); ++i) {
+    const IWString& tag = sparse_fingerprint_tag(i);
+    const std::string as_string(tag.data(), tag.length());
+    auto iter = bit_xref.xref().find(as_string);
+    if (iter == bit_xref.xref().end()) {
+      cerr << "CreateSubset:no cross reference for " << tag << "'\n";
+      return std::nullopt;
+    }
+  }
+
+  return result;
+}
+#endif
+
+// The support vectors are stored in gfp form with a weight.
+class WeightedFingerprint {
   private:
+    IW_General_Fingerprint _fp;
     double _weight;
 
   public:
@@ -141,6 +172,8 @@ class WeightedFingerprint : public IW_General_Fingerprint {
     double weight() const { return _weight;}
 
     int Build(IW_TDT& tdt);
+
+    IW_General_Fingerprint& fp() { return _fp;}
 
     double Tanimoto(IW_General_Fingerprint& fp);
 };
@@ -152,12 +185,12 @@ WeightedFingerprint::WeightedFingerprint() {
 int
 WeightedFingerprint::Build(IW_TDT& tdt) {
   int fatal = 0;
-  if (! IW_General_Fingerprint::construct_from_tdt(tdt, fatal)) {
-    cerr << "WeightedFingerprint:Build:cannot built gfp\n";
+  if (! _fp.construct_from_tdt(tdt, fatal)) {
+    cerr << "WeightedFingerprint::Build:cannot parse " << tdt << "'\n";
     return 0;
   }
 
-  if (! tdt.dataitem_value(weight_tag, _weight) || _weight < -1.0 || _weight > 1.0) {
+  if (! tdt.dataitem_value(weight_tag, _weight)) {
     cerr << "WeightedFingerprint::Built:invalid weight\n";
     return 0;
   }
@@ -167,18 +200,21 @@ WeightedFingerprint::Build(IW_TDT& tdt) {
 
 double
 WeightedFingerprint::Tanimoto(IW_General_Fingerprint& fp) {
-  IW_General_Fingerprint* me = this;
-  return me->tanimoto(fp) * _weight;
+  return _fp.equal_weight_tanimoto(fp) * _weight;
 }
 
 // Model class populated from a svmfp_model proto.
 class SvmModel {
   private:
     int _nfingerprints;
-    WeightedFingerprint* _gfp;
+    WeightedFingerprint* _support_vector;
+
+    // If directed by the proto, discard count information in sparse fingerprints.
+    bool _flatten_counts;
 
     double _threshold_b;
 
+    // In a weighted average, the weight assigned to this model.
     float _weight;
 
     // Read from the proto.
@@ -190,16 +226,29 @@ class SvmModel {
     // If we have a classification problem, the class labels to apply.
     IWString _class_labels[2];
 
+    // If a regression model, scale to [0,1] and back.
     feature_scaler::FeatureScaler<float> _response_scaler;
+
+    // Enable subsetting a gfp to just those features needed by the model.
+    bit_subset::BitSubset _bit_subset;
+
+    // It can be interesting to keep track of the scores computed.
+    Accumulator<double> _acc_scores;
 
   // private functions
 
-    int Initialise(const SvmfpModel::SvmfpModel& model_proto,
-                const GfpBitToFeatureMap::GfpBitXref& bit_xref);
     int ReadSupportVectors(const IWString& dir, const IWString& fname);
     int ReadSupportVectors(iwstring_data_source& input);
     int ReadClassLabelTranslation(const IWString& dir, const std::string& fname);
     int ReadRegressionScaling(const IWString& dir, const std::string& fname);
+
+    // Make any changes needed to `gfp` before it is used for scoring.
+    // This includes subsetting the bits, and possibly flattening sparse fingerprints.
+    int PreProcess(IW_General_Fingerprint& gfp);
+
+    // Once the support vectors are read, preprocess them the same as
+    // the fingerprints to be scored.
+    int PreprocessSupportVectors();
 
   public:
     SvmModel();
@@ -215,42 +264,58 @@ class SvmModel {
 
     const IWString& response_name() const { return _response_name;}
 
-    // Return a model evaluation in various forms.
-    double Score(IW_General_Fingerprint& fp) const;
-    IWString StringScore(IW_General_Fingerprint& fp) const;
+    // The numeric score for this model.
+    // Should be const, but for updating _acc_scores.
+    double Score(IW_General_Fingerprint& fp);
 
     // Given a numeric score, translate to the appropriate label.
     const IWString& ClassLabelForScore(double score) const;
+
+    // Report on the scores assigned.
+    int Report(std::ostream& output) const;
 };
 
 SvmModel::SvmModel() {
   _nfingerprints = 0;
-  _gfp = nullptr;
+  _support_vector = nullptr;
   _threshold_b = 0.0;
+  _flatten_counts = false;
   _weight = 1.0;
   _is_regression = true;
 }
 
 SvmModel::~SvmModel() {
-  if (_gfp != nullptr) {
-    delete [] _gfp;
+  if (_support_vector != nullptr) {
+    delete [] _support_vector;
+    _support_vector = nullptr;
   }
+
   _nfingerprints = 0;
-  _gfp = nullptr;
   _weight = 0.0;
 }
 
 // Read information from `model_proto` to build state.
 int
 SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
-                      const IWString& dir) {
-  if (! model_proto.has_bit_xref()) {
-    cerr << "SvmModel::Initialise:missing bit_xref\n";
+                     const IWString& dir) {
+  if (! model_proto.has_bit_subset()) {
+    cerr << "SvmModel::Initialise:missing bit_subset\n";
+    return 0;
+  }
+
+  if (! model_proto.has_train_gfp()) {
+    cerr << "SvmModel::Initialise:missing train gfp file\n";
     return 0;
   }
 
   if (! model_proto.has_support_vectors()) {
     cerr << "SvmModel::Initialise:missing support vectors";
+    return 0;
+  }
+
+  // Establish gfp state.
+  if (! ReadSingleGfp(model_proto.train_gfp())) {
+    cerr << "SvmModel::Initialise:cannot read " << model_proto.train_gfp() << '\n';
     return 0;
   }
 
@@ -263,17 +328,28 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
 
   _response_name = model_proto.response_name();
 
-  std::string fname = model_proto.bit_xref();
-  std::optional<GfpBitToFeatureMap::GfpBitXref> bit_xref = ReadProto<GfpBitToFeatureMap::GfpBitXref>(dir, fname);
-  if (! bit_xref) {
-    cerr << "Cannot read bit cross reference proto '" << fname << "'\n";
+  std::string fname = model_proto.bit_subset();
+  std::optional<GfpBitSubset::GfpBitSubset> subset_proto = 
+                ReadBinaryProto<GfpBitSubset::GfpBitSubset>(dir, fname);
+  if (! subset_proto) {
+    cerr << "Cannot read bit subset proto '" << fname << "'\n";
+    return 0;
+  }
+
+  if (! _bit_subset.Build(*subset_proto)) {
+    cerr << "SvmModel::Initialise:cannot process subset proto\n";
     return 0;
   }
 
   fname = model_proto.support_vectors();
   if (! ReadSupportVectors(dir, fname)) {
     cerr << "SvmModel::Initialise:cannot read support vectors '" << fname << "'\n";
+    return 0;
   }
+
+  PreprocessSupportVectors();
+
+  _flatten_counts = model_proto.flatten_sparse_fingerprints();
 
   if (model_proto.has_class_label_translation()) {
     const std::string fname = model_proto.class_label_translation();
@@ -285,21 +361,22 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
   }
 
   if (model_proto.has_response_scaling()) {
-    if (_is_regression) {
+    if (! _is_regression) {
       cerr << "SvmModel::Initialise:classification model cannot also have response scaling\n";
       return 0;
     }
+    const std::string fname = model_proto.response_scaling();
     if (! ReadRegressionScaling(dir, fname)) {
       cerr << "SvmModel::Initialise:cannot read response scaling '" << fname << "'\n";
       return 0;
     }
   }
 
-  return Initialise(model_proto, *bit_xref);
+  return 1;
 }
 
 // `fname` contains the name of the file containing the weighted support vectors.
-// Read that file and populate _gfp.
+// Read that file and populate _support_vector.
 int
 SvmModel::ReadSupportVectors(const IWString& dir, const IWString& fname) {
   IWString path_name = PathName(dir, fname);
@@ -316,7 +393,7 @@ SvmModel::ReadSupportVectors(const IWString& dir, const IWString& fname) {
     return 0;
   }
 
-  _gfp = new WeightedFingerprint[_nfingerprints];
+  _support_vector = new WeightedFingerprint[_nfingerprints];
 
   if (verbose) {
     cerr << "Reading " << _nfingerprints << " support vectors\n";
@@ -325,12 +402,12 @@ SvmModel::ReadSupportVectors(const IWString& dir, const IWString& fname) {
   return ReadSupportVectors(input);
 }
 
-// Populate the already allocated _gfp array with the contents of `input`.
+// Populate the already allocated _support_vector array with the contents of `input`.
 int
 SvmModel::ReadSupportVectors(iwstring_data_source& input) {
   IW_TDT tdt;
   for (int i = 0; tdt.next(input); ++i) {
-    if (! _gfp[i].Build(tdt)) {
+    if (! _support_vector[i].Build(tdt)) {
       cerr << "SvmModel::ReadSupportVectors:cannot read " << tdt << '\n';
       return 0;
     }
@@ -341,6 +418,34 @@ SvmModel::ReadSupportVectors(iwstring_data_source& input) {
   }
 
   return 1;
+}
+
+void FlattenSparseFingerprint(IW_General_Fingerprint& gfp) {
+  const int nsparse = number_sparse_fingerprints();
+  for (int i = 0; i < nsparse; ++i) {
+    Sparse_Fingerprint& sfp = gfp.sparse_fingerprint(i);
+    sfp.truncate_counts_at(1);
+  }
+}
+
+int
+SvmModel::PreProcess(IW_General_Fingerprint& gfp) {
+  int rc = _bit_subset.MakeSubset(gfp);
+  if (_flatten_counts) {
+    FlattenSparseFingerprint(gfp);
+  }
+  return rc;
+}
+
+// Returns the number of bits removed.
+int
+SvmModel::PreprocessSupportVectors() {
+  int rc = 0;
+
+  for (int i = 0; i < _nfingerprints; ++i) {
+    rc += PreProcess(_support_vector[i].fp());
+  }
+  return rc;
 }
 
 // The file `dir/fname` is a ClassLabelTranslation proto. Read that file
@@ -390,12 +495,33 @@ SvmModel::ReadRegressionScaling(const IWString& dir, const std::string& fname) {
   return 1;
 }
 
+// A common operation is to getch the number of each kind of fingerprint.
+// A convenience function to enable this with one line of code rather than 2.
+std::tuple<int, int>
+GetNumberFingerprints() {
+  return {number_fingerprints(), number_sparse_fingerprints()};
+}
+
+int
+SvmModel::Report(std::ostream& output) const {
+  if (_acc_scores.n() == 0) {
+    output << "SvmModel::Report: " << _response_name << " no scores\n";
+    return 1;
+  }
+
+  output << "SvmModel::Report: " << _response_name << " scored " << _acc_scores.n() << " fingerprints";
+  output << " scores btw " << _acc_scores.minval() << " and " << _acc_scores.maxval() << " mean " << _acc_scores.average() << '\n';
+  return 1;
+}
+
 // Score a single fingerprint. The weighted similarity to our support vectors.
 double
-SvmModel::Score(IW_General_Fingerprint& fp) const {
-  double result = _threshold_b;
+SvmModel::Score(IW_General_Fingerprint& gfp) {
+  PreProcess(gfp);
+
+  double result = - _threshold_b;
   for (int i = 0; i < _nfingerprints; ++i) {
-    result += _gfp[i].Tanimoto(fp) ;
+    result += _support_vector[i].Tanimoto(gfp) ;
   }
 
   // If needed, convert back to the original range of the model data.
@@ -403,25 +529,10 @@ SvmModel::Score(IW_General_Fingerprint& fp) const {
     result = _response_scaler.ScaleBackToOrignalRange(result);
   }
 
+  _acc_scores.extra(result);
+
   return result;
 }
-
-#ifdef NOT_NEEDED_ANY_MORE
-IWString
-SvmModel::StringScore(IW_General_Fingerprint& fp) const {
-  double score = Score(fp);
-  if (_is_regression) {
-    IWString result;
-    if (fraction_as_string.active()) {
-      return fraction_as_string.string_for_fraction(score);
-    } else {
-      result << static_cast<float>(score);
-    }
-    return result;
-  }
-  return ClassLabelForScore(score);
-}
-#endif
 
 const IWString&
 SvmModel::ClassLabelForScore(double score) const {
@@ -446,13 +557,16 @@ AppendScore(float score,
   }
 }
 
-// Seemingly nothing left to do. Maybe remove...
-int
-SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
-                const GfpBitToFeatureMap::GfpBitXref& bit_xref) {
-  return 1;
+// Copy from a protobuf::Map to an std::unordered_map.
+// There is a typing mismatch, ignored.
+void
+CopyXref(const google::protobuf::Map<long unsigned int, long unsigned int>& from,
+         std::unordered_map<uint32_t, uint32_t>& to) {
+  for (auto [b, f] : from) {
+    to.emplace(b, f);
+  }
 }
-
+         
 int
 GfpSvmfpEvaluate(IW_General_Fingerprint& fp,
                  SvmModel* models,
@@ -461,10 +575,10 @@ GfpSvmfpEvaluate(IW_General_Fingerprint& fp,
   append_first_token_of_name(fp.id(), output);
 
   for (int i = 0; i < nmodels; ++i) {
+    const auto score = models[i].Score(fp);
     if (models[i].is_regression()) {
-      AppendScore(models[i].Score(fp), output);
+      AppendScore(score, output);
     } else {
-      const auto score = models[i].Score(fp);
       if (write_label) {
         output << output_separator << models[i].ClassLabelForScore(score);
       }
@@ -624,6 +738,14 @@ GfpSvmfpEvaluate(int argc, char** argv) {
     if (! GfpSvmfpEvaluate(fname, models.get(), nmodels, output)) {
       cerr << "GfpSvmfpEvaluate:cannot process '" << fname << "'\n";
       return 1;
+    }
+  }
+
+  output.flush();
+
+  if (verbose) {
+    for (int i = 0; i < nmodels; ++i) {
+      models[i].Report(cerr);
     }
   }
 
