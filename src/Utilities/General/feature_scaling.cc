@@ -43,6 +43,7 @@ void
 Usage(int rc) {
   cerr << "Scale an unscale a numeric data column\n";
   cerr << " -C <fname>        profile the input, create a scaling and apply\n";
+  cerr << " -bin              create both .txt and .dat proto files with scaling information\n";
   cerr << " -U <fname>        use a previously generated scaling to scale or unscale data\n";
   cerr << " -action ...       either 'scale' or 'unscale' data using previously generated scaling data\n";
   cerr << " -c <col>          colum contining the data\n";
@@ -254,7 +255,20 @@ GatherRange(const Command_Line_v2& cl,
     }
   }
 
-  if (! iwmisc::WriteProtoAsText(scaling, output_fname)) {
+  if (! cl.option_present("bin")) {
+    if (! iwmisc::WriteProtoAsText(scaling, output_fname)) {
+      return std::nullopt;
+    }
+  }
+
+  IWString fname;
+  fname << output_fname << ".txt";
+  if (! iwmisc::WriteProtoAsText(scaling, fname)) {
+    return std::nullopt;
+  }
+
+  fname = output_fname << ".dat";
+  if (! iwmisc::WriteBinaryProto(scaling, fname)) {
     return std::nullopt;
   }
 
@@ -263,7 +277,7 @@ GatherRange(const Command_Line_v2& cl,
 
 int
 FeatureScaling(int argc, char** argv) {
-  Command_Line_v2 cl(argc, argv, "-v-C=s-U=s-c=ipos-action=s-hdr=ipos-prec=ipos");
+  Command_Line_v2 cl(argc, argv, "-v-C=s-U=s-c=ipos-action=s-hdr=ipos-prec=ipos-bin");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

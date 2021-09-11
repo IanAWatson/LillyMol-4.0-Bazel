@@ -8,6 +8,7 @@ require 'google/protobuf'
 require_relative 'lib/iwcmdline'
 require_relative 'lib/gfp_model_pb'
 require_relative 'lib/class_label_translation_pb'
+require_relative 'lib/feature_scaling_pb'
 
 def usage(retcod)
   $stderr << "Evaluate a LightGBM model build with svmfp_make\n"
@@ -53,7 +54,7 @@ class Model
   end
 
   def is_classification
-    @data.metadata.class_label_translation != nil
+    @data.metadata.class_label_translation.size.positive?
   end
 
   def bit_xref
@@ -166,14 +167,22 @@ def reverse_hash(hash)
   result
 end
 
-def generate_classification_data(model, predictions, ids)
-  class_label_translation = get_class_label_transation(model)
-
+def write_header(model, classification)
   response = model.data.metadata.response_name
 
   sep = ' '
 
-  $stdout << "ID#{sep}pred_#{response}#{sep}score\n"
+  $stdout << "ID#{sep}pred_#{response}"
+  $stdout << "#{sep}score" if classification
+  $stdout << "\n"
+end
+
+def generate_classification_data(model, predictions, ids)
+  write_header(model, true)  # true -> classification
+
+  class_label_translation = get_class_label_transation(model)
+
+  sep = ' '
 
   score_to_label = reverse_hash(class_label_translation.to_numeric)
   n = predictions.size
@@ -189,6 +198,18 @@ def generate_classification_data(model, predictions, ids)
 end
 
 def generate_regression_data(model, predictions, ids)
+  write_header(model, false) # false -> not classification
+
+  fname = "#{model.mdir}/#{model.data.metadata.response_scaling}"
+  unscaling = FeatureScaling::FeatureScaling.decode(File.read(fname))
+  feature_range = unscaling.max - unscaling.min
+  sep = ' '
+  n = predictions.size
+  n.times do |i|
+    score = predictions[i].to_f
+    score = unscaling.min + score * feature_range
+    $stdout << "#{ids[i]}#{sep}#{score.round(3)}\n"
+  end
 end
 
 models.each do |model|
@@ -201,8 +222,9 @@ models.each do |model|
   tmpresult = Tempfile.new('lgbm.txt')
   cmd = "#{evaluate} task=predict input_model=#{mdir}/LightGBM_model.txt " \
         "data=#{tmpsvml.path} predict_disable_shape_check=true " \
-        "metric_freq=1000 predict_result=#{tmpresult.path} > #{tmplog.path} "
+        "metric_freq=1000 predict_result=#{tmpresult.path} > #{tmplog.path}"
   execute_cmd(cmd, verbose, [tmpresult.path])
+  system("/bin/cat #{tmplog.path} >&2")
 
   predictions = File.readlines(tmpresult.path)
   raise "Size mismatch #{ids.size} and #{predictions.size}" unless ids.size == predictions.size

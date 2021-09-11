@@ -62,7 +62,7 @@ def perform_class_label_translation_lightgbm(activity_file, mdir, train_activity
 end
 
 def perform_response_scaling(activity_file, mdir, train_activity, verbose)
-  cmd = "feature_scaling -C #{mdir}/response_scaling.dat #{activity_file} > #{train_activity}"
+  cmd = "feature_scaling -bin -C #{mdir}/response_scaling #{activity_file} > #{train_activity}"
   execute_cmd(cmd, verbose, [train_activity])
 end
 
@@ -160,7 +160,7 @@ FileUtils.cp(smiles, train_smi)
 if cmdline.option_present('C')
   if lightgbm
     perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
-    lightgbm = "#{lightgbm} objective=binary"
+    lightgbm = "lightgbm #{lightgbm} objective=binary"
   else
     perform_class_label_translation(activity_file, mdir, train_activity, verbose)
     svm_learn_options = "#{svm_learn_options} -z c"
@@ -168,7 +168,7 @@ if cmdline.option_present('C')
 else
   perform_response_scaling(activity_file, mdir, train_activity, verbose)
   svm_learn_options = "#{svm_learn_options} -z r"
-  lightgbm = "#{lightgbm} objective=regression" if lightgbm
+  lightgbm = "lightgbm #{lightgbm} objective=regression" if lightgbm
 end
 
 bit_xref = "bit"
@@ -195,7 +195,8 @@ execute_cmd(cmd, verbose, [train_svml, "#{mdir}/bit_xref.dat", "#{mdir}/bit_subs
 
 if lightgbm
   model_file = "#{mdir}/LightGBM_model.txt"
-  cmd = "lightgbm conf=#{default_lightgbm_config} data=#{mdir}/train.svml output_model=#{model_file} #{lightgbm}"
+  cmd = "#{lightgbm} config=#{default_lightgbm_config} " \
+        "force_row_wise=true data=#{mdir}/train.svml output_model=#{model_file}"
 else
   model_file = "#{mdir}/train.model"
   cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
