@@ -1,4 +1,5 @@
 # Build svmfp models
+# Subsequently altered to also build lightgbm models.
 
 # frozen_string_literal: true
 
@@ -7,7 +8,7 @@ require 'fileutils'
 require 'google/protobuf'
 
 require_relative 'lib/iwcmdline'
-require_relative 'lib/svmfp_model_pb'
+require_relative 'lib/gfp_model_pb'
 
 def usage(retcod)
   $stderr << "Builds an svmfp model from smiles and activity\n"
@@ -17,7 +18,8 @@ def usage(retcod)
   $stderr << " -gfp ... -gfp fingerprint specification (to gfp_make)\n"
   $stderr << " -p <support>  support level for bit inclusion\n"
   $stderr << " -flatten      flatten sparse fingerprint counts to 1\n"
-  $stderr << " -v            verbose output\n";
+  $stderr << " -loghtgbm ... -lightgbm build a lightgbm model\n"
+  $stderr << " -v            verbose output\n"
 
   exit retcod
 end
@@ -47,12 +49,20 @@ end
 # `activity_file` has been identified as containing classification data.
 # generate a class label translation file in `mdir`.
 def perform_class_label_translation(activity_file, mdir, train_activity, verbose)
-  cmd = "class_label_translation -C #{mdir}/class_label_translation #{activity_file} > #{train_activity}"
-  execute_cmd(cmd, verbose, [train_activity])
+  cmd = "class_label_translation -C #{mdir}/class_label_translation.txt " \
+  "-bin #{mdir}/class_label_translation.dat #{activity_file} > #{train_activity}"
+  execute_cmd(cmd, verbose, [train_activity, "#{mdir}/class_label_translation.dat"])
+end
+
+# Only difference is that an extra option is needed for class_label_translation.
+def perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
+  cmd = "class_label_translation -lightgbm -C #{mdir}/class_label_translation.txt " \
+  "-cbin #{mdir}/class_label_translation.dat #{activity_file} > #{train_activity}"
+  execute_cmd(cmd, verbose, [train_activity, "#{mdir}/class_label_translation.dat"])
 end
 
 def perform_response_scaling(activity_file, mdir, train_activity, verbose)
-  cmd = "feature_scaling -C #{mdir}/response_scaling.pdat #{activity_file} > #{train_activity}"
+  cmd = "feature_scaling -C #{mdir}/response_scaling.dat #{activity_file} > #{train_activity}"
   execute_cmd(cmd, verbose, [train_activity])
 end
 
@@ -63,8 +73,8 @@ def get_response_name(activity_file)
   header.split[1]
 end
 
-cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' + 
-                        '-svm_learn=xfile-gfp_to_svm_lite=xfile')
+cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' \
+                        '-svm_learn=xfile-gfp_to_svm_lite=xfile-lightgbm=close-lightgbm_config=sfile')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
   usage(1)
@@ -115,6 +125,15 @@ svm_learn_options = if cmdline.option_present('svml')
                       '-t 4 -m 500'
                     end
 
+# nil if not specified.
+lightgbm = cmdline.value('lightgbm')
+default_lightgbm_config = cmdline.value('lightgbm_config')
+
+if lightgbm && ! default_lightgbm_config
+  $stderr << "When building a lightgbm model, must specify -lightgbm_config\n"
+  usage(1)
+end
+
 if ARGV.empty?
   $stderr << "Insufficient arguments\n"
   usage(1)
@@ -139,54 +158,86 @@ execute_cmd(cmd, verbose, [train_gfp])
 
 FileUtils.cp(smiles, train_smi)
 if cmdline.option_present('C')
-  perform_class_label_translation(activity_file, mdir, train_activity, verbose)
-  svm_learn_options = svm_learn_options + ' -z c'
+  if lightgbm
+    perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
+    lightgbm = "#{lightgbm} objective=binary"
+  else
+    perform_class_label_translation(activity_file, mdir, train_activity, verbose)
+    svm_learn_options = "#{svm_learn_options} -z c"
+  end
 else
   perform_response_scaling(activity_file, mdir, train_activity, verbose)
-  svm_learn_options = svm_learn_options + ' -z r'
+  svm_learn_options = "#{svm_learn_options} -z r"
+  lightgbm = "#{lightgbm} objective=regression" if lightgbm
 end
 
-bit_xref = "train_gfp_subset.pdat"
-bit_subset = "train.gfp_xref.pdat"
+bit_xref = "bit"
+bit_subset = "bit"
 
 f = if flatten_sparse_fingerprints
-      "-f"
+      '-f'
     else
-      ""
+      ''
     end
-cmd = "#{gfp_to_svm_lite} #{f} -C #{bit_xref} -A #{train_activity} -S #{mdir}/train "
+
+l = if lightgbm
+      '-l'
+    else
+      ''
+    end
+
+cmd = "#{gfp_to_svm_lite} #{f} #{l} -C #{mdir}/#{bit_xref} -A #{train_activity} -S #{mdir}/train "
 cmd << ' -p ' << cmdline.value('p') if cmdline.option_present('p')
 
 train_svml = "#{mdir}/train.svml"
 cmd = "#{cmd} #{train_gfp}"
-execute_cmd(cmd, verbose, [train_svml])
+execute_cmd(cmd, verbose, [train_svml, "#{mdir}/bit_xref.dat", "#{mdir}/bit_subset.dat"])
 
-model_file = "#{mdir}/train.model"
-cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
+if lightgbm
+  model_file = "#{mdir}/LightGBM_model.txt"
+  cmd = "lightgbm conf=#{default_lightgbm_config} data=#{mdir}/train.svml output_model=#{model_file} #{lightgbm}"
+else
+  model_file = "#{mdir}/train.model"
+  cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
+end
 execute_cmd(cmd, verbose, [model_file])
 
-support_vectors = "#{mdir}/support_vectors.gfp"
-cmd = "svm_model_support_vectors.sh -o #{support_vectors} #{model_file} #{train_gfp}"
-execute_cmd(cmd, verbose, [support_vectors])
-
-# Now create the model proto
-
-model = SvmfpModel::SvmfpModel.new
-model.threshold_b = get_threshold_b(model_file)
-model.bit_subset = bit_subset
-model.bit_xref = bit_xref
-model.fingerprints = fingerprints
-model.train_gfp = train_gfp
-model.support_vectors = 'support_vectors.gfp'
-model.date_built = Time.now.to_s
-model.response_name = get_response_name(train_activity)
-if cmdline.option_present('C')
-  model.class_label_translation = 'class_label_translation'
-else
-  model.response_scaling = 'response_scaling.pdat'
+# The metadata attribute is common between svmfp and LightGBM models.
+def populate_metadata(model, fingerprints, response_name, classification, flatten_sparse_fingerprints)
+  model.metadata = GfpModel::ModelMetadata.new
+  model.metadata.date_built = Time.now.to_s
+  model.metadata.fingerprints = fingerprints
+  model.metadata.response_name = response_name
+  if classification
+    model.metadata.class_label_translation = 'class_label_translation.dat'
+  else
+    model.metadata.response_scaling = 'response_scaling.dat'
+  end
+  model.metadata.flatten_sparse_fingerprints = flatten_sparse_fingerprints
 end
 
-model_description_file = "#{mdir}/model.dat"
-File.write(model_description_file, SvmfpModel::SvmfpModel.encode(model))
-model_description_file = "#{mdir}/model.json"
-File.write(model_description_file, SvmfpModel::SvmfpModel.encode_json(model))
+response_name = get_response_name(train_activity)
+
+# Write the model proto
+if lightgbm
+  model = GfpModel::LightGbmModel.new
+  populate_metadata(model, fingerprints, response_name, cmdline.option_present('C'), flatten_sparse_fingerprints)
+  model.bit_xref = 'bit_xref.dat'
+  File.write("#{mdir}/model.dat", GfpModel::LightGbmModel.encode(model))
+  File.write("#{mdir}/model.json", GfpModel::LightGbmModel.encode_json(model))
+else
+  support_vectors = "#{mdir}/support_vectors.gfp"
+  cmd = "svm_model_support_vectors.sh -o #{support_vectors} #{model_file} #{train_gfp}"
+  execute_cmd(cmd, verbose, [support_vectors])
+
+  model = GfpModel::SvmfpModel.new
+  populate_metadata(model, fingerprints, response_name, cmdline.option_present('C'), flatten_sparse_fingerprints)
+
+  model.threshold_b = get_threshold_b(model_file)
+  model.bit_subset = 'bit_xref.dat'
+  model.bit_xref = bit_xref
+  model.train_gfp = train_gfp
+  model.support_vectors = 'support_vectors.gfp'
+  File.write("#{mdir}/model.dat", GfpModel::SvmfpModel.encode(model))
+  File.write("#{mdir}/model.json", GfpModel::SvmfpModel.encode_json(model))
+end

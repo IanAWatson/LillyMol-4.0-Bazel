@@ -235,6 +235,24 @@ cc_binary(
 )
 
 cc_binary(
+    name = "normalise",
+    srcs = [
+        "normalise.cc",
+        "iwtokeniser.cc",
+        "iwtokeniser.h",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwstring:iwstring",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "random_records",
     srcs = [
         "random_records.cc",

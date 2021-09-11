@@ -30,18 +30,24 @@ char output_separator = ' ';
 
 int too_many_classes = 10;
 
+// LightGBM insists on classes being [0,1].
+int for_lightgbm = 0;
+
 IWDigits class_numbers;
 
 void
 Usage(int rc) {
   cerr << "Performs multi-directional class label translations\n";
-  cerr << " -C <fnmame>    create a cross lab4el cross reference proto\n";
-  cerr << " -H <fnmame>    use    a cross lab4el cross reference proto\n";
-  cerr << " -desc          input is a descriptor file - activity in col 2\n";
-  cerr << " -smi           input is a smiles file - activity in col 3\n";
-  cerr << " -c <col>       activity values are in column <col>\n";
-  cerr << " -hdr <n>       number of header records in the input\n";
-  cerr << " -v             verbose output\n";
+  cerr << " -C <fnmame>     create a cross lab4el cross reference proto\n";
+  cerr << " -cbin <fname>   also create a binary cross reference file\n";
+  cerr << " -U <fnmame>     use    a cross lab4el cross reference proto\n";
+  cerr << " -ubin           the -U file is binary encoded\n";
+  cerr << " -desc           input is a descriptor file - activity in col 2\n";
+  cerr << " -smi            input is a smiles file - activity in col 3\n";
+  cerr << " -c <col>        activity values are in column <col>\n";
+  cerr << " -hdr <n>        number of header records in the input\n";
+  cerr << " -lightgbm       output goes to LightGBM, classes are [0,1]\n";
+  cerr << " -v              verbose output\n";
 
   exit(rc);
 }
@@ -131,22 +137,19 @@ int
 UseCrossReference(const Command_Line_v2& cl,
                    IWString& proto_file_name,
                    IWString_and_File_Descriptor& output) {
-  iwstring_data_source input(proto_file_name.null_terminated_chars());
-  if (! input.good()) {
-    cerr << "Cannot open proto file '" << proto_file_name << "'\n";
+  std::optional<ClassLabelTranslation::ClassLabelTranslation> mapping;
+  if (cl.option_present("ubin")) {
+    mapping = iwmisc::ReadBinaryProto<ClassLabelTranslation::ClassLabelTranslation>(proto_file_name);
+  } else {
+    mapping = iwmisc::ReadTextProto<ClassLabelTranslation::ClassLabelTranslation>(proto_file_name);
+  }
+
+  if (! mapping) {
+    cerr << "UseCrossReference:cannot read '" << proto_file_name << "'\n";
     return 0;
   }
 
-  google::protobuf::io::FileInputStream file_input_stream(input.fd());
-
-  ClassLabelTranslation::ClassLabelTranslation mapping;
-
-  if (! google::protobuf::TextFormat::Parse(&file_input_stream, &mapping)) {
-    cerr << "GfpToFeature::FromProto:cannot parse '" << proto_file_name << "'\n";
-    return 0;
-  }
-
-  return UseCrossReference(cl, mapping, output);
+  return UseCrossReference(cl, *mapping, output);
 }
 
 // End of code for using existing mapping.
@@ -228,7 +231,8 @@ ProfileLabels(const char * fname,
 
 std::optional<ClassLabelTranslation::ClassLabelTranslation>
 CreateCrossReference(const Command_Line_v2& cl,
-                     IWString& output_fname) {
+                     IWString& output_fname,
+                     IWString& binary_output_fname) {
   IW_STL_Hash_Map_int count;
   for (const char * fname : cl) {
     if (! ProfileLabels(fname, count)) {
@@ -282,8 +286,15 @@ CreateCrossReference(const Command_Line_v2& cl,
     return std::get<1>(c1) > std::get<1>(c2);
   });
 
+  // By default, generated classes -1 and 1 for a two class problem.
   int class_number = -1;
   int class_delta = 2;
+
+  if (for_lightgbm) {  // 0,1 class labels.
+    class_number = 0;
+    class_delta = 1;
+  }
+
   if (nclasses > 2) {
     class_number = 0;
     class_delta = 1;
@@ -300,13 +311,19 @@ CreateCrossReference(const Command_Line_v2& cl,
 
   for (int i = 0; i < nclasses; ++i) {
     const auto [label, n] = label_count[i];
-    Const std::string tmp(label.data(), label.length());
+    const std::string tmp(label.data(), label.length());
     google::protobuf::MapPair<std::string, uint32_t> to_insert(tmp, n);
     mapping.mutable_class_count()->insert(to_insert);
   }
 
   if (! iwmisc::WriteProtoAsText(mapping, output_fname)) {
     return std::nullopt;
+  }
+
+  if (! binary_output_fname.empty()) {
+    if (! iwmisc::WriteBinaryProto(mapping, binary_output_fname)) {
+      return std::nullopt;
+    }
   }
 //if (! WriteMapping(mapping, output_fname)) {
 //}
@@ -316,7 +333,7 @@ CreateCrossReference(const Command_Line_v2& cl,
 
 int
 ClassLabelTranslation(int argc, char** argv) {
-  Command_Line_v2 cl(argc, argv, "-v-C=s-U=s-c=ipos-smi-desc-hdr=ipos");
+  Command_Line_v2 cl(argc, argv, "-v-C=s-U=s-c=ipos-smi-desc-hdr=ipos-lightgbm-cbin=s-ubin");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -348,6 +365,12 @@ ClassLabelTranslation(int argc, char** argv) {
       cerr << "Inpus has " << header_records << " header records\n";
   }
 
+  if (cl.option_present("lightgbm")) {
+     for_lightgbm = 1;
+     if (verbose)
+       cerr << "Class labels start at 0\n";
+  }
+
   class_numbers.initialise(too_many_classes);
 
   if (cl.empty()) {
@@ -359,7 +382,11 @@ ClassLabelTranslation(int argc, char** argv) {
   int rc = 0;
   if (cl.option_present('C')) {
     IWString cfile = cl.string_value('C');
-    std::optional<ClassLabelTranslation::ClassLabelTranslation> mapping = CreateCrossReference(cl, cfile);
+    IWString bfile;
+    if (cl.option_present("cbin")) {
+      bfile = cl.string_value("cbin");
+    }
+    std::optional<ClassLabelTranslation::ClassLabelTranslation> mapping = CreateCrossReference(cl, cfile, bfile);
     if (! mapping) {
       cerr << "Cannot create cross reference file '" << cfile << "'\n";
       return 1;

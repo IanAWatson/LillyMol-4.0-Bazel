@@ -1,4 +1,18 @@
 proto_library(
+    name = "gfp_model_proto",
+    srcs = [
+        "gfp_model.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "gfp_model_cc_proto",
+    deps = [
+        ":gfp_model_proto",
+    ],
+)
+
+proto_library(
     name = "gfp_to_svm_lite_proto",
     srcs = [
         "gfp_to_svm_lite.proto",
@@ -9,20 +23,6 @@ cc_proto_library(
     name = "gfp_to_svm_lite_cc_proto",
     deps = [
         ":gfp_to_svm_lite_proto",
-    ],
-)
-
-proto_library(
-    name = "svmfp_model_proto",
-    srcs = [
-        "svmfp_model.proto",
-    ],
-)
-
-cc_proto_library(
-    name = "svmfp_model_cc_proto",
-    deps = [
-        ":svmfp_model_proto",
     ],
 )
 
@@ -252,7 +252,7 @@ cc_binary(
     deps = [
         ":gfp",
         ":gfp_to_svm_lite_cc_proto",
-        ":svmfp_model_cc_proto",
+        ":gfp_model_cc_proto",
         "//Foundational/cmdline_v2:cmdline_v2",
         "//Foundational/data_source:iwstring_data_source",
         "//Utilities/General:class_label_translation_cc_proto",

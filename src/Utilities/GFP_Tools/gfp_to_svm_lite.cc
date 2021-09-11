@@ -64,6 +64,10 @@ int fingerprints_read = 0;
 
 int write_counts_as_float = 0;
 
+// If the resulting svml file is destined for LightGBM, then
+// the identifier is not allowed.
+int for_lightgbm = 0;
+
 void
 Usage(int rc) {
   cerr << "Convert a gfp file to form(s) useful for svm_lite\n";
@@ -504,6 +508,7 @@ GfpBitsRetained::BitsToFeatures(const Sparse_Fingerprint& fp, int fpnum,
 
 // Write the `nfeatures` feature/count data in `features` in svm_lite
 // form to `output`.
+#ifdef NOP_LONGER_USED
 template <typename Activity>
 int
 WriteSvmLite(FeatureCount* features,
@@ -520,12 +525,17 @@ WriteSvmLite(FeatureCount* features,
     bit_number.append_number(output, features[i].feature);
     count.append_number(output, features[i].count);
   }
-  output << " # " << name << '\n';
+  if (! for_lightgbm) {
+    output << " # " << name;
+  }
+
+  output << '\n';
 
   output.write_if_buffer_holds_more_than(8192);
 
   return 1;
 }
+#endif
 
 // In order to reduce the number of arguments passed, put some
 // arguments to GfpToSvmLite that are commonly passed.
@@ -549,7 +559,10 @@ SvmLiteOutput(IW_General_Fingerprint& gfp,
               Args& args) {
   args.svml_output << activity;
   args.bit_xref.WriteSvmlFeatures(gfp, args.svml_output);
-  args.svml_output << " # " << id << '\n';
+  if (! for_lightgbm) {
+    args.svml_output << " # " << id;
+  }
+  args.svml_output << '\n';
 
   args.svml_output.write_if_buffer_holds_more_than(8192);
 
@@ -698,6 +711,10 @@ std::optional<Activity>
 GetActivity(const Activity_Data_From_File<Activity>& activity,
             const IWString& id,
             int activity_column) {
+  if (activity_column < 0 && activity.empty()) {
+    return 0;
+  }
+
   if (activity_column > 0)
     return ActivityFromColumn<Activity>(id, activity_column);
 
@@ -829,10 +846,10 @@ int
 WriteProtos(GfpBitsRetained& bit_xref,
             const IWString& output_proto_stem) {
   IWString fname;
-  fname << output_proto_stem << "_subset.pdat";
+  fname << output_proto_stem << "_subset.dat";
   bit_xref.WriteBitSubsetProto(fname);
   fname = output_proto_stem;
-  fname << "_xref.pdat";
+  fname << "_xref.dat";
   bit_xref.writeBitXrefProto(fname);
 
   return 1;
@@ -840,7 +857,7 @@ WriteProtos(GfpBitsRetained& bit_xref,
 
 int
 GfpToSvmLite(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vF:P:C:X:U:A:p:fc:S:d");
+  Command_Line cl(argc, argv, "vF:P:C:X:U:A:p:fc:S:dlO:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -881,6 +898,8 @@ GfpToSvmLite(int argc, char** argv) {
       cerr << "Cannot read activity data (-A)\n";
       return 1;
     }
+  } else if (cl.option_present('X') || cl.option_present('U')) {
+    // activity not available when doing a test set.
   } else {
     cerr << "MUst specify a source of activity via either -A or -c options\n";
     Usage(1);
@@ -958,12 +977,12 @@ GfpToSvmLite(int argc, char** argv) {
         cerr << "Cannot profile bits in " << fname << '\n';
         return 1;
       }
-      bit_xref.ConvertToCrossReference();
-      WriteProtos(bit_xref, fname);
-      // Generate both protos, even if only one needed. Should be cheap.
-      args.bit_subset.Build(bit_xref.ToBitSubsetProto());
-      args.bit_xref.Build(bit_xref.ToBitXrefProto());
     }
+    bit_xref.ConvertToCrossReference();
+    WriteProtos(bit_xref, fname);
+    // Generate both protos, even if only one needed. Should be cheap.
+    args.bit_subset.Build(bit_xref.ToBitSubsetProto());
+    args.bit_xref.Build(bit_xref.ToBitXrefProto());
   } else if (cl.option_present('U')) {
     IWString fname = cl.string_value('U');
     if (! args.bit_subset.Build(fname)) {
@@ -983,7 +1002,11 @@ GfpToSvmLite(int argc, char** argv) {
 
   if (output_as_svm_lite) {
     IWString fname;
-    fname << output_file_name_stem << ".svml";
+    if (output_file_name_stem == "-") {
+      fname = "-";
+    } else {
+      fname << output_file_name_stem << ".svml";
+    }
     if (! args.svml_output.open(fname.null_terminated_chars())) {
       cerr << "Cannot open svm lite output '" << fname << "'\n";
       return 1;
@@ -1002,6 +1025,12 @@ GfpToSvmLite(int argc, char** argv) {
     if (verbose) {
       cerr << "gfp output to '" << fname << "'\n";
     }
+  }
+
+  if (cl.option_present('l')) {
+    for_lightgbm = 1;
+    if (verbose)
+      cerr << "Output intended for LightGBM - no identifier info\n";
   }
 
   // Memoized output helpers for svml lite outputs.

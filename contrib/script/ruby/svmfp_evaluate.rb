@@ -5,7 +5,7 @@
 require 'google/protobuf'
 
 require_relative 'lib/iwcmdline'
-require_relative 'lib/svmfp_model_pb'
+require_relative 'lib/gfp_model_pb'
 
 def usage(retcod)
   $stderr << "Evaluate an svmfp model build with svmfp_make\n"
@@ -39,7 +39,7 @@ class Model
     @model_data_fname = "#{mdir}/model.dat"
     raise "Missing #{@model_data_fname}" unless File.size?(@model_data_fname)
 
-    @data = SvmfpModel::SvmfpModel.decode(File.read(@model_data_fname))
+    @data = GfpModel::SvmfpModel.decode(File.read(@model_data_fname))
   end
 
   def gfp

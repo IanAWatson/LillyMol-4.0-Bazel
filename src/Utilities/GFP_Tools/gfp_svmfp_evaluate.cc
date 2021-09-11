@@ -23,7 +23,7 @@
 #include "Utilities/GFP_Tools/gfp.h"
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
-#include "Utilities/GFP_Tools/svmfp_model.pb.h"
+#include "Utilities/GFP_Tools/gfp_model.pb.h"
 #include "Utilities/General/class_label_translation.pb.h"
 #include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #define FEATURE_SCALER_IMPLEMENTATION
@@ -257,7 +257,7 @@ class SvmModel {
     // Initialise an SvmModel based on a SvmfpModel proto.
     // Argument `directory` is needed so that the files
     // specified in `model_proto` can be found.
-    int Initialise(const SvmfpModel::SvmfpModel& model_proto,
+    int Initialise(const GfpModel::SvmfpModel& model_proto,
                    const IWString& directory);
 
     bool is_regression() const { return _is_regression;}
@@ -296,7 +296,7 @@ SvmModel::~SvmModel() {
 
 // Read information from `model_proto` to build state.
 int
-SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
+SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
                      const IWString& dir) {
   if (! model_proto.has_bit_subset()) {
     cerr << "SvmModel::Initialise:missing bit_subset\n";
@@ -326,7 +326,7 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
 
   _threshold_b = model_proto.threshold_b();
 
-  _response_name = model_proto.response_name();
+  _response_name = model_proto.metadata().response_name();
 
   std::string fname = model_proto.bit_subset();
   std::optional<GfpBitSubset::GfpBitSubset> subset_proto = 
@@ -349,10 +349,10 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
 
   PreprocessSupportVectors();
 
-  _flatten_counts = model_proto.flatten_sparse_fingerprints();
+  _flatten_counts = model_proto.metadata().flatten_sparse_fingerprints();
 
-  if (model_proto.has_class_label_translation()) {
-    const std::string fname = model_proto.class_label_translation();
+  if (model_proto.metadata().has_class_label_translation()) {
+    const std::string fname = model_proto.metadata().class_label_translation();
     if (!ReadClassLabelTranslation(dir, fname)) {
       cerr << "SvmModel:cannot read class_label_translation " << fname << '\n';
       return 0;
@@ -360,12 +360,12 @@ SvmModel::Initialise(const SvmfpModel::SvmfpModel& model_proto,
     _is_regression = false;
   }
 
-  if (model_proto.has_response_scaling()) {
+  if (model_proto.metadata().has_response_scaling()) {
     if (! _is_regression) {
       cerr << "SvmModel::Initialise:classification model cannot also have response scaling\n";
       return 0;
     }
-    const std::string fname = model_proto.response_scaling();
+    const std::string fname = model_proto.metadata().response_scaling();
     if (! ReadRegressionScaling(dir, fname)) {
       cerr << "SvmModel::Initialise:cannot read response scaling '" << fname << "'\n";
       return 0;
@@ -670,7 +670,7 @@ GfpSvmfpEvaluate(int argc, char** argv) {
   for (int i = 0; i < nmodels; ++i) {
     IWString fname = cl.string_value('M', i);
     const IWString dir_name = IwDirname(fname);
-    SvmfpModel::SvmfpModel model;
+    GfpModel::SvmfpModel model;
     cerr << "fname " << fname << " dir_name '" << dir_name << "'\n";
     if (! ReadBinaryProto(fname, model)) {
       cerr << "Cannot read model proto file '" << fname << "'\n"; 
