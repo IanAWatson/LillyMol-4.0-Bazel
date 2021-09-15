@@ -19,15 +19,14 @@
 #include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 
-#include "Utilities/GFP_Tools/bit_subset.h"
-#include "Utilities/GFP_Tools/gfp.h"
-#include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
-#include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
-#include "Utilities/GFP_Tools/gfp_model.pb.h"
 #include "Utilities/General/class_label_translation.pb.h"
-#include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 #define FEATURE_SCALER_IMPLEMENTATION
 #include "Utilities/General/scaler.h"
+
+#include "Utilities/GFP_Tools/bit_subset.h"
+#include "Utilities/GFP_Tools/gfp.h"
+#include "Utilities/GFP_Tools/gfp_model.pb.h"
+#include "Utilities/GFP_Tools/gfp_to_svm_lite.pb.h"
 
 namespace gfp_svmfp_evaluate {
 using std::cerr;
@@ -625,17 +624,6 @@ GfpSvmfpEvaluate(iwstring_data_source& input,
   return 1;
 }
 
-IWString
-IwDirname(const IWString& fname) {
-  IWString result(fname);
-  int ndx = fname.rindex('/');
-  if (ndx < 0) {
-    return ".";
-  }
-  result.iwtruncate(ndx);
-  return result;
-}
-
 int
 GfpSvmfpEvaluate(const char * fname,
                  SvmModel* models,
@@ -669,7 +657,7 @@ GfpSvmfpEvaluate(int argc, char** argv) {
   std::unique_ptr<SvmModel[]> models(new SvmModel[nmodels]);
   for (int i = 0; i < nmodels; ++i) {
     IWString fname = cl.string_value('M', i);
-    const IWString dir_name = IwDirname(fname);
+    const IWString dir_name = iwmisc::IWDirname(fname);
     GfpModel::SvmfpModel model;
     cerr << "fname " << fname << " dir_name '" << dir_name << "'\n";
     if (! ReadBinaryProto(fname, model)) {

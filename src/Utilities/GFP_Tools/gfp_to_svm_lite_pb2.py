@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x15gfp_to_svm_lite.proto\x12\x0cGfpBitSubset\"?\n\tBitSubset\x12\x14\n\x07\x66p_name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x10\n\x04\x62its\x18\x02 \x03(\rB\x02\x10\x01\x42\n\n\x08_fp_name\"\xa1\x01\n\x07\x42itXref\x12\x14\n\x07\x66p_name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12?\n\x0e\x62it_to_feature\x18\x02 \x03(\x0b\x32\'.GfpBitSubset.BitXref.BitToFeatureEntry\x1a\x33\n\x11\x42itToFeatureEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\r:\x02\x38\x01\x42\n\n\x08_fp_name\"t\n\x06Params\x12\x14\n\x07support\x18\x01 \x01(\rH\x00\x88\x01\x01\x12(\n\x1b\x66latten_sparse_fingerprints\x18\x03 \x01(\x08H\x01\x88\x01\x01\x42\n\n\x08_supportB\x1e\n\x1c_flatten_sparse_fingerprints\"\xae\x01\n\x0cGfpBitSubset\x12\x32\n\x04xref\x18\x01 \x03(\x0b\x32$.GfpBitSubset.GfpBitSubset.XrefEntry\x12$\n\x06params\x18\x02 \x01(\x0b\x32\x14.GfpBitSubset.Params\x1a\x44\n\tXrefEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.GfpBitSubset.BitSubset:\x02\x38\x01\"\xb2\x01\n\x0fGfpBitToFeature\x12\x35\n\x04xref\x18\x01 \x03(\x0b\x32\'.GfpBitSubset.GfpBitToFeature.XrefEntry\x12$\n\x06params\x18\x02 \x01(\x0b\x32\x14.GfpBitSubset.Params\x1a\x42\n\tXrefEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.GfpBitSubset.BitXref:\x02\x38\x01\x62\x06proto3'
+  serialized_pb=b'\n\x15gfp_to_svm_lite.proto\x12\x0cGfpBitSubset\"?\n\tBitSubset\x12\x14\n\x07\x66p_name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x10\n\x04\x62its\x18\x02 \x03(\rB\x02\x10\x01\x42\n\n\x08_fp_name\"\xa1\x01\n\x07\x42itXref\x12\x14\n\x07\x66p_name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12?\n\x0e\x62it_to_feature\x18\x02 \x03(\x0b\x32\'.GfpBitSubset.BitXref.BitToFeatureEntry\x1a\x33\n\x11\x42itToFeatureEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\r:\x02\x38\x01\x42\n\n\x08_fp_name\"\xb4\x01\n\x06Params\x12\x14\n\x07support\x18\x01 \x01(\rH\x00\x88\x01\x01\x12(\n\x1b\x66latten_sparse_fingerprints\x18\x02 \x01(\x08H\x01\x88\x01\x01\x12#\n\x16highest_feature_number\x18\x03 \x01(\rH\x02\x88\x01\x01\x42\n\n\x08_supportB\x1e\n\x1c_flatten_sparse_fingerprintsB\x19\n\x17_highest_feature_number\"\xae\x01\n\x0cGfpBitSubset\x12\x32\n\x04xref\x18\x01 \x03(\x0b\x32$.GfpBitSubset.GfpBitSubset.XrefEntry\x12$\n\x06params\x18\x02 \x01(\x0b\x32\x14.GfpBitSubset.Params\x1a\x44\n\tXrefEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.GfpBitSubset.BitSubset:\x02\x38\x01\"\xb2\x01\n\x0fGfpBitToFeature\x12\x35\n\x04xref\x18\x01 \x03(\x0b\x32\'.GfpBitSubset.GfpBitToFeature.XrefEntry\x12$\n\x06params\x18\x02 \x01(\x0b\x32\x14.GfpBitSubset.Params\x1a\x42\n\tXrefEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.GfpBitSubset.BitXref:\x02\x38\x01\x62\x06proto3'
 )
 
 
@@ -168,8 +168,15 @@ _PARAMS = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='flatten_sparse_fingerprints', full_name='GfpBitSubset.Params.flatten_sparse_fingerprints', index=1,
-      number=3, type=8, cpp_type=7, label=1,
+      number=2, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='highest_feature_number', full_name='GfpBitSubset.Params.highest_feature_number', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -194,9 +201,14 @@ _PARAMS = _descriptor.Descriptor(
       index=1, containing_type=None,
       create_key=_descriptor._internal_create_key,
     fields=[]),
+    _descriptor.OneofDescriptor(
+      name='_highest_feature_number', full_name='GfpBitSubset.Params._highest_feature_number',
+      index=2, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
   ],
-  serialized_start=268,
-  serialized_end=384,
+  serialized_start=269,
+  serialized_end=449,
 )
 
 
@@ -234,8 +246,8 @@ _GFPBITSUBSET_XREFENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=493,
-  serialized_end=561,
+  serialized_start=558,
+  serialized_end=626,
 )
 
 _GFPBITSUBSET = _descriptor.Descriptor(
@@ -272,8 +284,8 @@ _GFPBITSUBSET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=387,
-  serialized_end=561,
+  serialized_start=452,
+  serialized_end=626,
 )
 
 
@@ -311,8 +323,8 @@ _GFPBITTOFEATURE_XREFENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=676,
-  serialized_end=742,
+  serialized_start=741,
+  serialized_end=807,
 )
 
 _GFPBITTOFEATURE = _descriptor.Descriptor(
@@ -349,8 +361,8 @@ _GFPBITTOFEATURE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=564,
-  serialized_end=742,
+  serialized_start=629,
+  serialized_end=807,
 )
 
 _BITSUBSET.oneofs_by_name['_fp_name'].fields.append(
@@ -367,6 +379,9 @@ _PARAMS.fields_by_name['support'].containing_oneof = _PARAMS.oneofs_by_name['_su
 _PARAMS.oneofs_by_name['_flatten_sparse_fingerprints'].fields.append(
   _PARAMS.fields_by_name['flatten_sparse_fingerprints'])
 _PARAMS.fields_by_name['flatten_sparse_fingerprints'].containing_oneof = _PARAMS.oneofs_by_name['_flatten_sparse_fingerprints']
+_PARAMS.oneofs_by_name['_highest_feature_number'].fields.append(
+  _PARAMS.fields_by_name['highest_feature_number'])
+_PARAMS.fields_by_name['highest_feature_number'].containing_oneof = _PARAMS.oneofs_by_name['_highest_feature_number']
 _GFPBITSUBSET_XREFENTRY.fields_by_name['value'].message_type = _BITSUBSET
 _GFPBITSUBSET_XREFENTRY.containing_type = _GFPBITSUBSET
 _GFPBITSUBSET.fields_by_name['xref'].message_type = _GFPBITSUBSET_XREFENTRY

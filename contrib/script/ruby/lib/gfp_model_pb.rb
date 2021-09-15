@@ -25,6 +25,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :metadata, :message, 1, "GfpModel.ModelMetadata"
       proto3_optional :bit_xref, :string, 4
     end
+    add_message "GfpModel.CatboostModel" do
+      optional :metadata, :message, 1, "GfpModel.ModelMetadata"
+      proto3_optional :bit_xref, :string, 4
+    end
   end
 end
 
@@ -32,4 +36,5 @@ module GfpModel
   ModelMetadata = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("GfpModel.ModelMetadata").msgclass
   SvmfpModel = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("GfpModel.SvmfpModel").msgclass
   LightGbmModel = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("GfpModel.LightGbmModel").msgclass
+  CatboostModel = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("GfpModel.CatboostModel").msgclass
 end

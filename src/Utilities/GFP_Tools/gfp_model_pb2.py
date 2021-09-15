@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fgfp_model.proto\x12\x08GfpModel\"\xd1\x02\n\rModelMetadata\x12\x1a\n\rresponse_name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x19\n\x0c\x66ingerprints\x18\x02 \x01(\tH\x01\x88\x01\x01\x12$\n\x17\x63lass_label_translation\x18\x03 \x01(\tH\x02\x88\x01\x01\x12\x1d\n\x10response_scaling\x18\x04 \x01(\tH\x03\x88\x01\x01\x12(\n\x1b\x66latten_sparse_fingerprints\x18\x05 \x01(\x08H\x04\x88\x01\x01\x12\x17\n\ndate_built\x18\x06 \x01(\tH\x05\x88\x01\x01\x42\x10\n\x0e_response_nameB\x0f\n\r_fingerprintsB\x1a\n\x18_class_label_translationB\x13\n\x11_response_scalingB\x1e\n\x1c_flatten_sparse_fingerprintsB\r\n\x0b_date_built\"\x85\x02\n\nSvmfpModel\x12)\n\x08metadata\x18\x01 \x01(\x0b\x32\x17.GfpModel.ModelMetadata\x12\x17\n\nbit_subset\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x15\n\x08\x62it_xref\x18\x03 \x01(\tH\x01\x88\x01\x01\x12\x16\n\ttrain_gfp\x18\x04 \x01(\tH\x02\x88\x01\x01\x12\x1c\n\x0fsupport_vectors\x18\x05 \x01(\tH\x03\x88\x01\x01\x12\x18\n\x0bthreshold_b\x18\x06 \x01(\x01H\x04\x88\x01\x01\x42\r\n\x0b_bit_subsetB\x0b\n\t_bit_xrefB\x0c\n\n_train_gfpB\x12\n\x10_support_vectorsB\x0e\n\x0c_threshold_b\"^\n\rLightGbmModel\x12)\n\x08metadata\x18\x01 \x01(\x0b\x32\x17.GfpModel.ModelMetadata\x12\x15\n\x08\x62it_xref\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_bit_xrefb\x06proto3'
+  serialized_pb=b'\n\x0fgfp_model.proto\x12\x08GfpModel\"\xd1\x02\n\rModelMetadata\x12\x1a\n\rresponse_name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x19\n\x0c\x66ingerprints\x18\x02 \x01(\tH\x01\x88\x01\x01\x12$\n\x17\x63lass_label_translation\x18\x03 \x01(\tH\x02\x88\x01\x01\x12\x1d\n\x10response_scaling\x18\x04 \x01(\tH\x03\x88\x01\x01\x12(\n\x1b\x66latten_sparse_fingerprints\x18\x05 \x01(\x08H\x04\x88\x01\x01\x12\x17\n\ndate_built\x18\x06 \x01(\tH\x05\x88\x01\x01\x42\x10\n\x0e_response_nameB\x0f\n\r_fingerprintsB\x1a\n\x18_class_label_translationB\x13\n\x11_response_scalingB\x1e\n\x1c_flatten_sparse_fingerprintsB\r\n\x0b_date_built\"\x85\x02\n\nSvmfpModel\x12)\n\x08metadata\x18\x01 \x01(\x0b\x32\x17.GfpModel.ModelMetadata\x12\x17\n\nbit_subset\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x15\n\x08\x62it_xref\x18\x03 \x01(\tH\x01\x88\x01\x01\x12\x16\n\ttrain_gfp\x18\x04 \x01(\tH\x02\x88\x01\x01\x12\x1c\n\x0fsupport_vectors\x18\x05 \x01(\tH\x03\x88\x01\x01\x12\x18\n\x0bthreshold_b\x18\x06 \x01(\x01H\x04\x88\x01\x01\x42\r\n\x0b_bit_subsetB\x0b\n\t_bit_xrefB\x0c\n\n_train_gfpB\x12\n\x10_support_vectorsB\x0e\n\x0c_threshold_b\"^\n\rLightGbmModel\x12)\n\x08metadata\x18\x01 \x01(\x0b\x32\x17.GfpModel.ModelMetadata\x12\x15\n\x08\x62it_xref\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_bit_xref\"^\n\rCatboostModel\x12)\n\x08metadata\x18\x01 \x01(\x0b\x32\x17.GfpModel.ModelMetadata\x12\x15\n\x08\x62it_xref\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_bit_xrefb\x06proto3'
 )
 
 
@@ -257,6 +257,50 @@ _LIGHTGBMMODEL = _descriptor.Descriptor(
   serialized_end=727,
 )
 
+
+_CATBOOSTMODEL = _descriptor.Descriptor(
+  name='CatboostModel',
+  full_name='GfpModel.CatboostModel',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='metadata', full_name='GfpModel.CatboostModel.metadata', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='bit_xref', full_name='GfpModel.CatboostModel.bit_xref', index=1,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='_bit_xref', full_name='GfpModel.CatboostModel._bit_xref',
+      index=0, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
+  ],
+  serialized_start=729,
+  serialized_end=823,
+)
+
 _MODELMETADATA.oneofs_by_name['_response_name'].fields.append(
   _MODELMETADATA.fields_by_name['response_name'])
 _MODELMETADATA.fields_by_name['response_name'].containing_oneof = _MODELMETADATA.oneofs_by_name['_response_name']
@@ -295,9 +339,14 @@ _LIGHTGBMMODEL.fields_by_name['metadata'].message_type = _MODELMETADATA
 _LIGHTGBMMODEL.oneofs_by_name['_bit_xref'].fields.append(
   _LIGHTGBMMODEL.fields_by_name['bit_xref'])
 _LIGHTGBMMODEL.fields_by_name['bit_xref'].containing_oneof = _LIGHTGBMMODEL.oneofs_by_name['_bit_xref']
+_CATBOOSTMODEL.fields_by_name['metadata'].message_type = _MODELMETADATA
+_CATBOOSTMODEL.oneofs_by_name['_bit_xref'].fields.append(
+  _CATBOOSTMODEL.fields_by_name['bit_xref'])
+_CATBOOSTMODEL.fields_by_name['bit_xref'].containing_oneof = _CATBOOSTMODEL.oneofs_by_name['_bit_xref']
 DESCRIPTOR.message_types_by_name['ModelMetadata'] = _MODELMETADATA
 DESCRIPTOR.message_types_by_name['SvmfpModel'] = _SVMFPMODEL
 DESCRIPTOR.message_types_by_name['LightGbmModel'] = _LIGHTGBMMODEL
+DESCRIPTOR.message_types_by_name['CatboostModel'] = _CATBOOSTMODEL
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 ModelMetadata = _reflection.GeneratedProtocolMessageType('ModelMetadata', (_message.Message,), {
@@ -320,6 +369,13 @@ LightGbmModel = _reflection.GeneratedProtocolMessageType('LightGbmModel', (_mess
   # @@protoc_insertion_point(class_scope:GfpModel.LightGbmModel)
   })
 _sym_db.RegisterMessage(LightGbmModel)
+
+CatboostModel = _reflection.GeneratedProtocolMessageType('CatboostModel', (_message.Message,), {
+  'DESCRIPTOR' : _CATBOOSTMODEL,
+  '__module__' : 'gfp_model_pb2'
+  # @@protoc_insertion_point(class_scope:GfpModel.CatboostModel)
+  })
+_sym_db.RegisterMessage(CatboostModel)
 
 
 # @@protoc_insertion_point(module_scope)

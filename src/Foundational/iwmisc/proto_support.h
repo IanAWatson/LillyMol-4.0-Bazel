@@ -85,6 +85,26 @@ ReadBinaryProto(IWString& fname) {
   return result;
 }
 
+// Read existing proto.
+template <typename Proto>
+bool
+ReadBinaryProto(IWString& fname, Proto& proto) {
+  proto.Clear();
+
+  AFile input(fname, O_RDONLY);
+  if (! input.good()) {
+    cerr << "ReadBinaryProto:cannot open '" << fname << "'\n";
+    return false;
+  }
+
+  if (! proto.ParseFromFileDescriptor(input.fd())) {
+    cerr << "ReadBinaryProto:cannot parse '" << fname << "'\n";
+    return false;
+  }
+
+  return true;
+}
+
 template <typename Proto>
 std::optional<Proto>
 ReadTextProto(IWString& fname) {

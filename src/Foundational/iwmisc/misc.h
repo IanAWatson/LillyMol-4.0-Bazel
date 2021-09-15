@@ -345,6 +345,11 @@ class Int_Comparator_Smaller
     int operator() (int i1, int i2) const;
 };
 
+namespace iwmisc {
+// Return the directory name of `path_name`.
+IWString IWDirname(const IWString& path_name);
+}  // namespace iwmisc
+
 
 //  Approximately divide the file into offsets for chunked processing
 

@@ -19,6 +19,7 @@ def usage(retcod)
   $stderr << " -p <support>  support level for bit inclusion\n"
   $stderr << " -flatten      flatten sparse fingerprint counts to 1\n"
   $stderr << " -loghtgbm ... -lightgbm build a lightgbm model\n"
+  $stderr << " -catboost ... -catboost build a catboost model\n"
   $stderr << " -v            verbose output\n"
 
   exit retcod
@@ -74,7 +75,8 @@ def get_response_name(activity_file)
 end
 
 cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' \
-                        '-svm_learn=xfile-gfp_to_svm_lite=xfile-lightgbm=close-lightgbm_config=sfile')
+                        '-svm_learn=xfile-gfp_to_svm_lite=xfile-lightgbm=close-lightgbm_config=sfile' \
+                        '-catboost=close')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
   usage(1)
@@ -128,6 +130,12 @@ svm_learn_options = if cmdline.option_present('svml')
 # nil if not specified.
 lightgbm = cmdline.value('lightgbm')
 default_lightgbm_config = cmdline.value('lightgbm_config')
+catboost = cmdline.value('catboost')
+
+lightgbm = "lightgbm config=#{default_lightgbm_config} #{lightgbm} force_row_wise=true" if lightgbm
+catboost = "catboost fit #{catboost} --train-dir #{mdir} --fstr-file fstr.dat " \
+           "--use-best-model --min-data-in-leaf=2 --auto-class-weights Balanced " \
+           "--model-format CatboostBinary,CPP " if catboost
 
 if lightgbm && ! default_lightgbm_config
   $stderr << "When building a lightgbm model, must specify -lightgbm_config\n"
@@ -157,18 +165,20 @@ cmd = "#{gfp_make} #{fingerprints} #{smiles} > #{train_gfp}"
 execute_cmd(cmd, verbose, [train_gfp])
 
 FileUtils.cp(smiles, train_smi)
-if cmdline.option_present('C')
-  if lightgbm
+if cmdline.option_present('C')  # Classification.
+  if lightgbm || catboost
     perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
-    lightgbm = "lightgbm #{lightgbm} objective=binary"
+    lightgbm = "lightgbm #{lightgbm} objective=binary" if lightgbm
+    catboost = "#{catboost} --loss-function Logloss --custom-metric=MCC" if catboost
   else
     perform_class_label_translation(activity_file, mdir, train_activity, verbose)
     svm_learn_options = "#{svm_learn_options} -z c"
   end
-else
+else  # Regression
   perform_response_scaling(activity_file, mdir, train_activity, verbose)
   svm_learn_options = "#{svm_learn_options} -z r"
   lightgbm = "lightgbm #{lightgbm} objective=regression" if lightgbm
+  catboost = "#{catboost} --loss-function RMSE" if catboost
 end
 
 bit_xref = "bit"
@@ -180,14 +190,17 @@ f = if flatten_sparse_fingerprints
       ''
     end
 
-l = if lightgbm
+l = if lightgbm || catboost
       '-l'
     else
       ''
     end
 
 cmd = "#{gfp_to_svm_lite} #{f} #{l} -C #{mdir}/#{bit_xref} -A #{train_activity} -S #{mdir}/train "
-cmd << ' -p ' << cmdline.value('p') if cmdline.option_present('p')
+if cmdline.option_present('p')
+  support = cmdline.value('p')
+  cmd = "#{cmd} -p #{support}"
+end
 
 train_svml = "#{mdir}/train.svml"
 cmd = "#{cmd} #{train_gfp}"
@@ -195,8 +208,10 @@ execute_cmd(cmd, verbose, [train_svml, "#{mdir}/bit_xref.dat", "#{mdir}/bit_subs
 
 if lightgbm
   model_file = "#{mdir}/LightGBM_model.txt"
-  cmd = "#{lightgbm} config=#{default_lightgbm_config} " \
-        "force_row_wise=true data=#{mdir}/train.svml output_model=#{model_file}"
+  cmd = "#{lightgbm} data=#{mdir}/train.svml output_model=#{model_file}"
+elsif catboost
+  model_file = "#{mdir}/Catboost.model.bin"
+  cmd = "#{catboost} --learn-set libsvm://#{mdir}/train.svml --model-file Catboost.model.bin"
 else
   model_file = "#{mdir}/train.model"
   cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
@@ -219,6 +234,8 @@ end
 
 response_name = get_response_name(train_activity)
 
+catboost = "#{catboost} --name=#{response_name}" if catboost
+
 # Write the model proto
 if lightgbm
   model = GfpModel::LightGbmModel.new
@@ -226,6 +243,12 @@ if lightgbm
   model.bit_xref = 'bit_xref.dat'
   File.write("#{mdir}/model.dat", GfpModel::LightGbmModel.encode(model))
   File.write("#{mdir}/model.json", GfpModel::LightGbmModel.encode_json(model))
+elsif catboost
+  model = GfpModel::CatboostModel.new
+  populate_metadata(model, fingerprints, response_name, cmdline.option_present('C'), flatten_sparse_fingerprints)
+  model.bit_xref = 'bit_xref.dat'
+  File.write("#{mdir}/model.dat", GfpModel::CatboostModel.encode(model))
+  File.write("#{mdir}/model.json", GfpModel::CatboostModel.encode_json(model))
 else
   support_vectors = "#{mdir}/support_vectors.gfp"
   cmd = "svm_model_support_vectors.sh -o #{support_vectors} #{model_file} #{train_gfp}"

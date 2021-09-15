@@ -27,6 +27,7 @@ cc_library(
         "fraction_as_string.cc",
         "int_comparator.cc",
         "iwdigits.cc",
+        "iwdirname.cc",
         "logical_expression.cc",
         "msi_object.cc",
         "new_int.cc",

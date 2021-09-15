@@ -50,6 +50,7 @@ IWDigits count;
 // by default, only svm_lite produced.
 bool output_as_svm_lite = true;
 bool output_as_gfp_subset = false;
+bool output_as_tsv = false;
 
 int flatten_sparse_fingerprints = 0;
 
@@ -133,7 +134,7 @@ class GfpBitsRetained {
     int ImposeSupport();
 
     // Both of the protos produced need to have their `params` attributes filled.
-    template <typename Proto> void SetParams(Proto& proto) const;
+    template <typename Proto> void SetParams(Proto& proto, uint32_t highest_feature_number) const;
 
   public:
     GfpBitsRetained();
@@ -317,14 +318,28 @@ MakeSubsetProto(const std::unordered_map<gfp_bit_type_t, uint32_t>& count) {
   return result;
 }
 
+#ifdef NOT_NEEDED
+void
+UpdateHighestFeature(GfpBitSubset::BitSubset& subset,
+                     uint32_t& highest_feature_number) {
+  for (const auto feature : subset.bits()) {
+    if (feature > highest_feature_number) {
+      highest_feature_number = feature;
+    }
+  }
+}
+#endif
+
 GfpBitSubset::GfpBitSubset
 GfpBitsRetained::ToBitSubsetProto() const {
   GfpBitSubset::GfpBitSubset result;
 
   const auto [nfixed, nsparse] = GetNumberFingerprints();
 
+  uint32_t highest_feature_number = 0;
   for (int i = 0; i < nfixed; ++i) {
     GfpBitSubset::BitSubset counts = MakeSubsetProto(_dense_count[i]);
+//  UpdateHighestFeature(counts, highest_feature_number);
 
     const std::string tag_name(_dense_gfp_name[i].data(), _dense_gfp_name[i].length());
     google::protobuf::MapPair<std::string, GfpBitSubset::BitSubset> to_insert(tag_name, counts);
@@ -334,6 +349,7 @@ GfpBitsRetained::ToBitSubsetProto() const {
 
   for (int i = 0; i < nsparse; ++i) {
     GfpBitSubset::BitSubset counts = MakeSubsetProto(_sparse_count[i]);
+//  UpdateHighestFeature(counts, highest_feature_number);
 
     const std::string tag_name(_sparse_gfp_name[i].data(), _sparse_gfp_name[i].length());
     google::protobuf::MapPair<std::string, GfpBitSubset::BitSubset> to_insert(tag_name, counts);
@@ -341,7 +357,7 @@ GfpBitsRetained::ToBitSubsetProto() const {
     result.mutable_xref()->insert(to_insert);
   }
 
-  SetParams(result);
+  SetParams(result, highest_feature_number);
 
   return result;
 }
@@ -360,13 +376,26 @@ MakeXrefProto(const std::unordered_map<gfp_bit_type_t, uint32_t>& count) {
 
 template <typename Proto>
 void
-GfpBitsRetained::SetParams(Proto& proto) const {
+GfpBitsRetained::SetParams(Proto& proto, uint32_t highest_feature_number) const {
   if (_support > 0) {
     proto.mutable_params()->set_support(_support);
   }
 
   if (flatten_sparse_fingerprints) {
     proto.mutable_params()->set_flatten_sparse_fingerprints(true);
+  }
+
+  cerr << "Found  highest_feature_number " << highest_feature_number << '\n';
+  proto.mutable_params()->set_highest_feature_number(highest_feature_number);
+}
+
+void
+UpdateHighestFeature(const GfpBitSubset::BitXref& xref,
+                     uint32_t& highest_feature_number) {
+  for (const auto [_, feature] : xref.bit_to_feature()) {
+    if (feature > highest_feature_number) {
+      highest_feature_number = feature;
+    }
   }
 }
 
@@ -376,8 +405,11 @@ GfpBitsRetained::ToBitXrefProto() const {
 
   const auto [nfixed, nsparse] = GetNumberFingerprints();
 
+  uint32_t highest_feature_number = 0;
+
   for (int i = 0; i < nfixed; ++i) {
     GfpBitSubset::BitXref xref = MakeXrefProto(_dense_count[i]);
+    UpdateHighestFeature(xref, highest_feature_number);
 
     const std::string tag_name(_dense_gfp_name[i].data(), _dense_gfp_name[i].length());
     google::protobuf::MapPair<std::string, GfpBitSubset::BitXref> to_insert(tag_name, xref);
@@ -387,6 +419,7 @@ GfpBitsRetained::ToBitXrefProto() const {
 
   for (int i = 0; i < nsparse; ++i) {
     GfpBitSubset::BitXref xref = MakeXrefProto(_sparse_count[i]);
+    UpdateHighestFeature(xref, highest_feature_number);
 
     const std::string tag_name(_sparse_gfp_name[i].data(), _sparse_gfp_name[i].length());
     google::protobuf::MapPair<std::string, GfpBitSubset::BitXref> to_insert(tag_name, xref);
@@ -394,7 +427,7 @@ GfpBitsRetained::ToBitXrefProto() const {
     result.mutable_xref()->insert(to_insert);
   }
 
-  SetParams(result);
+  SetParams(result, highest_feature_number);
 
   return result;
 }
@@ -549,6 +582,18 @@ struct Args {
   IWString_and_File_Descriptor svml_output;
   // The output stream for gfp output.
   IWString_and_File_Descriptor gfp_output;
+  // Catboost needs a tab separated descriptor file.
+  IWString_and_File_Descriptor tsv_output;
+
+  // Catboost needs a feature description file.
+  IWString_and_File_Descriptor feature_description_file;
+
+  // If tsv output is needed, compute once the number of
+  // columns in the output.
+  uint32_t highest_feature_number;
+
+  // Used for tsv formation.
+  char output_separator = '\t';
 };
 
 template <typename Activity>
@@ -566,6 +611,20 @@ SvmLiteOutput(IW_General_Fingerprint& gfp,
 
   args.svml_output.write_if_buffer_holds_more_than(8192);
 
+  return 1;
+}
+
+template <typename Activity>
+int
+TsvOutput(IW_General_Fingerprint& gfp,
+          const IWString& id,
+          Activity activity,
+          Args& args) {
+  args.tsv_output << activity << args.output_separator;
+  args.bit_xref.WriteDsv(gfp, args.output_separator, args.tsv_output);
+  args.tsv_output << '\n';
+  
+  args.tsv_output.write_if_buffer_holds_more_than(8192);
   return 1;
 }
 
@@ -636,6 +695,11 @@ GfpToSvmLite(IW_General_Fingerprint& gfp,
   }
   if (output_as_gfp_subset) {
     if (! GfpSubsetOutput(gfp, id, activity, args)) {
+      rc = 0;
+    }
+  }
+  if (output_as_tsv) {
+    if (! TsvOutput(gfp, id, activity, args)) {
       rc = 0;
     }
   }
@@ -855,9 +919,40 @@ WriteProtos(GfpBitsRetained& bit_xref,
   return 1;
 }
 
+IWString 
+FileNameGivenSuffix(const IWString& output_file_name_stem, const char * suffix) {
+  if (output_file_name_stem == "-") {
+    return IWString("-");
+  }
+  if (output_file_name_stem.ends_with(suffix)) {
+    return IWString(output_file_name_stem);
+  }
+
+  IWString fname;
+  fname << output_file_name_stem << suffix;
+  return fname;
+}
+
+int
+OpenWithSuffix(const IWString & output_file_name_stem,
+               const char * suffix,
+               IWString_and_File_Descriptor& output,
+               int verbose) {
+  IWString fname = FileNameGivenSuffix(output_file_name_stem, suffix);
+  if (! output.open(fname.null_terminated_chars())) {
+    cerr << "OpenWithSuffix:cannot open '" << fname << "'\n";
+    return 0;
+  }
+
+  if (verbose) {
+    cerr << suffix << " output to '" << fname << "'\n";
+  }
+  return 1;
+}
+
 int
 GfpToSvmLite(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vF:P:C:X:U:A:p:fc:S:dlO:");
+  Command_Line cl(argc, argv, "vF:P:C:X:U:A:p:fc:S:dlO:D:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -933,6 +1028,7 @@ GfpToSvmLite(int argc, char** argv) {
   if (cl.option_present('O')) {
     output_as_gfp_subset = false;
     output_as_svm_lite = false;
+    output_as_tsv = false;
 
     const_IWSubstring o;
     for (int i = 0; cl.value('O', o, i); ++i) {
@@ -943,6 +1039,8 @@ GfpToSvmLite(int argc, char** argv) {
           output_as_svm_lite = true;
         } else if (token == "gfp") {
           output_as_gfp_subset = true;
+        } else if (token == "tsv") {
+          output_as_tsv = true;
         } else {
           cerr << "Unrecognised -O directive '" << o << "'\n";
           return 1;
@@ -1000,30 +1098,27 @@ GfpToSvmLite(int argc, char** argv) {
     Usage(1);
   }
 
+  // Note that there is no checking for multiple output streams trying to use stdout.
   if (output_as_svm_lite) {
-    IWString fname;
-    if (output_file_name_stem == "-") {
-      fname = "-";
-    } else {
-      fname << output_file_name_stem << ".svml";
-    }
-    if (! args.svml_output.open(fname.null_terminated_chars())) {
-      cerr << "Cannot open svm lite output '" << fname << "'\n";
-      return 1;
-    }
-    if (verbose) {
-      cerr << "svm_lite output to '" << fname << "'\n";
-    }
+    IWString fname = OpenWithSuffix(output_file_name_stem, ".svml", args.svml_output, verbose);
   }
   if (output_as_gfp_subset) {
-    IWString fname;
-    fname << output_file_name_stem << ".gfp";
-    if (! args.gfp_output.open(fname.null_terminated_chars())) {
-      cerr << "Cannot open gfpite output '" << fname << "'\n";
-      return 1;
-    }
-    if (verbose) {
-      cerr << "gfp output to '" << fname << "'\n";
+    OpenWithSuffix(output_file_name_stem, ".gfp", args.gfp_output, verbose);
+  }
+  if (output_as_tsv) {
+    OpenWithSuffix(output_file_name_stem, ".tsv", args.tsv_output, verbose);
+
+    args.highest_feature_number = args.bit_xref.HighestFeatureNumber();
+
+    if (cl.option_present('D')) {
+      IWString fname = cl.string_value('D');
+      if (! args.feature_description_file.open(fname.null_terminated_chars())) {
+        cerr << "Cannot open feature description file '" << fname << "'\n";
+        return 1;
+      }
+      if (verbose) {
+        cerr << "Feature description written to '" << fname << "'\n";
+      }
     }
   }
 

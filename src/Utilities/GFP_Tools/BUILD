@@ -41,6 +41,26 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_catboost_score",
+    srcs = [
+        "gfp_catboost_score.cc",
+        "Catboost.model.bin.cpp",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_to_svm_lite_cc_proto",
+        ":gfp_model_cc_proto",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Utilities/General:class_label_translation_cc_proto",
+        "//Utilities/General:scaler",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "gfp_leader",
     srcs = [
         "gfp_leader_v2.cc",

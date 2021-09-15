@@ -44,8 +44,8 @@ TestBitSubset::SetUp() {
 }
 
 std::optional<IW_General_Fingerprint>
-TestBitSubset::BuildGfp(const std::vector<uint32_t>& fixed,
-         const std::unordered_map<uint32_t, uint32_t>& sparse) {
+BuildGfp_(const std::vector<uint32_t>& fixed,
+          const std::unordered_map<uint32_t, uint32_t>& sparse) {
   const int nbits = fixed.size();
   IW_Bits_Base bits(nbits);
   for (int i = 0; i < nbits; ++i) {
@@ -93,6 +93,12 @@ TestBitSubset::BuildGfp(const std::vector<uint32_t>& fixed,
   return gfp;
 }
 
+std::optional<IW_General_Fingerprint>
+TestBitSubset::BuildGfp(const std::vector<uint32_t>& fixed,
+         const std::unordered_map<uint32_t, uint32_t>& sparse) {
+  return BuildGfp_(fixed, sparse);
+}
+
 TEST_F(TestBitSubset, TestGfpFormationEmpty) {
   constexpr int nbits = 64;
   std::vector<uint32_t> bits(nbits);
@@ -134,6 +140,14 @@ SetBits(const std::vector<uint32_t>& on_bits,
   for (auto b : on_bits) {
     destination[b] = 1;
   }
+}
+
+std::vector<uint32_t>
+VectorSomeItemsSet(const int nbits, const std::vector<uint32_t>& on_bits) {
+  std::vector<uint32_t> bits(nbits);
+  std::fill(bits.begin(), bits.end(), 0);
+  SetBits(on_bits, bits);
+  return bits;
 }
 
 TEST_F(TestBitSubset, TestGfpFormationSeveralBits) {
@@ -325,4 +339,121 @@ xref {
     EXPECT_EQ(sfp.count_for_bit(b), sparse[b]);
   }
 }
+
+class TestBitXref : public testing::Test
+{
+  protected:
+    void SetUp() override;
+
+  protected:
+    std::optional<IW_General_Fingerprint> BuildGfp(const std::vector<uint32_t>& fixed,
+         const std::unordered_map<uint32_t, uint32_t>& sparse);
+};
+
+void
+TestBitXref::SetUp() {
+}
+
+std::optional<IW_General_Fingerprint>
+TestBitXref::BuildGfp(const std::vector<uint32_t>& fixed,
+         const std::unordered_map<uint32_t, uint32_t>& sparse) {
+  return BuildGfp_(fixed, sparse);
+}
+
+TEST_F(TestBitXref, TestOneFingerprint) {
+  const std::vector<uint32_t> on_bits {0, 10, 20, 30, 40, 50, 60};
+  const std::vector<uint32_t> fixed = VectorSomeItemsSet(64, on_bits);
+  for (auto b : on_bits) {
+    EXPECT_EQ(fixed[b], 1);
+  }
+  std::unordered_map<uint32_t, uint32_t> sparse { {1, 1}, {2, 22}, {30, 1}, {55, 55}, {1024, 1}};
+
+  std::optional<IW_General_Fingerprint> gfp = BuildGfp(fixed, sparse);
+  ASSERT_TRUE(gfp);
+
+  EXPECT_EQ(number_fingerprints(), 1);
+  EXPECT_EQ(number_sparse_fingerprints(), 1);
+
+  for (const auto [bit, count] : sparse) {
+    EXPECT_EQ(gfp->sparse_fingerprint(0).count_for_bit(bit), count);
+  }
+
+  const std::string proto_text = R"pb(
+params {
+  highest_feature_number: 1024
+}
+xref {
+  key: "FPD"
+  value {
+    bit_to_feature {
+      key: 0
+      value: 1
+    }
+    bit_to_feature {
+      key: 30
+      value: 4
+    }
+    bit_to_feature {
+      key: 50
+      value: 7
+    }
+    bit_to_feature {
+      key: 60
+      value: 8
+    }
+  }
+}
+xref {
+  key: "NCS"
+  value {
+    bit_to_feature {
+      key: 1
+      value: 2
+    }
+    bit_to_feature {
+      key: 2
+      value: 3
+    }
+    bit_to_feature {
+      key: 55
+      value: 5
+    }
+    bit_to_feature {
+      key: 1024
+      value: 6
+    }
+    bit_to_feature {
+      key: 1025
+      value: 9
+    }
+  }
+}
+)pb";
+
+  GfpBitSubset::GfpBitToFeature proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(proto_text, &proto));
+
+  bit_subset::BitXref xref;
+  ASSERT_TRUE(xref.Build(proto));
+  ASSERT_TRUE(xref.InitialiseGfpKnown(*gfp));
+
+  constexpr int highest_feature_number = 9;
+  EXPECT_EQ(xref.HighestFeatureNumber(), highest_feature_number);
+
+  std::vector<int> features(highest_feature_number + 1);
+  EXPECT_EQ(xref.PopulateFeatureVector(*gfp, features), 8);
+
+  EXPECT_EQ(std::accumulate(features.cbegin(), features.cend(), 0),
+         4 /* fixed */ + sparse[1] + sparse[2] + sparse[55] + sparse[1024]);
+
+  EXPECT_EQ(features[1], 1);  // Fixed
+  EXPECT_EQ(features[2], sparse[1]);
+  EXPECT_EQ(features[3], sparse[2]);
+  EXPECT_EQ(features[4], 1);  // fixed 30
+  EXPECT_EQ(features[5], sparse[55]);
+  EXPECT_EQ(features[6], sparse[1024]);
+  EXPECT_EQ(features[7], 1);  // fixed 50
+  EXPECT_EQ(features[8], 1);  // fixed 60
+}
+
 }  // namespace

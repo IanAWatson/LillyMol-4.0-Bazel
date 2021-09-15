@@ -45,7 +45,15 @@ message SvmfpModel{
   optional double threshold_b = 6;
 }
 
-message LightGbmModel{
+message LightGbmModel {
+  ModelMetadata metadata = 1;
+
+  // Proto file containing a mapping from gfp bits to
+  // svm_lite feature numbers
+  optional string bit_xref = 4;
+}
+
+message CatboostModel {
   ModelMetadata metadata = 1;
 
   // Proto file containing a mapping from gfp bits to

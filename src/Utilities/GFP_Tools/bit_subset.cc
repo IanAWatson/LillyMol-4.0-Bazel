@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "Foundational/iwmisc/proto_support.h"
 
 #include "Utilities/GFP_Tools/bit_subset.h"
@@ -111,6 +113,8 @@ BitXref::BitXref() {
   _fixed = nullptr;
   _nsparse = 0;
   _sparse = nullptr;
+
+  _highest_feature_number = 0;
 }
 
 BitXref::~BitXref() {
@@ -217,8 +221,9 @@ BitXref::WriteSvmlFeatures(const IW_General_Fingerprint& gfp,
     const BitToFeature* b2f = _fixed[i];
     const IWDYFP & fp = gfp[i];
     int j = 0;
-    while (int b = fp.next_on_bit(j)) {
-      const auto iter = b2f->find(b);
+    int bit;
+    while ((bit = fp.next_on_bit(j)) >= 0) {
+      const auto iter = b2f->find(bit);
       if (iter == b2f->cend()) {
         continue;
       }
@@ -286,7 +291,89 @@ BitXref::InitialiseGfpKnown(const IW_General_Fingerprint& gfp) {
     _sparse[i] = &(iter->second);
   }
 
-  return 1;
+  return _nfixed + _nsparse;
+}
+
+uint32_t
+BitXref::HighestFeatureNumber() const {
+  uint32_t result = 0;
+  for (const auto& [tag, bit_to_feature] : _tag_to_bit_to_feature) {
+    for (const auto [_,  feature] : bit_to_feature) {
+      if (feature > result) {
+        result = feature;
+      }
+    }
+  }
+
+  return result;
+}
+
+template <typename T>
+int
+BitXref::PopulateFeatureVector(const IW_General_Fingerprint& gfp,
+                               std::vector<T>& features) const {
+  std::fill(features.begin(), features.end(), 0.0);
+  int rc = 0;
+  cerr << "PopulateFeatureVector: _nfixed " << _nfixed << " sparse " << _nsparse << '\n';
+  for (int i = 0; i < _nfixed; ++i) {
+    IWDYFP& fp = gfp[i];
+    int j = 0;
+    int bit;
+    while ((bit = fp.next_on_bit(j)) >= 0) {
+      const auto iter = _fixed[i]->find(bit);
+      cerr << "Checking fixed bit " << bit << " missing " << (iter == _fixed[i]->end()) << '\n';
+      if (iter == _fixed[i]->end()) {
+        continue;
+      }
+      assert(iter->second < features.size());
+      features[iter->second] = 1.0f;
+      rc++;
+    }
+  }
+
+  for (int i = 0; i < _nsparse; ++i) {
+    const Sparse_Fingerprint & sfp = gfp.sparse_fingerprint(i);
+    int j = 0;
+    unsigned int bit;
+    int count;
+    while (sfp.next_bit_set(j, bit, count)) {
+      const auto iter = _sparse[i]->find(bit);
+      cerr << "Checking bit " << bit << " missing " << (iter == _sparse[i]->end()) << '\n';
+      if (iter == _sparse[i]->end()) {
+        continue;
+      }
+      assert(iter->second < features.size());
+      features[iter->second] = static_cast<float>(count);
+      rc++;
+    }
+  }
+
+  return rc;
+}
+template int BitXref::PopulateFeatureVector(const IW_General_Fingerprint& gfp, std::vector<float>&) const;
+
+int
+BitXref::WriteDsv(const IW_General_Fingerprint& gfp, char output_separator,
+                 IWString_and_File_Descriptor& output) {
+  if (_highest_feature_number <= 0) {
+    _highest_feature_number = HighestFeatureNumber();
+    if (_highest_feature_number <= 0) {
+      cerr << "BitXref::WriteDsv:highest feature number not discerned\n";
+      return 0;
+    }
+  }
+
+  std::vector<int> features(_highest_feature_number + 1);
+  int rc = PopulateFeatureVector(gfp, features);
+
+  output.reserve(_highest_feature_number * 2);
+  output << features[0];
+  for (uint32_t i = 1; i <= _highest_feature_number; ++i) {
+    output << output_separator << features[i];
+    output.write_if_buffer_holds_more_than(1024);  // Help pipe handling.
+  }
+
+  return rc;
 }
 
 }  // namespace bit_subset

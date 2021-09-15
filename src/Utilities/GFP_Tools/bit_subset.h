@@ -85,6 +85,9 @@ class BitXref {
     int _nsparse;
     BitToFeature** _sparse;
 
+    // when doing tsv output, we need to know the highest feature number.
+    uint32_t _highest_feature_number;
+
     // Read from the proto.
     int _flatten_sparse_counted;
 
@@ -102,9 +105,18 @@ class BitXref {
     // Fails if any fingerprints in _bit_to_feature are not present.
     int InitialiseGfpKnown(const IW_General_Fingerprint& gfp);
 
+    // Across all the BitToFeature hashes, the highest value.
+    uint32_t HighestFeatureNumber() const;
+
+    // Convert bit numbers in `gfp` to feature numbers in `features`.
+    // Returns the number of items set in `features`.
+    template <typename T>
+    int PopulateFeatureVector(const IW_General_Fingerprint& gfp,
+                               std::vector<T>& features) const;
+
     // Has this been initialized.
     int Active() const { 
-      return (_fixed != nullptr || _sparse != nullptr);
+      return _tag_to_bit_to_feature.size() > 0;
     }
 
     // Write all the feature:count pairs to `output`.
@@ -116,6 +128,12 @@ class BitXref {
     // Otherwise returns the number of features written.
     // Returning 0 just means that none of the bits in `gfp` were written.
     int WriteSvmlFeatures(const IW_General_Fingerprint& gfp, IWString_and_File_Descriptor& output);
+
+    // Write the bits in `gfp` in tabular form to `output`.
+    // The number of columns is _highest_feature_number.
+    // Note there is no leading `output_separator` written. No newline.
+    int WriteDsv(const IW_General_Fingerprint& gfp, char output_separator,
+                 IWString_and_File_Descriptor& output);
 };
 
 }  // namespace bit_subset

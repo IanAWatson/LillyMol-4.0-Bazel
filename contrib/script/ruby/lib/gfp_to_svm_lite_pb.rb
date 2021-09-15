@@ -15,7 +15,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     end
     add_message "GfpBitSubset.Params" do
       proto3_optional :support, :uint32, 1
-      proto3_optional :flatten_sparse_fingerprints, :bool, 3
+      proto3_optional :flatten_sparse_fingerprints, :bool, 2
+      proto3_optional :highest_feature_number, :uint32, 3
     end
     add_message "GfpBitSubset.GfpBitSubset" do
       map :xref, :string, :message, 1, "GfpBitSubset.BitSubset"
