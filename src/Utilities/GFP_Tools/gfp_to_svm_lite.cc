@@ -285,12 +285,13 @@ RemoveLowSupport(std::unordered_map<gfp_bit_type_t, uint32_t> & mapping,
   int rc = 0;
   for (auto iter = mapping.begin(), last = mapping.end(); iter != last; ) {
     if (iter->second < support) {
-      mapping.erase(iter);
+      mapping.erase(iter++);
       rc++;
     } else {
       ++iter;
     }
   }
+
   return rc;
 }
 
@@ -385,7 +386,6 @@ GfpBitsRetained::SetParams(Proto& proto, uint32_t highest_feature_number) const 
     proto.mutable_params()->set_flatten_sparse_fingerprints(true);
   }
 
-  cerr << "Found  highest_feature_number " << highest_feature_number << '\n';
   proto.mutable_params()->set_highest_feature_number(highest_feature_number);
 }
 
@@ -477,8 +477,12 @@ ToCrossReference(std::unordered_map<gfp_bit_type_t, uint32_t>& xref,
 
 int
 GfpBitsRetained::ConvertToCrossReference() {
+  cerr << " in ConvertToCrossReference, support " << _support << '\n';
   if (_support > 0) {
-    ImposeSupport();
+    const int removed = ImposeSupport();
+    if (verbose) {
+      cerr << "GfpBitsRetained::ImposeSupport:support " << _support << " removed " << removed << " bits\n";
+    }
   }
 
   // Globally unique feature number.

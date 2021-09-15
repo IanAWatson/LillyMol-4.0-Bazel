@@ -43,7 +43,7 @@ class Model
   end
 
   def gfp
-    @data.fingerprints
+    @data.metadata.fingerprints
   end
 end
 

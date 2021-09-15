@@ -126,7 +126,7 @@ PathName(const IWString& dirname, const IWString& fname) {
 // Read a textproto of type `Proto` from `dir/fname`.
 template <typename Proto>
 std::optional<Proto>
-ReadProto(const IWString& dirname, const std::string& fname) {
+ReadTextProto(const IWString& dirname, const std::string& fname) {
   IWString path_name = PathName(dirname, fname);
   return iwmisc::ReadTextProto<Proto>(path_name);
 }
@@ -452,7 +452,7 @@ SvmModel::PreprocessSupportVectors() {
 int
 SvmModel::ReadClassLabelTranslation(const IWString& dir, const std::string& fname) {
   std::optional<ClassLabelTranslation::ClassLabelTranslation> mapping =
-    ReadProto<ClassLabelTranslation::ClassLabelTranslation>(dir, fname);
+    ReadBinaryProto<ClassLabelTranslation::ClassLabelTranslation>(dir, fname);
   if (! mapping) {
     cerr << "SvmModel::ReadClassLabelTranslation:cannot read '" << fname << "'\n";
     return 0;
@@ -480,7 +480,7 @@ SvmModel::ReadClassLabelTranslation(const IWString& dir, const std::string& fnam
 int
 SvmModel::ReadRegressionScaling(const IWString& dir, const std::string& fname) {
   std::optional<FeatureScaling::FeatureScaling> proto =
-    ReadProto<FeatureScaling::FeatureScaling>(dir, fname);
+    ReadBinaryProto<FeatureScaling::FeatureScaling>(dir, fname);
   if (! proto) {
     cerr << "SvmModel::ReadRegressionScaling:cannot read '" << fname << "'\n";
     return 0;

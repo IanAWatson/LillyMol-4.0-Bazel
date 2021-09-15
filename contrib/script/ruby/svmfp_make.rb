@@ -51,7 +51,7 @@ end
 # generate a class label translation file in `mdir`.
 def perform_class_label_translation(activity_file, mdir, train_activity, verbose)
   cmd = "class_label_translation -C #{mdir}/class_label_translation.txt " \
-  "-bin #{mdir}/class_label_translation.dat #{activity_file} > #{train_activity}"
+  "-cbin #{mdir}/class_label_translation.dat #{activity_file} > #{train_activity}"
   execute_cmd(cmd, verbose, [train_activity, "#{mdir}/class_label_translation.dat"])
 end
 
@@ -134,7 +134,7 @@ catboost = cmdline.value('catboost')
 
 lightgbm = "lightgbm config=#{default_lightgbm_config} #{lightgbm} force_row_wise=true" if lightgbm
 catboost = "catboost fit #{catboost} --train-dir #{mdir} --fstr-file fstr.dat " \
-           "--use-best-model --min-data-in-leaf=2 --auto-class-weights Balanced " \
+           "--use-best-model --min-data-in-leaf=2 " \
            "--model-format CatboostBinary,CPP " if catboost
 
 if lightgbm && ! default_lightgbm_config
@@ -169,7 +169,7 @@ if cmdline.option_present('C')  # Classification.
   if lightgbm || catboost
     perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
     lightgbm = "lightgbm #{lightgbm} objective=binary" if lightgbm
-    catboost = "#{catboost} --loss-function Logloss --custom-metric=MCC" if catboost
+    catboost = "#{catboost} --loss-function Logloss --custom-metric=MCC --auto-class-weights Balanced" if catboost
   else
     perform_class_label_translation(activity_file, mdir, train_activity, verbose)
     svm_learn_options = "#{svm_learn_options} -z c"
@@ -218,7 +218,7 @@ else
 end
 execute_cmd(cmd, verbose, [model_file])
 
-# The metadata attribute is common between svmfp and LightGBM models.
+# The metadata attribute is common among all model types.
 def populate_metadata(model, fingerprints, response_name, classification, flatten_sparse_fingerprints)
   model.metadata = GfpModel::ModelMetadata.new
   model.metadata.date_built = Time.now.to_s

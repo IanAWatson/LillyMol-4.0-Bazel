@@ -177,6 +177,9 @@ def write_header(model, classification)
   $stdout << "\n"
 end
 
+# Class label translation and unscaling are not handled
+# in the python, so these are no longer used.
+# Left in place in case things change.
 def generate_classification_data(model, predictions, ids)
   write_header(model, true)  # true -> classification
 
@@ -212,44 +215,27 @@ def generate_regression_data(model, predictions, ids)
   end
 end
 
+# write `ids` to `fname`
+def populate_id_file(ids, fname)
+  File.open(fname, "w") { |file| file << ids.join("\n") << "\n" }
+end
+
 # Unfortunately it seems that catboost cannot read a .svml file during
 # inference - nor can it read from stdin. So back to python.
 
+tmpids = Tempfile.new("catboostscore.ids")
+populate_id_file(ids, tmpids.path)
+
 models.each do |model|
+  tmpsvml = Tempfile.new('catboostscore.svml')
   cmd = "#{gfp_make}  #{model.gfp} #{smiles_files} |" \
-         "gfp_to_svm_lite -l -X #{model.bit_xref} -S - -O svml -"
-  execute_cmd(cmd, verbose, ["#{mdir}/bit_xref.dat", "#{mdir}/train.svml"])
-  # Convert to the csr forms.
-  cmd = "catboose_evaluate.sh -mdir #{mdir} 
+         "gfp_to_svm_lite -l -X #{model.bit_xref} -S - -O svml - > #{tmpsvml.path} "
+  execute_cmd(cmd, verbose, [tmpsvml.path])
 
-  chunk = []
-  IO.popen(cmd) {|line| 
-    chunk << line
-    $stderr << "Read line\n"
-    if chunk.size >= 10
-      tmptsv = Tempfile.new('catboost.tsv')
-      tmptsv << chunk.join("\n")
-      chunk = []
-    end
-  }
-
-  tmplog = Tempfile.new('lgbm.log')
-  tmpresult = Tempfile.new('lgbm.txt')
-  cmd = "#{evaluate} calc --model-file=#{mdir}/Catboost.model.bin " \
-        "--input-path=libsvm://#{tmpsvml.path} --output-path=#{tmpresult.path} " \
-        "--output-columns=Probability,Class,SampleId > #{tmplog.path}"
-  execute_cmd(cmd, verbose, [tmpresult.path])
-  system("/bin/cat #{tmplog.path} >&2")
-
-  predictions = File.readlines(tmpresult.path)
-  raise "Size mismatch #{ids.size} and #{predictions.size}" unless ids.size == predictions.size
-  # Generate a combined file
-  tmpcombined = Tempfile.new('lgbmb.txt')
-  if model.is_classification
-    generate_classification_data(model, predictions, ids)
-  else
-    generate_regression_data(model, predictions, ids)
-  end
+  tmpeval = Tempfile.new('catboostscore.pred')
+  cmd = "catboost_score.sh --mdir #{mdir} --svml #{tmpsvml.path} " \
+         "--ids #{tmpids.path}"
+  execute_cmd(cmd, verbose, [])
 end
 
 exit 0

@@ -5,8 +5,9 @@ import pathlib
 import sys
 from typing import Callable, Dict, List
 
-from absl import flags
 from absl import app
+from absl import flags
+from absl import logging
 
 from catboost import Pool, CatBoostClassifier, CatBoostRegressor
 from catboost import EFstrType
@@ -29,8 +30,6 @@ flags.DEFINE_string("option_file", None, "File containing options for learning. 
 flags.DEFINE_multi_string("str_option", None, "File containing string options for learning. CatboostOptions text proto")
 flags.DEFINE_multi_string("int_option", None, "File containing integer options for learning. CatboostOptions text proto")
 flags.DEFINE_multi_string("flt_option", None, "File containing float options for learning. CatboostOptions text proto")
-
-flags.DEFINE_boolean("verbose", False, "Verbose output")
 
 def get_catboost_options(fname: str) -> Dict[str, str]:
   """Read the CatboostOptions proto in `fname` and
@@ -55,17 +54,14 @@ def get_catboost_options(fname: str) -> Dict[str, str]:
   return result
 
 def write_feature_importance(model: int,
-                             verbose: bool,
                              fname: str):
   """Write sorted feature importance data to `fname`.
   Args:
    model: a Catboost model
-   verbose: verbosity
    fname: destination
   """
   importance = model.get_feature_importance(type=EFstrType.FeatureImportance)
-  if verbose:
-    print(f"Feature importance returned {importance.size} values", file=sys.stderr)
+  logging.vlog(1, "Feature importance returned %d values", importance.size)
 
   with open(fname, "w") as outp:
     nz = np.nonzero(importance)
@@ -95,7 +91,6 @@ def catboost_build(unused_argv):
   svml = FLAGS.svml
   classification = FLAGS.classification
   options_file = FLAGS.option_file
-  verbose = FLAGS.verbose
 
   # Fails if this is an existing file (not dir).
   if not os.path.isdir(mdir):
@@ -114,8 +109,7 @@ def catboost_build(unused_argv):
   if not "min_data_in_leaf" in kwargs:
     kwargs["min_data_in_leaf"] = 2
 
-  if verbose:
-    print(f"Options {kwargs}", file=sys.stderr)
+  logging.vlog(1, "Options %r", kwargs)
 
   train_data = Pool(f"libsvm://{svml}")
 
@@ -132,7 +126,7 @@ def catboost_build(unused_argv):
   model.save_model(fname, format="cpp")
 
   fname = os.path.join(mdir, "feature_importance.csv")
-  write_feature_importance(model, verbose, fname)
+  write_feature_importance(model, fname)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required("mdir")
