@@ -897,6 +897,24 @@ cc_binary(
 )
 
 cc_binary(
+    name = "smu_rotatable_bond",
+    srcs = [
+        "smu_rotatable_bond.cc",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+         "//Foundational/cmdline:iwcmdline",
+         "//Foundational/iwaray:iwaray",
+         "//Foundational/iwmisc:iwmisc",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "sp3_filter",
     srcs = [
         "sp3_filter.cc",

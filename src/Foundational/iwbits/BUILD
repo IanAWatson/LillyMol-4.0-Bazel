@@ -25,6 +25,17 @@ cc_library(
     ],
 )
 
+cc_binary(
+    name = "fixed_bit_vector_benchmark",
+    srcs = [
+        "fixed_bit_vector_benchmark.cc",
+    ],
+    deps = [
+        "@benchmark//:benchmark",
+        ":iwbits",
+    ],
+)
+
 # cc_binary(
 #     name = "fppop",
 #     srcs = [
