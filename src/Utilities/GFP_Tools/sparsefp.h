@@ -52,6 +52,7 @@ class Sparse_Fingerprint
     int construct_from_sparse_ascii_representation(const const_IWSubstring &);
 
     int construct_from_daylight_ascii_representation(const const_IWSubstring &);
+    int construct_from_daylight_ascii_representation_uncounted(const const_IWSubstring& daylight);
     int construct_from_tdt_record(const const_IWSubstring &);
 
     int append_daylight_ascii_form_with_counts_encoded(IWString & s) const;

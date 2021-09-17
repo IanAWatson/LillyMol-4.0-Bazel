@@ -600,11 +600,12 @@ Sparse_Fingerprint_Creator::BitsWithoutCounts() const {
     bits[i] = htonl(bits[i]);
   }
 
-  IW_Bits_Base fp;
-  fp.construct_from_array_of_bits(reinterpret_cast<const unsigned char *>(bits), ndx * IW_BITS_PER_WORD);
+  int allocated = 0;
+  char * daylight = du_bin2ascii(&allocated, ndx * IW_BYTES_PER_WORD,
+                                 reinterpret_cast<char *>(bits));
 
   IWString result;
-  fp.daylight_ascii_representation(result);
+  result.set_and_assume_ownership(daylight, allocated);
   return result;
 }
 

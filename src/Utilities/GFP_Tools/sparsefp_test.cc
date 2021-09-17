@@ -402,4 +402,25 @@ TEST(TestSparseFingerprint, FromSvmLite) {
   EXPECT_EQ(sfp.count_for_bit(45000), 1);
 }
 
+TEST(TestSparseFingerprint, TestUncounted) {
+  const std::vector<uint32_t> bits{98000, 12, 13, 65000, 4, 88};
+  Sparse_Fingerprint_Creator sfc;
+  for (auto b : bits) {
+    sfc.hit_bit(b);
+  }
+
+  const IWString daylight = sfc.BitsWithoutCounts();
+
+  Sparse_Fingerprint sfp;
+
+  ASSERT_TRUE(sfp.construct_from_daylight_ascii_representation_uncounted(daylight));
+
+  EXPECT_EQ(sfp.nbits(), bits.size());
+  for (auto b : bits) {
+    EXPECT_TRUE(sfp.is_set(b));
+  }
+
+  EXPECT_FLOAT_EQ(sfp.tanimoto_binary(sfp), 1.0f);
+}
+
 } // namespace

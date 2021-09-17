@@ -546,4 +546,5 @@ cc_test(
         ":gfp",
         "@googletest//:gtest_main",
     ],
+    timeout="short",
 )

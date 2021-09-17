@@ -1,3 +1,7 @@
+#include <algorithm>
+#include <limits>
+#include <optional>
+
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -6,9 +10,6 @@
 #else
 #include <netinet/in.h>
 #endif
-
-#include <algorithm>
-#include <limits>
 
 #define IWQSORT_FO_IMPLEMENTATION 1
 
@@ -840,6 +841,51 @@ Sparse_Fingerprint::dot_product(const Sparse_Fingerprint & rhs) const
   return d1d2;
 }
 
+// Building a Sparse_Fingerprint from the Daylight form first involves forming
+// an IW_Bits_Base.
+std::optional<IW_Bits_Base>
+FromDaylight(const const_IWSubstring& daylight) {
+  if (daylight.empty()) {
+    return std::nullopt;
+  }
+
+  IW_Bits_Base result;
+
+  if (! result.construct_from_daylight_ascii_representation(daylight)) {
+    cerr << "FromDaylight: cannot parse Daylight respresntation\n";
+    cerr << daylight << '\n';
+    return std::nullopt;
+  }
+
+  const int nbits = result.nbits();
+
+  if (0 != nbits % IW_BITS_PER_WORD)
+  {
+    cerr << "FromDaylight: must be a multiple of " << IW_BITS_PER_WORD << " bits, " << nbits << " is not\n";
+    return std::nullopt;
+  }
+
+  if (0 == nbits)
+  {
+    cerr << "FromDaylight:no bits present! '" << daylight << "'\n";
+    return std::nullopt;
+  }
+
+  int nwords = nbits / IW_BITS_PER_WORD;
+  if (nbits % IW_BITS_PER_WORD != 0) {
+    nwords++;
+  }
+
+  // Use old style cast since we change both the type and const.
+  unsigned int * data = (unsigned int *) result.bits();
+
+  for (int i = 0; i < nwords; ++i) {
+    data[i] = ntohl(data[i]);
+  }
+
+  return result;
+}
+
 /*
   Figuring out how many bits we have encoded is tricky. Here's a table of number of
   bits and number of words needed
@@ -993,6 +1039,28 @@ Sparse_Fingerprint::_counted_form_construct_from_array_of_bits(const void * void
   cerr << "Just read fingerprint\n";
   debug_print(cerr);
 #endif
+  return 1;
+}
+
+int
+Sparse_Fingerprint::construct_from_daylight_ascii_representation_uncounted(const const_IWSubstring& daylight) {
+  std::optional<IW_Bits_Base> bits = FromDaylight(daylight);
+  if (! bits) {
+    cerr << "Sparse_Fingerprint::construct_from_daylight_ascii_representation_uncounted:cannot intrepret input\n";
+    return 0;
+  }
+
+  const unsigned int * data = reinterpret_cast<const unsigned int *>(bits->bits());
+
+  const int nbits = bits->nbits() / IW_BITS_PER_WORD;
+
+  resize(nbits);
+  // A little wasteful, perhaps add an option to resize to omit allocating the count array.
+  delete [] _count;
+  _count = nullptr;
+
+  std::copy_n(data, nbits, _bit);
+
   return 1;
 }
 
