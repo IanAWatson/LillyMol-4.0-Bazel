@@ -62,6 +62,12 @@ class Sparse_Fingerprint_Creator
     int append_daylight_ascii_form_with_counts_encoded (const const_IWSubstring & tag, IWString & dyascii) const;    // first argument is the TDT tag
     int create_from_array_of_ints (const int *, int);
 
+    // Return a Daylight encoded string of a dense vector of the bits hashed to `nbits`.
+    IWString FixedWidthFingerprint(int nbits) const;
+
+    // A Daylight encoded string of the sorted bit numbers.
+    IWString BitsWithoutCounts() const;
+
     template <typename O> int write_as_feature_count(const char sep, O &) const;
     template <typename O> int write_as_md5_sum(O & output) const;
 

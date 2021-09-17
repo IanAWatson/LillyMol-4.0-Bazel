@@ -63,7 +63,7 @@ BM_Tanimoto(benchmark::State& state) {
 
   Sparse_Fingerprint sfp1 = MakeFingerprint(nbits1);
   Sparse_Fingerprint sfp2 = MakeFingerprint(nbits2);
-  float maxsim = 0.0f;  // Useless operation to guard against compiler optimization?
+  float maxsim = 0.0f;  // Useless operation to guard against compiler optimization.
   for (auto _ :state) {
     const float t = sfp1.tanimoto_binary(sfp2);
     if (t > maxsim) {

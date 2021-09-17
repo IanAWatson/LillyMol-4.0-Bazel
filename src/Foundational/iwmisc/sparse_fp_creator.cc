@@ -228,7 +228,7 @@ Sparse_Fingerprint_Creator::_write_constant_width_fingerprint(unsigned int nb,
 }
 
 inline void
-Sparse_Fingerprint_Creator::_convert_to_unsigned_char (unsigned int b,
+Sparse_Fingerprint_Creator::_convert_to_unsigned_char(unsigned int b,
                                      unsigned char & count) const
 {
   FPHash::const_iterator f = _fp.find(b);
@@ -248,7 +248,7 @@ Sparse_Fingerprint_Creator::_convert_to_unsigned_char (unsigned int b,
 //#define DEBUG_ENCODE_WITH_COUNTS
 
 int
-Sparse_Fingerprint_Creator::daylight_ascii_form_with_counts_encoded (IWString & dyascii) const
+Sparse_Fingerprint_Creator::daylight_ascii_form_with_counts_encoded(IWString & dyascii) const
 {
   unsigned int * s = new unsigned int[_fp.size()]; std::unique_ptr<unsigned int[]> free_s(s);
 
@@ -280,7 +280,7 @@ Sparse_Fingerprint_Creator::daylight_ascii_form_with_counts_encoded (IWString & 
 */
 
 int
-Sparse_Fingerprint_Creator::_daylight_ascii_form_with_counts_encoded (const unsigned int * s,
+Sparse_Fingerprint_Creator::_daylight_ascii_form_with_counts_encoded(const unsigned int * s,
                                   unsigned int * tmp,
                                   IWString & dyascii) const
 {
@@ -570,6 +570,42 @@ int
 Sparse_Fingerprint_Creator::write_as_md5_sum(O & output) const
 {
   return unordered_map_to_md5(_fp, output);
+}
+
+IWString
+Sparse_Fingerprint_Creator::FixedWidthFingerprint(int nbits) const {
+  IW_Bits_Base bits(nbits);
+  bits.clear();
+  for (auto [bit, _] : _fp) {
+    int b = bit % nbits;
+    bits.set(b);
+  }
+  IWString result;
+  bits.daylight_ascii_representation_including_nset_info(result);
+  return result;
+}
+
+IWString
+Sparse_Fingerprint_Creator::BitsWithoutCounts() const {
+  unsigned int * bits = new unsigned int[_fp.size()]; std::unique_ptr<unsigned int[]> free_bits(bits);
+
+  int ndx = 0;
+  for (auto [bit, _] : _fp) {
+    bits[ndx] = bit;
+    ++ndx;
+  }
+  gfx::timsort(bits, bits + ndx);
+
+  for (int i = 0; i < ndx; ++i) {
+    bits[i] = htonl(bits[i]);
+  }
+
+  IW_Bits_Base fp;
+  fp.construct_from_array_of_bits(reinterpret_cast<const unsigned char *>(bits), ndx * IW_BITS_PER_WORD);
+
+  IWString result;
+  fp.daylight_ascii_representation(result);
+  return result;
 }
 
 #ifdef __GNUG__

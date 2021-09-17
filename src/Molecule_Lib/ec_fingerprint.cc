@@ -188,9 +188,13 @@ ECBaseWithOutput::Open(IWString& fname)
 
 JobParameters::JobParameters()
 {
+  produce_output = true;
+
   function_as_tdt_filter = false;
 
-  produce_output = true;
+  write_fixed_width_fingerprint = 0;
+
+  write_counted_sparse_fingerprint = true;
 }
 
 int
@@ -213,14 +217,26 @@ ProduceFingerprint::DoAnyOutput(Molecule& m, const JobParameters& job_parameters
     output << job_parameters.identifier_tag << m.name() << ">\n";
   }
 
-  IWString tmp;
-  _sfc.daylight_ascii_form_with_counts_encoded(job_parameters.fingerprint_tag, tmp);
-  output << tmp << "\n";
+  if (job_parameters.write_fixed_width_fingerprint > 0) {
+    WriteFixedWidthFingerprint(job_parameters, output);
+  } else {
+    IWString tmp;
+    _sfc.daylight_ascii_form_with_counts_encoded(job_parameters.fingerprint_tag, tmp);
+    output << tmp << "\n";
+  }
 
 //if (! job_parameters.function_as_tdt_filter) {
 //  output << "|\n";
 //}
 
+  return 1;
+}
+
+int
+ProduceFingerprint::WriteFixedWidthFingerprint(const JobParameters& job_parameters,
+                IWString_and_File_Descriptor& output) const {
+  const IWString ascii = _sfc.FixedWidthFingerprint(job_parameters.write_fixed_width_fingerprint);
+  output << job_parameters.fingerprint_tag << ascii << ">\n";
   return 1;
 }
 

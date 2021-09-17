@@ -72,6 +72,7 @@ usage(int rc)
   cerr << "  -p            precise fingerprints - includes attachment point in inner shell\n";
   cerr << "  -m            bit formation is multiplicative. shells not differentiated\n";
   cerr << "  -q <query>    query specification of atoms to be processed\n";
+  cerr << "  -w <nbits>    generate fixed width binary fingerprints, `nbits` bits\n";
   cerr << "  -l            reduce to largest fragment\n";
   cerr << "  -i <type>     input specification\n";
   cerr << "  -g ...        chemical standardisation options\n";
@@ -344,7 +345,7 @@ DirectiveAnd(Command_Line& cl, char flag)
 int
 EcFingerprint(int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "A:E:K:lg:i:J:P:vfr:R:ysB:cmpM:nD:q:");
+  Command_Line cl(argc, argv, "A:E:K:lg:i:J:P:vfr:R:ysB:cmpM:nD:q:w:");
 
   if (cl.unrecognised_options_encountered())
     usage(1);
@@ -397,7 +398,7 @@ EcFingerprint(int argc, char ** argv)
     }
 
     if (verbose)
-      cerr << "Will only fingerprint pairs separated by " << max_radius << " bonds or less\n";
+      cerr << "Will only fingerprints to radius " << max_radius << '\n';
   }
 
   if (cl.option_present('P')) {
@@ -418,6 +419,16 @@ EcFingerprint(int argc, char ** argv)
 
     if (verbose)
       cerr << "Will function as a TDT filter\n";
+  }
+
+  if (cl.option_present('w')) {
+    if (! cl.value('w', job_parameters.write_fixed_width_fingerprint) || job_parameters.write_fixed_width_fingerprint < 8) {
+      cerr << "Invalid fixed width fingerprint directive (-w)\n";
+      return 1;
+    }
+    if (verbose) {
+      cerr << "Will generate fixed width fingerprints " << job_parameters.write_fixed_width_fingerprint << " bits\n";
+    }
   }
 
 //if (! cl.option_present('D'))

@@ -48,6 +48,9 @@ Accumulator_Int<uint> atom_count;
 Accumulator_Int<uint> longest_path_acc;
 extending_resizable_array<int> longest_path;
 
+// If positive, the width of the fixed width fingerprint to produce.
+int write_fixed_width_fingerprint = 0;
+
 void
 usage(int rc)
 {
@@ -61,6 +64,7 @@ usage(int rc)
   cerr << "  -f            function as a TDT filter\n";
   cerr << "  -X <fname>    look for bits in <fname> and provide explanations\n";
   cerr << "  -B <fname>    write all bits found to <fname>\n";
+  cerr << "  -w <nbits>    generate fixed width binary fingerprints, `nbits` bits\n";
   cerr << "  -t            truncate all pairs beyond max_separation\n";
   cerr << "  -y            check for bit collisions\n";
   cerr << "  -c            produce labelled molecules with coverage\n";
@@ -120,9 +124,14 @@ DoAtomPairFingerprint(Molecule & m,
     output << identifier_tag << m.name() << ">\n";
   }
 
-  IWString tmp;
-  sfc.daylight_ascii_form_with_counts_encoded(tag, tmp);
-  output << tmp << "\n";
+  if (write_fixed_width_fingerprint > 0) {
+    const IWString ascii = sfc.FixedWidthFingerprint(write_fixed_width_fingerprint);
+    output << tag << ascii << ">\n";
+  } else {
+    IWString tmp;
+    sfc.daylight_ascii_form_with_counts_encoded(tag, tmp);
+    output << tmp << "\n";
+  }
 
   if (! function_as_tdt_filter) {
     output << "|\n";
@@ -252,7 +261,7 @@ DoAtomPairFingerprint(const char * fname, FileType input_type,
 int
 DoAtomPairFingerprint(int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "A:K:lg:i:J:P:bvftr:R:ysB:c");
+  Command_Line cl(argc, argv, "A:K:lg:i:J:P:bvftr:R:ysB:cw:");
 
   if (cl.unrecognised_options_encountered())
     usage(1);
@@ -331,6 +340,17 @@ DoAtomPairFingerprint(int argc, char ** argv)
 
     if (verbose)
       cerr << "Will function as a TDT filter\n";
+  }
+
+  if (cl.option_present('w')) {
+    if (! cl.value('w', write_fixed_width_fingerprint) || write_fixed_width_fingerprint < 8) {
+      cerr << "The number of bits in a fixed fingerprint must be +ve\n";
+      return 1;
+    }
+
+    if (verbose) {
+      cerr << "Will generate fixed width fingerprints " << write_fixed_width_fingerprint << " bits\n";
+    }
   }
 
   if (! cl.option_present('J')) {

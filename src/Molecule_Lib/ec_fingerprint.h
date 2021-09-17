@@ -39,6 +39,11 @@ struct JobParameters {
 
   // Reading fingerprints from stdin.
   bool function_as_tdt_filter;
+
+  // If positive, the width of the fingerprint to produce.
+  int write_fixed_width_fingerprint;
+
+  bool write_counted_sparse_fingerprint;
 };
 
 // Class holds transient results of a shell expansion. It largely exists
@@ -139,6 +144,9 @@ class ProduceFingerprint : public ECFunction
 {
   private:
     Sparse_Fingerprint_Creator _sfc;
+
+    // private functions
+    int WriteFixedWidthFingerprint(const JobParameters& job_parameters, IWString_and_File_Descriptor& output) const;
 
   public: 
     ProduceFingerprint() {
