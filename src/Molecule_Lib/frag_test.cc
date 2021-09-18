@@ -7,6 +7,8 @@
 
 namespace {
 
+using testing::UnorderedElementsAre;
+
 TEST(TestFrags, NoAtoms) {
   Molecule m;
   EXPECT_EQ(m.number_fragments(), 0);
@@ -79,5 +81,32 @@ INSTANTIATE_TEST_SUITE_P(TestFragMembership, TestFragmentMembership, testing::Va
    SmilesSameFrag{"C.C.C", 0, 2, false},
    SmilesSameFrag{"C1CC1.CC", 3, 4, true}
 ));
+
+TEST(TestCreateSubset, TestCreateSubset) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("FCNO"));
+
+  for (int i = 0; i < m.natoms(); ++i) {
+    Set_of_Atoms to_keep;
+    to_keep << i;
+    Molecule subset = m.create_subset(to_keep);
+    EXPECT_EQ(subset.natoms(), 1);
+    EXPECT_EQ(subset.atomic_number(0), m.atomic_number(i));
+  }
+
+  for (int i = 0; i < m.natoms(); ++i) {
+    for (int j = i + 1; j < m.natoms(); ++j)  {
+      Set_of_Atoms to_keep;
+      to_keep << i << j;
+      Molecule subset = m.create_subset(to_keep);
+      EXPECT_EQ(subset.natoms(), 2);
+      std::vector<atomic_number_t> in_parent {m.atomic_number(i), m.atomic_number(j)};
+      EXPECT_THAT(in_parent,
+        UnorderedElementsAre(subset.atomic_number(0), subset.atomic_number(1)));
+    }
+
+  }
+
+}
 }  // namespace
 

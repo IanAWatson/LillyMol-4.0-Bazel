@@ -666,6 +666,14 @@ Atom::connections(atom_number_t my_atom_number, Set_of_Atoms & others) const
   return _number_elements;
 }
 
+Set_of_Atoms
+Atom::connections(atom_number_t my_atom_number) const {
+  Set_of_Atoms result;
+  connections(my_atom_number, result);
+  return result;
+}
+
+
 int
 Atom::connections_and_types(atom_number_t my_atom_number, Set_of_Atoms & others,
                             resizable_array<bond_type_t> & bt) const

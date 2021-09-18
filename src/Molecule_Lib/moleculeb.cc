@@ -142,6 +142,12 @@ Molecule::connections(atom_number_t a, Set_of_Atoms & others) const
   return aa->connections(a, others);
 }
 
+Set_of_Atoms
+Molecule::connections(atom_number_t a) const {
+  assert(ok_atom_number(a));
+  return _things[a]->connections(a);
+}
+
 int
 Molecule::connections_and_types(atom_number_t a, Set_of_Atoms & others,
                                 resizable_array<bond_type_t> & bt) const

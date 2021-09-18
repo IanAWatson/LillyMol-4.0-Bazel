@@ -157,6 +157,7 @@ class Atom : public resizable_array <Bond *>, public Coordinates
 
     int connections (atom_number_t, atom_number_t *, bond_type_t * = NULL) const;
     int connections (atom_number_t, Set_of_Atoms &) const;
+    Set_of_Atoms connections(atom_number_t zatom) const;
 
     int connections_and_types (atom_number_t, Set_of_Atoms &,
                                resizable_array<bond_type_t> &) const;

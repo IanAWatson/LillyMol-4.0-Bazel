@@ -733,10 +733,10 @@ Molecule::create_components_across_bonds (const int * rmbond,
 }
 
 int
-Molecule::create_subset (Molecule & subset,
-                         const int * process_these,
-                         int id,
-                         int * xref) const
+Molecule::create_subset(Molecule & subset,
+                        const int * process_these,
+                        int id,
+                        int * xref) const
 {
   int ndx = subset.natoms();    // we can start with a non-empty molecule
   int rc = 0;
@@ -862,9 +862,9 @@ Molecule::create_subset (Molecule & subset,
 }
 
 int
-Molecule::create_subset (Molecule & subset,
-                         const int * process_these,
-                         int id) const
+Molecule::create_subset(Molecule & subset,
+                        const int * process_these,
+                        int id) const
 {
   assert(ok());
   assert(subset.ok());
@@ -872,6 +872,19 @@ Molecule::create_subset (Molecule & subset,
   int * tmp = new_int(_number_elements, -1); std::unique_ptr<int[]> free_tmp(tmp);
 
   return create_subset(subset, process_these, id, tmp);
+}
+
+Molecule
+Molecule::create_subset(const Set_of_Atoms& these_atoms) const {
+  Molecule result;
+  std::unique_ptr<int[]> to_keep(new_int(_number_elements));
+  these_atoms.set_vector(to_keep.get(), 1);
+
+  if (! create_subset(result, to_keep.get(), 1)) {
+    cerr << "Molecule::create_subset:failed\n";
+    return result;
+  }
+  return result;
 }
 
 int
