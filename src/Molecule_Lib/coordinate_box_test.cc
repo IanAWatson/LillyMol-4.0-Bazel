@@ -1,4 +1,4 @@
-n2 Test the coordinate box idea.
+// Test the coordinate box idea.
 
 #include <random>
 
@@ -12,6 +12,8 @@ namespace {
 
 using coordinate_box::CoordinateBox;
 using testing::ElementsAre;
+using testing::FloatEq;
+using testing::FloatNear;
 
 TEST(TestCoordinateBox, BadBoxSpec1) {
   const const_IWSubstring s;
@@ -536,10 +538,6 @@ TEST(TestConcentricBox, TestCellsLayer2) {
       }
     }
   }
-  return;
-
-  coords.setxyz(0.8, -1.8, -1.8);
-  EXPECT_EQ(box.CellNumber(coords), 124);
 }
 
 // Given a coordinate 'v' that gets passed through a ConcentricBox with
@@ -559,7 +557,7 @@ TEST(TestConcentricBox, TestLayer1) {
   coordinate_box::ConcentricBox box(dx);
 
   Space_Vector<float> coords(0.0, 0.0, 0.0);
-  uint32_t cell = box.CellNumber(coords);
+  uint64_t cell = box.CellNumber(coords);
   EXPECT_EQ(cell, 0);
 
   coords.setxyz(0.499, 0.4999, 0.4999);
@@ -701,7 +699,7 @@ TEST(TestConcentricBox, TestLayer1) {
   EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(), ElementsAre(0.0, 0.0, -1.0));
 }
 
-TEST(TestConcentricBox, TestRandom) {
+TEST(TestConcentricBox, TestRandom1) {
   constexpr double dx = 1.0;
   coordinate_box::ConcentricBox box(dx);
 
@@ -715,7 +713,7 @@ TEST(TestConcentricBox, TestRandom) {
     const float z = distribution(rng);
     Space_Vector<float> coords(x, y, z);
 
-    const uint32_t cell = box.CellNumber(coords);
+    const uint64_t cell = box.CellNumber(coords);
 
     const Space_Vector<float> returned = box.CellNumberToCoordinates<float>(cell);
 
@@ -727,13 +725,70 @@ TEST(TestConcentricBox, TestRandom) {
   }
 }
 
+TEST(TestConcentricBox, TestP1) {
+  coordinate_box::ConcentricBox box(0.01);
+  const Space_Vector<float> coords(0.0, 2.6, 15.1);
+  const uint64_t cell = box.CellNumber(coords);
+  const Space_Vector<float> returned = box.CellNumberToCoordinates<float>(cell);
+  EXPECT_THAT(returned.ToResizableArray(), 
+              ElementsAre(FloatNear(coords.x(), 1.0e-05),
+              FloatNear(coords.y(), 0.5),
+              FloatNear(coords.z(), 0.5)));
+}
+
+TEST(TestConcentricBox, TestRandom01) {
+  coordinate_box::ConcentricBox box(0.01);
+
+  std::default_random_engine rng;
+  std::uniform_real_distribution<float> distribution(0.0, 20.0);
+
+  constexpr int kNtest = 100;
+  for (int i = 0; i < kNtest; ++i) {
+    const float x = distribution(rng);
+    const float y = distribution(rng);
+    const float z = distribution(rng);
+    Space_Vector<float> coords(x, y, z);
+
+    const coordinate_box::LayerPosition lpil = box.Position(coords);
+
+    const Space_Vector<float> returned = box.CellToCoordinates<float>(lpil);
+
+    EXPECT_THAT(returned.ToResizableArray(),
+                ElementsAre(FloatNear(x, 0.1), FloatNear(y, 0.1), FloatNear(z, 0.1)));
+  }
+}
+
+TEST(TestConcentricBox, TestRandomDefResolution) {
+  coordinate_box::ConcentricBox box;
+
+  std::default_random_engine rng;
+  std::uniform_real_distribution<float> distribution(0.0, 90.0);
+
+  constexpr int kNtest = 1000;
+  constexpr float abs_diff = 1.0e-03;
+  for (int i = 0; i < kNtest; ++i) {
+    const float x = distribution(rng);
+    const float y = distribution(rng);
+    const float z = distribution(rng);
+    Space_Vector<float> coords(x, y, z);
+
+    const coordinate_box::LayerPosition lpil = box.Position(coords);
+
+    const Space_Vector<float> returned = box.CellToCoordinates<float>(lpil);
+
+    EXPECT_THAT(returned.ToResizableArray(), 
+                ElementsAre(FloatNear(x, abs_diff), FloatNear(y, abs_diff), FloatNear(z, abs_diff)));
+    EXPECT_LT(returned.distance(coords), 1.0e-03);
+  }
+}
+
 TEST(TestConcentricBox, TestLayer2) {
   constexpr double dx = 1.0;
   coordinate_box::ConcentricBox box(dx);
 
   Space_Vector<float> coords;
   coords.setxyz(-1.6, -1.6, -1.6);
-  uint32_t cell = box.CellNumber(coords);
+  uint64_t cell = box.CellNumber(coords);
   EXPECT_EQ(cell, 27);
   EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(), ElementsAre(-2.0, -2.0, -2.0));
 
@@ -1157,7 +1212,7 @@ TEST(TestConcentricBox, TestLayer3) {
 
   Space_Vector<float> coords;
   coords.setxyz(-2.6, -2.6, -2.6);
-  uint32_t cell = box.CellNumber(coords);
+  uint64_t cell = box.CellNumber(coords);
   EXPECT_EQ(cell, 125);
   EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(), ElementsAre(-3.0, -3.0, -3.0));
 
@@ -1260,7 +1315,7 @@ TEST(TestConcentricBox, TestLayer4) {
 
   Space_Vector<float> coords;
   coords.setxyz(-3.6, -3.6, -3.6);
-  uint32_t cell = box.CellNumber(coords);
+  uint64_t cell = box.CellNumber(coords);
   EXPECT_EQ(cell, 343);
   EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(), ElementsAre(-4.0, -4.0, -4.0));
 
@@ -1291,7 +1346,7 @@ TEST(TestConcentricBox, TestLayer5) {
 
   Space_Vector<float> coords;
   coords.setxyz(-4.6, -4.6, -4.6);
-  uint32_t cell = box.CellNumber(coords);
+  uint64_t cell = box.CellNumber(coords);
   EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(), ElementsAre(-5.0, -5.0, -5.0));
 
   for (float x = -4.6f; x < 5.0f; x += 1.0f) {
@@ -1301,7 +1356,7 @@ TEST(TestConcentricBox, TestLayer5) {
         float x_expected = Expected(x);
         float y_expected = Expected(y);
         float z_expected = Expected(z);
-        const uint32_t cell = box.CellNumber(coords);
+        const uint64_t cell = box.CellNumber(coords);
         EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(),
                     ElementsAre(x_expected, y_expected, z_expected));
       }
@@ -1320,7 +1375,7 @@ TEST(TestConcentricBox, TestLayer9) {
         float x_expected = Expected(x);
         float y_expected = Expected(y);
         float z_expected = Expected(z);
-        const uint32_t cell = box.CellNumber(coords);
+        const uint64_t cell = box.CellNumber(coords);
         EXPECT_THAT(box.CellNumberToCoordinates<float>(cell).ToResizableArray(),
                     ElementsAre(x_expected, y_expected, z_expected));
       }
@@ -1328,5 +1383,59 @@ TEST(TestConcentricBox, TestLayer9) {
   }
 }
 
+TEST(TestFromString, Empty) {
+  const const_IWSubstring s;
+  coordinate_box::LayerPosition layer_position;
+  EXPECT_EQ(coordinate_box::FromString(s, layer_position), 0);
+}
+
+TEST(TestFromString, JustSeparator) {
+  const const_IWSubstring s(":");
+  coordinate_box::LayerPosition layer_position;
+  EXPECT_EQ(coordinate_box::FromString(s, layer_position), 0);
+}
+
+TEST(TestFromString, EmptyLayer) {
+  const const_IWSubstring s(":0");
+  coordinate_box::LayerPosition layer_position;
+  EXPECT_EQ(coordinate_box::FromString(s, layer_position), 0);
+}
+
+TEST(TestFromString, EmptyPosition) {
+  const const_IWSubstring s("0:");
+  coordinate_box::LayerPosition layer_position;
+  EXPECT_EQ(coordinate_box::FromString(s, layer_position), 0);
+}
+
+TEST(TestFromString, BothZero) {
+  const const_IWSubstring s("0:0");
+  coordinate_box::LayerPosition layer_position;
+  ASSERT_EQ(coordinate_box::FromString(s, layer_position), s.length());
+  EXPECT_EQ(layer_position.layer, 0);
+  EXPECT_EQ(layer_position.position_in_layer, 0);
+}
+
+TEST(TestFromString, BothZeroWithTrailing) {
+  const const_IWSubstring s("0:0:::");
+  coordinate_box::LayerPosition layer_position;
+  EXPECT_EQ(coordinate_box::FromString(s, layer_position), 3);
+  EXPECT_EQ(layer_position.layer, 0);
+  EXPECT_EQ(layer_position.position_in_layer, 0);
+}
+
+TEST(TestFromString, ArbitraryNumbers) {
+  for (uint32_t layer = 17; layer < 8000; layer += 103) {
+    uint64_t within_layer = 123456;
+    for (int i = 0; i < 100; ++i) {
+      within_layer *= 987654;
+      IWString s;
+      s << layer << ':' << within_layer;
+      coordinate_box::LayerPosition layer_position;
+      EXPECT_EQ(coordinate_box::FromString(s, layer_position), s.length());
+      EXPECT_EQ(layer_position.layer, layer);
+      EXPECT_EQ(layer_position.position_in_layer, within_layer);
+    }
+  }
+}
 
 }  // namespace

@@ -30,6 +30,11 @@ struct Torsion {
   // For each example of this torsion, an accumulation of
   // the observed angles.
   Accumulator<double> acc_angle;
+  // Ultimately we want to compute the variance, and that is complicated by
+  // the fact that angles can be either side of 0,180 and be nearly the same.
+  // Therefore use two accumulators, and the variance will be the minimum of
+  // those.
+  Accumulator<double> acc_angle_pi2;
 
   // The first molecule that exemplifies this torsion.
   IWString exemplar;
@@ -304,6 +309,25 @@ AngleToIndex(float angle) {
   return static_cast<int>(angle * multiplier);
 }
 
+float
+AddHalfPi(float angle) {
+  constexpr float two_pi = M_PI + M_PI;
+  angle += (M_PI * 0.5);
+  if (angle > two_pi) {
+    angle -= two_pi;
+  }
+
+  return angle;
+}
+
+double
+MinVaranmce(const Torsion& torsion) {
+  double v1 = torsion.acc_angle.variance();
+  double v2 = torsion.acc_angle_pi2.variance();
+
+  return std::min(v1, v2);
+}
+
 int
 CheckVariability(Molecule& m,
                  const Bond& bond,
@@ -326,6 +350,7 @@ CheckVariability(Molecule& m,
   auto iter = params.acc_angle.find(usmi);
   if (iter != params.acc_angle.end()) {
     iter->second.acc_angle.extra(angle);
+    iter->second.acc_angle_pi2.extra(AddHalfPi(angle));
     iter->second.all_angles[AngleToIndex(angle)]++;
     return 1;
   }
@@ -648,7 +673,7 @@ SmuRotatableBonds(int argc, char ** argv) {
               static_cast<float>(acc.average()) << sep <<
               static_cast<float>(acc.maxval()) << sep <<
               static_cast<float>(acc.range()) << sep << 
-              static_cast<float>(sqrt(acc.variance())) << sep << 
+              static_cast<float>(sqrt(MinVaranmce(torsion))) << sep << 
               buckets_occupied << sep << highest_occupancy << sep <<
               static_cast<float>(highest_occupancy) / static_cast<float>(acc.n()) << '\n';
 

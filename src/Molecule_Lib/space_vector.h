@@ -505,7 +505,7 @@ Space_Vector<T>::read (const const_IWSubstring & buffer, char separator)
 
 template <typename T>
 T
-Space_Vector<T>::distance (const Space_Vector<T> & rhs) const
+Space_Vector<T>::distance(const Space_Vector<T> & rhs) const
 {
   return static_cast<T>(sqrt(static_cast<double>(_x - rhs._x) * static_cast<double>(_x - rhs._x) + 
                              static_cast<double>(_y - rhs._y) * static_cast<double>(_y - rhs._y) +
