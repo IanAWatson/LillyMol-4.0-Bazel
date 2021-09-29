@@ -104,7 +104,6 @@ TEST(TestCreateSubset, TestCreateSubset) {
       EXPECT_THAT(in_parent,
         UnorderedElementsAre(subset.atomic_number(0), subset.atomic_number(1)));
     }
-
   }
 
 }

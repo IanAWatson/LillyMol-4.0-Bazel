@@ -1,6 +1,8 @@
 #ifndef MOLECULE_LIB_COORDINATE_BOX_H
 #define MOLECULE_LIB_COORDINATE_BOX_H
 
+#include <cstdint>
+
 #include "Foundational/iwstring/iwstring.h"
 #include "Molecule_Lib/space_vector.h"
 
@@ -47,6 +49,44 @@ class CoordinateBox {
     template <typename T>
     Space_Vector<T> CoordinatesAsVector(int cell_number) const;
 };
+
+// A cell number that defines a set of coordinates in relation to a
+// concentric set of cubic shells. The shells are defined by a resolution
+// specified in the constructor.
+// The cell numbering is not public.
+// Points going through the conversion process will be truncated at
+// values that are multiples of `resolution`.
+class ConcentricBox {
+  private:
+    double _resolution;
+    // Several computations need _resolution*0.5
+    double _half_resolution;
+
+  // private functions.
+    template <typename T> Space_Vector<T> _right_face(uint32_t layer, int within_layer) const;
+    template <typename T> Space_Vector<T> _left_face(uint32_t layer, int within_layer) const;
+    template <typename T> Space_Vector<T> _somewhere_along_x(uint32_t layer, int within_layer) const;
+
+    template <typename T> uint32_t CellNumber(const Space_Vector<T>& coords, uint32_t layer, uint32_t x, uint32_t y, uint32_t z) const;
+    template <typename T> uint32_t LayerNumber(const Space_Vector<T>& coords) const;
+
+  public:
+    // A default resolution which should be good enough for most interatomic distances.
+    ConcentricBox(double resolution = 0.001);
+
+    // Given a position in space, return the corresponding call number.
+    template <typename T>
+    uint32_t CellNumber(const Space_Vector<T>& coords) const;
+
+    // For a cell number, return the position in space.
+    template <typename T> 
+    std::tuple<T, T, T> CoordinatesAsTuple(uint32_t cell_number) const;
+    template <typename T>
+    Space_Vector<T> CellNumberToCoordinates(uint32_t cell_number) const;
+};
+
+// Helper function for ConcentricBox, exposed just for testing.
+uint32_t CellToLayer(uint32_t cell);
 
 } // namespace coordinate_box
 

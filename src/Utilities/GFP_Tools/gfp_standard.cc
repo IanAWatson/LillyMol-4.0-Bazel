@@ -14,7 +14,7 @@
 extern float * precomputed_ratio;
 
 void
-GFP_Standard::build_molecular_properties (const Molecular_Properties_Integer & mpr)
+GFP_Standard::build_molecular_properties(const Molecular_Properties_Integer & mpr)
 {
   copy_vector(_molecular_properties, mpr.rawdata(), 8);
 }
@@ -34,7 +34,7 @@ set_bits_in_mk (int s)
 }
 
 void
-GFP_Standard::build_mk (IWDYFP & fp)
+GFP_Standard::build_mk(IWDYFP & fp)
 {
   if (bits_in_mk == max_uint)
   {
@@ -63,7 +63,7 @@ GFP_Standard::build_mk (IWDYFP & fp)
 }
 
 void
-GFP_Standard::build_mk2 (IWDYFP & fp)
+GFP_Standard::build_mk2(IWDYFP & fp)
 {
   if (fp.nbits() != static_cast<decltype(fp.nbits())>(bits_in_mk))
   {
@@ -166,7 +166,7 @@ GFP_Standard::build_mk (const int * b)
 }
 
 void 
-GFP_Standard::build_mk2 (const int * b)
+GFP_Standard::build_mk2(const int * b)
 {
   assert (bits_in_mk > 0);
 
@@ -183,7 +183,7 @@ GFP_Standard::build_mk2 (const int * b)
 }
 
 void
-GFP_Standard::build_iw  (IWDYFP & fp)
+GFP_Standard::build_iw(IWDYFP & fp)
 {
   _nset_iw = fp.nset();
   memcpy(_iw, fp.bits(), 256);
@@ -197,7 +197,7 @@ GFP_Standard::build_iw  (IWDYFP & fp)
 */
 
 static inline int
-popcount_2fp (const unsigned* bufA,const unsigned* bufB,const int nwords)
+popcount_2fp(const unsigned* bufA,const unsigned* bufB,const int nwords)
 {
     int count = 0;
     assert(nwords % 8 == 0);
@@ -223,7 +223,7 @@ popcount_2fp (const unsigned* bufA,const unsigned* bufB,const int nwords)
 }
 
 static inline int
-popcount (const unsigned char * b, const int nwords)
+popcount(const unsigned char * b, const int nwords)
 {
   const int nquads = nwords / 2;
   int count = 0;
@@ -239,7 +239,7 @@ popcount (const unsigned char * b, const int nwords)
 }
 
 float
-GFP_Standard::tanimoto (const GFP_Standard & rhs) const
+GFP_Standard::tanimoto(const GFP_Standard & rhs) const
 {
   float rc = static_cast<float>(0.0);
   
@@ -343,7 +343,7 @@ GFP_Standard::tanimoto_distance_2(GFP_Standard const & fp1,
 }
 
 int
-standard_fingerprints_present ()
+standard_fingerprints_present()
 {
   if (3 != number_fingerprints())
   {

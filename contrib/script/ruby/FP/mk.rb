@@ -25,7 +25,7 @@ class MK
     $stderr << "IN MK\n"
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                         extra_qualifiers: extra_qualifiers)
-    cmd << " -J MK"
+    cmd << " -J FPMK"
     cmd
   end
 end

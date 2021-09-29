@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <cmath>
 
+#include "Foundational/iwaray/iwaray.h"
 #include "Foundational/iwmisc/iwconfig.h"
 
 class const_IWSubstring;
@@ -85,6 +86,8 @@ class Space_Vector
     T           angle_between (const Space_Vector<T> & a1, const Space_Vector<T> & a2) const;   // bond angle, we assume  a1 - this - a2, we return the angle a1-this-a2
 
     bool        closer_than (const Space_Vector<T> &, T) const;   // tries to be efficient
+
+    resizable_array<T> ToResizableArray() const;
 };
 
 #include <iostream>
@@ -104,7 +107,7 @@ using std::endl;
 
 template <typename T>
 void
-Space_Vector<T>::_default_values ()
+Space_Vector<T>::_default_values()
 {
   _x = _y = _z = static_cast<T>(0.0);
 
@@ -112,7 +115,7 @@ Space_Vector<T>::_default_values ()
 }
 
 template <typename T>
-Space_Vector<T>::Space_Vector ()
+Space_Vector<T>::Space_Vector()
 {
 #ifdef DEBUG_SPACE_VECTOR
   cerr << "In default constructor " << this << endl;
@@ -122,7 +125,7 @@ Space_Vector<T>::Space_Vector ()
 }
 
 template <typename T>
-Space_Vector<T>::Space_Vector (T x, T y, T z)
+Space_Vector<T>::Space_Vector(T x, T y, T z)
 {
 #ifdef DEBUG_SPACE_VECTOR
   cerr << "Individual value constructor " << this << endl;
@@ -136,7 +139,7 @@ Space_Vector<T>::Space_Vector (T x, T y, T z)
 }
 
 template <typename T>
-Space_Vector<T>::Space_Vector (const Space_Vector<T> & rhs)
+Space_Vector<T>::Space_Vector(const Space_Vector<T> & rhs)
 {
 #ifdef DEBUG_SPACE_VECTOR
   cerr << "In copy constructor " << this << " rhs is " << rhs << endl;
@@ -594,6 +597,13 @@ Space_Vector<T>::closer_than (const Space_Vector<T> & rhs, T d) const
   return sqrt(sum) <= d;
 }
 
+template <typename T>
+resizable_array<T>
+Space_Vector<T>::ToResizableArray() const {
+  resizable_array<T> result(3);
+  result << _x << _y << _z;
+  return result;
+}
 #endif
 
 #endif

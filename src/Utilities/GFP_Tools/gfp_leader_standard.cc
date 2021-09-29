@@ -27,12 +27,12 @@ static int clusters_to_form = std::numeric_limits<int>::max();
 
 static Report_Progress report_progress;
 
-static IWString smiles_tag ("$SMI<");
-static IWString identifier_tag ("PCN<");
-static IWString distance_tag ("DIST<");
-static IWString mk_tag ("FPMK<");
-static IWString mk2_tag ("FPMK2<");
-static IWString iw_tag ("FPIW<");
+static IWString smiles_tag("$SMI<");
+static IWString identifier_tag("PCN<");
+static IWString distance_tag("DIST<");
+static IWString mk_tag("FPMK<");
+static IWString mk2_tag("FPMK2<");
+static IWString iw_tag("FPIW<");
 
 static float threshold = 0.0;
 
@@ -44,7 +44,7 @@ class Leader_Item : public Smiles_ID_Dist
   public:
     Leader_Item();
 
-    void set_gfp (const GFP_Standard * s) { _gfp = s;}
+    void set_gfp(const GFP_Standard * s) { _gfp = s;}
 };
 
 Leader_Item::Leader_Item()
@@ -62,11 +62,12 @@ static int * selected = nullptr;
 static float * distances = nullptr;
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
   cerr << "Leader implementation requiring MPR IW MK MK2\n";
   cerr << " -t <dist>      distance threshold\n";
+  cerr << " -n <number>    number of clusters to form\n";
   cerr << " -A <fname>     file of previously selected fingerprints\n";
   cerr << " -s <size>      size of fingerprint file\n";
   cerr << " -p <n>         process <n> leaders at once (max 2 for now)\n";
@@ -78,8 +79,8 @@ usage (int rc)
 }
 
 static int
-choose_next_leader (const int * selected,
-                    int n)
+choose_next_leader(const int * selected,
+                   int n)
 {
   for (int i = 0; i < n; i++)
   {
@@ -92,10 +93,10 @@ choose_next_leader (const int * selected,
 }
 
 static int
-choose_next_leaders (const int * selected,
-                     int n,
-                     int * leaders,
-                     int leaders_requested)
+choose_next_leaders(const int * selected,
+                    int n,
+                    int * leaders,
+                    int leaders_requested)
 {
   int leader_count = 0;
 
@@ -115,7 +116,7 @@ choose_next_leaders (const int * selected,
 }
 
 static int
-leader ()
+leader()
 {
   int cluster_id = 0;
 
@@ -130,7 +131,7 @@ leader ()
   }
 #endif
 
-  while ((icentre = choose_next_leader (selected + start, pool_size - start)) >= 0)
+  while ((icentre = choose_next_leader(selected + start, pool_size - start)) >= 0)
   {
     cluster_id++;
 
@@ -176,16 +177,16 @@ leader ()
 }
 
 static int
-leader (int * leaders,
-        int leaders_requested,
-        float * cand_distances)
+leader(int * leaders,
+       int leaders_requested,
+       float * cand_distances)
 {
   int cluster_id = 0;
 
   int leaders_found;
   int start = 0;
 
-  while ((leaders_found = choose_next_leaders (selected + start, pool_size - start, leaders, leaders_requested)))
+  while ((leaders_found = choose_next_leaders(selected + start, pool_size - start, leaders, leaders_requested)))
   {
     for (int i = 0; i < leaders_found; i++)
     {
@@ -248,8 +249,8 @@ leader (int * leaders,
 }
 
 static int
-do_previously_selected (const IW_General_Fingerprint & gfp,
-                        float threshold)
+do_previously_selected(const IW_General_Fingerprint & gfp,
+                       float threshold)
 {
   GFP_Standard sgfp;
 
@@ -275,8 +276,8 @@ do_previously_selected (const IW_General_Fingerprint & gfp,
 }
 
 static int
-do_previously_selected (iwstring_data_source & input,
-                        float threshold)
+do_previously_selected(iwstring_data_source & input,
+                      float threshold)
 {
   IW_TDT tdt;
 
@@ -298,10 +299,10 @@ do_previously_selected (iwstring_data_source & input,
 }
 
 static int
-do_previously_selected (const char * fname,
-                        float threshold)
+do_previously_selected(const char * fname,
+                       float threshold)
 {
-  iwstring_data_source input (fname);
+  iwstring_data_source input(fname);
 
   if (! input.good())
   {
@@ -313,7 +314,7 @@ do_previously_selected (const char * fname,
 }
 
 static int
-read_pool (iwstring_data_source & input)
+read_pool(iwstring_data_source & input)
 {
   IW_TDT tdt;
 
@@ -326,10 +327,10 @@ read_pool (iwstring_data_source & input)
     leader_item[ndx].set_gfp(fingerprints+ndx);
 
     tdt.dataitem_value(smiles_tag, tmp);
-    leader_item[ndx].set_smiles (tmp);
+    leader_item[ndx].set_smiles(tmp);
 
     tdt.dataitem_value(identifier_tag, tmp);
-    leader_item[ndx].set_id (tmp);
+    leader_item[ndx].set_id(tmp);
 
     IW_General_Fingerprint gfp;
 
@@ -364,7 +365,7 @@ read_pool (iwstring_data_source & input)
 }
 
 static int
-allocate_pool (int s)
+allocate_pool(int s)
 {
   leader_item = new Leader_Item[s];
   selected = new_int(s);
@@ -382,19 +383,19 @@ allocate_pool (int s)
   return 1;
 }
 static int
-gfp_leader_standard (int argc, char ** argv)
+gfp_leader_standard(int argc, char ** argv)
 {
-  Command_Line cl (argc, argv, "vt:A:s:p:r:h:n:");
+  Command_Line cl(argc, argv, "vt:A:s:p:r:h:n:");
 
-  if (cl.unrecognised_options_encountered ())
+  if (cl.unrecognised_options_encountered())
   {
     cerr << "Unrecognised options encountered\n";
-    usage (1);
+    usage(1);
   }
 
   verbose = cl.option_count('v');
 
-  set_report_fingerprint_status (0);
+  set_report_fingerprint_status(0);
 
   if (! cl.option_present('t'))
   {
@@ -450,7 +451,7 @@ gfp_leader_standard (int argc, char ** argv)
   if (0 == cl.number_elements())
   {
     cerr << "Insufficient arguments\n";
-    usage (2);
+    usage(2);
   }
 
   if (cl.number_elements() > 1)
@@ -471,7 +472,7 @@ gfp_leader_standard (int argc, char ** argv)
 
   if (0 == pool_size)
   {
-    pool_size = input.count_records_starting_with (identifier_tag);
+    pool_size = input.count_records_starting_with(identifier_tag);
 
     if (0 == pool_size)
     {
@@ -512,7 +513,7 @@ gfp_leader_standard (int argc, char ** argv)
   {
     const char * fname = cl.option_value('A');
 
-    if (! do_previously_selected (fname, threshold))
+    if (! do_previously_selected(fname, threshold))
     {
       cerr << "Cannot process previously selected file '" << fname << "'\n";
       return 0;
@@ -590,7 +591,7 @@ gfp_leader_standard (int argc, char ** argv)
 }
 
 int
-main (int argc, char ** argv)
+main(int argc, char ** argv)
 {
   prog_name = argv[0];
 
