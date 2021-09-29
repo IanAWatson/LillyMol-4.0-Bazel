@@ -12,6 +12,7 @@
 
 #include "aromatic.h"
 #include "chiral_centre.h"
+#include "coordinate_box.h"
 #include "misc2.h"
 #include "molecule.h"
 #include "pearlman.h"
@@ -112,6 +113,12 @@ void
 set_append_coordinates_after_each_atom (int s)
 {
   append_coordinates_after_each_atom = s;
+}
+
+static int append_coordinate_box_after_each_atom = 0;
+void
+set_append_coordinate_box_after_each_atom(int s) {
+  append_coordinate_box_after_each_atom = s;
 }
 
 static int _write_smiles_with_smarts_atoms = 0;
@@ -303,6 +310,12 @@ process_standard_smiles_options (Command_Line & cl, int verbose,
       if (verbose)
         cerr << "Will add coordinates to each atom in a smiles\n";
     }
+    else if ("cbox" == tmp)
+    {
+      set_append_coordinate_box_after_each_atom(1);
+      if (verbose)
+        cerr << "Will add boxed coordinates to each atom in a smiles\n";
+    }
     else if ("random" == tmp)
     {
       random_number_seed_t tmp = set_smiles_random_number_seed_random();
@@ -467,7 +480,16 @@ Molecule::_process_directional_bond_for_smiles (IWString & smiles,
 }
 
 static void
-do_append_coordinates (IWString & smiles, const Atom * a)
+do_append_coordinate_box(const Atom& a, IWString& smiles) {
+  coordinate_box::ConcentricBox box;
+  const coordinate_box::LayerPosition layer_position = box.Position(a);
+  smiles += "{{B";
+  smiles << layer_position;
+  smiles += "}}";
+}
+
+static void
+do_append_coordinates(IWString & smiles, const Atom * a)
 {
   smiles += "{{";
   smiles.append_number(a->x(), 5);
@@ -569,8 +591,8 @@ Molecule::_append_smarts_equivalent (Smiles_Formation_Info & sfi,
 }
 
 static int
-append_permanent_aromatic (IWString & smiles,
-                           const Atom * a)
+append_permanent_aromatic(IWString & smiles,
+                          const Atom * a)
 {
   const IWString & s = a->element()->aromatic_symbol();
 
@@ -770,8 +792,11 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
   if (need_to_close_square_bracket)
     smiles += ']';
 
-  if (append_coordinates_after_each_atom)
+  if (append_coordinates_after_each_atom) {
     do_append_coordinates(smiles, a);
+  } else if (append_coordinate_box_after_each_atom) {
+    do_append_coordinate_box(a, smiles);
+  }
 
 //cerr << "After addition, length " << smiles.length() << endl;
 
@@ -862,8 +887,11 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
   if (need_to_close_square_bracket)
     smiles += ']';
 
-  if (append_coordinates_after_each_atom)
+  if (append_coordinates_after_each_atom) {
     do_append_coordinates(smiles, a);
+  } else if (append_coordinate_box_after_each_atom) {
+    do_append_coordinate_box(a, smiles);
+  }
 
   return rc;
 }

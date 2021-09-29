@@ -13,14 +13,15 @@
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 
-#include "molecule.h"
-#include "rwmolecule.h"
 #include "aromatic.h"
-#include "smiles.h"
 #include "chiral_centre.h"
-#include "substructure.h"
-#include "parse_smarts_tmp.h"
+#include "coordinate_box.h"
 #include "misc2.h"
+#include "molecule.h"
+#include "parse_smarts_tmp.h"
+#include "rwmolecule.h"
+#include "smiles.h"
+#include "substructure.h"
 
 /*
   Aug 2002. 
@@ -215,7 +216,7 @@ Molecule::write_molecule_rsmi (std::ostream & os, const IWString & comment)
 }
 
 static void
-smiles_set_name (const char * s, int nchars, Molecule * m)
+smiles_set_name(const char * s, int nchars, Molecule * m)
 {
   const_IWSubstring tmp(s, nchars);
 
@@ -245,9 +246,9 @@ class Smiles_Ring_Status: public resizable_array<atom_number_t>
     Smiles_Ring_Status();
 
     int complete() const;
-    int report_hanging_ring_closures (std::ostream &) const;
+    int report_hanging_ring_closures(std::ostream &) const;
 
-    int encounter (int, atom_number_t, atom_number_t &, bond_type_t &);
+    int encounter(int, atom_number_t, atom_number_t &, bond_type_t &);
 
     int rings_encountered() const { return _rings_encountered;}
 };
@@ -274,7 +275,7 @@ Smiles_Ring_Status::complete() const
 }
 
 int
-Smiles_Ring_Status::report_hanging_ring_closures (std::ostream & os) const
+Smiles_Ring_Status::report_hanging_ring_closures(std::ostream & os) const
 {
   for (int i = 0; i < _number_elements; i++)
   {
@@ -312,9 +313,9 @@ Smiles_Ring_Status::report_hanging_ring_closures (std::ostream & os) const
 */
 
 int
-Smiles_Ring_Status::encounter (int ring_number, atom_number_t a,
-                               atom_number_t & other_end,
-                               bond_type_t & bt)
+Smiles_Ring_Status::encounter(int ring_number, atom_number_t a,
+                              atom_number_t & other_end,
+                              bond_type_t & bt)
 {
   assert(ring_number >= 0);
 
@@ -384,7 +385,7 @@ Smiles_Ring_Status::encounter (int ring_number, atom_number_t a,
 */
 
 static int
-process_hcount (const char * smiles, int & hcount, int & nchars)
+process_hcount(const char * smiles, int & hcount, int & nchars)
 {
   hcount = 1;
   nchars = 1;
@@ -536,10 +537,10 @@ initialise_organic_subset()
 */
 
 int
-parse_smiles_token (const char * smiles,
-                    int characters_to_process,
-                    const Element * &    e,
-                    int & aromatic)
+parse_smiles_token(const char * smiles,
+                   int characters_to_process,
+                   const Element * &    e,
+                   int & aromatic)
 {
   int c = *smiles;
 
@@ -1130,11 +1131,29 @@ Molecule::read_molecule_tdt_ds (iwstring_data_source & input)
   }
 }
 
+int
+ParseBoxedCoordinates(const_IWSubstring c,  // Local copy.
+                      Coordinates& coords) {
+  assert(c.starts_with('B'));
+  c += 1;  // SKip over 'B'.
+  coordinate_box::LayerPosition layer_position;
+  const int consumed = coordinate_box::FromString(c, layer_position);
+  if (consumed != c.length()) {
+    return 0;
+  }
+
+  coordinate_box::ConcentricBox box;
+
+  coords = box.CellToCoordinates<float>(layer_position);
+
+  return c.length() + 1;
+}
+
 static int
-parse_coordinates (const char * smiles,
-                   int characters_to_process,
-                   int characters_processed,
-                   Coordinates & coords)
+parse_coordinates(const char * smiles,
+                  int characters_to_process,
+                  int characters_processed,
+                  Coordinates & coords)
 {
   smiles += characters_processed;
 
@@ -1164,8 +1183,12 @@ parse_coordinates (const char * smiles,
 
   const_IWSubstring c(smiles, close_brace);
 
-  if (! coords.read(c, ','))
-  {
+  if (c[0] == 'B') {
+    if (! ParseBoxedCoordinates(c, coords)) {
+      cerr << "parse_coordinates::Cannot parse boxed coordinates '" << c << "'\n";
+      return 0;
+    }
+  } else if (! coords.read(c, ',')) {
     cerr << "parse_coordinates: cannot parse coordinates '" << c << "'\n";
     return 0;
   }
@@ -1781,7 +1804,7 @@ Molecule::_build_from_smiles (const char * smiles,
       previous_bond_type = SINGLE_BOND;
       previous_bond_type |= SMI_DIRECTIONAL_DOWN;
     }
-    else if ('{' == *s && characters_processed && (characters_to_process - characters_processed >=9) && '{' == s[1])
+    else if ('{' == *s && characters_processed && (characters_to_process - characters_processed >=8) && '{' == s[1])
     {
       if (! previous_token_should_be(previous_token_was, PREVIOUS_TOKEN_ATOM_SPECIFIER))
       {

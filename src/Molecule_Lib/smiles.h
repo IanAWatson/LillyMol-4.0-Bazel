@@ -53,7 +53,8 @@ extern int process_standard_smiles_options (Command_Line &, int = 0, const char 
 extern void set_smiles_reuse_ring_closure_numbers (int);
 extern int  smiles_reuse_ring_closure_numbers ();
 
-extern void set_append_coordinates_after_each_atom (int);
+extern void set_append_coordinates_after_each_atom(int);
+extern void set_append_coordinate_box_after_each_atom(int);
 
 extern void set_smiles_native_ordering (int);
 

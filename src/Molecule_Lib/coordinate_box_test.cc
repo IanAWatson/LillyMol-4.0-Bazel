@@ -1438,4 +1438,20 @@ TEST(TestFromString, ArbitraryNumbers) {
   }
 }
 
+TEST(TestFromString, RoundTrip) {
+  for (uint32_t layer = 17; layer < 8000; layer += 10399) {
+    uint64_t within_layer = 1234567;
+    for (int i = 0; i < 100; ++i) {
+      within_layer *= 987654;
+      coordinate_box::LayerPosition layer_position(layer, within_layer);
+      IWString s;
+      s << layer_position;
+      coordinate_box::LayerPosition returned;
+      EXPECT_EQ(coordinate_box::FromString(s, returned), s.length());
+      EXPECT_EQ(returned.layer, layer);
+      EXPECT_EQ(returned.position_in_layer, within_layer);
+    }
+  }
+}
+
 }  // namespace

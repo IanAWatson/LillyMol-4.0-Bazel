@@ -127,6 +127,9 @@ class ConcentricBox {
 // If unsuccessful, 0 is returned and `destination` is indeterminate.
 int FromString(const const_IWSubstring& s, LayerPosition& destination);
 
+IWString &
+operator << (IWString & output, const LayerPosition& layer_position);
+
 // Helper function for ConcentricBox, exposed just for testing.
 uint32_t CellToLayer(uint64_t cell);
 

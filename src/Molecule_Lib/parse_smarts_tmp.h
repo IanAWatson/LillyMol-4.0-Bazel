@@ -11,6 +11,7 @@
 // two query atoms and a possible qualification, like number
 // of atoms between, or smarts.
 
+#include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/substructure.pb.h"
 
 class ThreeDots

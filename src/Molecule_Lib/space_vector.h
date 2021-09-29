@@ -208,7 +208,7 @@ Space_Vector<T>::norm () const
 
 template <typename T>
 void
-Space_Vector<T>::setxyz (T x, T y, T z)
+Space_Vector<T>::setxyz(T x, T y, T z)
 {
   _x = x;
   _y = y;
@@ -218,7 +218,7 @@ Space_Vector<T>::setxyz (T x, T y, T z)
 }
 template <typename T>
 void
-Space_Vector<T>::setxyz (const Space_Vector<T> & rhs)
+Space_Vector<T>::setxyz(const Space_Vector<T> & rhs)
 {
   _x = rhs._x;
   _y = rhs._y;

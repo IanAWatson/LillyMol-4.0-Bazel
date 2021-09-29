@@ -454,11 +454,12 @@ ConcentricBox::PositionInLayer(const Space_Vector<T>& coords,
   return position;
 }
 
+constexpr char kComponentSeparator = ':';
+
 int
 FromString(const const_IWSubstring& s, LayerPosition& destination) {
   destination.layer = 0;
   destination.position_in_layer = 0;
-  constexpr char kComponentSeparator = ':';
   const int nchars = s.length();
   int i = 0;
   for ( ; i < nchars; ++i) {
@@ -498,6 +499,12 @@ FromString(const const_IWSubstring& s, LayerPosition& destination) {
   }
 
   return 0;
+}
+
+IWString &
+operator << (IWString & output, const LayerPosition& layer_position) {
+  output << layer_position.layer << kComponentSeparator << layer_position.position_in_layer;
+  return output;
 }
 
 template uint64_t ConcentricBox::CellNumber(const Space_Vector<float>& coords) const;
