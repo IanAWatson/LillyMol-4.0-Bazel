@@ -18,4 +18,7 @@ message MoleculeDatabaseOptions {
 
   // Specifications about graph conversion.
   Mol2Graph mol2graph = 4;
+
+  // By default the unique smiles is used.
+  bool unique_smiles = 5;
 }

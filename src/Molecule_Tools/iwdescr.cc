@@ -2245,7 +2245,7 @@ compute_ramey_descriptors(Molecule & m,
 
   const int nh = m.implicit_hydrogens();
 
-  const auto oxygen_balance = - 1600.0 * (2 * nc + static_cast<double>(nh) / 2.0 - no) / m.molecular_weight();
+  const auto oxygen_balance = - 1600.0 * (2 * nc + static_cast<double>(nh) / 2.0 - no) / m.molecular_weight_ignore_isotopes();
 
   descriptor[iwdescr_obalance].set(static_cast<float>(oxygen_balance));
 
