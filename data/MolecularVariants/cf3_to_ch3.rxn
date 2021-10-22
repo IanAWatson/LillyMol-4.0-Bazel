@@ -1,0 +1,8 @@
+name: "cf3_to_ch3"
+scaffold {
+  id: 0
+  smarts: "[CD4](-F)(-F)F"
+  remove_atom: 1
+  remove_atom: 2
+  remove_atom: 3
+}

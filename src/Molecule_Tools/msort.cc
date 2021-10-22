@@ -63,6 +63,7 @@ static int * direction = NULL;
 #define CMP_SMALLEST_RING_SIZE 26
 #define CMP_ATOMIC_NUMBER_TOTAL 27
 #define CMP_SP3 27
+#define CMP_NBONDS 28
 
 static extending_resizable_array<int> comparison_column;
 
@@ -152,6 +153,7 @@ usage(int rc)
   cerr << "                     'rngat' number of ring atoms\n";
   cerr << "                     'Z' sum of atomic numbers in the molecule\n";
   cerr << "                     'sp3' number of sp3 atoms\n";
+  cerr << "                     'nbonds' number of bonds (single=1, double=2, triple=3)\n";
   cerr << "                     'charge' number atoms with formal charges\n";
   cerr << "                     'qry=...' hits to substructure query\n";
   cerr << "                     'smt=...' hits to substructure query\n";
@@ -332,6 +334,27 @@ compute_sp3(const Molecule & m)
   {
     if (m.ncon(i) == m.nbonds(i))
       rc++;
+  }
+
+  return rc;
+}
+
+// Deliberate decision to NOT specifically handle aromatic bonds.
+static int
+compute_nbonds(const Molecule& m) {
+
+  int rc = 0;
+  const int nedges = m.nedges();
+
+  for (int i = 0; i < nedges; ++i) {
+    const Bond* b = m.bondi(i);
+    if (b->is_single_bond()) {
+      rc += 1;
+    } else if (b->is_double_bond()) {
+      rc += 2;
+    } else if (b->is_triple_bond()) {
+      rc += 3;
+    }
   }
 
   return rc;
@@ -823,6 +846,8 @@ File_Record::initialise(Molecule & m,
       _property[i] = compute_total_atomic_number(m);
     else if (CMP_SP3 == comparison_criterion[i])
       _property[i] = compute_sp3(m);
+    else if (CMP_NBONDS == comparison_criterion[i])
+      _property[i] = compute_nbonds(m);
     else if (CMP_ANY_CHARGE == comparison_criterion[i])
       _property[i] = m.number_formally_charged_atoms();
     else if (CMP_SMALLEST_RING_SIZE == comparison_criterion[i])
@@ -1387,6 +1412,8 @@ msort (int argc, char ** argv)
           comparison_criterion[nproperties] = CMP_ATOMIC_NUMBER_TOTAL;
         else if ("sp3" == token)
           comparison_criterion[nproperties] = CMP_SP3;
+        else if ("nbonds" == token)
+          comparison_criterion[nproperties] = CMP_NBONDS;
         else if ("charge" == token)
           comparison_criterion[nproperties] = CMP_ANY_CHARGE;
         else if (token.starts_with("qry="))

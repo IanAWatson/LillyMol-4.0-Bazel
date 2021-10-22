@@ -1,0 +1,9 @@
+name: "rmfused_phenyl"
+scaffold {
+  id: 0
+  smarts: "[cD3x3]1:[cD2]:[cD2]:[cD2]:[cD2]:[cD3x3]1"
+  remove_atom: 1
+  remove_atom: 2
+  remove_atom: 3
+  remove_atom: 4
+}

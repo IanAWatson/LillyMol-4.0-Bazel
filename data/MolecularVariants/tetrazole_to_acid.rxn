@@ -1,0 +1,24 @@
+name: "tetrazole_to_acid"
+scaffold {
+  id: 0
+  smarts: "[nx2H]1[nD2][nD2][nD2][cD3x2]1"
+  remove_atom: 0
+  remove_atom: 1
+  remove_atom: 2
+  remove_atom: 3
+}
+sidechain {
+  id: 1
+  reagent: "O.O"
+  smarts: "O.O"
+  join {
+    a1: 4
+    a2: 0
+    btype: SS_SINGLE_BOND
+  }
+  join {
+    a1: 4
+    a2: 1
+    btype: SS_SINGLE_BOND
+  }
+}

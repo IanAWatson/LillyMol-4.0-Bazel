@@ -1,0 +1,10 @@
+name: "phenyl_to_methyl"
+scaffold {
+  id: 0
+  smarts: "[/IWfss1cD3]1[cD2][cD2][cD2][cD2][cD2]1"
+  remove_atom: 1
+  remove_atom: 2
+  remove_atom: 3
+  remove_atom: 4
+  remove_atom: 5
+}

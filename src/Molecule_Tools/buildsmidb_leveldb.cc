@@ -99,6 +99,9 @@ int BuildSmiDb(Molecule& m,
     return BuildSmiDb(m.unique_smiles(), m.name(), write_options, database);
   }
 
+
+  // TOTO(ianiwatson@gmail.com) Implement graph processing...
+
   return 1;
 }
 

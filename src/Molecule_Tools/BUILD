@@ -427,6 +427,24 @@ cc_binary(
 )
 
 cc_binary(
+    name = "molecular_variants",
+    srcs = [
+        "molecular_variants.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:iwreaction",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iw_tdt:iw_tdt",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "molecule_subset",
     srcs = [
         "molecule_subset.cc",
@@ -878,6 +896,24 @@ cc_binary(
         "-lz",
     ],
 )
+
+cc_binary(
+    name = "smu_duplicates",
+    srcs = [
+        "smu_duplicates.cc",
+    ],
+    deps = [
+         "//Foundational/cmdline:iwcmdline",
+         "//Foundational/iwaray:iwaray",
+         "//Foundational/iwmisc:iwmisc",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
 
 cc_binary(
     name = "smu_ring_membership_change",

@@ -1,0 +1,13 @@
+name: "rm_cf2"
+scaffold {
+  id: 0
+  smarts: "F-[CD4T2](F)(-C)-C-F"
+  remove_atom: 0
+  remove_atom: 1
+  remove_atom: 2
+  make_bond {
+    a1: 3
+    a2: 4
+    btype: SS_SINGLE_BOND
+  }
+}

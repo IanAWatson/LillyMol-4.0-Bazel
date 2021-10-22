@@ -1,0 +1,17 @@
+syntax proto3;
+
+message CoordinateBox {
+  double resolution = 1;
+
+  // The lengths of the sides of the box.
+  // It is assumed that they will be pretty close to an
+  // even multiple of `resolution`.
+  double xlength = 2;
+  double ylength = 3;
+  double zlength = 4;
+
+  // The position in space of this box.
+  double xorigin = 5;
+  double yorigin = 6;
+  double zorigin = 7;
+}
