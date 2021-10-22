@@ -57,6 +57,11 @@ set_max_aromatic_ring_size(int s)
 
 static int min_aromatic_ring_size = 4;
 
+void
+set_min_aromatic_ring_size(int s) {
+  min_aromatic_ring_size = s;
+}
+
 int
 display_no_kekule_form_message()
 {
@@ -2260,6 +2265,8 @@ display_all_aromaticity_options(std::ostream & os)
   os << "  -A okchain     aromatic atoms/bonds in a chain are OK\n";
   os << "  -A tryn+       when an aromatic structure cannot be found, try protonating N atoms\n";
   os << "  -A usmidflt=X  set default aromaticity type for unique smiles\n";
+  os << "  -A mnars=N     min size of an aromatic ring, def " << min_aromatic_ring_size << '\n';
+  os << "  -A mxars=N     max size of an aromatic ring, def " << max_aromatic_ring_size << '\n';
   os << "  -A perm=a      element 'a' is permanent aromatic type\n";
   os << "  -A oknk        non Kekule rings like c1cccc1 can be aromatic\n";
   os << "  -A nokekule    do not attempt Kekule form determination\n";
@@ -2540,6 +2547,26 @@ process_standard_aromaticity_options(Command_Line & cl, int verbose, char aflag)
       if (verbose)
         cerr << "All unique smiles generated with " << atype << " aromaticity rules\n";
     }
+    else if (c.starts_with("mnars=")) {
+      c.remove_leading_chars(6);
+      if (! c.numeric_value(min_aromatic_ring_size) || min_aromatic_ring_size < 3) {
+        cerr << "Invalid min aromatic ring size directive '" << c << "'\n";
+        return 0;
+      }
+      if (verbose) {
+        cerr << "Min aromatic ring size " << min_aromatic_ring_size << '\n';
+      }
+    }
+    else if (c.starts_with("mxars=")) {
+      c.remove_leading_chars(6);
+      if (! c.numeric_value(max_aromatic_ring_size) || max_aromatic_ring_size < 3) {
+        cerr << "Invalid max_aromatic ring size directive '" << c << "'\n";
+        return 0;
+      }
+      if (verbose) {
+        cerr << "Max aromatic ring size " << max_aromatic_ring_size << '\n';
+      }
+    }
     else if (c.starts_with("perm="))
     {
       c.remove_leading_chars(5);
@@ -2647,8 +2674,7 @@ class Kekule_Temporary_Arrays
 
   //  Some variables are only set if the molecule is larg//  Some variables are only set if the molecule is large.
 
-  int *
-      _smallest_ring_size;    // for each atom, what is the size of the smallest ring containing it
+  int * _smallest_ring_size;    // for each atom, what is the size of the smallest ring containing it
 
   int _additional_fused_pi_electrons;
 

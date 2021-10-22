@@ -79,6 +79,7 @@ extern void set_allow_pipeline_pilot_aromaticity_on_input(int s);
   The largest ring that can be aromatic
 */
 
+extern void set_min_aromatic_ring_size(int s);
 extern void set_max_aromatic_ring_size(int s);
 
 extern void set_perform_kekule_perception(int s);
