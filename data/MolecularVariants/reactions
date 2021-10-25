@@ -3,6 +3,7 @@ aromaticf_to_h.rxn
 aromatic_ch3_to_h.rxn
 aromatic_s_to_o.rxn
 br2cl.rxn
+catechol_to_hydroxy.rxn
 cf3_to_ch3.rxn
 cyclobutane_to_cyclopropane.rxn
 cyclohexyl_to_methyl.rxn
@@ -13,7 +14,10 @@ ethyl_to_methyl.rxn
 hydroxamic_to_carboxyllic.rxn
 i2cl.rxn
 imidazole_to_pyrrole.rxn
+indole_to_pyrrole.rxn
+isoindole_to_pyrrole.rxn
 isoxazole_to_oxazole.rxn
+isoquinoline_to_pyridine.rxn
 move_aromatic_nitrogen.rxn
 # nitro_to_benzoxadiazol.rxn
 ortho_meta_halogen_to_ortho.rxn
@@ -30,6 +34,7 @@ piperidine_to_amine.rxn
 propane_to_methyl.rxn
 pyrazine_to_pyridine.rxn
 pyrimidine_to_pyridine.rxn
+resorcinol_to_hydroxy.rxn
 rm_butane.rxn
 rm_cf2.rxn
 rm_ch2.rxn

@@ -135,6 +135,13 @@ int InDatabase(int argc, char ** argv) {
 
   verbose = cl.option_count('v');
 
+  if (cl.option_present('A')) {
+    if (! process_standard_aromaticity_options(cl, verbose, 'A')) {
+      cerr << "Cannot initialise aromaticity\n";
+      return 1;
+    }
+  }
+
   if (cl.option_present('r')) {
     if (! report_progress.initialise(cl, 'r', verbose)) {
       cerr << "Cannot initialize progress reporting\n";

@@ -1,5 +1,6 @@
 //Examine SMU 3d structures to figure out which bonds are rotatable.
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 
@@ -11,6 +12,7 @@
 #include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/standardise.h"
 
 namespace smu_rotatable_bonds {
 
@@ -23,6 +25,15 @@ Usage(int rc) {
   cerr << " -v            verbose output\n";
   exit(rc);
 }
+
+// A smarts, which will include all atoms attached to
+// a bond, and the identify of the query atoms that are
+// the canonical form.
+struct SmartsAndDihedral {
+  IWString smarts;
+  Set_of_Atoms canonical_atoms;
+};
+
 
 struct Torsion {
   // For each example of this torsion, an accumulation of
@@ -64,8 +75,12 @@ struct JobParameters {
   // conformers.
   bool process_as_groups = false;
 
+  bool consider_all_attachments = true;
+
   // Should probably always be true.
   bool remove_hydrogens = false;
+
+  Chemical_Standardisation chemical_standardisation;
 
   int verbose = 0;
 };
@@ -104,23 +119,29 @@ BondOkToProcess(Molecule& m,
     return false;
   }
 
-  if (b.nrings()) {
-    return false;
-  }
-
   const atom_number_t a2 = b.a1();
   const atom_number_t a3 = b.a2();
 
+  // If terminal, not rotatable.
   if (m.ncon(a2) == 1 || m.ncon(a3) == 1) {
     return false;
   }
 
-  // Guard against triple bonds.
+  if (m.ring_bond_count(a2) > 0 || m.ring_bond_count(a3) > 0) {
+    return 0;
+  }
 
-  if (m.ncon(a2) == 2 && m.nbonds(a2) == 4) {
+  m.ring_membership();
+
+  if (b.nrings()) {
     return false;
   }
-  if (m.ncon(a3) == 2 && m.nbonds(a3) == 4) {
+
+  // disallow any unsaturation.
+  if (m.ncon(a2) < m.nbonds(a2)) {
+    return false;
+  }
+  if (m.ncon(a3) < m.nbonds(a3)) {
     return false;
   }
 
@@ -322,6 +343,9 @@ AddHalfPi(float angle) {
 
 double
 MinVaranmce(const Torsion& torsion) {
+  if (torsion.acc_angle.n() < 2) {
+    return 0.0;
+  }
   double v1 = torsion.acc_angle.variance();
   double v2 = torsion.acc_angle_pi2.variance();
 
@@ -333,14 +357,18 @@ CheckVariability(Molecule& m,
                  const Bond& bond,
                  const Set_of_Atoms& atoms,
                  IWString& usmi,
+                 const SmartsAndDihedral& smarts,
                  JobParameters & params) {
   auto angle = m.dihedral_angle(atoms[0], atoms[1], atoms[2], atoms[3]);
+  angle += M_PI;   // ensure positive.
+#ifdef NEGATE_ANGLE
   if (angle < 0.0f)  {
     angle = - angle;
   }
   if (angle >= float_pi) {
     angle -= float_pi;
   }
+#endif
 
   if (angle < 0.0f)  {
     cerr << "NEgative angle " << angle << '\n';
@@ -359,7 +387,11 @@ CheckVariability(Molecule& m,
   torsion.acc_angle.extra(angle);
   torsion.all_angles[AngleToIndex(angle)]++;
   torsion.exemplar = MakeExemplarIsotopic(m, atoms);
-  torsion.first_smarts = std::move(MakeSmarts(m, atoms));
+  if (smarts.smarts.empty()) {
+    torsion.first_smarts = std::move(MakeSmarts(m, atoms));
+  } else {
+    torsion.first_smarts = smarts.smarts;
+  }
   params.acc_angle.emplace(std::move(usmi), torsion);  // OK to destroy usmi
 
   return 1;
@@ -493,8 +525,14 @@ IDFromConformerNumber(const IWString& id) {
 void
 Preprocess(JobParameters& params,
            Molecule& m) {
+  m.reset_all_atom_map_numbers();
+
   if (params.remove_hydrogens) {
     m.remove_all(1);
+  }
+
+  if (params.chemical_standardisation.active()) {
+    params.chemical_standardisation.process(m);
   }
 }
 
@@ -504,6 +542,8 @@ SmuRotatableBonds(Molecule& m,
   Preprocess(params, m);
 
   (void) m.ring_membership();
+
+  SmartsAndDihedral smarts;  // Not used here.
 
   const int nedges = m.nedges();
   for (int i = 0; i < nedges; ++i) {
@@ -517,7 +557,7 @@ SmuRotatableBonds(Molecule& m,
     if (! AssembleAtoms(m, *b, usmi, dihedral)) {
       continue;
     }
-    CheckVariability(m, *b, dihedral, usmi, params);
+    CheckVariability(m, *b, dihedral, usmi, smarts, params);
   }
 
   return 1;
@@ -571,6 +611,195 @@ SmuRotatableBondsGrouped(data_source_and_type<Molecule>& input,
   return 1;
 }
 
+// If possible, return a canonical connection attached to
+// `from` while ignoring `exclude`.
+atom_number_t
+CanonicalConnection(const Molecule& m,
+                    atom_number_t from,
+                    atom_number_t exclude) {
+  Set_of_Atoms connections = m.connections(from);
+  connections.remove_first(exclude);
+  if (connections.size() == 1) {
+    return connections[0];
+  }
+
+  resizable_array<atomic_number_t> atomic_numbers;
+  atomic_numbers.resize(connections.size());
+  for (atom_number_t atom : connections) {
+    if (atom != exclude) {
+      atomic_numbers << m.atomic_number(atom);
+    }
+  }
+
+  if (connections.size() == 2) {
+    if (atomic_numbers[0] == atomic_numbers[1]) {
+      return INVALID_ATOM_NUMBER;
+    }
+    if (atomic_numbers[0] > atomic_numbers[1]) {
+      return connections[0];
+    } else {
+      return connections[1];
+    }
+  }
+
+  // connections.size() == 3
+
+  // First check if they are all the same.
+  if (atomic_numbers[0] == atomic_numbers[1] && atomic_numbers[1] == atomic_numbers[2]) {
+    return INVALID_ATOM_NUMBER;
+  }
+
+  // Are any two the same
+  if (atomic_numbers[0] == atomic_numbers[1]) {
+    return connections[2];
+  }
+  if (atomic_numbers[0] == atomic_numbers[2]) {
+    return connections[1];
+  }
+  if (atomic_numbers[1] == atomic_numbers[2]) {
+    return connections[0];
+  }
+
+  // Must be all different, choose the highest atomic number.
+  atomic_number_t highest_atomic_number = atomic_numbers[0];
+  atom_number_t canonical_atom = connections[0];
+  for (int i = 1; i < 3; ++i) {
+    if (atomic_numbers[i] > highest_atomic_number) {
+      highest_atomic_number = atomic_numbers[i];
+      canonical_atom = connections[i];
+    }
+  }
+
+  return canonical_atom;
+}
+
+int
+AssembleAtomsAllAttachments(Molecule& m,
+                            atom_number_t canon1,
+                            atom_number_t a1,
+                            atom_number_t a2,
+                            atom_number_t canon2,
+                            IWString& usmi,
+                            SmartsAndDihedral& smarts,
+                            Set_of_Atoms& dihedral) {
+  dihedral << canon1 << a1 << a2 << canon2;
+
+  Set_of_Atoms connected1 = m.connections(a1);
+  Set_of_Atoms connected2 = m.connections(a2);
+
+  const int matoms = m.natoms();
+
+  std::unique_ptr<int[]> atom_in_subset(new_int(matoms));
+  connected1.set_vector(atom_in_subset.get(), 1);
+  connected2.set_vector(atom_in_subset.get(), 1);
+
+  Molecule subset;
+  std::unique_ptr<int[]> xref(new_int(matoms));
+  if (! m.create_subset(subset, atom_in_subset.get(), 1, xref.get())) {
+    return 0;
+  }
+
+  usmi = subset.unique_smiles();
+
+  // By convention, we write the canonical atoms as #atomic_number
+
+  smarts.smarts << "[#" << m.atomic_number(canon1) << ']';
+  smarts.smarts << m.smarts_equivalent_for_atom(a1);
+  for (atom_number_t atom : connected1) {
+    if (atom == a2 || atom == canon1) {
+      continue;
+    }
+    smarts.smarts << "(-" << m.atomic_symbol(atom) << ')';
+  }
+  smarts.smarts << '-';
+  smarts.smarts << m.smarts_equivalent_for_atom(a2);
+  smarts.smarts << "(-[#" << m.atomic_number(canon2) << "])";
+  for (atom_number_t atom : connected2) {
+    if (atom == a1 || atom == canon2) {
+      continue;
+    }
+    smarts.smarts << "(-" << m.atomic_symbol(atom) << ')';
+  }
+  return 1;
+}
+
+int
+AssembleAtomsAllAttachments(Molecule& m,
+                            const Bond & b,
+                            IWString& usmi,
+                            SmartsAndDihedral& smarts,
+                            Set_of_Atoms& dihedral) {
+  const atom_number_t a1 = b.a1();
+  const atom_number_t a2 = b.a2();
+
+  atom_number_t c1 = CanonicalConnection(m, a1, a2);
+  if (c1 == INVALID_ATOM_NUMBER) {
+    return 0;
+  }
+  atom_number_t c2 = CanonicalConnection(m, a2, a1);
+  if (c2 == INVALID_ATOM_NUMBER) {
+    return 0;
+  }
+
+  // First determine if this bond can be resolved.
+  const atomic_number_t z1 = m.atomic_number(c1);
+  const atomic_number_t z2 = m.atomic_number(a1);
+  const atomic_number_t z3 = m.atomic_number(a2);
+  const atomic_number_t z4 = m.atomic_number(c2);
+
+  if (z1 < z4) {
+    return AssembleAtomsAllAttachments(m, c1, a1, a2, c2, usmi, smarts, dihedral);
+  } else if (z1 > z4) {
+    return AssembleAtomsAllAttachments(m, c2, a2, a1, c1, usmi, smarts, dihedral);
+  } else if (z2 < z3) {
+    return AssembleAtomsAllAttachments(m, c1, a1, a2, c2, usmi, smarts, dihedral);
+  } else if (z2 > z3) {
+    return AssembleAtomsAllAttachments(m, c2, a2, a1, c1, usmi, smarts, dihedral);
+  } else {
+    return 0;
+  }
+}
+
+int
+ExtractTorsionsAllAttachments(Molecule& m,
+                              JobParameters& params) {
+//cerr << "Processing " << m.name() << '\n';
+  const int nedges = m.nedges();
+  for (int i = 0; i < nedges; ++i) {
+    const Bond * b = m.bondi(i);
+    if (! BondOkToProcess(m, *b)) {
+//    cerr << "cannot process bond\n";
+      continue;
+    }
+
+    IWString usmi;
+    SmartsAndDihedral smarts;
+    Set_of_Atoms dihedral;
+    if (! AssembleAtomsAllAttachments(m, *b, usmi, smarts, dihedral)) {
+//    cerr << "AssembleAtomsAllAttachments failed\n";
+      continue;
+    }
+//  cerr << "CheckVariability " << usmi << '\n';
+    CheckVariability(m, *b, dihedral, usmi, smarts, params);
+  }
+
+  return 1;
+}
+
+int
+SmuRotatableBondsAllAttachments(data_source_and_type<Molecule>& input,
+                        JobParameters& params)  {
+  Molecule * m;
+  while (NULL != (m = input.next_molecule())) {
+    std::unique_ptr<Molecule> free_m(m);
+    Preprocess(params, *m);
+    ExtractTorsionsAllAttachments(*m, params);
+    params.molecules_read++;
+  }
+
+  return 1;
+}
+
 int
 SmuRotatableBonds(const char * fname,
                   JobParameters& params) {
@@ -581,7 +810,9 @@ SmuRotatableBonds(const char * fname,
     return 1;
   }
 
-  if (params.process_as_groups) {
+  if (params.consider_all_attachments) {
+    return SmuRotatableBondsAllAttachments(input, params);
+  } else if (params.process_as_groups) {
     return SmuRotatableBondsGrouped(input, params);
   } else {
     return SmuRotatableBondsEach(input, params);
@@ -590,7 +821,7 @@ SmuRotatableBonds(const char * fname,
 
 int
 SmuRotatableBonds(int argc, char ** argv) {
-  Command_Line cl(argc, argv, "vi:A:hp:");
+  Command_Line cl(argc, argv, "vi:A:hp:g:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -615,7 +846,14 @@ SmuRotatableBonds(int argc, char ** argv) {
     }
   }
 
-  unsigned int min_count_for_output = std::numeric_limits<int>::max();
+  if (cl.option_present('g')) {
+    if (! params.chemical_standardisation.construct_from_command_line(cl, params.verbose, 'g')) {
+      cerr << "Invalid chemical standardisation specification (-g)\n";
+      return 1;
+    }
+  }
+
+  unsigned int min_count_for_output = 0;
   if (cl.option_present('p')) {
     if (! cl.value('p', min_count_for_output) || min_count_for_output < 0) {
       cerr << "Invalid -p options\n";
@@ -668,6 +906,7 @@ SmuRotatableBonds(int argc, char ** argv) {
     }
     std::cout << std::setprecision(3);
     std::cout << torsion.exemplar << sep << smiles << sep <<
+              torsion.first_smarts << sep <<
               acc.n() << sep <<
               static_cast<float>(acc.minval()) << sep <<
               static_cast<float>(acc.average()) << sep <<

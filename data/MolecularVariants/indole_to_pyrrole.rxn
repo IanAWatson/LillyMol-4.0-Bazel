@@ -1,0 +1,9 @@
+name: "indole_to_pyrrole"
+scaffold {
+  id: 0
+  smarts: "[nx2]1c2[cD2][cD2][cD2][cD2]c2cc1"
+  remove_atom: 2
+  remove_atom: 3
+  remove_atom: 4
+  remove_atom: 5
+}

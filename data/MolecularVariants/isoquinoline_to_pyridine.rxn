@@ -1,0 +1,9 @@
+name: "isoquinoline_to_pyridine"
+scaffold {
+  id: 0
+  smarts: "[nx2]1cc2[cD2][cD2][cD2][cD2]c2cc1"
+  remove_atom: 3
+  remove_atom: 4
+  remove_atom: 5
+  remove_atom: 6
+}

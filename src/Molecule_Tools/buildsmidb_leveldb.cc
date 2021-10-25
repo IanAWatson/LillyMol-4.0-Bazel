@@ -5,6 +5,7 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/report_progress.h"
 #include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/mol2graph_proto.h"
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
@@ -153,6 +154,13 @@ int BuildSmiDb(int argc, char ** argv) {
   }
 
   verbose = cl.option_count('v');
+
+  if (cl.option_present('A')) {
+    if (! process_standard_aromaticity_options(cl, verbose, 'A')) {
+      cerr << "Cannot initialise aromaticity\n";
+      return 1;
+    }
+  }
 
   if (cl.option_present('r')) {
     if (! report_progress.initialise(cl, 'r', verbose)) {
