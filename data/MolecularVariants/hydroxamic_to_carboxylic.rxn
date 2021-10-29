@@ -1,4 +1,4 @@
-name: "hydroxamic_to_carboxyllic"
+name: "hydroxamic_to_carboxylic"
 scaffold {
   id: 0
   smarts: "[OD1]=[CD3]-[ND2H]-[OH]"

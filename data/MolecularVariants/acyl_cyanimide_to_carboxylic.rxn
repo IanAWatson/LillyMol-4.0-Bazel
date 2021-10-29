@@ -1,4 +1,4 @@
-name: "acyl_cyanimide_to_carboxyllic"
+name: "acyl_cyanimide_to_carboxylic"
 scaffold {
   id: 0
   smarts: "[ND1G2]#C-[ND2H]-[CD3G1]=O"

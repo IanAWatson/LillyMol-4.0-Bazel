@@ -1,4 +1,4 @@
-acyl_cyanimide_to_carboxyllic.rxn
+acyl_cyanimide_to_carboxylic.rxn
 aromaticf_to_h.rxn
 aromatic_ch3_to_h.rxn
 aromatic_s_to_o.rxn
@@ -12,7 +12,7 @@ cyclopentane_to_methyl.rxn
 cyclopropyl_to_methyl.rxn
 ethoxy_to_methoxy.rxn
 ethyl_to_methyl.rxn
-hydroxamic_to_carboxyllic.rxn
+hydroxamic_to_carboxylic.rxn
 i2cl.rxn
 imidazole_to_pyrrole.rxn
 indole_to_pyrrole.rxn
@@ -30,7 +30,7 @@ phenyl_linker_to_methyl.rxn
 phenyl_to_f.rxn
 phenyl_to_methyl.rxn
 phenyl_to_propyl_ring.rxn
-phosphonate_to_carboxyllic.rxn
+phosphonate_to_carboxylic.rxn
 piperazine_to_piperidine.rxn
 piperidine_to_amine.rxn
 propane_to_methyl.rxn
