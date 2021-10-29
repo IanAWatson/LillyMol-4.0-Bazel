@@ -245,6 +245,9 @@ message NoReaction {
 //q  optional string comment = 29;
 
 //q  optional string smarts = 30;
+
+//   For removing multiple atoms.
+//q  repeated int32 remove_atoms = 31;
 // DO NOT EDIT
 
 
@@ -327,6 +330,8 @@ message ScaffoldReactionSite {
   optional string comment = 29;
 
   optional string smarts = 30;
+
+  repeated int32 remove_atoms = 31;
 // DO NOT EDIT
 }
 
@@ -372,6 +377,8 @@ message SidechainReactionSite {
   optional string comment = 29;
 
   optional string smarts = 30;
+
+  repeated int32 remove_atoms = 31;
 // DO NOT EDIT
 
   repeated string reagent = 40;

@@ -109,10 +109,10 @@ TEST(Test_Torsion_Angle, TestDegrees) {
 
   TorsionAngleConstraint constraint;
   constraint.SetAtoms(0, 1, 2, 3);
-  constraint.set_range_in_degrees(-168.69 - 0.1, -168.69 + 0.1);
+  constraint.set_range_in_degrees(168.69 - 0.1, 168.69 + 0.1);
   EXPECT_TRUE(constraint.Matches(m));
   m.setxyz(3, 1.5, 0.5, -0.1);
-  EXPECT_FALSE(constraint.Matches(m));
+  EXPECT_TRUE(constraint.Matches(m));
   constraint.set_range_in_degrees(168.69 - 0.01, 168.69 + 0.01);
   EXPECT_TRUE(constraint.Matches(m));
   m.setxyz(3, 0.5, 0.5, -0.1);
@@ -201,8 +201,8 @@ TEST(Test_Torsion_Angle, FromProto) {
   m.setxyz(8, 1.0, 0.0, 1.0);
   std::string string_proto = R"pb(
       range {
-         min: -1.5709
-         max: -1.5707
+         min: 1.5707
+         max: 1.5709
       }
       a1: 5
       a2: 6

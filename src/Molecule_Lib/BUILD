@@ -425,6 +425,20 @@ cc_library(
 )
 
 cc_test(
+    name = "atom_test",
+    srcs = ["atom_test.cc"],
+    timeout = "short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
     name = "linear_fingerprint_test",
     srcs = ["linear_fingerprint_test.cc"],
     timeout = "short",
@@ -561,6 +575,21 @@ cc_test(
         ":iwmolecule",
         ":moleculeio",
         ":substructure_cc_proto",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ]
+)
+
+cc_test(
+    name = "space_vector_test",
+    srcs = [
+        "space_vector_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":space_vector",
         "@googletest//:gtest_main",
     ],
     linkopts = [

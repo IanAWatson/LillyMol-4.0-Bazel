@@ -19,12 +19,15 @@ void
 Usage(int rc) {
   cerr << "Filter a set of sorted molecules based on externally specified reactions\n";
   cerr << "If the product has been seen before, the starting molecule is discarded\n";
+  cerr << " -a              read all the input into a vector of Molecules (recommended)\n";
   cerr << " -r <fname>      reaction file (proto only)\n";
   cerr << " -R <fname>      file containing reaction files\n";
   cerr << " -X <fname>      write discarded molecules to <fname>\n";
+  cerr << " -p              in the -X file, write the predecessor on a separate line\n";
   cerr << " -g ...          standard chemical standardisation options\n";
   cerr << " -l              reduce to largest fragment\n";
   cerr << " -c              discard chirality\n";
+  cerr << " -o <sep>        output separator\n";
   cerr << " -v              verbose output\n";
   exit(rc);
 }
@@ -47,6 +50,8 @@ struct Predecessor {
 
 struct JobParameters {
   int verbose = 0;
+
+  bool load_all_molecules = false;
 
   int reduce_to_largest_fragment = 0;
 
@@ -73,6 +78,10 @@ struct JobParameters {
   extending_resizable_array<int> rxn_hits;
 
   IWString_and_File_Descriptor stream_for_rejected;
+
+  bool predecessor_on_separate_line = false;
+
+  char sep = ' ';
 };
 
 void
@@ -109,14 +118,21 @@ HandleDiscarded(Molecule& m,
                 JobParameters& job_parameters) {
   predecessor.times_seen++;
 
-  constexpr char sep = ' ';
-  if (job_parameters.stream_for_rejected.is_open()) {
-    job_parameters.stream_for_rejected << m.smiles() << sep << m.name() << sep << rxn.comment();
+  char sep = job_parameters.sep;
+
+  IWString_and_File_Descriptor& output = job_parameters.stream_for_rejected;
+
+  if (output.is_open()) {
+    output << m.smiles() << sep << m.name() << sep << rxn.comment();
     for (const IWString& changed_by :  args.changes) {
-      job_parameters.stream_for_rejected << sep << changed_by;
+      output << sep << changed_by;
     }
-    job_parameters.stream_for_rejected << sep << predecessor.smiles << sep << predecessor.name << '\n';
-    job_parameters.stream_for_rejected.write_if_buffer_holds_more_than(8192);
+    if (job_parameters.predecessor_on_separate_line) {
+      output << '\n';
+    } else {
+      output << sep;
+    }
+    output << predecessor.smiles << sep << predecessor.name << '\n';
   }
   return 1;
 }
@@ -205,6 +221,80 @@ MolecularVariants(Molecule& m,
 }
 
 int
+RemoveDuplicates(resizable_array_p<Molecule>& mols,
+                 JobParameters& job_parameters) {
+  int initial_mols = mols.number_elements();
+  for (int i = initial_mols - 1; i >= 0; --i) {
+    Molecule& m = *mols[i];
+    const IWString& usmi = m.unique_smiles();
+    if (job_parameters.seen.contains(usmi)) {
+      mols.remove_item(i);
+    } else {
+      Predecessor p;
+      p.smiles = m.smiles();
+      p.name = m.name();
+      p.times_seen = 1;
+      job_parameters.seen.emplace(std::move(usmi), std::move(p));
+    }
+  }
+
+  if (job_parameters.verbose) {
+    cerr << "Removed " << (initial_mols - mols.size()) << " exact duplicates\n";
+  }
+  return initial_mols - mols.size();
+}
+
+int
+MolecularVariantsAll(resizable_array_p<Molecule>& mols,
+                      JobParameters& job_parameters,
+                      std::ostream& output) {
+  RemoveDuplicates(mols, job_parameters);
+
+  for (int i = mols.size() - 1; i >= 0; --i) {
+    Molecule& m = *mols[i];
+
+    for (int j = 0; j < job_parameters.reactions.number_elements(); ++j) {
+      Args args;
+      if (ProductEncountered(m, j, 0, args, job_parameters)) {
+        mols.remove_item(i);
+        break;
+      }
+    }
+  }
+
+  for (Molecule* m : mols) {
+    output << m->smiles() << ' ' << m->name() << '\n';
+  }
+
+  if (job_parameters.verbose) {
+    cerr << "Wrote " << mols.size() << " molecules\n";
+  }
+
+  return 1;
+}
+
+int
+MolecularVariantsAll(data_source_and_type<Molecule>& input,
+                      JobParameters& job_parameters,
+                      std::ostream& output) {
+  resizable_array_p<Molecule> mols;
+  mols.resize(10000);
+
+  Molecule * m;
+  while ((m = input.next_molecule()) != NULL) {
+    Preprocess(*m, job_parameters);
+    mols.add(m);
+  }
+
+  job_parameters.molecules_read = mols.size();
+  if (job_parameters.verbose) {
+    cerr << "Read " << mols.size() << " molecules\n";
+  }
+
+  return MolecularVariantsAll(mols, job_parameters, output);
+}
+
+int
 MolecularVariants(data_source_and_type<Molecule>& input,
                   JobParameters& job_parameters,
                   std::ostream& output) {
@@ -232,7 +322,11 @@ MolecularVariants(const char * fname,
     return 0;
   }
 
-  return MolecularVariants(input, job_parameters, output);
+  if (job_parameters.load_all_molecules) {
+    return MolecularVariantsAll(input, job_parameters, output);
+  } else {
+    return MolecularVariants(input, job_parameters, output);
+  }
 }
 
 // Reads the ReactionProto from `fname`.
@@ -304,7 +398,7 @@ ReactionsFromFile(IWString& fname,
 
 int
 MolecularVariants(int argc, char ** argv) {
-  Command_Line cl(argc, argv, "vi:A:g:lcr:R:X:b:");
+  Command_Line cl(argc, argv, "vi:A:g:lcr:R:X:b:apo:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -336,6 +430,18 @@ MolecularVariants(int argc, char ** argv) {
     }
   }
 
+  if (cl.option_present('o')) {
+    IWString o = cl.string_value('o');
+    if (! char_name_to_char(o)) {
+      cerr << "Unrecognised character specification '" << o << "'\n";
+      return 1;
+    }
+    job_parameters.sep = o[0];
+    if (verbose) {
+      cerr << "output separator '" << job_parameters.sep << "'\n";
+    }
+  }
+
   if (cl.option_present('g')) {
     if (! job_parameters.chemical_standardisation.construct_from_command_line(cl, false, 'g')) {
       cerr << "Cannot initialise chemical standardisation\n";
@@ -362,6 +468,20 @@ MolecularVariants(int argc, char ** argv) {
         cerr << "Cannot read reactions from " << fname << '\n';
         return 1;
       }
+    }
+  }
+
+  if (cl.option_present('a')) {
+    job_parameters.load_all_molecules = true;
+    if (job_parameters.verbose) {
+      cerr << "All molecules loaded into memory\n";
+    }
+  }
+
+  if (cl.option_present('p')) {
+    job_parameters.predecessor_on_separate_line = true;
+    if (verbose) {
+      cerr << "In the rejected molecules file (-X) write predecessor on separate line\n";
     }
   }
 
@@ -407,7 +527,9 @@ MolecularVariants(int argc, char ** argv) {
   }
 
   if (job_parameters.verbose) {
-    cerr << "Read " << job_parameters.molecules_read << " molecules\n";
+    if (! job_parameters.load_all_molecules) {  // Info has already been written.
+      cerr << "Read " << job_parameters.molecules_read << " molecules\n";
+    }
     cerr << job_parameters.starting_molecule_duplicates_discarded << " starting molecule duplicates discarded\n";
     cerr << "Generated " << job_parameters.seen.size() << " molecules\n";
     for (int i = 0; i < job_parameters.reactions.number_elements(); ++i) {

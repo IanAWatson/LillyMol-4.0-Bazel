@@ -1111,7 +1111,11 @@ class Molecule : private resizable_array_p<Atom>
 
     distance_t    bond_length(atom_number_t, atom_number_t, int = 0) const;
     angle_t       bond_angle(atom_number_t, atom_number_t, atom_number_t, int = 0) const;
+    // By default, dihedral angles are always positive. The _signed variant returns values
+    // in the range -pi to pi
     angle_t       dihedral_angle(atom_number_t, atom_number_t, atom_number_t, atom_number_t, int = 0) const;
+    // No bonded requirement here, not checked.
+    angle_t       dihedral_angle_signed(atom_number_t, atom_number_t, atom_number_t, atom_number_t) const;
 
 //  After changing a dihedral, we may want to do a bump check
 

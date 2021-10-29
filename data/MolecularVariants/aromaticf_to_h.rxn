@@ -1,4 +1,4 @@
-name: "aromaticf_to_h.rxn"
+name: "aromaticf_to_h"
 scaffold {
   id: 0
   smarts: "F-c"

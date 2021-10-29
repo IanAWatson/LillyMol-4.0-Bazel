@@ -597,6 +597,10 @@ Reaction_Site::ConstructFromProto(const P& proto)
     _atoms_to_be_removed.add_if_not_already_present(atom);
   }
 
+  for (const auto atom: proto.remove_atoms()) {
+    _atoms_to_be_removed.add_if_not_already_present(atom);
+  }
+
   for (const auto atom :proto.remove_fragment()) {
     _fragments_to_be_removed.add_if_not_already_present(atom);
   }
