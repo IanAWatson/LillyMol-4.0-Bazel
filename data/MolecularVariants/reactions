@@ -49,7 +49,7 @@ rmmethane.rxn
 rmtboc.rxn
 shorten_ch2_chain.rxn
 sulfonamide_to_amide.rxn
-sulfonate_to_carboxyllic_acid.rxn
+sulfonic_acid_to_carboxylic.rxn
 tbutyl_2_methyl.rxn
 tetrazole_to_acid.rxn
 thiol_2_alcohol.rxn
