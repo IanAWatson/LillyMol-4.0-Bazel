@@ -301,8 +301,8 @@ Atom_Typing_Specification::_parse_user_specified_type(const const_IWSubstring & 
 }
 
 int
-iwattype_convert_to_string_form (int atype,
-                                 IWString & s)
+iwattype_convert_to_string_form(int atype,
+                                IWString & s)
 {
   if (IWATTYPE_Z == atype)
     s = 'z';
@@ -342,7 +342,7 @@ iwattype_convert_to_string_form (int atype,
 }
 
 int
-determine_atom_type (const IWString & s)
+determine_atom_type(const IWString & s)
 {
   IWString mys(s);
   mys.to_lowercase();
@@ -758,9 +758,9 @@ assign_atom_types_tt (Molecule & m,
 
 template <typename T>
 int
-assign_atom_types_tt (Molecule & m, 
-                      const int * ncon,
-                      T * invariant)
+assign_atom_types_tt(Molecule & m, 
+                     const int * ncon,
+                     T * invariant)
 {
   const int matoms = m.natoms();
 
@@ -1865,7 +1865,7 @@ display_atom_type_specifications (std::ostream & os)
 */
 
 int
-Atom_Typing_Specification::build (const const_IWSubstring & s)
+Atom_Typing_Specification::build(const const_IWSubstring & s)
 {
   _built_from = s;
 

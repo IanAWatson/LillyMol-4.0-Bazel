@@ -157,6 +157,21 @@ cc_binary(
 
 
 cc_binary(
+    name = "gfp_nearneighbours_single_file",
+    srcs = [
+        "gfp_nearneighbours_single_file.cc",
+        "fp_and_smiles.cc",
+    ],
+    deps = [
+        ":gfp",
+        "//Foundational/histogram:iwhistogram",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "gfp_lnearneighbours",
     srcs = [
         "gfp_lnearneighbours.cc",

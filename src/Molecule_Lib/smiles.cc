@@ -2086,7 +2086,7 @@ Molecule::random_smiles()
 
   invalidate_smiles();
 
-  Atom_Chooser_Random acr(random_smiles_default_seed);
+  Atom_Chooser_Random acr(set_smiles_random_number_seed_random());
 
   (void) _build_smiles_ordering_fctr(acr, NULL, _smiles_information);
 

@@ -98,6 +98,17 @@ Preprocess(Molecule& m,
   }
 }
 
+IWString
+MaybeQuoted(const IWString& s, char sep) {
+  if (! s.contains(sep)) {
+    return s;
+  }
+
+  IWString result;
+  result << '"' << s << '"';
+  return result;
+}
+
 // Initially intended this to hold more pieces of information,
 // but for now, only one item is held.
 struct Args {
@@ -123,7 +134,7 @@ HandleDiscarded(Molecule& m,
   IWString_and_File_Descriptor& output = job_parameters.stream_for_rejected;
 
   if (output.is_open()) {
-    output << m.smiles() << sep << m.name() << sep << rxn.comment();
+    output << m.smiles() << sep << m.name() << sep << MaybeQuoted(rxn.comment(), sep);
     for (const IWString& changed_by :  args.changes) {
       output << sep << changed_by;
     }
@@ -517,6 +528,10 @@ MolecularVariants(int argc, char ** argv) {
     if (job_parameters.verbose) {
       cerr << "Rejected molecules written to " << fname << '\n';
     }
+    const char sep = job_parameters.sep;
+
+    job_parameters.stream_for_rejected << "smiles" << sep << "id" << sep <<
+                "reaction" << sep << "product" << sep << "product_id\n";
   }
 
   for (const char * fname : cl) {

@@ -1015,6 +1015,26 @@ cc_binary(
 )
 
 cc_binary(
+    name = "topological_torsion",
+    srcs = [
+        "topological_torsion_main.cc",
+    ],
+    deps = [
+        ":topological_torsion_lib",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "tp_first_pass",
     srcs = [
         "tp_first_pass.cc",
@@ -1208,6 +1228,25 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "topological_torsion_lib",
+    srcs = [
+        "topological_torsion.cc",
+    ],
+    hdrs = [
+        "topological_torsion.h",
+    ],
+    deps = [
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "//Molecule_Lib:iwmolecule"
+    ],
+    linkopts = [
+        "-lz"
+    ],
+)
+
 cc_test(
     name = "extended_pi_test",
     srcs = [
@@ -1219,6 +1258,23 @@ cc_test(
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",
     ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
+    name = "topological_torsion_test",
+    srcs = [
+        "topological_torsion_test.cc",
+    ],
+    deps = [
+        ":topological_torsion_lib",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ],
+    timeout="short",
     linkopts = [
         "-lz",
     ],
