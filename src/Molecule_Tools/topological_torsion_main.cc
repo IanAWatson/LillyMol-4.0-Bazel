@@ -106,7 +106,8 @@ TopologicalTorsion(Molecule& m,
   }
 
   std::unique_ptr<int[]> include_atom(new_int(m.natoms(), 1));
-  Sparse_Fingerprint_Creator sfc = TopologicalTorsion(m, atom_type.get(), include_atom.get(), job_options.torsion_options);
+  Sparse_Fingerprint_Creator sfc = TopologicalTorsion(m, atom_type.get(),
+                                 include_atom.get(), job_options.torsion_options);
 
   if (! job_options.work_as_filter) {
     output << smiles_tag << m.smiles() << ">\n";
