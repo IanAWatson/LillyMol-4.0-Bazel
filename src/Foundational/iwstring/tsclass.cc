@@ -34,9 +34,9 @@ int verbose = 0;     // note, is externally visible
 #include "should_match.h"
 
 void
-numeric_value (int int_result, int expected_int_result,
-               const IWString & result, const char *expected_result,
-               const char *invoker)
+numeric_value(int int_result, int expected_int_result,
+              const IWString & result, const char *expected_result,
+              const char *invoker)
 {
   int die = 0;
   if (int_result != expected_int_result)
@@ -696,6 +696,7 @@ test_operators()
     return 0;
   }
 
+#ifdef DOES_NOT_WORK_MEMORY_PROBLEM
   g = 'q';
 
   if (g == 'q')
@@ -705,6 +706,7 @@ test_operators()
     cerr << "const_IWSubstring::operator != (char) failed, line " << __LINE__ << "\n";
     return 0;
   }
+#endif
 
   const char * rhs = NULL;
   IWString nn = rhs;

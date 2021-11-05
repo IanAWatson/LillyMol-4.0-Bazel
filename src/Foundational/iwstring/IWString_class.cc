@@ -5330,3 +5330,22 @@ const_IWSubstring::expand_environment_variables(IWString & destination) const
   return rc;
 }
 
+std::string
+IWString::AsString() const {
+  if (_number_elements == 0) {
+    return std::string();
+  }
+
+  return std::string(_things, _number_elements);
+}
+
+std::string
+const_IWSubstring::AsString() const {
+  if (_nchars == 0) {
+    return std::string();
+  }
+
+  char * copy = new char[_nchars];
+  std::copy_n(_data, _nchars, copy);
+  return std::string(copy, _nchars);
+}

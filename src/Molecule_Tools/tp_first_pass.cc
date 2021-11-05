@@ -17,25 +17,27 @@
 */
 
 #include <iostream>
-#include <iostream>
 #include <memory>
 #include <limits>
 using std::cerr;
 using std::endl;
-#include <assert.h>
+#include <cassert>
 
-#include "Foundational/cmdline/cmdline.h"
-#include "Foundational/iwstring/iwstring.h"
 #include "Foundational/accumulator/accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwstring/iwstring.h"
 
 #include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/misc2.h"
+#include "Molecule_Lib/etrans.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/standardise.h"
+#include "Molecule_Lib/misc2.h"
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/standardise.h"
+
+#include "tp_first_pass_lib.h"
 
 /*
   The programme can operate in the mode of just scanning its input
@@ -152,8 +154,6 @@ static Elements_to_Remove elements_to_remove;
   We can transform element types.
 */
 
-#include "Molecule_Lib/etrans.h"
-
 static Element_Transformations element_transformations;
 
 static Molecule_Output_Object rejections_output_object;
@@ -163,7 +163,7 @@ const char *prog_name;
 static int verbose = 0;
 
 static void
-usage (int rc = 1)
+Usage(int rc = 1)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
   cerr << "usage: " << prog_name << " -i <input type> -o <output type> file1 file2...\n";
@@ -214,9 +214,8 @@ usage (int rc = 1)
 */
 
 static int
-do_convert_isotopes (Molecule & m)
+do_convert_isotopes(Molecule & m)
 {
-
   int rc = m.transform_to_non_isotopic_form ();
 
   if (rc)
@@ -226,16 +225,16 @@ do_convert_isotopes (Molecule & m)
 }
 
 static int
-interesting_atoms (Molecule & m)
+interesting_atoms(Molecule & m)
 {
   int carbon = 0;
   int nitrogen = 0;
   int oxygen = 0;
 
-  int matoms = m.natoms ();
+  const int matoms = m.natoms();
   for (int i = 0; i < matoms; i++)
   {
-    atomic_number_t z = m.atomic_number (i);
+    atomic_number_t z = m.atomic_number(i);
     if (6 == z)
     {
       carbon = 1;
@@ -260,9 +259,9 @@ interesting_atoms (Molecule & m)
 }
 
 static int
-count_interesting_atoms (Molecule & m,
-                         const int * include_atom,
-                         const int flag)
+count_interesting_atoms(Molecule & m,
+                        const int * include_atom,
+                        const int flag)
 {
   int carbon = 0;
   int nitrogen = 0;
@@ -275,7 +274,7 @@ count_interesting_atoms (Molecule & m,
     if (NULL != include_atom && flag != include_atom[i])
       continue;
 
-    atomic_number_t z = m.atomic_number (i);
+    atomic_number_t z = m.atomic_number(i);
     if (6 == z)
       carbon++;
     else if (7 == z)
@@ -301,12 +300,12 @@ count_interesting_atoms (Molecule & m,
 static IWString rejection_reason;
 
 static int
-exclude_for_no_interesting_atoms (Molecule & m)
+exclude_for_no_interesting_atoms(Molecule & m)
 {
-  int nf = m.number_fragments ();
+  int nf = m.number_fragments();
   if (1 == nf)
   {
-    if (interesting_atoms (m))
+    if (interesting_atoms(m))
       return 0;    // do not reject this molecule
     else
     {
@@ -316,7 +315,7 @@ exclude_for_no_interesting_atoms (Molecule & m)
   }
 
   resizable_array_p<Molecule> components;
-  m.create_components (components);
+  m.create_components(components);
 
   int largest_frag = 0;
   int interesting_atoms_in_largest_frag = 0;
@@ -325,14 +324,14 @@ exclude_for_no_interesting_atoms (Molecule & m)
   {
     Molecule * c = components[i];
 
-    int catoms = c->natoms ();
+    int catoms = c->natoms();
 
-    assert (catoms == m.atoms_in_fragment (i));
+    assert (catoms == m.atoms_in_fragment(i));
 
     if (catoms < largest_frag)
       continue;
 
-    interesting_atoms_in_largest_frag = interesting_atoms (*c);
+    interesting_atoms_in_largest_frag = interesting_atoms(*c);
     largest_frag = catoms;
   }
 
@@ -346,7 +345,7 @@ exclude_for_no_interesting_atoms (Molecule & m)
 }
 
 static int
-exclude_for_too_few_interesting_atoms (Molecule & m)
+exclude_for_too_few_interesting_atoms(Molecule & m)
 {
   const int nf = m.number_fragments();
 
@@ -393,15 +392,17 @@ exclude_for_too_few_interesting_atoms (Molecule & m)
 static int ok_elements[HIGHEST_ATOMIC_NUMBER + 1];
 
 static int
-exclude_for_atom_type (const Molecule & m)
+exclude_for_atom_type(const Molecule & m)
 {
 
-  int matoms = m.natoms ();
+  int matoms = m.natoms();
   for (int i = 0; i < matoms; i++)
   {
-    const Atom * a = m.atomi (i);
+    const Atom * a = m.atomi(i);
 
-    if (1 == a->atomic_number () && 1 != a->ncon ())
+    const Element * e = a->element();
+
+    if (1 == e->atomic_number() && 1 != a->ncon())
     {
       if (verbose > 1)
         cerr << "Contains two valent hydrogen\n";
@@ -410,43 +411,38 @@ exclude_for_atom_type (const Molecule & m)
       return 1;    // yes, exclude this molecule
     }
 
-    const Element * e = a->element ();
-
-    atomic_number_t z = e->atomic_number ();
-
-    if (e->organic ())
+    if (e->organic())
       continue;
 
-
-    if (exclude_molecules_containing_non_periodic_table_elements && ! e->is_in_periodic_table ())
+    if (exclude_molecules_containing_non_periodic_table_elements && ! e->is_in_periodic_table())
     {
-      if (allow_non_periodic_table_elements_if_not_connected && 0 == a->ncon ())
+      if (allow_non_periodic_table_elements_if_not_connected && 0 == a->ncon())
       {
         if (verbose > 1)
-          cerr << "Allowing singly connected non-periodic table element '" << e->symbol () << "'\n";
+          cerr << "Allowing singly connected non-periodic table element '" << e->symbol() << "'\n";
         continue;
       }
 
       if (verbose > 1)
-        cerr << "Contains non periodic table atom '" << e->symbol () << "'\n";
+        cerr << "Contains non periodic table atom '" << e->symbol() << "'\n";
       molecules_containing_non_periodic_table_elements++;
       rejection_reason = "non_periodic_table_atom";
       return 1;    // yes, exclude this molecule
     }
 
-    if (! ok_elements[z])
+    if (! ok_elements[e->atomic_number()])
     {
       if (verbose > 1)
-        cerr << "Contains non-allowed atom '" << e->symbol () << "'\n";
+        cerr << "Contains non-allowed atom '" << e->symbol() << "'\n";
       molecules_containing_non_allowed_atom_types++;
       rejection_reason = "non_allowed_atom";
       return 1;    // yes, exclude this molecule
     }
 
-    if (a->ncon () > 0)
+    if (a->ncon() > 0)
     {
       if (verbose > 1)
-        cerr << "Contains covalently bound non-organic '" << e->symbol () << "'\n";
+        cerr << "Contains covalently bound non-organic '" << e->symbol() << "'\n";
       molecules_containing_colvalent_non_organics++;
       rejection_reason = "covalent_non-organic";
       return 1;    // yes, exclude this molecule
@@ -457,16 +453,16 @@ exclude_for_atom_type (const Molecule & m)
 }
 
 static int
-process_fragments (Molecule & m)
+process_fragments(Molecule & m)
 {
   int atoms_in_largest_fragment = 0;
 
   int number_large_fragments = 0;
 
-  int nf = m.number_fragments ();
+  int nf = m.number_fragments();
   for (int i = 0; i < nf; i++)
   {
-    int aif = m.atoms_in_fragment (i);
+    int aif = m.atoms_in_fragment(i);
 
     if (aif >= reject_if_fragements_with_this_many_atoms)
       number_large_fragments++;
@@ -506,8 +502,8 @@ process_fragments (Molecule & m)
 }
 
 static int
-reject_for_ring_size_condition (Molecule & m,
-                                int upper_ring_size_cutoff)
+reject_for_ring_size_condition(Molecule & m,
+                               int upper_ring_size_cutoff)
 {
   for (int i = m.nrings() - 1; i >= 0; i--)
   {
@@ -521,21 +517,21 @@ reject_for_ring_size_condition (Molecule & m,
 }
 
 static int
-reject_for_ring_bond_ratio (Molecule & m)
+reject_for_ring_bond_ratio(Molecule & m)
 {
   if (ring_bond_ratio > 1.0)
     return 0;
 
-  (void) m.ring_membership ();
+  (void) m.ring_membership();
 
-  int nb = m.nedges ();
+  int nb = m.nedges();
 
   int ring_bonds = 0;
 
   for (int i = 0; i < nb; i++)
   {
-    const Bond * b = m.bondi (i);
-    if (b->nrings ())
+    const Bond * b = m.bondi(i);
+    if (b->nrings())
       ring_bonds++;
   }
 
@@ -550,9 +546,9 @@ reject_for_ring_bond_ratio (Molecule & m)
 }
 
 static int 
-_apply_all_filters (Molecule & m)
+_apply_all_filters(Molecule & m)
 {
-  assert (m.ok ());
+  assert (m.ok());
 
   rejection_reason.resize_keep_storage(0);
 
@@ -561,7 +557,7 @@ _apply_all_filters (Molecule & m)
 
   (void) chemical_standardisation.process(m);
 
-  int matoms = m.natoms ();
+  int matoms = m.natoms();
 
   if (0 == matoms)
     return 0;
@@ -569,7 +565,7 @@ _apply_all_filters (Molecule & m)
   if (lower_atom_count_cutoff > 0 || upper_atom_count_cutoff > 0 ||
       std::numeric_limits<int>::max() != reject_if_fragements_with_this_many_atoms)
   {
-    if (process_fragments (m))   // great, everything OK
+    if (process_fragments(m))   // great, everything OK
       ;
     else if (run_all_checks)
       ;
@@ -577,18 +573,18 @@ _apply_all_filters (Molecule & m)
       return 0;
   }
 
-  elements_to_remove.process (m);
+  elements_to_remove.process(m);
 
-  element_transformations.process (m);
+  element_transformations.process(m);
 
   int keep = 0;
 
-  if (exclude_for_atom_type (m))
+  if (exclude_for_atom_type(m))
   {
     if (verbose > 1)
       cerr << "Found bad atom types\n";
   }
-  else if (exclude_molecules_with_no_interesting_atoms && exclude_for_no_interesting_atoms (m))
+  else if (exclude_molecules_with_no_interesting_atoms && exclude_for_no_interesting_atoms(m))
   {
     if (verbose > 1)
       cerr << "No interesting atoms\n";
@@ -602,43 +598,43 @@ _apply_all_filters (Molecule & m)
     molecules_with_not_enough_interesting_atoms++;
   }
   else if (lower_ring_count_cutoff && 
-           m.nrings () < lower_ring_count_cutoff)
+           m.nrings() < lower_ring_count_cutoff)
   {
     molecules_with_too_few_rings++;
     if (verbose > 1)
-      cerr << "Molecule contains " << m.nrings () << " rings, which is below cutoff\n";
+      cerr << "Molecule contains " << m.nrings() << " rings, which is below cutoff\n";
     rejection_reason << "not_enough_rings";
   }
   else if (upper_ring_count_cutoff &&
-           m.nrings () > upper_ring_count_cutoff)
+           m.nrings() > upper_ring_count_cutoff)
   {
     molecules_with_too_many_rings++;
     if (verbose > 1)
-      cerr << "Molecule contains " << m.nrings () << " rings, which is above cutoff\n";
+      cerr << "Molecule contains " << m.nrings() << " rings, which is above cutoff\n";
     rejection_reason << "too_many_rings";
   }
-  else if (exclude_isotopes && m.number_isotopic_atoms ())
+  else if (exclude_isotopes && m.number_isotopic_atoms())
   {
     molecules_containing_isotopes++;
     if (verbose > 1)
       cerr << "Molecule contains isotopes\n";
     rejection_reason << "isotopes";
   }
-  else if (skip_molecules_with_abnormal_valences && ! m.valence_ok ())
+  else if (skip_molecules_with_abnormal_valences && ! m.valence_ok())
   {
     molecules_with_abnormal_valences++;
     if (verbose > 1)
       cerr << "Molecule contains abnormal valence(s)\n";
     rejection_reason << "abnormal_valence";
   }
-  else if (reject_for_ring_bond_ratio (m))
+  else if (reject_for_ring_bond_ratio(m))
   {
     molecules_with_bad_ring_bond_ratios++;
     if (verbose > 1)
       cerr << "Ring bond ratio out of range\n";
     rejection_reason << "ring_bond_ratio";
   }
-  else if (upper_ring_size_cutoff > 0 && reject_for_ring_size_condition (m, upper_ring_size_cutoff))
+  else if (upper_ring_size_cutoff > 0 && reject_for_ring_size_condition(m, upper_ring_size_cutoff))
   {
     molecules_with_ring_sizes_out_of_range++;
     if (verbose > 1)
@@ -653,16 +649,16 @@ _apply_all_filters (Molecule & m)
     return 0;
 
   if (convert_isotopes)
-    do_convert_isotopes (m);
+    do_convert_isotopes(m);
 
   return 1;
 }
 
 static int
-do_append_rejection_reason (Molecule & m,
-                            const IWString & rejection_reason)
+do_append_rejection_reason(Molecule & m,
+                           const IWString & rejection_reason)
 {
-  IWString tmp = m.molecule_name ();
+  IWString tmp = m.molecule_name();
   tmp += ' ';
 
   if (write_rejection_reason_like_tsubstructure)
@@ -671,20 +667,20 @@ do_append_rejection_reason (Molecule & m,
   }
   else
   {
-    if (prepend_before_reason.length ())
+    if (prepend_before_reason.length())
       tmp << prepend_before_reason;
     tmp += rejection_reason;
 
   }
-  m.set_name (tmp);
+  m.set_name(tmp);
 
   return 1;
 }
 
 static int
-apply_all_filters (Molecule & m, int molecule_number)
+apply_all_filters(Molecule & m, int molecule_number)
 {
-  int rc = _apply_all_filters (m);
+  int rc = _apply_all_filters(m);
 
   if (run_all_checks && rejection_reason.length() > 0)
     ;
@@ -692,9 +688,9 @@ apply_all_filters (Molecule & m, int molecule_number)
     return rc;
 
   if (append_rejection_reason_to_name && rejection_reason.length() > 0)
-    do_append_rejection_reason (m, rejection_reason);
-  if (rejections_output_object.good ())
-    rejections_output_object.write (m);
+    do_append_rejection_reason(m, rejection_reason);
+  if (rejections_output_object.good())
+    rejections_output_object.write(m);
 
   return 0;
 }
@@ -704,23 +700,23 @@ apply_all_filters (Molecule & m, int molecule_number)
 */
 
 static int
-non_printing_characters_in_name (Molecule & m)
+non_printing_characters_in_name(Molecule & m)
 {
-  IWString mname = m.name ();
+  IWString mname = m.name();
 
   int rc = 0;
-  for (int i = mname.length () - 1; i >= 0; i--)
+  for (int i = mname.length() - 1; i >= 0; i--)
   {
     char c = mname[i];
 
-    if (isprint (c))
+    if (isprint(c))
       continue;
 
     if ('\0' != translate_non_printing_chars)
       mname[i] = translate_non_printing_chars;
     else if (remove_non_printing_chars)
     {
-      mname.remove_item (i);
+      mname.remove_item(i);
       i++;
     }
 
@@ -728,7 +724,7 @@ non_printing_characters_in_name (Molecule & m)
   }
 
   if (rc && ('\0' != translate_non_printing_chars || remove_non_printing_chars))
-    m.set_name (mname);
+    m.set_name(mname);
 
   if (verbose > 1 && rc)
     cerr << "Removed/changed " << rc << " non printing chars in name\n";
@@ -737,33 +733,29 @@ non_printing_characters_in_name (Molecule & m)
 }
 
 static int
-tp_first_pass (data_source_and_type<Molecule> & input,
-          Molecule_Output_Object & output_object)
+tp_first_pass(data_source_and_type<Molecule> & input,
+              Molecule_Output_Object & output_object)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule ()))
+  while (NULL != (m = input.next_molecule()))
   {
-
-    std::unique_ptr<Molecule> free_m (m);
+    std::unique_ptr<Molecule> free_m(m);
 
 //  if (verbose > 1)
-//    cerr << "Molecule " << input.molecules_read () << " finishes at line " << input.lines_read () << endl;
+//    cerr << "Molecule " << input.molecules_read() << " finishes at line " << input.lines_read() << endl;
 
     if (verbose)
-      natoms_accumulator.extra (m->natoms ());
+      natoms_accumulator.extra(m->natoms());
 
-    (void) non_printing_characters_in_name (*m);
+    (void) non_printing_characters_in_name(*m);
 
-    if (! apply_all_filters (*m, input.molecules_read ()))
+    if (! apply_all_filters(*m, input.molecules_read()))
       continue;
 
-//  if (number_assigner.active ())
-//    number_assigner.process (*m);
+    if (text_to_append.length())
+      m->append_to_name(text_to_append);
 
-    if (text_to_append.length ())
-      m->append_to_name (text_to_append);
-
-    if (! output_object.write (m))
+    if (! output_object.write(m))
       return 0;
     
     molecules_written++;
@@ -776,43 +768,43 @@ tp_first_pass (data_source_and_type<Molecule> & input,
 */
 
 int
-tp_first_pass (const char *fname,
-               FileType input_type,
-               Molecule_Output_Object & output)
+tp_first_pass(const char *fname,
+              FileType input_type,
+              Molecule_Output_Object & output)
 {
   assert (NULL != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {
-    input_type = discern_file_type_from_name (fname);
+    input_type = discern_file_type_from_name(fname);
     assert (FILE_TYPE_INVALID != input_type);
   }
 
-  data_source_and_type<Molecule> input (input_type, fname);
-  if (! input.good ())
+  data_source_and_type<Molecule> input(input_type, fname);
+  if (! input.good())
   {
     cerr << prog_name << ": cannot open '" << fname << "'\n";
     return 1;
   }
 
   if (verbose > 1)
-    input.set_verbose (1);
+    input.set_verbose(1);
 
   if (connection_table_errors_allowed)
-    input.set_connection_table_errors_allowed (connection_table_errors_allowed);
+    input.set_connection_table_errors_allowed(connection_table_errors_allowed);
 
 // Avoid name collisions before they occur
 
-  if (output_file_stem.length ())
+  if (output_file_stem.length())
   {
-    if (output.would_use_name (output_file_stem.null_terminated_chars (), fname))
+    if (output.would_use_name(output_file_stem.null_terminated_chars(), fname))
     {
       cerr << "tp_first_pass: input '" << fname << "' and output stem '" << 
                output_file_stem << "' must not collide\n";
       return 4;
     }
   }
-  else if (output.would_use_name (fname))
+  else if (output.would_use_name(fname))
   {
     cerr << "tp_first_pass: input '" << fname << "' and output must be distinct\n";
     return 3;
@@ -826,17 +818,17 @@ tp_first_pass (const char *fname,
   static int first_call = 1;
 
   int rc = 0;
-  if (output_file_stem.length ())
+  if (output_file_stem.length())
   {
     if (first_call)
-      rc = output.new_stem (output_file_stem);
+      rc = output.new_stem(output_file_stem);
     else
-      rc = output.ok ();
+      rc = output.ok();
 
     first_call = 0;
   }
   else
-    rc = output.new_stem (fname);
+    rc = output.new_stem(fname);
 
   if (0 == rc)
   {
@@ -844,49 +836,49 @@ tp_first_pass (const char *fname,
     return 2;
   }
 
-  rc = tp_first_pass (input, output);
+  rc = tp_first_pass(input, output);
 
-  molecules_read += input.molecules_read ();
+  molecules_read += input.molecules_read();
 
   return rc;
 }
 
 static int
-tp_first_pass (int argc, char ** argv)
+tp_first_pass(int argc, char ** argv)
 {
-  Command_Line cl (argc, argv, "aI:g:t:n:L:S:d:A:K:X:c:C:E:vVi:o:r:R:B:P:p:b:kyue:x:Z:wf:");
+  Command_Line cl(argc, argv, "aI:g:t:n:L:S:d:A:K:X:c:C:E:vVi:o:r:R:B:P:p:b:kyue:x:Z:wf:");
 
-  verbose = cl.option_count ('v');
+  verbose = cl.option_count('v');
 
-  if (cl.unrecognised_options_encountered ())
+  if (cl.unrecognised_options_encountered())
   {
     cerr << "Unrecognised options encountered\n";
-    usage (1);
+    Usage(1);
   }
 
-  if (! process_elements (cl))
-    usage (2);
+  if (! process_elements(cl))
+    Usage(2);
 
-  if (cl.option_present ('g'))
+  if (cl.option_present('g'))
   {
-    if (! chemical_standardisation.construct_from_command_line (cl, verbose > 1, 'g'))
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
     {
-      usage (6);
+      Usage(6);
     }
   }
 
-  if (! process_standard_aromaticity_options (cl, verbose))
+  if (! process_standard_aromaticity_options(cl, verbose))
   {
-    usage (5);
+    Usage(5);
   }
 
-  if (cl.option_present ('t'))
+  if (cl.option_present('t'))
   {
-    if (! element_transformations.construct_from_command_line (cl, verbose, 't'))
-      usage (8);
+    if (! element_transformations.construct_from_command_line(cl, verbose, 't'))
+      Usage(8);
   }
 
-  if (cl.option_present ('k'))
+  if (cl.option_present('k'))
   {
     exclude_molecules_with_no_interesting_atoms = 0;
 
@@ -899,20 +891,20 @@ tp_first_pass (int argc, char ** argv)
     if (! exclude_molecules_with_no_interesting_atoms)
     {
       cerr << "The -f and -k options cannot be used together\n";
-      usage(1);
+      Usage(1);
     }
 
     if (! cl.value('f', min_fraction_interesting_atoms) || min_fraction_interesting_atoms < 0.0 || min_fraction_interesting_atoms > 1.0)
     {
       cerr << "The minimum fraction of interesting atoms needed (-f) must be a valid fraction\n";
-      usage(1);
+      Usage(1);
     }
 
     if (verbose)
       cerr << "Molecules must have a minimum fraction " << min_fraction_interesting_atoms << " of interesting atoms\n";
   }
 
-  if (cl.option_present ('y'))
+  if (cl.option_present('y'))
   {
     allow_non_periodic_table_elements_if_not_connected = 1;
 
@@ -921,12 +913,12 @@ tp_first_pass (int argc, char ** argv)
   }
 
   FileType input_type = FILE_TYPE_INVALID;
-  if (cl.option_present ('i'))
+  if (cl.option_present('i'))
   {
     if (! process_input_type (cl, input_type))
     {
       cerr << "Cannot determine input type\n";
-      usage (6);
+      Usage(6);
     }
   }
   else if (1 == cl.number_elements() && 0 == strcmp(cl[0], "-"))
@@ -937,17 +929,17 @@ tp_first_pass (int argc, char ** argv)
 
   Molecule_Output_Object output;
 
-  if (! cl.option_present ('o'))
+  if (! cl.option_present('o'))
   {
     output.add_output_type (FILE_TYPE_SMI);
   }
   else if (! output.determine_output_types (cl))
   {
     cerr << "Cannot determine output types\n";
-    usage (8);
+    Usage(8);
   }
 
-  if (cl.option_present ('S'))
+  if (cl.option_present('S'))
   {
     cl.value ('S', output_file_stem);
 
@@ -963,11 +955,11 @@ tp_first_pass (int argc, char ** argv)
 
 // By default we echo any chiral info present in the input
 
-  set_include_chiral_info_in_smiles (1);
+  set_include_chiral_info_in_smiles(1);
 
-  if (cl.option_present ('L'))
+  if (cl.option_present('L'))
   {
-    if (! cl.option_present ('o'))
+    if (! cl.option_present('o'))
       rejections_output_object.add_output_type (FILE_TYPE_SMI);
     else if (! rejections_output_object.determine_output_types (cl))
     {
@@ -987,14 +979,14 @@ tp_first_pass (int argc, char ** argv)
     if (verbose)
       cerr << "Rejected structures will be written to '" << reject_log_file_name << "'\n";
 
-    if (cl.option_present ('a'))
+    if (cl.option_present('a'))
     {
       append_rejection_reason_to_name = 1;
       if (verbose)
         cerr << "The reason for rejection will be appended to the molecule name\n";
     }
 
-    if (cl.option_present ('u'))
+    if (cl.option_present('u'))
     {
       append_rejection_reason_to_name = 1;
       write_rejection_reason_like_tsubstructure = 1;
@@ -1003,7 +995,7 @@ tp_first_pass (int argc, char ** argv)
     }
   }
 
-  if (cl.option_present ('K'))
+  if (cl.option_present('K'))
   {
     prepend_before_reason = cl.string_value ('K');
 
@@ -1016,16 +1008,16 @@ tp_first_pass (int argc, char ** argv)
       prepend_before_reason << ' ';
   }
 
-  if (cl.option_present ('X'))
+  if (cl.option_present('X'))
   {
     if (! elements_to_remove.construct_from_command_line (cl, verbose, 'X'))
     {
       cerr << "Cannot discern elements to remove from -X switch\n";
-      usage (18);
+      Usage(18);
     }
   }
 
-  if (! cl.option_present ('c'))
+  if (! cl.option_present('c'))
     ;
   else if (cl.value ('c', lower_atom_count_cutoff) && lower_atom_count_cutoff > 0)
   {
@@ -1035,10 +1027,10 @@ tp_first_pass (int argc, char ** argv)
   else
   {
     cerr << "Cannot discern lower atom count cutoff from " << cl.option_value ('c') << "'\n";
-    usage (48);
+    Usage(48);
   }
 
-  if (! cl.option_present ('C'))
+  if (! cl.option_present('C'))
     ;
   else if (cl.value ('C', upper_atom_count_cutoff))
   {
@@ -1046,7 +1038,7 @@ tp_first_pass (int argc, char ** argv)
     {
       cerr << "Upper atom count cutoff " << upper_atom_count_cutoff << 
               " must be greater than lower atom count cutoff " << lower_atom_count_cutoff << endl;
-      usage (49);
+      Usage(49);
     }
     if (verbose)
       cerr << "Will exclude molecules with more than " << upper_atom_count_cutoff << " atoms\n";
@@ -1054,22 +1046,22 @@ tp_first_pass (int argc, char ** argv)
   else
   {
     cerr << "Cannot discern upper atom count cutoff from '" << cl.option_value ('C') << "'\n";
-    usage (50);
+    Usage(50);
   }
 
 //if (! number_assigner.initialise (cl, 'n', verbose))
 //{
 //  cerr << "Cannot process -n option\n";
-//  usage (51);
+//  Usage(51);
 //}
 
-  if (cl.option_present ('r'))
+  if (cl.option_present('r'))
   {
     if (! cl.value ('r', lower_ring_count_cutoff) ||
           lower_ring_count_cutoff < 1)
     {
       cerr << "-r option needs a whole number > 0\n";
-      usage (52);
+      Usage(52);
     }
 
     if (verbose)
@@ -1077,13 +1069,13 @@ tp_first_pass (int argc, char ** argv)
               " will be ignored\n";
   }
 
-  if (cl.option_present ('R'))
+  if (cl.option_present('R'))
   {
     if (! cl.value ('R', upper_ring_count_cutoff) ||
           upper_ring_count_cutoff < lower_ring_count_cutoff)
     {
       cerr << "-R option needs a whole number > " << lower_ring_count_cutoff << endl;
-      usage (53);
+      Usage(53);
     }
 
     if (verbose)
@@ -1104,21 +1096,21 @@ tp_first_pass (int argc, char ** argv)
     if (! cl.value('Z', upper_ring_size_cutoff) || upper_ring_size_cutoff < 3)
     {
       cerr << "The upper ring size cutoff value (-Z) must be a valid ring size\n";
-      usage(3);
+      Usage(3);
     }
 
     if (verbose)
       cerr << "Will discard molecules with ring sizes > " << upper_ring_size_cutoff << endl;
   }
 
-  if (cl.option_present ('V'))
+  if (cl.option_present('V'))
   {
     skip_molecules_with_abnormal_valences = 1;
     if (verbose)
       cerr << "Molecules containing abnormal valences will be skipped\n";
   }
 
-  if (cl.option_present ('I'))
+  if (cl.option_present('I'))
   {
     int i = 0;
     IWString tmp;
@@ -1145,31 +1137,31 @@ tp_first_pass (int argc, char ** argv)
       else
       {
         cerr << "Unrecognised -I qualifier '" << tmp << "'\n";
-        usage (55);
+        Usage(55);
       }
     }
   }
 
-  if (cl.option_present ('B'))
+  if (cl.option_present('B'))
   {
     if (1 != cl.option_count ('B'))
     {
       cerr << "Only one -B option is allowed\n";
-      usage (57);
+      Usage(57);
     }
 
     if (! cl.value ('B', connection_table_errors_allowed) ||
           connection_table_errors_allowed < 0)
     {
       cerr << "The -B option requires a non negative integer argument\n";
-      usage (34);
+      Usage(34);
     }
 
     if (verbose)
       cerr << connection_table_errors_allowed << " connection table errors allowed\n";
   }
 
-  if (cl.option_present ('P'))
+  if (cl.option_present('P'))
   {
     cl.value ('P', text_to_append);
     if (verbose)
@@ -1180,7 +1172,7 @@ tp_first_pass (int argc, char ** argv)
     
   }
 
-  if (cl.option_present ('p'))
+  if (cl.option_present('p'))
   {
     const_IWSubstring p;
     cl.value ('p', p);
@@ -1200,21 +1192,20 @@ tp_first_pass (int argc, char ** argv)
     else
     {
       cerr << "Invalid/unrecognised -p qualifier '" << p << "'\n";
-      usage (6);
+      Usage(6);
     }
   }
 
-  if (cl.option_present ('b'))
+  if (cl.option_present('b'))
   {
-    if (! cl.value ('b', ring_bond_ratio) || ring_bond_ratio < 0.0 || ring_bond_ratio > 1.0)
+    if (! cl.value('b', ring_bond_ratio) || ring_bond_ratio < 0.0 || ring_bond_ratio > 1.0)
     {
       cerr << "The lower ring bond ratio (-b) option must be followed by a valid fraction\n";
-      usage (14);
+      Usage(14);
     }
 
     if (verbose)
       cerr << "Molecules with ring bond ratio's of " << ring_bond_ratio << " or less are rejected\n";
-
   }
 
 // initialise the array of allowable elements
@@ -1272,43 +1263,42 @@ tp_first_pass (int argc, char ** argv)
     if (ok_elements[i])
       continue;
 
-    const Element * e = get_element_from_atomic_number (i);
-    if (! e->organic ())
+    const Element * e = get_element_from_atomic_number(i);
+    if (! e->organic())
       continue;
 
     ok_elements[i] = 1;
     if (verbose)
-      cerr << "Element " << e->symbol () << " atomic number " << i << " allowed\n";
+      cerr << "Element " << e->symbol() << " atomic number " << i << " allowed\n";
   }
 
-  if (0 == cl.number_elements ())
-  {
+  if (cl.empty()) {
     cerr << prog_name << ": insufficient arguments " << argc << "\n";
-    usage (56);
+    Usage(56);
   }
 
   int rc = 0;
-  for (int i = 0; i < cl.number_elements (); i++)
+  for (int i = 0; i < cl.number_elements(); i++)
   {
     const char *fname = cl[i];
 
     if (verbose)
       cerr << prog_name << " processing '" << fname << "'\n";
 
-    rc += tp_first_pass (fname, input_type, output);
+    rc += tp_first_pass(fname, input_type, output);
   }
 
   if (verbose)
   {
-    if (cl.number_elements () > 1)
+    if (cl.number_elements() > 1)
       cerr << molecules_read << " molecules read, ";
     cerr << molecules_written << " molecules written\n";
 
-    if (0 == molecules_read)
+    if (molecules_read == 0)
       return rc;
 
-    cerr << "Molecules had between " << natoms_accumulator.minval () << " and " <<
-            natoms_accumulator.maxval () << " atoms\n";
+    cerr << "Molecules had between " << natoms_accumulator.minval() << " and " <<
+            natoms_accumulator.maxval() << " atoms\n";
 
     if (molecules_containing_non_allowed_atom_types)
       cerr << "Skipped " << molecules_containing_non_allowed_atom_types <<
@@ -1348,16 +1338,16 @@ tp_first_pass (int argc, char ** argv)
     if (isotopes_converted)
       cerr << isotopes_converted << " isotopes converted to natural form\n";
 
-    elements_to_remove.report (cerr);
+    elements_to_remove.report(cerr);
 
-    if (element_transformations.number_elements ())
-      element_transformations.debug_print (cerr);
+    if (element_transformations.number_elements())
+      element_transformations.debug_print(cerr);
 
     if (molecules_with_abnormal_valences)
       cerr << molecules_with_abnormal_valences << " molecules containing abnormal valences\n";
 
-    if (chemical_standardisation.active ())
-      chemical_standardisation.report (cerr);
+    if (chemical_standardisation.active())
+      chemical_standardisation.report(cerr);
 
     if (molecules_with_bad_ring_bond_ratios)
       cerr << molecules_with_bad_ring_bond_ratios << " molecules with ring bond ratios out of range\n";
@@ -1367,11 +1357,11 @@ tp_first_pass (int argc, char ** argv)
 }
 
 int
-main (int argc, char **argv)
+main(int argc, char **argv)
 {
   prog_name = argv[0];
 
-  int rc = tp_first_pass (argc, argv);
+  int rc = tp_first_pass(argc, argv);
 
   return rc;
 }

@@ -1040,6 +1040,7 @@ cc_binary(
         "tp_first_pass.cc",
     ],
     deps = [
+        ":tp_first_pass_lib",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
@@ -1247,6 +1248,24 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "tp_first_pass_lib",
+    srcs = [
+        "tp_first_pass_lib.cc",
+    ],
+    hdrs = [
+        "tp_first_pass_lib.h",
+    ],
+    deps = [
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule"
+    ],
+    linkopts = [
+        "-lz"
+    ],
+)
+
 cc_test(
     name = "extended_pi_test",
     srcs = [
@@ -1270,6 +1289,23 @@ cc_test(
     ],
     deps = [
         ":topological_torsion_lib",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ],
+    timeout="short",
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
+    name = "tp_first_pass_test",
+    srcs = [
+        "tp_first_pass_test.cc",
+    ],
+    deps = [
+        ":tp_first_pass_lib",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",

@@ -60,3 +60,18 @@ cc_binary(
         ":iwstring",
     ],
 )
+
+cc_test(
+    name = "iwstring_test",
+    srcs = [
+        "iwstring_test.cc",
+    ],
+    deps = [
+        ":iwstring",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)

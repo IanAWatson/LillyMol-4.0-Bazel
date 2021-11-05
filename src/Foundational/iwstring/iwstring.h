@@ -101,6 +101,9 @@ class const_IWSubstring
 
 #if defined (IW_STD_STRING_DEFINED)
     const_IWSubstring & operator = (const std::string &);
+    // Return an std::string from this.
+    // Creates a newly allocated copy.
+    std::string AsString() const ;
 #endif
 
     int debug_print (std::ostream &) const;
@@ -391,6 +394,8 @@ class IWString : public resizable_array<char>
 
 #if defined (IW_STD_STRING_DEFINED)
     IWString & operator = (const std::string &);
+    // Creates a newly allocated copy.
+    std::string AsString() const;
 #endif
 
     IWString & operator = (IWString &&);

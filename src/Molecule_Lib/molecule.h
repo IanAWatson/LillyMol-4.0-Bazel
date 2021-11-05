@@ -1,6 +1,7 @@
 #ifndef IW_MOLECULE_H
 #define IW_MOLECULE_H 1
 
+#include <memory>
 #include <string>
 
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
@@ -1267,7 +1268,10 @@ class Molecule : private resizable_array_p<Atom>
 
     int number_fragments();
     int fragment_membership(atom_number_t);
+    // Fragment membership of each atom. User provided array, or returned.
     int fragment_membership(int *);
+    std::unique_ptr<int[]> fragment_membership();
+
     int atoms_in_fragment(int);
     int atoms_in_largest_fragment();
     int largest_fragment();     // fragment number

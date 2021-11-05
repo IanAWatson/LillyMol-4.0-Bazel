@@ -967,7 +967,7 @@ Molecule::create_components (resizable_array_p<T> & components)
 template int Molecule::create_components(resizable_array_p<Molecule>&);
 
 int
-Molecule::fragment_membership (int * f)
+Molecule::fragment_membership(int * f)
 {
   assert(ok());
   assert(NULL != f);
@@ -980,8 +980,22 @@ Molecule::fragment_membership (int * f)
   return number_fragments();
 }
 
+std::unique_ptr<int[]>
+Molecule::fragment_membership() {
+  assert(ok());
+
+  if (! _fragment_information.contains_valid_data())
+    (void) number_fragments();
+
+  std::unique_ptr<int[]> result = std::make_unique<int[]>(_number_elements);
+
+  copy_vector(result.get(), _fragment_information.fragment_membership(), _number_elements);
+
+  return result;
+}
+
 int
-Molecule::fragment_membership (atom_number_t a)
+Molecule::fragment_membership(atom_number_t a)
 {
   assert (ok_atom_number(a));
 
