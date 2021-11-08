@@ -74,15 +74,6 @@ static int hard_upper_atom_count_cutoff = 0;
 static int upper_atom_count_demerit = 100;
 
 /*
-  We reject if the atom contains only C, H or S
-  On 20 Nov, we expanded that to be C, H, S, or halogen
-  We reject of we see any strange element types.
-*/
-
-static int atom_types_count = 0;
-static int csxh_count = 0;
-
-/*
   Apr 2017. For PAINS processing
 */
 
@@ -91,8 +82,8 @@ static int demerit_numeric_value_index = 0;
 static int make_implicit_hydrogens_explicit = 0;
 
 static void
-do_atom_count_demerits (Molecule & m,
-                        Demerit & demerit)
+do_atom_count_demerits(Molecule & m,
+                       Demerit & demerit)
 {
   int nf = m.number_fragments();
 
@@ -201,10 +192,10 @@ run_a_set_of_queries(Molecule_to_Match & target,
 }
 
 static void
-iwdemerit (Molecule & m,
-           resizable_array_p<Substructure_Hit_Statistics> & q1,
-           resizable_array_p<Substructure_Hit_Statistics> & q2,
-           Demerit & demerit)
+iwdemerit(Molecule & m,
+          resizable_array_p<Substructure_Hit_Statistics> & q1,
+          resizable_array_p<Substructure_Hit_Statistics> & q2,
+          Demerit & demerit)
 {
   if (soft_lower_atom_count_cutoff > 0 || soft_upper_atom_count_cutoff > 0)
   {
@@ -230,10 +221,10 @@ iwdemerit (Molecule & m,
       return;
   }
 
-  Molecule_to_Match target(&m);
-
   if (q1.number_elements())
   {
+    Molecule_to_Match target(&m);
+
     run_a_set_of_queries(target, demerit, q1);
 
 //  cerr << "After command line queries, score is " << demerit.score() << " rej? " << demerit.rejected() << endl;
@@ -352,10 +343,10 @@ do_append_demerit_text_to_name(Molecule & m,
 }
 
 static int
-iwdemerit (Molecule & m,
-           resizable_array_p<Substructure_Hit_Statistics> & q1,
-           resizable_array_p<Substructure_Hit_Statistics> & q2,
-           std::ofstream & output)
+iwdemerit(Molecule & m,
+          resizable_array_p<Substructure_Hit_Statistics> & q1,
+          resizable_array_p<Substructure_Hit_Statistics> & q2,
+          std::ofstream & output)
 {
   elements_to_remove.process(m);
 
@@ -409,7 +400,7 @@ iwdemerit (Molecule & m,
 }
 
 static void
-preprocess (Molecule & m)
+preprocess(Molecule & m)
 {
   m.remove_all(1);
 
@@ -420,10 +411,10 @@ preprocess (Molecule & m)
 }
 
 static int
-iwdemerit (data_source_and_type<Molecule> & input,
-           resizable_array_p<Substructure_Hit_Statistics> & q1,
-           resizable_array_p<Substructure_Hit_Statistics> & q2,
-           std::ofstream & output)
+iwdemerit(data_source_and_type<Molecule> & input,
+          resizable_array_p<Substructure_Hit_Statistics> & q1,
+          resizable_array_p<Substructure_Hit_Statistics> & q2,
+          std::ofstream & output)
 {
   assert (input.good());
 
@@ -451,8 +442,6 @@ iwdemerit (data_source_and_type<Molecule> & input,
     cerr << molecules_rejected << " molecules were rejected\n";
 
     cerr << "Details on queries\n";
-    cerr << "atom_types_count = " << atom_types_count << endl;
-    cerr << "only C S X or H = " << csxh_count << endl;
 
     if (do_hard_coded_substructure_queries)
       substructure_demerits::hard_coded_queries_statistics(cerr);
@@ -468,9 +457,9 @@ iwdemerit (data_source_and_type<Molecule> & input,
 }
 
 static int
-iwdemerit (const char * fname, FileType input_type,
-           resizable_array_p<Substructure_Hit_Statistics> & q1,
-           resizable_array_p<Substructure_Hit_Statistics> & q2)
+iwdemerit(const char * fname, FileType input_type,
+          resizable_array_p<Substructure_Hit_Statistics> & q1,
+          resizable_array_p<Substructure_Hit_Statistics> & q2)
 {
   if (FILE_TYPE_INVALID == input_type)
   {
@@ -505,7 +494,7 @@ iwdemerit (const char * fname, FileType input_type,
 }
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " <<__TIME__ << endl;
 
@@ -546,9 +535,9 @@ usage (int rc)
 }
 
 static void
-separate_depending_on_fragment_match (resizable_array_p<Substructure_Hit_Statistics> & queries,
-                                      resizable_array_p<Substructure_Hit_Statistics> & q1,
-                                      resizable_array_p<Substructure_Hit_Statistics> & q2)
+separate_depending_on_fragment_match(resizable_array_p<Substructure_Hit_Statistics> & queries,
+                                     resizable_array_p<Substructure_Hit_Statistics> & q1,
+                                     resizable_array_p<Substructure_Hit_Statistics> & q2)
 {
   int n = queries.number_elements();
 
@@ -590,7 +579,7 @@ display_atom_cutoff_options(std::ostream & output)
 }
 
 int
-iwdemerit (int argc, char ** argv)
+iwdemerit(int argc, char ** argv)
 {
   Command_Line cl(argc, argv, "M:VX:tA:S:R:G:O:kd:Dq:E:vi:o:c:C:N:uyf:xrlI:Z:z:W:");
 
@@ -1181,7 +1170,7 @@ iwdemerit (int argc, char ** argv)
 }
 
 int
-main (int argc, char ** argv)
+main(int argc, char ** argv)
 {
   prog_name = argv[0];
 

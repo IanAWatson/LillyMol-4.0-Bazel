@@ -48,6 +48,7 @@ class Demerit
 
   public:
     Demerit();
+    Demerit(Demerit&& rhs);
     ~Demerit();
 
     int ok() const;

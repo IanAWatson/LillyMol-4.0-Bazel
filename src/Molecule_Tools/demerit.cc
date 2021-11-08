@@ -1,3 +1,4 @@
+#include <iostream>
 #include "assert.h"
 
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
@@ -6,6 +7,8 @@
 
 #include "Foundational/iwmisc/misc.h"
 #include "demerit.h"
+
+using std::cerr;
 
 static int demerit_reason_contains_individual_demerits = 0;
 
@@ -36,12 +39,12 @@ set_rejection_threshold (int s)
 }
 
 int
-rejection_threshold ()
+rejection_threshold()
 {
   return _rejection_threshold;
 }
 
-Demerit::Demerit ()
+Demerit::Demerit()
 {
   _score = 0;
 
@@ -52,6 +55,15 @@ Demerit::Demerit ()
   _need_to_delete_atomic_demerit = 0;
 
   return;
+}
+
+Demerit::Demerit(Demerit&& rhs) {
+  _demerit = std::move(rhs._demerit);
+  _score = rhs._score;
+  _append_demerit_value_with_reason = rhs._append_demerit_value_with_reason;
+  _atomic_demerit = rhs._atomic_demerit;
+  _need_to_delete_atomic_demerit = rhs._need_to_delete_atomic_demerit;
+  rhs._need_to_delete_atomic_demerit = 0;
 }
 
 Demerit::~Demerit()
