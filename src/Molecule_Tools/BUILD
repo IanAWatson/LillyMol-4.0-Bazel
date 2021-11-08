@@ -1132,6 +1132,19 @@ cc_binary(
 )
 
 cc_library(
+    name = "demerit",
+    srcs = [
+        "demerit.cc",
+    ],
+    hdrs = [
+        "demerit.h",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
     name = "extended_pi",
     srcs = [
         "extended_pi.cc",
@@ -1140,6 +1153,20 @@ cc_library(
         "extended_pi.h",
     ],
     deps = [
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
+    name = "iwdemerit_lib",
+    srcs = [
+        "iwdemerit_lib.cc",
+    ],
+    hdrs = [
+        "iwdemerit_lib.h",
+    ],
+    deps = [
+        ":demerit",
         "//Molecule_Lib:iwmolecule",
     ],
 )
@@ -1273,6 +1300,23 @@ cc_test(
     ],
     deps = [
         ":extended_pi",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
+    name = "iwdemerit_lib_test",
+    srcs = [
+        "iwdemerit_lib_test.cc",
+    ],
+    deps = [
+        ":demerit",
+        ":iwdemerit_lib",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",

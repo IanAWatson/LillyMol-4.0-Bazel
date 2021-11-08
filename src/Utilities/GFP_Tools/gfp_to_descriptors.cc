@@ -302,17 +302,18 @@ fill_fixed_width_fingerprint_output_numeric(const IWDYFP& fp,
                                             const IW_Hash_Map<unsigned int, unsigned int>& col,
                                             int* tmp)
 {
-  if (0 != fp.nbits() % 8)
-  {
+  if (0 != fp.nbits() % 8) {
     cerr << "Sorry, cannot handle fingerprint with " << fp.nbits() << " bits\n";
     return 0;
   }
 
-  if (1 == interpret_fixed_width_as_numeric)
-    return fill_fixed_width_fingerprint_output_numeric1(fp.bits(), fp.nbits(), col, tmp);
-  else if (2 == interpret_fixed_width_as_numeric)
-    return fill_fixed_width_fingerprint_output_numeric2(
-        reinterpret_cast<const unsigned short*>(fp.bits()), fp.nbits(), col, tmp);
+  if (1 == interpret_fixed_width_as_numeric) {
+    const unsigned char * as_char = reinterpret_cast<const unsigned char*>(fp.bits());
+    return fill_fixed_width_fingerprint_output_numeric1(as_char, fp.nbits(), col, tmp);
+  } else if (2 == interpret_fixed_width_as_numeric) {
+    const unsigned short * as_short = reinterpret_cast<const unsigned short*>(fp.bits());
+    return fill_fixed_width_fingerprint_output_numeric2(as_short, fp.nbits(), col, tmp);
+  }
   else
     return 0;
 }
@@ -616,13 +617,15 @@ static int
 scan_fixed_width_fingerprint_numeric(const IWDYFP& fp,
                                      IW_Hash_Map<unsigned int, unsigned int>& fpcount)
 {
-  if (1 == interpret_fixed_width_as_numeric)
-    return scan_fixed_width_fingerprint_numeric1(fp.bits(), fp.nbits(), fpcount);
-  else if (2 == interpret_fixed_width_as_numeric)
-    return scan_fixed_width_fingerprint_numeric2(reinterpret_cast<const unsigned short*>(fp.bits()),
-                                                 fp.nbits(), fpcount);
-  else
+  if (1 == interpret_fixed_width_as_numeric) {
+    const unsigned char * as_char = reinterpret_cast<const unsigned char*>(fp.bits());
+    return scan_fixed_width_fingerprint_numeric1(as_char, fp.nbits(), fpcount);
+  } else if (2 == interpret_fixed_width_as_numeric) {
+    const unsigned short * as_short = reinterpret_cast<const unsigned short*>(fp.bits());
+    return scan_fixed_width_fingerprint_numeric2(as_short, fp.nbits(), fpcount);
+  } else {
     return 0;
+  }
 }
 
 static int

@@ -679,7 +679,8 @@ message SingleSubstructureQuery {
      string smarts = 18;
   }
 
-  // An atom can have an associated numeric value.
+  // There can be any number of numeric values associated
+  // with a query.
   repeated double numeric_value = 19;
 
   // Reject an embedding if there are any matched atoms between

@@ -37,7 +37,7 @@ FormMask(std::unordered_set<uint32_t>& subset,
   mask.allocate_space_for_bits(nbits);
   mask.clear();
   for (const auto iter : subset) {
-    mask.set(iter);
+    mask.set_bit(iter);
   }
 }
 

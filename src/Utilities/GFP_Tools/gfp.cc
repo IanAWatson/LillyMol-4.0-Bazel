@@ -1244,7 +1244,7 @@ IW_General_Fingerprint::flip()
 {
   for (int i = 0; i < bit_fingerprints_in_file; i++)
   {
-    _fingerprint[i].flip();
+    _fingerprint[i].Flip();
   }
 
   return;
@@ -1286,9 +1286,9 @@ IW_General_Fingerprint::tanimoto(IW_General_Fingerprint & rhs)
 
 #ifdef DEBUG_TANIMOTO
     cerr << _fingerprint[i].nbits() << " bits, " << _fingerprint[i].nset() << " bits set and " << fp2.nset() << endl;
-    _fingerprint[i].printon(cerr);
+    _fingerprint[i].PrintOn(cerr);
     cerr << endl;
-    fp2.printon(cerr);
+    fp2.PrintOn(cerr);
     cerr << endl;
     cerr << " FP " << i << " similarity " <<  _fingerprint[i].tanimoto(fp2) << " weight " << _fingerprint_weight[i] << " bic " << _fingerprint[i].bits_in_common (rhs._fingerprint[i]) << endl;
 #endif
@@ -2131,7 +2131,7 @@ IW_General_Fingerprint::_construct_from_tdt(IW_TDT & tdt,
         return 0;
       }
 //    std::cout << "Fingerprint has " << _fingerprint[i].nbits() << " bits, nset " << _fingerprint[i].nset() << endl;
-//    _fingerprint[i].printon(cout, '1', '0');
+//    _fingerprint[i].PrintOn(cout, '1', '0');
       std::cout << '\n';
       if (0 != _fingerprint[i].nbits() % 32)
       {
@@ -2140,7 +2140,7 @@ IW_General_Fingerprint::_construct_from_tdt(IW_TDT & tdt,
         _fingerprint[i].allocate_space_for_bits( 32 * (b / 32 + 1));
       }
 //    cout << "Fingerprint has " << _fingerprint[i].nbits() << " bits, nset " << _fingerprint[i].nset() << endl;
-//    _fingerprint[i].printon(cout, '1', '0');
+//    _fingerprint[i].PrintOn(cout, '1', '0');
 //    cout << endl;
     }
     else if (SPARSE_FORM == _fingerprint_type[i])
@@ -3948,7 +3948,7 @@ IW_General_Fingerprint::print_all_bits(std::ostream & output) const
   {
     output << i << " " << _fingerprint_tag[i] << ' ' << _fingerprint[i].nbits() << " bits " << _fingerprint[i].nset() << " bits set\n";
 
-    _fingerprint[i].printon(output);
+    _fingerprint[i].PrintOn(output);
 
     output << endl;
   }
@@ -4055,7 +4055,7 @@ IW_General_Fingerprint::equal_weight_tanimoto(IW_General_Fingerprint & rhs)
     na += _fingerprint[i].nset();
     nb += rhs._fingerprint[i].nset();
 
-    bic += _fingerprint[i].bits_in_common(rhs._fingerprint[i]);
+    bic += _fingerprint[i].BitsInCommon(rhs._fingerprint[i]);
   }
 
   for (int i = 0; i < _number_sparse_fingerprints_to_use_in_computations; i++)
@@ -4087,13 +4087,11 @@ IW_General_Fingerprint::equal_weight_dot_product(IW_General_Fingerprint & rhs)
 //  rc += _molecular_properties_integer.bits_in_common(rhs._molecular_properties_integer);   wrong, but this will never be used, implement if ever needed
   }
 
-  for (int i = 0; i < number_fingerprints_to_use_in_computations; i++)
-  {
-    rc += _fingerprint[i].bits_in_common(rhs._fingerprint[i]);
+  for (int i = 0; i < number_fingerprints_to_use_in_computations; i++) { 
+    rc += _fingerprint[i].BitsInCommon(rhs._fingerprint[i]);
   }
 
-  for (int i = 0; i < _number_sparse_fingerprints_to_use_in_computations; i++)
-  {
+  for (int i = 0; i < _number_sparse_fingerprints_to_use_in_computations; i++) {
     rc += _sparse_fingerprint[i].dot_product(rhs._sparse_fingerprint[i]);
   }
 
@@ -4167,7 +4165,7 @@ IW_General_Fingerprint::fixed_fingerprints_as_hex(IWString & s) const
   for (int i = 0; i < bit_fingerprints_in_file; i++)
   {
     IWString tmp;
-    _fingerprint[i].hex_form(tmp);
+    _fingerprint[i].HexForm(tmp);
 
     if (i > 0)
       s << ',';

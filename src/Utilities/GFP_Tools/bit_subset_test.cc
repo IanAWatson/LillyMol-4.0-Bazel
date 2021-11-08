@@ -22,6 +22,8 @@
 
 namespace {
 
+using fixed_bit_vector::FixedBitVector;
+
 IWString fixed_tag = "FPD<";
 IWString sparse_tag = "NCS<";
 IWString smiles_tag = "$SMI<";
@@ -47,14 +49,14 @@ std::optional<IW_General_Fingerprint>
 BuildGfp_(const std::vector<uint32_t>& fixed,
           const std::unordered_map<uint32_t, uint32_t>& sparse) {
   const int nbits = fixed.size();
-  IW_Bits_Base bits(nbits);
+  FixedBitVector bits(nbits);
   for (int i = 0; i < nbits; ++i) {
     if (fixed[i]) {
-      bits.set(i);
+      bits.set_bit(i);
     }
   }
-  IWString ascii_fixed;
-  bits.daylight_ascii_representation_including_nset_info(ascii_fixed);
+  const IWString ascii_fixed = 
+           bits.DaylightAsciiRepresentationIncludingNsetInfo();
 
   Sparse_Fingerprint_Creator sfc;
   for (const auto [key, value] : sparse) {
@@ -127,6 +129,10 @@ TEST_F(TestBitSubset, TestGfpFormation1Bit) {
   IWDYFP& fp = (*gfp)[0];
   EXPECT_EQ(fp.nbits(), nbits);
   EXPECT_EQ(fp.nset(), 1);
+  std::cerr << fp << '\n';
+  for (int i = 50; i < 55; ++i) {
+    std::cerr << i << " is set " << fp.is_set(i) << '\n';
+  }
   EXPECT_TRUE(fp.is_set(set_bit));
   const Sparse_Fingerprint& sfp = gfp->sparse_fingerprint(0);
   EXPECT_EQ(sfp.nbits(), 1);

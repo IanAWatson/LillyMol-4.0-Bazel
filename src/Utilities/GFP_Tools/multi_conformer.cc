@@ -6,29 +6,29 @@
 #include "multi_conformer.h"
 
 int
-Multiconformer_01::construct_from_tdt_record (const const_IWSubstring & s)
+Multiconformer_01::construct_from_tdt_record(const const_IWSubstring & s)
 {
   assert (s.ends_with('>'));
 
   const_IWSubstring tmp(s);
 
   tmp.chop();
-  tmp.remove_up_to_first ('<');
+  tmp.remove_up_to_first('<');
 
-  return construct_from_daylight_ascii_representation (tmp);
+  return construct_from_daylight_ascii_representation(tmp);
 }
 
 int
-Multiconformer_Fixed_Counted::construct_from_tdt_record (const const_IWSubstring & s)
+Multiconformer_Fixed_Counted::construct_from_tdt_record(const const_IWSubstring & s)
 {
   assert (s.ends_with('>'));
 
   const_IWSubstring tmp(s);
 
   tmp.chop();
-  tmp.remove_up_to_first ('<');
+  tmp.remove_up_to_first('<');
 
-  return construct_from_daylight_ascii_representation (tmp);
+  return construct_from_daylight_ascii_representation(tmp);
 }
 
 int
@@ -87,7 +87,7 @@ Multiconformer_01::construct_from_daylight_ascii_representation(const const_IWSu
 
   while (s.nextword(token, i, ','))
   {
-    if (! _fp[ndx].construct_from_daylight_ascii_bit_rep(token))
+    if (! _fp[ndx].ConstructFromDaylightAsciiBitRep(token))
     {
       cerr << "Multiconformer_01::construct_from_daylight_ascii_representation:invalid bit representation\n";
       cerr << "'" << token << "'\n";
@@ -142,16 +142,16 @@ Multiconformer_Sparse::construct_from_daylight_ascii_representation(const const_
 }
 
 int 
-Multiconformer_Sparse::construct_from_tdt_record (const const_IWSubstring & s)
+Multiconformer_Sparse::construct_from_tdt_record(const const_IWSubstring & s)
 {
-  assert (s.ends_with('>'));
+  assert(s.ends_with('>'));
 
   const_IWSubstring tmp(s);
 
   tmp.chop();
-  tmp.remove_up_to_first ('<');
+  tmp.remove_up_to_first('<');
 
-  return construct_from_daylight_ascii_representation (tmp);
+  return construct_from_daylight_ascii_representation(tmp);
 }
 
 int
@@ -177,7 +177,7 @@ Multiconformer_Fixed_Counted::debug_print(std::ostream & os) const
 }
 
 int
-Multiconformer_Sparse::debug_print (std::ostream & os) const
+Multiconformer_Sparse::debug_print(std::ostream & os) const
 {
   os << "Multiconformer_Sparse::contains " << _n << " components\n";
 

@@ -13,24 +13,16 @@ class Tversky;
 #define IWDYFP_NSET_NOT_COMPUTED -9
 
 #include "Foundational/iwbits/iwbits.h"
+#include "Foundational/iwbits/fixed_bit_vector.h"
 
-class IWDYFP : public IW_Bits_Base
+class IWDYFP : public fixed_bit_vector::FixedBitVector
 {
   private:
     int _nset;
 
-//  Note that we do something dangerous here. The bits_in_common code works on
-//  whole words only. What if we have a fingerprint with 16 bits? We rely on
-//  the IW_Bits_Base object being composed of whole words and having the last
-//  part of the unset bits zero'd - actually (Apr 2002), this isn't the case any more...
-
-    int _whole_words;
-
 //  private functions
 
     void _default_values();
-
-    void _determine_whole_words();
 
     int _bits_in_common(const IWDYFP & f2) const;
 
@@ -47,9 +39,8 @@ class IWDYFP : public IW_Bits_Base
  
     int allocate_space_for_bits(int);
 
-    int whole_words() const { return _whole_words;}
-
-    int construct_from_array_of_ints(const int *, int);    // we overload this method
+    int construct_from_array_of_ints(const int *, int nb);    // we overload this method
+    int ConstructFromArrayOfInts(const int * ii, int nb);
 
     int construct_from_tdt_record(const IWString &);
     int construct_from_tdt_record(const const_IWSubstring &);
@@ -61,7 +52,7 @@ class IWDYFP : public IW_Bits_Base
 
     int construct_from_descriptor_tdt_record(const IWString &);        // includes the tag and <> chars
     int construct_from_descriptor_record(const const_IWSubstring &);   // no tags
-    int construct_from_daylight_ascii_bit_rep(const const_IWSubstring & s);   // no tags
+    int ConstructFromDaylightAsciiBitRep(const const_IWSubstring & s);   // no tags
 
     int write_daylight_ascii_representation(std::ostream & os,
                                 const const_IWSubstring & data_item_name);
@@ -69,9 +60,9 @@ class IWDYFP : public IW_Bits_Base
     int daylight_ascii_tdt(IWString & result, const const_IWSubstring &);
 
     int nset() { if (_nset >= 0) return _nset;
-                        else return _nset = IW_Bits_Base::nset();}
+                        else return _nset = FixedBitVector::nset();}
 
-    int compute_nset() { _nset = IW_Bits_Base::nset(); return _nset;}
+    int compute_nset() { _nset = FixedBitVector::nset(); return _nset;}
 
     int set_nset(int);
 
@@ -85,9 +76,13 @@ class IWDYFP : public IW_Bits_Base
     void iwor(const IWDYFP &, int &);
     void iwxor(const IWDYFP &);
 
+    // We can fairly quickly see if a fingerprint can be compared with another
+    // to achieve a given similarity or larger.
+    int SimilarityMightBeGreaterThan(const IWDYFP& rhs, similarity_type_t threshold) const;
+
 //  Sometimes this is useful
 
-    int recompute_nset() { return _nset = IW_Bits_Base::nset();}
+    int recompute_nset() { return _nset = FixedBitVector::nset();}
 
     similarity_type_t tanimoto         (IWDYFP &);
     similarity_type_t fraction_matched (IWDYFP &);

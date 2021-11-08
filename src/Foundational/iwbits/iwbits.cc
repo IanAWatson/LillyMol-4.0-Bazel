@@ -747,10 +747,6 @@ IW_Bits_Base::construct_from_daylight_ascii_bit_rep(const char * ascii,
   if (0 == number_bits)
     return 1;
 
-#ifdef USE_IWMALLOC
-  iwmalloc_check_all_malloced(stderr);
-#endif
-
   unsigned int bytes_read;
   if (! (du_ascii2bin(ascii, nchars, _bits, bytes_read)))
   {
@@ -758,9 +754,6 @@ IW_Bits_Base::construct_from_daylight_ascii_bit_rep(const char * ascii,
     cerr << "nchars = " << nchars << endl;
     return 0;
   }
-#ifdef USE_IWMALLOC
-  iwmalloc_check_all_malloced(stderr);
-#endif
 
   return 1;
 }
@@ -807,8 +800,8 @@ determine_nbits_nset(const const_IWSubstring & fp,
   reading from unitialised memory
 */
 
-static int
-determine_nbits_nset (const char * fp, int & nbits, int & nset)
+int
+determine_nbits_nset(const char * fp, int & nbits, int & nset)
 {
   if (2 != IW_SSCANF(fp, ";%*d;%*d;%d;%d", &nbits, &nset))
   {
@@ -932,10 +925,6 @@ IW_Bits_Base::construct_from_tdt_record_nset(const const_IWSubstring & tdt_recor
     cerr << "IW_Bits_Base::construct_from_tdt_record_nset: inner call failed\n";
     return 0;
   }
-
-#ifdef USE_IWMALLOC
-  iwmalloc_check_all_malloced(stderr);
-#endif
 
   return 1;
 }
