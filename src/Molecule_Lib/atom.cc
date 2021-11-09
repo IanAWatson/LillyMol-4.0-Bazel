@@ -482,7 +482,10 @@ angle_between_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Ato
   v43.cross_product(v32);
   v43 *= static_cast<coord_t>(-1.0);
 
-  angle_t rc = v21.angle_between(v43);
+  return v21.angle_between(v43);
+#ifdef NO_ATTEMPT_TO_ASSIGN_DIRECTIONALITY
+  // Trying to assign directionality to a dihedral probably does not
+  // make sense. Besides, this never worked properly.
 
   // Now we need to work out the directionality of the angle
   // The cross product of v21 and v43 will be in the same or opposite
@@ -492,10 +495,11 @@ angle_between_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Ato
 
   angle_t tmp = v21.angle_between(v32);
 
-  if (tmp < static_cast<angle_t>(0.1))
+  if (tmp < static_cast<angle_t>(0.0))
     return -rc;
 
   return rc;
+#endif
 }
 
 /*

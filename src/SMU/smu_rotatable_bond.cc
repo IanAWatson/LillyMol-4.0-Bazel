@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <tuple>
 
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
@@ -22,6 +23,10 @@ void
 Usage(int rc) {
   cerr << "Identifies variability in torsion angles across SMU molecules\n";
   cerr << " -h            remove all explicit Hydrogen atoms\n";
+  cerr << " -p <n>        support level for writing a torsion\n";
+  cerr << " -g ...        chemical standardisation\n";
+  cerr << " -A ...        aromaticity\n";
+  cerr << " -i ...        input type specification\n";
   cerr << " -v            verbose output\n";
   exit(rc);
 }
@@ -330,17 +335,6 @@ AngleToIndex(float angle) {
   return static_cast<int>(angle * multiplier);
 }
 
-float
-AddHalfPi(float angle) {
-  constexpr float two_pi = M_PI + M_PI;
-  angle += (M_PI * 0.5);
-  if (angle > two_pi) {
-    angle -= two_pi;
-  }
-
-  return angle;
-}
-
 double
 MinVaranmce(const Torsion& torsion) {
   if (torsion.acc_angle.n() < 2) {
@@ -360,25 +354,10 @@ CheckVariability(Molecule& m,
                  const SmartsAndDihedral& smarts,
                  JobParameters & params) {
   auto angle = m.dihedral_angle(atoms[0], atoms[1], atoms[2], atoms[3]);
-  angle += M_PI;   // ensure positive.
-#ifdef NEGATE_ANGLE
-  if (angle < 0.0f)  {
-    angle = - angle;
-  }
-  if (angle >= float_pi) {
-    angle -= float_pi;
-  }
-#endif
-
-  if (angle < 0.0f)  {
-    cerr << "NEgative angle " << angle << '\n';
-    angle = 0.0f;
-  }
 
   auto iter = params.acc_angle.find(usmi);
   if (iter != params.acc_angle.end()) {
     iter->second.acc_angle.extra(angle);
-    iter->second.acc_angle_pi2.extra(AddHalfPi(angle));
     iter->second.all_angles[AngleToIndex(angle)]++;
     return 1;
   }
@@ -611,87 +590,129 @@ SmuRotatableBondsGrouped(data_source_and_type<Molecule>& input,
   return 1;
 }
 
-// If possible, return a canonical connection attached to
-// `from` while ignoring `exclude`.
-atom_number_t
-CanonicalConnection(const Molecule& m,
-                    atom_number_t from,
-                    atom_number_t exclude) {
-  Set_of_Atoms connections = m.connections(from);
-  connections.remove_first(exclude);
-  if (connections.size() == 1) {
-    return connections[0];
+int
+NumberBonds(const Bond & bond) {
+  if (bond.is_aromatic()) {
+    return 4;
   }
+  return bond.number_of_bonds();
+}
 
-  resizable_array<atomic_number_t> atomic_numbers;
-  atomic_numbers.resize(connections.size());
-  for (atom_number_t atom : connections) {
-    if (atom != exclude) {
-      atomic_numbers << m.atomic_number(atom);
+uint32_t
+ComputeHash(const Molecule& m,
+            atom_number_t a1,
+            const Bond & b12,
+            const atom_number_t a2,
+            const atom_number_t a3,
+            const Bond & b34,
+            const atom_number_t a4) {
+  static uint32_t magic[] { 27, 46, 93 };
+  return m.atomic_number(a1) + magic[0] * NumberBonds(b12) * m.atomic_number(a2) +
+                     magic[1] * m.atomic_number(a3) +
+                     magic[2] * NumberBonds(b34) * m.atomic_number(a4);
+}
+
+struct AtomsAndCount {
+  atom_number_t a1;
+  atom_number_t a2;
+  atom_number_t a3;
+  atom_number_t a4;
+  int instances = 1;
+
+  AtomsAndCount() {
+    instances = 1;
+  }
+  AtomsAndCount(atom_number_t q1,
+                atom_number_t q2,
+                atom_number_t q3,
+                atom_number_t q4) : a1(q1), a2(q2), a3(q3), a4(q4) {
+    instances = 1;
+  }
+};
+
+void
+AddToHash(uint32_t score, AtomsAndCount&& atoms_and_count,
+          std::unordered_map<uint32_t, AtomsAndCount>& scores) {
+  auto iter = scores.find(score);
+  if (iter != scores.end()) {
+    iter->second.instances++;
+  } else {
+    scores.emplace(std::make_pair(score, std::move(atoms_and_count)));
+  }
+}
+
+// The objective is to identify a canonical dihedral angle
+// with the bond between a2-a3 in the middle.
+// If it is possible to identify canonical atoms a1 and a4,
+// those are returned. If no canonical choice can be made,
+// nullopt is returned.
+std::optional<AtomsAndCount>
+CanonicalConnections(const Molecule& m,
+                     const Bond & b) {
+  const atom_number_t a2 = b.a1();
+  const atom_number_t a3 = b.a2();
+  const Atom& atom2 = m.atom(a2);
+  const Atom& atom3 = m.atom(a3);
+  // Mapping from score to dihedral atoms.
+  std::unordered_map<uint32_t, AtomsAndCount> scores;
+
+  for (const Bond * b2 : atom2) {
+    atom_number_t j = b2->other(a2);
+    if (j == a3) {
+      continue;
+    }
+    for (const Bond * b3 : atom3) {
+      const atom_number_t k = b3->other(a3);
+      if (k == a2) {
+        continue;
+      }
+      // Compute forward and reverse hashes.
+      uint32_t v = ComputeHash(m, j, *b2, a2, a3, *b3, k);
+      AddToHash(v, AtomsAndCount(j, a2, a3, k), scores);
+      v = ComputeHash(m, k, *b3, a3, a2, *b2, j);
+      AddToHash(v, AtomsAndCount(k, a3, a2, j), scores);
     }
   }
 
-  if (connections.size() == 2) {
-    if (atomic_numbers[0] == atomic_numbers[1]) {
-      return INVALID_ATOM_NUMBER;
+  // Looking for the highest score that has one instance.
+  uint32_t highest_score = 0;
+  AtomsAndCount canonical_atoms;
+
+  for (const auto& [score, atoms] : scores) {
+    if (score < highest_score) {
+      continue;
     }
-    if (atomic_numbers[0] > atomic_numbers[1]) {
-      return connections[0];
-    } else {
-      return connections[1];
+    if (atoms.instances > 1) {
+      continue;
     }
+    highest_score = score;
+    canonical_atoms = atoms;
   }
 
-  // connections.size() == 3
-
-  // First check if they are all the same.
-  if (atomic_numbers[0] == atomic_numbers[1] && atomic_numbers[1] == atomic_numbers[2]) {
-    return INVALID_ATOM_NUMBER;
+  if (highest_score == 0) {
+    return std::nullopt;
   }
 
-  // Are any two the same
-  if (atomic_numbers[0] == atomic_numbers[1]) {
-    return connections[2];
-  }
-  if (atomic_numbers[0] == atomic_numbers[2]) {
-    return connections[1];
-  }
-  if (atomic_numbers[1] == atomic_numbers[2]) {
-    return connections[0];
-  }
-
-  // Must be all different, choose the highest atomic number.
-  atomic_number_t highest_atomic_number = atomic_numbers[0];
-  atom_number_t canonical_atom = connections[0];
-  for (int i = 1; i < 3; ++i) {
-    if (atomic_numbers[i] > highest_atomic_number) {
-      highest_atomic_number = atomic_numbers[i];
-      canonical_atom = connections[i];
-    }
-  }
-
-  return canonical_atom;
+  return canonical_atoms;
 }
 
 int
 AssembleAtomsAllAttachments(Molecule& m,
-                            atom_number_t canon1,
-                            atom_number_t a1,
-                            atom_number_t a2,
-                            atom_number_t canon2,
+                            const AtomsAndCount& ac,
                             IWString& usmi,
-                            SmartsAndDihedral& smarts,
-                            Set_of_Atoms& dihedral) {
-  dihedral << canon1 << a1 << a2 << canon2;
-
-  Set_of_Atoms connected1 = m.connections(a1);
+                            SmartsAndDihedral& smarts) {
+  const atom_number_t a1 = ac.a1;
+  const atom_number_t a2 = ac.a2;
+  const atom_number_t a3 = ac.a3;
+  const atom_number_t a4 = ac.a4;
   Set_of_Atoms connected2 = m.connections(a2);
+  Set_of_Atoms connected3 = m.connections(a3);
 
   const int matoms = m.natoms();
 
   std::unique_ptr<int[]> atom_in_subset(new_int(matoms));
-  connected1.set_vector(atom_in_subset.get(), 1);
   connected2.set_vector(atom_in_subset.get(), 1);
+  connected3.set_vector(atom_in_subset.get(), 1);
 
   Molecule subset;
   std::unique_ptr<int[]> xref(new_int(matoms));
@@ -703,19 +724,19 @@ AssembleAtomsAllAttachments(Molecule& m,
 
   // By convention, we write the canonical atoms as #atomic_number
 
-  smarts.smarts << "[#" << m.atomic_number(canon1) << ']';
-  smarts.smarts << m.smarts_equivalent_for_atom(a1);
-  for (atom_number_t atom : connected1) {
-    if (atom == a2 || atom == canon1) {
+  smarts.smarts << "[#" << m.atomic_number(a1) << ']';
+  smarts.smarts << m.smarts_equivalent_for_atom(a2);
+  for (atom_number_t atom : connected2) {
+    if (atom == a3 || atom == a1) {
       continue;
     }
     smarts.smarts << "(-" << m.atomic_symbol(atom) << ')';
   }
   smarts.smarts << '-';
-  smarts.smarts << m.smarts_equivalent_for_atom(a2);
-  smarts.smarts << "(-[#" << m.atomic_number(canon2) << "])";
-  for (atom_number_t atom : connected2) {
-    if (atom == a1 || atom == canon2) {
+  smarts.smarts << m.smarts_equivalent_for_atom(a3);
+  smarts.smarts << "(-[#" << m.atomic_number(a4) << "])";
+  for (atom_number_t atom : connected3) {
+    if (atom == a2 || atom == a4) {
       continue;
     }
     smarts.smarts << "(-" << m.atomic_symbol(atom) << ')';
@@ -723,41 +744,22 @@ AssembleAtomsAllAttachments(Molecule& m,
   return 1;
 }
 
+// Examine the atoms around `b` and if a canonical form can be
+// identified, fill in `usmu`, `smarts`, and `dihedral`.
 int
 AssembleAtomsAllAttachments(Molecule& m,
                             const Bond & b,
                             IWString& usmi,
                             SmartsAndDihedral& smarts,
                             Set_of_Atoms& dihedral) {
-  const atom_number_t a1 = b.a1();
-  const atom_number_t a2 = b.a2();
-
-  atom_number_t c1 = CanonicalConnection(m, a1, a2);
-  if (c1 == INVALID_ATOM_NUMBER) {
-    return 0;
-  }
-  atom_number_t c2 = CanonicalConnection(m, a2, a1);
-  if (c2 == INVALID_ATOM_NUMBER) {
+  std::optional<AtomsAndCount> canonical_atoms = CanonicalConnections(m, b);
+  if (canonical_atoms == std::nullopt) {
     return 0;
   }
 
-  // First determine if this bond can be resolved.
-  const atomic_number_t z1 = m.atomic_number(c1);
-  const atomic_number_t z2 = m.atomic_number(a1);
-  const atomic_number_t z3 = m.atomic_number(a2);
-  const atomic_number_t z4 = m.atomic_number(c2);
-
-  if (z1 < z4) {
-    return AssembleAtomsAllAttachments(m, c1, a1, a2, c2, usmi, smarts, dihedral);
-  } else if (z1 > z4) {
-    return AssembleAtomsAllAttachments(m, c2, a2, a1, c1, usmi, smarts, dihedral);
-  } else if (z2 < z3) {
-    return AssembleAtomsAllAttachments(m, c1, a1, a2, c2, usmi, smarts, dihedral);
-  } else if (z2 > z3) {
-    return AssembleAtomsAllAttachments(m, c2, a2, a1, c1, usmi, smarts, dihedral);
-  } else {
-    return 0;
-  }
+  const AtomsAndCount& ac = canonical_atoms.value();
+  dihedral << ac.a1 << ac.a2 << ac.a3 << ac.a4;
+  return AssembleAtomsAllAttachments(m, ac, usmi, smarts);
 }
 
 int
@@ -885,7 +887,19 @@ SmuRotatableBonds(int argc, char ** argv) {
     }
   }
 
-  const char sep = ' ';
+  const char sep = ',';
+  // Header record
+  std::cout << "smiles" << sep << "num.smi" << sep << "smarts" << sep <<
+            "N" << sep <<
+            "min" << sep <<
+            "ave" << sep <<
+            "max" << sep <<
+            "range" << sep <<
+            "var" << sep <<
+            "nbuckets" << sep <<
+            "highest_occupancy" << sep <<
+            "highest_occupancyf" << sep << '\n';
+
   for (const auto& [smiles, torsion] : params.acc_angle) {
     const auto& acc = torsion.acc_angle;
     if (static_cast<float>(acc.minval()) < 0.0) {

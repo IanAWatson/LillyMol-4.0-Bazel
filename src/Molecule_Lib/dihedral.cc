@@ -34,21 +34,6 @@ Molecule::dihedral_angle(atom_number_t a1, atom_number_t a2, atom_number_t a3, a
   return angle_between_atoms(*aa1, *aa2, *aa3, *aa4);
 }
 
-angle_t
-Molecule::dihedral_angle_signed(atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4) const
-{
-  assert(ok_4_atoms(a1, a2, a3, a4));
-
-  const Atom * aa1 = _things[a1];
-  const Atom * aa2 = _things[a2];
-  const Atom * aa3 = _things[a3];
-  const Atom * aa4 = _things[a4];
-
-  return angle_between_atoms_signed(*aa1, *aa2, *aa3, *aa4);
-}
-
-//#define DEBUG_SET_DIHEDRAL
-
 int
 Molecule::set_dihedral(atom_number_t a1, 
                        atom_number_t a2,

@@ -1,0 +1,70 @@
+// Tester for the atom class
+
+#include "googlemock/include/gmock/gmock.h"
+#include "googletest/include/gtest/gtest.h"
+#include "google/protobuf/text_format.h"
+
+#include "molecule.h"
+
+namespace {
+TEST(TestAtom, TestDihedralZero) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("CCCC"));
+  m.setxyz(0, -0.5, 1.0, 0.0);
+  m.setxyz(1, 0.0, 0.0, 0.0);
+  m.setxyz(2, 1.0, 0.0, 0.0);
+  m.setxyz(3, 1.5, 1.0, 0.0);
+  EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), 0.0f);
+}
+
+TEST(TestAtom, TestDihedralSmallPositive) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("CCCC"));
+  m.setxyz(0, -0.5, 1.0, 0.0);
+  m.setxyz(1, 0.0, 0.0, 0.0);
+  m.setxyz(2, 1.0, 0.0, 0.0);
+  m.setxyz(3, 1.5, 1.0, 0.1);
+  EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), 0.09966857f);
+}
+
+TEST(TestAtom, TestDihedralSmallNegative) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("CCCC"));
+  m.setxyz(0, -0.5, 1.0, 0.0);
+  m.setxyz(1, 0.0, 0.0, 0.0);
+  m.setxyz(2, 1.0, 0.0, 0.0);
+  m.setxyz(3, 1.5, 1.0, -0.1);
+  EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), 0.09966857f);
+}
+
+TEST(TestAtom, TestDihedral90) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("CCCC"));
+  m.setxyz(0, -0.5, 1.0, 0.0);
+  m.setxyz(1, 0.0, 0.0, 0.0);
+  m.setxyz(2, 1.0, 0.0, 0.0);
+  m.setxyz(3, 1.5, 0.0, 1.0);
+  EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), 0.5 * M_PI);
+}
+
+TEST(TestAtom, TestDihedralneg90) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("CCCC"));
+  m.setxyz(0, -0.5, 1.0, 0.0);
+  m.setxyz(1, 0.0, 0.0, 0.0);
+  m.setxyz(2, 1.0, 0.0, 0.0);
+  m.setxyz(3, 1.5, 0.0, -1.0);
+  EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), 0.5 * M_PI);
+}
+
+TEST(TestAtom, TestDihedralneg180) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("CCCC"));
+  m.setxyz(0, -0.5, 1.0, 0.0);
+  m.setxyz(1, 0.0, 0.0, 0.0);
+  m.setxyz(2, 1.0, 0.0, 0.0);
+  m.setxyz(3, 1.5, -1.0, 0.0);
+  EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), M_PI);
+}
+
+}  //  namespace

@@ -1,8 +1,9 @@
-#ifndef IW_3DVECTOR_H
-#define IW_3DVECTOR_H
+#ifndef MOLECULE_LIB_SPACE_VECTOR_H
+#define MOLECULE_LIB_SPACE_VECTOR_H
 
-#include <assert.h>
+#include <cassert>
 #include <cmath>
+#include <iostream>
 
 #include "Foundational/iwaray/iwaray.h"
 #include "Foundational/iwmisc/iwconfig.h"
@@ -16,40 +17,40 @@ class Space_Vector
     T _x;
     T _y;
     T _z;
-    void _default_values ();
+    void _default_values();
 
   public:
-    Space_Vector ();
-    Space_Vector (T, T, T);
-    Space_Vector (const Space_Vector<T> &);
-    ~Space_Vector ();
+    Space_Vector();
+    Space_Vector(T, T, T);
+    Space_Vector(const Space_Vector<T> &);
+    ~Space_Vector();
 
-    T x () const { return _x; }
-    T y () const { return _y; }
-    T z () const { return _z; }
+    T x() const { return _x; }
+    T y() const { return _y; }
+    T z() const { return _z; }
 
-    T & x () { return _x; }
-    T & y () { return _y; }
-    T & z () { return _z; }
+    T & x() { return _x; }
+    T & y() { return _y; }
+    T & z() { return _z; }
 
-    void setxyz (T, T, T);
-    void setxyz (const Space_Vector<T> &);
+    void setxyz(T, T, T);
+    void setxyz(const Space_Vector<T> &);
 
 //  function to help speed up whim
 
-    void getxyz (double * c) const { c[0] = static_cast<double>(_x);
-                                     c[1] = static_cast<double>(_y);
-                                     c[2] = static_cast<double>(_z);}
+    void getxyz(double * c) const { c[0] = static_cast<double>(_x);
+                                    c[1] = static_cast<double>(_y);
+                                    c[2] = static_cast<double>(_z);}
 
-    int read (const const_IWSubstring &, char=' ');
+    int read(const const_IWSubstring &, char=' ');
 
-    void add (T, T, T);
-    void translate (T tx, T ty, T tz) { Space_Vector<T>::add (tx, ty, tz);}
-    void translate (const Space_Vector<T> &);
-    void  normalise ();
-    T norm () const;
-    T length () const { return norm ();}
-    T normsquared () const { return _x * _x + _y * _y + _z * _z;}
+    void add(T, T, T);
+    void translate(T tx, T ty, T tz) { Space_Vector<T>::add(tx, ty, tz);}
+    void translate(const Space_Vector<T> &);
+    void  normalise();
+    T norm() const;
+    T length() const { return norm();}
+    T normsquared() const { return _x * _x + _y * _y + _z * _z;}
 
     Space_Vector<T> & operator =  (const Space_Vector<T> &);
     Space_Vector<T> operator +  (T) const;
@@ -71,33 +72,29 @@ class Space_Vector
     T           operator ^ (const Space_Vector<T> &) const;       // dot product
     int         operator == (const Space_Vector<T> &)const ;
     int         operator != (const Space_Vector<T> &)const ;
-    void        cross_product (const Space_Vector<T> &);
+    void        cross_product(const Space_Vector<T> &);
 
-    T           angle_between              (const Space_Vector<T> &) const;
-    T           angle_between_unit_vectors (const Space_Vector<T> &) const;
+    T           angle_between             (const Space_Vector<T> &) const;
+    T           angle_between_unit_vectors(const Space_Vector<T> &) const;
 
-    T           distance (const Space_Vector<T> &) const;
-    T           distance_squared (const Space_Vector<T> &) const;
+    T           distance(const Space_Vector<T> &) const;
+    T           distance_squared(const Space_Vector<T> &) const;
 
-    T           dot_product (const Space_Vector<T> &) const;
+    T           dot_product(const Space_Vector<T> &) const;
 
-    Space_Vector<T> form_unit_vector (const Space_Vector<T> &) const;
+    Space_Vector<T> form_unit_vector(const Space_Vector<T> &) const;
 
-    T           angle_between (const Space_Vector<T> & a1, const Space_Vector<T> & a2) const;   // bond angle, we assume  a1 - this - a2, we return the angle a1-this-a2
+    T           angle_between(const Space_Vector<T> & a1, const Space_Vector<T> & a2) const;   // bond angle, we assume  a1 - this - a2, we return the angle a1-this-a2
 
-    bool        closer_than (const Space_Vector<T> &, T) const;   // tries to be efficient
+    bool        closer_than(const Space_Vector<T> &, T) const;   // tries to be efficient
 
     resizable_array<T> ToResizableArray() const;
 };
-
-#include <iostream>
 
 template <typename T> std::ostream & operator << (std::ostream &, const Space_Vector<T> &);
 
 #if defined(SPACE_VECTOR_IMPLEMENTATION) || defined(IW_IMPLEMENTATIONS_EXPOSED)
 
-#include <stdlib.h>
-#include <iostream>
 #include <algorithm>
 
 using std::cerr;
@@ -153,7 +150,7 @@ Space_Vector<T>::Space_Vector(const Space_Vector<T> & rhs)
 }
 
 template <typename T>
-Space_Vector<T>::~Space_Vector ()
+Space_Vector<T>::~Space_Vector()
 {
 #ifdef DEBUG_SPACE_VECTOR
   cerr << "descructor called for " << this << endl;
@@ -179,7 +176,7 @@ Space_Vector<T>::operator = (const Space_Vector<T> & rhs)
 
 template <typename T>
 void
-Space_Vector<T>::normalise ()
+Space_Vector<T>::normalise()
 {
 #ifdef DEBUG_SPACE_VECTOR
   cerr << "Normalising " << this << endl;
@@ -199,9 +196,11 @@ Space_Vector<T>::normalise ()
 
 template <typename T>
 T
-Space_Vector<T>::norm () const
+Space_Vector<T>::norm() const
 {
-  T norm = static_cast<T>(sqrt(static_cast<double>(_x) * static_cast<double>(_x) + static_cast<double>(_y) * static_cast<double>(_y) + static_cast<double>(_z) * static_cast<double>(_z)));
+  T norm = static_cast<T>(sqrt(static_cast<double>(_x) * static_cast<double>(_x) +
+                               static_cast<double>(_y) * static_cast<double>(_y) +
+                               static_cast<double>(_z) * static_cast<double>(_z)));
 
   return norm;
 }
@@ -237,9 +236,19 @@ template <typename T>
 Space_Vector<T>
 Space_Vector<T>::operator * (const Space_Vector<T> & v2) const
 {
-  Space_Vector<T> result(_y * v2._z - _z * v2._y,
-                         _z * v2._x - _x * v2._z,
-                         _x * v2._y - _y * v2._x);
+  const double x1 = _x;
+  const double y1 = _y;
+  const double z1 = _z;
+
+  const double x2 = v2._x;
+  const double y2 = v2._y;
+  const double z2 = v2._z;
+  Space_Vector<T> result(y1 * z2 - z1 * y2,
+                         z1 * x2 - x1 * z2,
+                         x1 * y2 - y1 * x2);
+//Space_Vector<T> result(_y * v2._z - _z * v2._y,
+//                       _z * v2._x - _x * v2._z,
+//                       _x * v2._y - _y * v2._x);
 
   return result;
 }
@@ -284,7 +293,7 @@ Space_Vector<T>::operator += (const Space_Vector<T> & v2)
 
 template <typename T>
 void
-Space_Vector<T>::add (T xx, T yy, T zz)
+Space_Vector<T>::add(T xx, T yy, T zz)
 {
   _x += xx;
   _y += yy;
@@ -293,7 +302,7 @@ Space_Vector<T>::add (T xx, T yy, T zz)
 
 template <typename T>
 void
-Space_Vector<T>::translate (const Space_Vector<T> & whereto)
+Space_Vector<T>::translate(const Space_Vector<T> & whereto)
 {
   _x += whereto._x;
   _y += whereto._y;
@@ -416,7 +425,7 @@ Space_Vector<T>::operator - () const
 
 template <typename T>
 T
-Space_Vector<T>::angle_between_unit_vectors (const Space_Vector<T> & v1) const
+Space_Vector<T>::angle_between_unit_vectors(const Space_Vector<T> & v1) const
 {
   double tmp = static_cast<double>(_x) * static_cast<double>(v1._x) +
                static_cast<double>(_y) * static_cast<double>(v1._y) +
@@ -440,7 +449,7 @@ Space_Vector<T>::angle_between_unit_vectors (const Space_Vector<T> & v1) const
 
 template <typename T>
 T
-Space_Vector<T>::angle_between (const Space_Vector<T> & v1) const
+Space_Vector<T>::angle_between(const Space_Vector<T> & v1) const
 {
   Space_Vector<T> lhs(_x, _y, _z);
   lhs.normalise();
@@ -453,7 +462,7 @@ Space_Vector<T>::angle_between (const Space_Vector<T> & v1) const
 
 template <typename T>
 void
-Space_Vector<T>::cross_product (const Space_Vector<T> & v2)
+Space_Vector<T>::cross_product(const Space_Vector<T> & v2)
 {
   double xorig = static_cast<double>(_x);
   double yorig = static_cast<double>(_y);
@@ -468,7 +477,7 @@ Space_Vector<T>::cross_product (const Space_Vector<T> & v2)
 
 template <typename T>
 int
-Space_Vector<T>::read (const const_IWSubstring & buffer, char separator)
+Space_Vector<T>::read(const const_IWSubstring & buffer, char separator)
 {
   if (buffer.nwords(separator) < 3)
   {
@@ -514,7 +523,7 @@ Space_Vector<T>::distance(const Space_Vector<T> & rhs) const
 
 template <typename T>
 T
-Space_Vector<T>::distance_squared (const Space_Vector<T> & rhs) const
+Space_Vector<T>::distance_squared(const Space_Vector<T> & rhs) const
 {
   return static_cast<T>(static_cast<double>(_x - rhs._x) * static_cast<double>(_x - rhs._x) + 
                         static_cast<double>(_y - rhs._y) * static_cast<double>(_y - rhs._y) +
@@ -523,14 +532,14 @@ Space_Vector<T>::distance_squared (const Space_Vector<T> & rhs) const
 
 template <typename T>
 T
-Space_Vector<T>::dot_product (const Space_Vector<T> & rhs) const
+Space_Vector<T>::dot_product(const Space_Vector<T> & rhs) const
 {
   return _x * rhs._x + _y * rhs._y + _z * rhs._z;
 }
 
 template <typename T>
 Space_Vector<T>
-Space_Vector<T>::form_unit_vector (const Space_Vector<T> & rhs) const
+Space_Vector<T>::form_unit_vector(const Space_Vector<T> & rhs) const
 {
 #ifdef DEBUG_SPACE_VECTOR
   cerr << "In form_unit_vector from " << this << " to " << &rhs << endl;
@@ -554,8 +563,8 @@ operator << (std::ostream & os, const Space_Vector<T> & qq)
 
 template <typename T>
 T
-Space_Vector<T>::angle_between (const Space_Vector<T> & a1,
-                                const Space_Vector<T> & a2) const
+Space_Vector<T>::angle_between(const Space_Vector<T> & a1,
+                               const Space_Vector<T> & a2) const
 {
   Space_Vector<double> ab(a1.x() - _x, a1.y() - _y, a1.z() - _z);
   Space_Vector<double> ac(a2.x() - _x, a2.y() - _y, a2.z() - _z);
@@ -568,7 +577,7 @@ Space_Vector<T>::angle_between (const Space_Vector<T> & a1,
 
 template <typename T>
 bool
-Space_Vector<T>::closer_than (const Space_Vector<T> & rhs, T d) const
+Space_Vector<T>::closer_than(const Space_Vector<T> & rhs, T d) const
 {
   T sum = static_cast<T>(0.0);
 
@@ -604,6 +613,6 @@ Space_Vector<T>::ToResizableArray() const {
   result << _x << _y << _z;
   return result;
 }
-#endif
+#endif  // SPACE_VECTOR_IMPLEMENTATION
 
-#endif
+#endif  // MOLECULE_LIB_SPACE_VECTOR_H
