@@ -803,6 +803,21 @@ cc_test(
 )
 
 cc_test(
+    name = "symmetry_test",
+    srcs = ["symmetry_test.cc"],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
     name = "misc2_test",
     srcs = ["misc2_test.cc"],
     timeout = "short",
