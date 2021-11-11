@@ -1028,8 +1028,8 @@ Atom_and_Rank::choose_an_unused_rank(RankInUse& rank_in_use)
 */
 
 int
-Atom_and_Rank::is_connected_to (Atom_and_Rank * n,
-                                const Bond * b)
+Atom_and_Rank::is_connected_to(Atom_and_Rank * n,
+                               const Bond * b)
 {
   assert (_number_elements == _bt.number_elements());
 
@@ -1105,7 +1105,7 @@ static Int_Comparitor_Larger_fo int_comparitor_larger_fo;
 #endif
 
 void
-Atom_and_Rank::establish_neighbours ()
+Atom_and_Rank::establish_neighbours()
 {
   assert (NULL == _ranks_of_neighbours);
 
@@ -1225,9 +1225,9 @@ Atom_and_Rank::a_neighbour_has_been_classified (const Atom_and_Rank * c)
 }
 
 int
-Atom_and_Rank::ok () const
+Atom_and_Rank::ok() const
 {
-  if (! resizable_array<Atom_and_Rank *>:: ok())
+  if (! resizable_array<Atom_and_Rank *>::ok())
     return 0;
 
   if (_ncon < _number_elements)
@@ -1237,7 +1237,7 @@ Atom_and_Rank::ok () const
 }
 
 int
-Atom_and_Rank::debug_print (std::ostream & os) const
+Atom_and_Rank::debug_print(std::ostream & os) const
 {
   os << "Atom " << _a << ", " << _number_elements << " neighbours, rank " << _rank << '\n';
   if (_number_elements < _ncon)
@@ -1279,8 +1279,8 @@ Atom_and_Rank::terse_print_neighbour_ranks(std::ostream & os) const
 #if defined(USING_QSORT)
 
 static int
-atom_and_rank_comparitor (Atom_and_Rank * const * pai1,
-                          Atom_and_Rank * const * pai2)
+atom_and_rank_comparitor(Atom_and_Rank * const * pai1,
+                         Atom_and_Rank * const * pai2)
 {
   int r1 = (*pai1)->rank();
   int r2 = (*pai2)->rank();
@@ -1446,7 +1446,7 @@ Atom_and_Rank::compare_for_timsort(const Atom_and_Rank * r2) const
 */
 
 int
-Atom_and_Rank::_compare_by_chirality (const Atom_and_Rank * r2) const
+Atom_and_Rank::_compare_by_chirality(const Atom_and_Rank * r2) const
 {
 #ifdef DEBUG_COMPARE_BY_CHIRAL_INFLUENCE
   cerr << "Comparing chirality " << _considering_chirality << ", " << _chirality_score << " vs " << r2->_chirality_score << '\n';
@@ -1502,7 +1502,7 @@ Atom_and_Rank::_compare_by_chirality (const Atom_and_Rank * r2) const
 }
 
 int
-Atom_and_Rank::_compare_by_chirality_for_timsort (const Atom_and_Rank * r2) const
+Atom_and_Rank::_compare_by_chirality_for_timsort(const Atom_and_Rank * r2) const
 {
 #ifdef DEBUG_COMPARE_BY_CHIRAL_INFLUENCE
   cerr << "Comparing chirality " << _considering_chirality << ", " << _chirality_score << " vs " << r2->_chirality_score << '\n';
@@ -1558,7 +1558,7 @@ Atom_and_Rank::_compare_by_chirality_for_timsort (const Atom_and_Rank * r2) cons
 }
 
 int
-Atom_and_Rank::chiral_score (const unsigned int * rank) const
+Atom_and_Rank::chiral_score(const unsigned int * rank) const
 {
   assert (NULL != _chiral_centre);
 
@@ -1571,7 +1571,7 @@ Atom_and_Rank::chiral_score (const unsigned int * rank) const
 */
 
 static unsigned int
-get_rank_for_connection (const unsigned int * rank, atom_number_t a)
+get_rank_for_connection(const unsigned int * rank, atom_number_t a)
 {
   if (CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN == a)
     return std::numeric_limits<unsigned int>::max(); 
@@ -1588,9 +1588,9 @@ get_rank_for_connection (const unsigned int * rank, atom_number_t a)
 */
 
 int
-Atom_and_Rank::_identify_two_unresolved_connections (const unsigned int * rank,
-                                                     atom_number_t & a1, 
-                                                     atom_number_t & a2) const
+Atom_and_Rank::_identify_two_unresolved_connections(const unsigned int * rank,
+                                                    atom_number_t & a1, 
+                                                    atom_number_t & a2) const
 {
   unsigned int rank_top_front  = get_rank_for_connection(rank, _chiral_centre->top_front());
   unsigned int rank_top_back   = get_rank_for_connection(rank, _chiral_centre->top_back());
@@ -1803,46 +1803,46 @@ class Unique_Determination : public resizable_array_p<Atom_and_Rank>
 
 //  Have the ranks changed from one iteration to the next
 
-    int _ranks_changed ();
+    int _ranks_changed();
 
 //  Does a comparison of stored ranks for the extended neighbour list of
 //  a set of atoms.
 
-    int _rank_values_resolved (resizable_array<atom_number_t> &, int);
+    int _rank_values_resolved(resizable_array<atom_number_t> &, int);
 
 //  Called only from _single_step_process_unique_atoms. 
 
-    void _atom_is_unique (atom_number_t a);
+    void _atom_is_unique(atom_number_t a);
 
 //  when computing chirality influences, we need the _rank array filled
 
-    void _fill_rank_array_for_chirality ();
+    void _fill_rank_array_for_chirality();
 
 //  Once we have perceived symmetry, we start to include the influence of chirality.
 
-    void _turn_on_chirality_considerations_and_reassign_ranks ();
+    void _turn_on_chirality_considerations_and_reassign_ranks();
 
 //  Scan through the atom_and_rank array and identify atoms with unique ranks
 
-    int _get_indices_of_unique_atoms (resizable_array<int> & unique_atoms) const;
+    int _get_indices_of_unique_atoms(resizable_array<int> & unique_atoms) const;
 
 //  These functions are used when unique atoms are identified in the
 //  sorted array of ranks
 
-    int _single_step_process_unique_atoms ();
+    int _single_step_process_unique_atoms();
 
 //  If atoms become disconnected, they are automatically done
 
-    int _process_all_now_disconnected_atoms ();
+    int _process_all_now_disconnected_atoms();
 
 //  Once the ranking remains unchanged from one iteration to the next,
 //  we store the resulting symmetry information
 
-    int _store_symmetry_info ();
+    int _store_symmetry_info();
 
 //  Use this to break ties
 
-    int _break_a_tie ();
+    int _break_a_tie();
 
 //  If all else fails, we can break ties by geometry
 
@@ -1850,60 +1850,60 @@ class Unique_Determination : public resizable_array_p<Atom_and_Rank>
 
     template <typename T> int _identify_extreme_value(T & c) const;
 
-    int _choose_tie_breaker_atom ();
+    int _choose_tie_breaker_atom();
 
 //  Fill the _chirality_score array
 
-    void _compute_chirality_scores ();
+    void _compute_chirality_scores();
 
 //  Look at a sequence of equivalent atoms and analyse their chirality scores
 
-    void _analyse_chirality_in_sequence (int sstart, int & next_starting_position, int * cs, int & chiral_atoms_in_sequence) const;
-    void _identify_next_sequence (int sstart, int & next_starting_position, int & chiral_atoms_in_sequence) const;
+    void _analyse_chirality_in_sequence(int sstart, int & next_starting_position, int * cs, int & chiral_atoms_in_sequence) const;
+    void _identify_next_sequence(int sstart, int & next_starting_position, int & chiral_atoms_in_sequence) const;
 
 //  An atom has been classified as unique. Move it to the inactive part of the array
 
-    int _move_to_inactive (int);
+    int _move_to_inactive(int);
 
-    int _process_all_unique_atoms ();
+    int _process_all_unique_atoms();
 
-    int _identify_unused_rank () const;
-    int _identify_two_unused_ranks (int & r1, int & r2) const;
-    int _identify_some_unused_ranks (int ranks_needed,
+    int _identify_unused_rank() const;
+    int _identify_two_unused_ranks(int & r1, int & r2) const;
+    int _identify_some_unused_ranks(int ranks_needed,
                       resizable_array<int> & ranks_identified) const;
 
 //  When an atom is ranked, we change the rank values for those atoms connected
 
-    int __adjust_rank_of_atoms_attached_to (Atom_and_Rank * r);
-    int _adjust_rank_of_atoms_attached_to (Atom_and_Rank * r);
+    int __adjust_rank_of_atoms_attached_to(Atom_and_Rank * r);
+    int _adjust_rank_of_atoms_attached_to(Atom_and_Rank * r);
 
 //  A single step of the expansion
 
-    int _expand (int);
+    int _expand(int);
 
-    int _canonical_order (int);
+    int _canonical_order(int);
 
-    int _index_of_atom (atom_number_t zatom) const;
+    int _index_of_atom(atom_number_t zatom) const;
 
-    int _get_rank (atom_number_t a) const;
-    int _index_if_active (atom_number_t a) const;
-    void _adjust_initial_ranks_for_cis_trans_bonds ();
-    void _adjust_initial_ranks_for_cis_trans_bonds (atom_number_t a1, atom_number_t a2);
-    unsigned int _compute_cis_trans_rank (Atom_and_Rank * a, 
+    int _get_rank(atom_number_t a) const;
+    int _index_if_active(atom_number_t a) const;
+    void _adjust_initial_ranks_for_cis_trans_bonds();
+    void _adjust_initial_ranks_for_cis_trans_bonds(atom_number_t a1, atom_number_t a2);
+    unsigned int _compute_cis_trans_rank(Atom_and_Rank * a, 
                        atom_number_t nw,
                        atom_number_t sw,
                        atom_number_t a2,
                        atom_number_t ne,
                        atom_number_t se);
 
-    int _expand_around_cis_trans_bond (atom_number_t a1,
+    int _expand_around_cis_trans_bond(atom_number_t a1,
                                 atom_number_t a2,
                                 unsigned int * new_rank);
 
-    int _identify_directionally_attached_atoms (const Atom_and_Rank * ar,
+    int _identify_directionally_attached_atoms(const Atom_and_Rank * ar,
                                 atom_number_t & nw,
                                 atom_number_t & sw) const;
-    int _identify_directionally_attached_bonds (const Atom_and_Rank * ar,
+    int _identify_directionally_attached_bonds(const Atom_and_Rank * ar,
                                                 const Bond * & b1,
                                                 const Bond * & b2) const;
     // Utility functions used in debugging.
@@ -1914,21 +1914,21 @@ class Unique_Determination : public resizable_array_p<Atom_and_Rank>
                         const int * include_atom,
                         std::ostream& output) const;
   public:
-    Unique_Determination (bool = false);
-    ~Unique_Determination ();
+    Unique_Determination(bool = false);
+    ~Unique_Determination();
 
-    int ok () const;
-    int debug_print (std::ostream &) const;
+    int ok() const;
+    int debug_print(std::ostream &) const;
 
-    int symmetry (int, int *) const;    // return previously computed values
-    int symmetry (Molecule *, int *, const int *);
+    int symmetry(int, int *) const;    // return previously computed values
+    int symmetry(Molecule *, int *, const int *);
 
-    int canonical_order (Molecule &, int *, const int *);
+    int canonical_order(Molecule &, int *, const int *);
 };
 
 //#define DEBUG_UNIQUE_DETERMINATION
 
-Unique_Determination::Unique_Determination (bool legacy_atom_ordering) : _legacy_atom_ordering(legacy_atom_ordering)
+Unique_Determination::Unique_Determination(bool legacy_atom_ordering) : _legacy_atom_ordering(legacy_atom_ordering)
 {
   _matoms = 0;
   _nactive = 0;
@@ -1984,7 +1984,7 @@ Unique_Determination::_allocate_atom_arrays(int matoms, int rank_delta)
   return 1;
 }
 
-Unique_Determination::~Unique_Determination ()
+Unique_Determination::~Unique_Determination()
 {
   _free_all_arrays();
 
@@ -1992,7 +1992,7 @@ Unique_Determination::~Unique_Determination ()
 }
 
 int
-Unique_Determination::_free_all_arrays ()
+Unique_Determination::_free_all_arrays()
 {
   if (NULL != _rank)
   {
@@ -2009,7 +2009,7 @@ Unique_Determination::_free_all_arrays ()
 }
 
 int
-Unique_Determination::ok () const
+Unique_Determination::ok() const
 {
   if (NULL == _m)
     return 0;
@@ -2021,7 +2021,7 @@ Unique_Determination::ok () const
 }
 
 int
-Unique_Determination::debug_print (std::ostream & os) const
+Unique_Determination::debug_print(std::ostream & os) const
 {
   os << "Details on Unique_Determination object, for " << _number_elements << " atoms, " << _nactive << " active\n";
   os << "use chirality " << _use_chirality << " include_chiral_info_in_smiles " << _include_chiral_info_in_smiles << endl;
@@ -2085,7 +2085,7 @@ Unique_Determination::_store_symmetry_info ()
 }
 
 void
-Unique_Determination::_compute_chirality_scores ()
+Unique_Determination::_compute_chirality_scores()
 {
   _fill_rank_array_for_chirality();
 
@@ -2105,9 +2105,9 @@ Unique_Determination::_compute_chirality_scores ()
 */
 
 void
-Unique_Determination::_identify_next_sequence (int sstart,
-                                               int & next_starting_position,
-                                               int & chiral_atoms_in_sequence) const
+Unique_Determination::_identify_next_sequence(int sstart,
+                                              int & next_starting_position,
+                                              int & chiral_atoms_in_sequence) const
 {
   unsigned int zrank = _things[sstart]->rank();    // keep processing while rank is the same
 
@@ -2231,7 +2231,7 @@ Unique_Determination::_choose_tie_breaker_by_geometry() const
 */
 
 int
-Unique_Determination::_choose_tie_breaker_atom ()
+Unique_Determination::_choose_tie_breaker_atom()
 {
 #ifdef DEBUG_CHOOSE_TIE_BREAKER_ATOM
   cerr << "Choosing tie breaker atom, _nchiral = " << _nchiral << '\n';
@@ -2320,7 +2320,7 @@ Unique_Determination::_choose_tie_breaker_atom ()
 //#define DEBUG_BREAK_A_TIE
 
 int
-Unique_Determination::_break_a_tie ()
+Unique_Determination::_break_a_tie()
 {
   int t = _choose_tie_breaker_atom();
 
@@ -2527,7 +2527,7 @@ Unique_Determination::_adjust_rank_of_atoms_attached_to(Atom_and_Rank * r)
 */
 
 void
-Unique_Determination::_atom_is_unique (atom_number_t a)
+Unique_Determination::_atom_is_unique(atom_number_t a)
 {
 #ifdef DEBUG_ATOM_IS_UNIQUE
   cerr << "Atom " << a << " has been determined to be unique";
@@ -2552,7 +2552,7 @@ Unique_Determination::_atom_is_unique (atom_number_t a)
 */
 
 int
-Unique_Determination::_get_indices_of_unique_atoms (resizable_array<int> & unique_atoms) const
+Unique_Determination::_get_indices_of_unique_atoms(resizable_array<int> & unique_atoms) const
 {
   if (1 == _nactive)
   {
@@ -2601,7 +2601,7 @@ Unique_Determination::_get_indices_of_unique_atoms (resizable_array<int> & uniqu
 */
 
 int
-Unique_Determination::_move_to_inactive (int a)
+Unique_Determination::_move_to_inactive(int a)
 {
 #ifdef DEBUG_MOVE_TO_INACTIVE
   cerr << "Item number " << a << " is to be made inactive\n";
@@ -2638,7 +2638,7 @@ Unique_Determination::_move_to_inactive (int a)
 */
 
 void
-Unique_Determination::_fill_rank_array_for_chirality ()
+Unique_Determination::_fill_rank_array_for_chirality()
 {
   for (int i = 0; i < _matoms; i++)     // _canonical_rank will only be partly filled
   {
@@ -2797,7 +2797,7 @@ Unique_Determination::_reassign_ranks()
 */
 
 int
-Unique_Determination::_process_all_now_disconnected_atoms ()
+Unique_Determination::_process_all_now_disconnected_atoms()
 {
   resizable_array<int> unique_atoms;     // actually indices in the array
   unique_atoms.resize_keep_storage(_nactive);
@@ -2866,7 +2866,7 @@ Unique_Determination::_process_all_now_disconnected_atoms ()
 }
 
 int
-Unique_Determination::_process_all_unique_atoms ()
+Unique_Determination::_process_all_unique_atoms()
 {
   int rc = 0;      // the number of unique atoms we find
   int found_each_iteration = 0;
@@ -2886,7 +2886,7 @@ Unique_Determination::_process_all_unique_atoms ()
 */
 
 int
-Unique_Determination::_ranks_changed ()
+Unique_Determination::_ranks_changed()
 {
   int rc = 0;
   for (int i = 0; i < _nactive; i++)
@@ -2908,8 +2908,8 @@ Unique_Determination::_ranks_changed ()
 
 #if defined(USING_QSORT)
 static int
-atom_and_neighbour_rank_comparitor (Atom_and_Rank * const * pai1,
-                                    Atom_and_Rank * const * pai2)
+atom_and_neighbour_rank_comparitor(Atom_and_Rank * const * pai1,
+                                   Atom_and_Rank * const * pai2)
 {
   Atom_and_Rank * a1 = *pai1;
   Atom_and_Rank * a2 = *pai2;
@@ -3102,14 +3102,14 @@ Unique_Determination::_initialise(Molecule & m,
 //#define DEBUG_SYMMETRY
 
 int
-Unique_Determination::_perceive_symmetry ()
+Unique_Determination::_perceive_symmetry()
 {
   return 1;
 }
 
 int
-Unique_Determination::symmetry (Molecule * m, int * symmetry_class,
-                                const int * include_atom)
+Unique_Determination::symmetry(Molecule * m, int * symmetry_class,
+                               const int * include_atom)
 {
   assert (OK_MOLECULE (m));
   assert (symmetry_class);
@@ -3280,7 +3280,7 @@ Unique_Determination::_expand_around_cis_trans_bonds()
     if (! b->part_of_cis_trans_grouping())
       continue;
 
-    _expand_around_cis_trans_bond (b->a1(), b->a2(), rank_delta);
+    _expand_around_cis_trans_bond(b->a1(), b->a2(), rank_delta);
 
  // _cis_trans_bonds--;
   }
@@ -3440,7 +3440,7 @@ Unique_Determination::_expand_around_cis_trans_bond(atom_number_t a1,
 }
 
 int
-Unique_Determination::_identify_directionally_attached_atoms (const Atom_and_Rank * ar,
+Unique_Determination::_identify_directionally_attached_atoms(const Atom_and_Rank * ar,
                                 atom_number_t & nw,
                                 atom_number_t & sw) const
 {
@@ -3491,7 +3491,7 @@ Unique_Determination::_identify_directionally_attached_atoms (const Atom_and_Ran
 }
 
 int
-Unique_Determination::_identify_directionally_attached_bonds (const Atom_and_Rank * ar,
+Unique_Determination::_identify_directionally_attached_bonds(const Atom_and_Rank * ar,
                                                 const Bond * & bnw,
                                                 const Bond * & bsw) const
 {
@@ -4026,7 +4026,7 @@ Unique_Determination::_adjust_initial_ranks_for_cis_trans_bonds ()
 }*/
 
 int
-Unique_Determination::_get_rank (atom_number_t a) const
+Unique_Determination::_get_rank(atom_number_t a) const
 {
   if (INVALID_ATOM_NUMBER == a)
     return -1;
@@ -4037,7 +4037,7 @@ Unique_Determination::_get_rank (atom_number_t a) const
 }
 
 int
-Unique_Determination::_index_if_active (atom_number_t a) const
+Unique_Determination::_index_if_active(atom_number_t a) const
 {
   for (int i = 0; i < _nactive; i++)
   {
@@ -4059,7 +4059,7 @@ Unique_Determination::_index_if_active (atom_number_t a) const
 */
 
 unsigned int
-Unique_Determination::_compute_cis_trans_rank (Atom_and_Rank * a, 
+Unique_Determination::_compute_cis_trans_rank(Atom_and_Rank * a, 
                        atom_number_t nw,
                        atom_number_t sw,
                        atom_number_t a2,
@@ -4182,7 +4182,7 @@ Unique_Determination::_adjust_initial_ranks_for_cis_trans_bonds (atom_number_t a
 }*/
 
 int
-Unique_Determination::_index_of_atom (atom_number_t zatom) const
+Unique_Determination::_index_of_atom(atom_number_t zatom) const
 {
   for (int i = 0; i < _number_elements; i++)
   {
@@ -4292,13 +4292,13 @@ Molecule::compute_canonical_ranking(Symmetry_Class_and_Canonical_Rank & sccr,
 }
 
 int
-Molecule::compute_canonical_ranking ()
+Molecule::compute_canonical_ranking()
 {
   return compute_canonical_ranking(_symmetry_class_and_canonical_rank, NULL);
 }
 
 int
-Molecule::canonical_rank (atom_number_t a)
+Molecule::canonical_rank(atom_number_t a)
 {
   assert(ok_atom_number(a));
 
@@ -4309,7 +4309,7 @@ Molecule::canonical_rank (atom_number_t a)
 }
 
 int
-Molecule::canonical_ranks (int * r)
+Molecule::canonical_ranks(int * r)
 {
   if (0 == _number_elements)
     return 0;
@@ -4323,7 +4323,7 @@ Molecule::canonical_ranks (int * r)
 }
 
 const int *
-Molecule::canonical_ranks ()
+Molecule::canonical_ranks()
 {
   if (0 == _number_elements)
     return NULL;
@@ -4335,7 +4335,7 @@ Molecule::canonical_ranks ()
 }
 
 const int *
-Molecule::symmetry_classes () 
+Molecule::symmetry_classes() 
 {
   if (0 == _number_elements)
     return NULL;
@@ -4349,7 +4349,7 @@ Molecule::symmetry_classes ()
 }
 
 int
-Molecule::symmetry_class (atom_number_t a)
+Molecule::symmetry_class(atom_number_t a)
 {
   assert (ok_atom_number(a));
 
@@ -4359,7 +4359,7 @@ Molecule::symmetry_class (atom_number_t a)
 }
 
 int
-Molecule::symmetry_equivalents (atom_number_t a, Set_of_Atoms & sym)
+Molecule::symmetry_equivalents(atom_number_t a, Set_of_Atoms & sym)
 {
   assert (ok_atom_number(a));
 
@@ -4384,7 +4384,7 @@ Molecule::symmetry_equivalents (atom_number_t a, Set_of_Atoms & sym)
 }
 
 int
-Molecule::number_symmetry_classes ()
+Molecule::number_symmetry_classes()
 {
   const int * symmc = symmetry_classes();     // force symmetry perception
 
@@ -4407,7 +4407,7 @@ Molecule::number_symmetry_classes ()
 }
 
 int
-Molecule::bond_symmetry_class_small_memory (int * s)
+Molecule::bond_symmetry_class_small_memory(int * s)
 {
   if (! _symmetry_class_and_canonical_rank.arrays_allocated())
     compute_canonical_ranking();
@@ -4454,7 +4454,7 @@ Molecule::bond_symmetry_class_small_memory (int * s)
 }
 
 int
-Molecule::bond_symmetry_class_large_memory (int * s)
+Molecule::bond_symmetry_class_large_memory(int * s)
 {
   if (! _symmetry_class_and_canonical_rank.arrays_allocated())
     compute_canonical_ranking();

@@ -745,6 +745,9 @@ class Molecule : private resizable_array_p<Atom>
     int natoms(atomic_number_t) const;     // number atoms with this atomic_number
     int natoms(const Element *) const;     // number atoms of this element type
     int natoms(const char *) const;        // number atoms of this atomic symbol
+    bool empty() const {
+      return _number_elements == 0;
+    }
 
     int number_different_elements() const;
 

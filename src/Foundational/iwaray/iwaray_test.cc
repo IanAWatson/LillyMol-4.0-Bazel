@@ -8,6 +8,8 @@
 
 namespace {
 
+using testing::ElementsAreArray;
+
 TEST(iwaray, test_reserve) {
   constexpr int n = 10;
   resizable_array<float> v(n);
@@ -144,6 +146,11 @@ TEST(resizable_array, operator_ltlt) {
   x << 99 << 100;
   EXPECT_EQ(x.size(), 5 + 2);
   EXPECT_EQ(x.back(), 100);
+}
+
+TEST(TestResizableArray, TestInitializerList) {
+  resizable_array<int> foo {3, 2, 1, 5};
+  EXPECT_THAT(foo, ElementsAreArray({3, 2, 1, 5}));
 }
 
 }  // namespace

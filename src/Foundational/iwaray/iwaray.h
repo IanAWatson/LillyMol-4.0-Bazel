@@ -4,6 +4,8 @@
 //#include <tbb/scalable_allocator.h>
 
 #include <iostream>
+#include <initializer_list>
+
 #include "Foundational/iwmisc/iwconfig.h"
 
 #if (__GNUC__ == 3) && (__GNUC_MINOR__ > 3)
@@ -211,6 +213,7 @@ class resizable_array: public resizable_array_base <T>
     resizable_array          (int);
     resizable_array          (int, const T);
     resizable_array          (const resizable_array<T> &);
+    resizable_array          (std::initializer_list<T> l);
     ~resizable_array         ();
 
     int  resize_keep_storage    (int);
@@ -435,6 +438,17 @@ resizable_array<T>::resizable_array(const resizable_array<T> & rhs)
     _things = NULL;
 
   return;
+}
+
+template <typename T>
+resizable_array<T>::resizable_array(std::initializer_list<T> l) {
+  _number_elements = 0;
+  _elements_allocated = 0;
+  _things = NULL;
+  this->resize(l.size());
+  for (T x : l) {
+    this->add(x);
+  }
 }
 
 template <typename T>

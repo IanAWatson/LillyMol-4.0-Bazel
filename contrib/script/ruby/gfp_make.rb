@@ -89,10 +89,9 @@ files = files.reverse
 
 fp_args = GfpMakeSupport.group_args(remaining_args)
 unless fp_args
-  fp_args = [OptionValue.new('IW', nil), OptionValue.new('MK', '-J LEVEL2=FPMK2')]
-  $stderr << "Cannot parse fingerprint arguments\n"
+# The order is important for the gfp_*standard* tools.
+  fp_args = [OptionValue.new('MK', '-J LEVEL2=FPMK2'), OptionValue.new('IW', nil), OptionValue.new("MPR")]
   $stderr << "default fp #{fp_args}\n"
-  # exit(1)
 end
 
 # There is one piece of Magic needed. If -MK and -MK2 are specified,

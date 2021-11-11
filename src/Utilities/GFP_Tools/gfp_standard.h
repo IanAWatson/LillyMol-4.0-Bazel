@@ -8,6 +8,10 @@
 
 #include "gfp.h"
 
+inline constexpr int kMkFp = 1;
+inline constexpr int kMk2Fp = 2;
+inline constexpr int kIwFp = 0;
+
 class GFP_Standard
 {
   private:

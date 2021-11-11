@@ -255,9 +255,9 @@ do_previously_selected(const IW_General_Fingerprint & gfp,
   GFP_Standard sgfp;
 
   sgfp.build_molecular_properties(gfp.molecular_properties_integer());
-  sgfp.build_mk(gfp[1]);
-  sgfp.build_mk2(gfp[2]);
-  sgfp.build_iw(gfp[0]);
+  sgfp.build_mk(gfp[kMkFp]);
+  sgfp.build_mk2(gfp[kMk2Fp]);
+  sgfp.build_iw(gfp[kIwFp]);
 
   for (int i = 0; i < pool_size; i++)
   {
