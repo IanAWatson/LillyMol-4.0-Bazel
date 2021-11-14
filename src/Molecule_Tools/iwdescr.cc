@@ -304,6 +304,10 @@ enum IWDescr_Enum
   iwdescr_cntrdshell1,
   iwdescr_cntrdshell2,
   iwdescr_cntrdshell3,
+  iwdescr_aveshell1,
+  iwdescr_aveshell2,
+  iwdescr_aveshell3,
+  iwdescr_maxshell3,
   iwdescr_nnsssrng,
   iwdescr_nrings3,
   iwdescr_nrings4,
@@ -800,6 +804,10 @@ fill_descriptor_extremeties (Descriptor * d,
   d[iwdescr_cntrdshell1].set_min_max_resolution(1.0f, 8.0f, resolution);
   d[iwdescr_cntrdshell2].set_min_max_resolution(1.0f, 14.0f, resolution);
   d[iwdescr_cntrdshell3].set_min_max_resolution(1.0f, 14.0f, resolution);
+  d[iwdescr_aveshell1].set_min_max_resolution(1.0f, 3.0f, resolution);
+  d[iwdescr_aveshell2].set_min_max_resolution(2.0f, 7.0f, resolution);
+  d[iwdescr_aveshell3].set_min_max_resolution(3.0f, 12.0f, resolution);
+  d[iwdescr_maxshell3].set_min_max_resolution(3.0f, 12.0f, resolution);
   d[iwdescr_nnsssrng].set_min_max_resolution(0.0f, 6.0f, resolution);
   d[iwdescr_nrings3].set_min_max_resolution(0.0f, 6.0f, resolution);
   d[iwdescr_nrings4].set_min_max_resolution(0.0f, 8.0f, resolution);
@@ -1287,6 +1295,11 @@ allocate_descriptors()
   descriptor[iwdescr_cntrdshell1].set_name("cntrdshell1");
   descriptor[iwdescr_cntrdshell2].set_name("cntrdshell2");
   descriptor[iwdescr_cntrdshell3].set_name("cntrdshell3");
+
+  descriptor[iwdescr_aveshell1].set_name("aveshell1");
+  descriptor[iwdescr_aveshell2].set_name("aveshell2");
+  descriptor[iwdescr_aveshell3].set_name("aveshell3");
+  descriptor[iwdescr_maxshell3].set_name("maxshell3");
 
   descriptor[iwdescr_nnsssrng].set_name("nnsssrng");
   descriptor[iwdescr_nrings3].set_name("nrings3");
@@ -2393,6 +2406,48 @@ do_compute_chirality_descriptors (Molecule & m,
   return 1;
 }
 
+void
+AppendShell(const Molecule& m,
+            atom_number_t zatom,
+            int radius,
+            const int * dm,
+            Set_of_Atoms& shell) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    if (i == zatom) {
+      continue;
+    }
+    if (dm[zatom * matoms + i] == radius) {
+      shell << i;
+    }
+  }
+}
+
+static int
+do_compute_mean_shell_occupancies(const Molecule& m,
+                                  const int * dm) {
+  const int matoms = m.natoms();
+  const int max_radius = 3;
+
+  std::unique_ptr<Accumulator_Int<int>[]> acc(new Accumulator_Int<int>[max_radius + 1]);
+
+  Set_of_Atoms shell;  // Scope here for efficiency.
+  for (int i = 0; i < matoms; ++i) {
+    shell.resize_keep_storage(0);
+    for (int r = 1; r <= max_radius; ++r) {
+      AppendShell(m, i, r, dm, shell);
+      acc[r].extra(shell.number_elements());
+    }
+  }
+
+  descriptor[iwdescr_aveshell1].set(acc[1].average());
+  descriptor[iwdescr_aveshell2].set(acc[2].average());
+  descriptor[iwdescr_aveshell3].set(acc[3].average());
+  descriptor[iwdescr_maxshell3].set(acc[3].maxval());
+
+  return 1;
+}
+
 #define CURRENT_SHELL 30
 #define NEXT_SHELL 99
 #define SHELL_COMPLETED -5
@@ -2407,12 +2462,12 @@ do_compute_chirality_descriptors (Molecule & m,
 */
 
 static int
-do_compute_descriptors_related_to_centroid_atom (Molecule & m,
-                                                 const int * dm,
-                                                 const int longest_path,
-                                                 const atomic_number_t * z,
-                                                 const int * ncon,
-                                                 int * in_shell)
+do_compute_descriptors_related_to_centroid_atom(Molecule & m,
+                                                const int * dm,
+                                                const int longest_path,
+                                                const atomic_number_t * z,
+                                                const int * ncon,
+                                                int * in_shell)
 {
   const auto matoms = m.natoms();
 
@@ -2458,7 +2513,7 @@ do_compute_descriptors_related_to_centroid_atom (Molecule & m,
   descriptor[iwdescr_cntrdgncy].set(atoms_at_min.number_elements());
   descriptor[iwdescr_cntrdshell1].set(atoms_in_next_shell);
 
-  const auto max_centroid_bond_radius = 2;    // change if ever needed
+  const int max_centroid_bond_radius = 2;    // change if ever needed
 
   for (auto r = 1; r <= max_centroid_bond_radius; ++r)
   {
@@ -2864,16 +2919,18 @@ do_compute_distance_matrix_descriptors (Molecule & m,
   int * eccentricity = new_int(matoms + matoms);std::unique_ptr<int[]> free_eccentricity(eccentricity);
 
   int * dm = new int[matoms * matoms]; std::unique_ptr<int[]> free_dm(dm);
-  copy_vector(dm, m.distance_matrix_warning_may_change(), matoms * matoms);
-
   assert (NULL != dm);
+
+  std::copy_n(m.distance_matrix_warning_may_change(), matoms * matoms, dm);
+
   int longest_path = do_compute_distance_matrix_descriptors(m, z, ncon, eccentricity, dm);
 
   assert (NULL != dm);
   do_compute_distances_from_longest_path_descriptors(m, dm, longest_path, eccentricity);   // re-use eccentricity array
 
-
   do_compute_descriptors_related_to_centroid_atom(m, dm, longest_path, z, ncon, eccentricity);   // eccentricity just used as a temporary array, existing contents destroyed
+
+  do_compute_mean_shell_occupancies(m, dm);
 
   return longest_path;
 }

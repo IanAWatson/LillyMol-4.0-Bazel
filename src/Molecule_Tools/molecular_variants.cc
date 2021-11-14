@@ -13,7 +13,6 @@
 
 namespace molecular_variants {
 using std::cerr;
-int verbose = 0;
 
 void
 Usage(int rc) {
@@ -227,7 +226,7 @@ MolecularVariants(Molecule& m,
   p.times_seen = 1;
   job_parameters.seen.emplace(m.unique_smiles(), std::move(p));
 
-  output << m.smiles() << ' ' << m.name() << '\n';
+  output << m.smiles() << job_parameters.sep << m.name() << '\n';
   return 1;
 }
 
@@ -274,7 +273,7 @@ MolecularVariantsAll(resizable_array_p<Molecule>& mols,
   }
 
   for (Molecule* m : mols) {
-    output << m->smiles() << ' ' << m->name() << '\n';
+    output << m->smiles() << job_parameters.sep << m->name() << '\n';
   }
 
   if (job_parameters.verbose) {
@@ -448,7 +447,7 @@ MolecularVariants(int argc, char ** argv) {
       return 1;
     }
     job_parameters.sep = o[0];
-    if (verbose) {
+    if (job_parameters.verbose) {
       cerr << "output separator '" << job_parameters.sep << "'\n";
     }
   }
@@ -491,7 +490,7 @@ MolecularVariants(int argc, char ** argv) {
 
   if (cl.option_present('p')) {
     job_parameters.predecessor_on_separate_line = true;
-    if (verbose) {
+    if (job_parameters.verbose) {
       cerr << "In the rejected molecules file (-X) write predecessor on separate line\n";
     }
   }
@@ -501,7 +500,7 @@ MolecularVariants(int argc, char ** argv) {
       cerr << "Invalid recursion specification (-b)\n";
       Usage(1);
     }
-    if (verbose)
+    if (job_parameters.verbose)
       cerr << "Recursion set to " << job_parameters.recursion << '\n';
   }
 

@@ -131,8 +131,10 @@ class resizable_array_base
     int  insert_after           (int, T);
     int  insert_in_order        (T, int (*) (const T *, const T *));
     int  swap_elements          (int, int);
-    T    next_after_wrap        (int &, int = 1) const;   // returns next item
-    int  next_index_after_wrap  (int, int = 1) const;     // returns next index
+    T    next_after_wrap        (int &, int direction = 1) const;   // returns next item
+    int  next_index_after_wrap  (int, int direction = 1) const;     // returns next index
+    // what index is from + delta - where delta is signed.
+    int  index_relative_to      (int from, int delta) const;
     void each                   (void (*) (T));
     T * rawdata                 () const { return _things;}    // dangerous, but good for performance
 
@@ -144,6 +146,12 @@ class resizable_array_base
     const T * cbegin() const { return _things;}
           T * end ()   const { return _things + _number_elements;}
     const T * cend ()  const { return _things + _number_elements;}
+
+    // Dangerous function, no checking, no nothing. Needed because I am
+    // using these dynamically sized arrays for a file read buffer.
+    void set_number_elements(int s) {
+      _number_elements = s;
+    }
 };
 
 template <typename T>
@@ -243,6 +251,9 @@ class resizable_array: public resizable_array_base <T>
     template <typename F> void each (const F &) const;
 
     template <typename F> void each_lambda (F) const;
+
+    // Remove elements [from,to).
+    int remove_from_to(int from, int to);
 
 //  mimic standard library
 
@@ -1383,6 +1394,21 @@ resizable_array_base<T>::next_index_after_wrap(int i, int direction) const
   return i;
 }
 
+template <typename T>
+int
+resizable_array_base<T>::index_relative_to(int ndx, int delta) const {
+  assert(ok_index(ndx));
+  int new_ndx = ndx + delta;
+  if (new_ndx >= 0) {
+    return new_ndx % _number_elements;
+  }
+
+  if ((new_ndx % _number_elements) == 0) {
+    return 0;
+  }
+  return _number_elements + (new_ndx % _number_elements);
+}
+
 /*
   These are equal if all elements are equal
 */
@@ -1979,6 +2005,31 @@ resizable_array<T>::count(const T & needle) const
   }
 
   return rc;
+}
+
+template <typename T>
+int
+resizable_array<T>::remove_from_to(int from, int to) {
+  if (from >= to || to > _number_elements) {
+    std::cerr << "resizable_array::remove_from_to:invalid range: [" << from << ',' << to << ") size " << _number_elements << '\n';
+    return -1;
+  }
+
+  if (to == _number_elements) {
+    _number_elements = from;
+    return to - from;
+
+  }
+
+  int destination = from;
+  for (int i = to; i < _number_elements; ++i) {
+    _things[destination] = _things[i];
+    ++destination;
+  }
+
+  _number_elements = destination;
+
+  return to - from;
 }
 
 #endif

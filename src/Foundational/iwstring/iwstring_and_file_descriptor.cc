@@ -229,10 +229,12 @@ IWString_and_File_Descriptor::_compress_and_write()
   return 0;
 }
 ssize_t
-IWString_and_File_Descriptor::write (const char * s, size_t nchars)
+IWString_and_File_Descriptor::write(const char * s, size_t nchars)
 {
-  if (nchars + _number_elements < 32768)
-    return IWString::strncat(s, nchars);
+  if (nchars + _number_elements < 32768) {
+    IWString::strncat(s, nchars);
+    return nchars;
+  }
 
   if (! is_open())
   {
@@ -245,10 +247,15 @@ IWString_and_File_Descriptor::write (const char * s, size_t nchars)
 
   ssize_t rc = 0;
 
+  // If everything works, we will return the initial number of bytes requested.
+  ssize_t initial_nchars = nchars;
+
   while (nchars)
   {
-    if (nchars < 32768)
-      return IWString::strncat(s, nchars);
+    if (nchars < 32768) {
+      IWString::strncat(s, nchars);
+      return nchars;
+    }
 
     int chars_to_write;
     if (nchars >= 32768)
@@ -267,6 +274,11 @@ IWString_and_File_Descriptor::write (const char * s, size_t nchars)
 
     s += chars_to_write;
     nchars -= chars_to_write;
+  }
+
+  if (rc != initial_nchars) {
+    cerr << "IWString_and_File_Descriptor::write:wrote " << rc << " of " << initial_nchars << " bytes\n";
+    return 0;
   }
 
   return rc;

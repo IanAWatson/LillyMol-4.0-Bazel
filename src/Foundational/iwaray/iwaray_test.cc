@@ -153,4 +153,87 @@ TEST(TestResizableArray, TestInitializerList) {
   EXPECT_THAT(foo, ElementsAreArray({3, 2, 1, 5}));
 }
 
+TEST(TestResizableArray, TestIndexRelativeToPositive) {
+  resizable_array<int> foo {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  const int n = foo.number_elements();
+  int first_ndx = 3;
+  int expected = first_ndx;
+  for (int delta = 0; delta < 100; ++delta) {
+    int pos = foo.index_relative_to(first_ndx, delta);
+    EXPECT_EQ(pos, expected);
+    expected++;
+    if (expected == n) {
+      expected = 0;
+    }
+  }
+}
+
+TEST(TestResizableArray, TestIndexRelativeToNegative) {
+  resizable_array<int> foo {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  const int n = foo.number_elements();
+  int first_ndx = 3;
+  int expected = first_ndx;
+  for (int delta = 0; delta < 100; ++delta) {
+    int pos = foo.index_relative_to(first_ndx, -delta);
+    EXPECT_EQ(pos, expected);
+    expected--;
+    if (expected < 0) {
+      expected = n - 1;
+    }
+  }
+}
+
+TEST(TestResizableArray, TestRemoveFromToEmpty) {
+  resizable_array<int> foo;
+  EXPECT_LT(foo.remove_from_to(0, 1), 0);
+}
+
+TEST(TestResizableArray, TestRemoveOnlyElement) {
+  resizable_array<int> foo {1};
+  EXPECT_EQ(foo.remove_from_to(0, 1), 1);
+  EXPECT_TRUE(foo.empty());
+}
+
+TEST(TestResizableArray, TestRemoveFirstElement) {
+  resizable_array<int> foo {1, 2, 3, 4};
+  EXPECT_EQ(foo.remove_from_to(0, 1), 1);
+  EXPECT_THAT(foo, ElementsAreArray({2, 3, 4}));
+}
+
+TEST(TestResizableArray, TestRemoveFirstTwoElements) {
+  resizable_array<int> foo {1, 2, 3, 4};
+  EXPECT_EQ(foo.remove_from_to(0, 2), 2);
+  EXPECT_THAT(foo, ElementsAreArray({3, 4}));
+}
+
+TEST(TestResizableArray, TestRemoveLastElement) {
+  resizable_array<int> foo {1, 2, 3, 4};
+  EXPECT_EQ(foo.remove_from_to(3, 4), 1);
+  EXPECT_THAT(foo, ElementsAreArray({1, 2, 3}));
+}
+
+TEST(TestResizableArray, TestRemoveTwoLastElements) {
+  resizable_array<int> foo {1, 2, 3, 4};
+  EXPECT_EQ(foo.remove_from_to(2, 4), 2);
+  EXPECT_THAT(foo, ElementsAreArray({1, 2}));
+}
+
+TEST(TestResizableArray, TestRemoveAllElements) {
+  resizable_array<int> foo {1, 2, 3, 4};
+  EXPECT_EQ(foo.remove_from_to(0, 4), 4);
+  EXPECT_TRUE(foo.empty());
+}
+
+TEST(TestResizableArray, TestRemoveOneMiddle) {
+  resizable_array<int> foo {1, 2, 3, 4};
+  EXPECT_EQ(foo.remove_from_to(2, 3), 1);
+  EXPECT_THAT(foo, ElementsAreArray({1, 2, 4}));
+}
+
+TEST(TestResizableArray, TestRemoveTwoMiddle) {
+  resizable_array<int> foo {1, 2, 3, 4, 5};
+  EXPECT_EQ(foo.remove_from_to(2, 4), 2);
+  EXPECT_THAT(foo, ElementsAreArray({1, 2, 5}));
+}
+
 }  // namespace

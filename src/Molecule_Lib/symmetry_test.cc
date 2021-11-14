@@ -86,7 +86,9 @@ TEST_F(TestSymmetry, TestNaphthalene) {
 
 TEST_F(TestSymmetry, TestSymmetryClasses) {
   ASSERT_TRUE(_m.build_from_smiles("Fc1c(F)cccc1"));
-  resizable_array<int> expected {1, 2, 3, 4, 5, 6};
+  const int * symm = _m.symmetry_classes();
+  EXPECT_EQ(symm[0], symm[3]);
+  EXPECT_EQ(symm[1], symm[2]);
 }
 
 }  // namespace
