@@ -213,6 +213,9 @@ BinaryDataFileReader::FillReadBuffer() {
   return true;
 }
 
+BinaryDataFileWriter::BinaryDataFileWriter() {
+}
+
 BinaryDataFileWriter::BinaryDataFileWriter(int fd) : _output(fd) {
   WriteMagicNumber();
 }

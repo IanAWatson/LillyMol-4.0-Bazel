@@ -93,6 +93,7 @@ class BinaryDataFileWriter {
     int WriteMagicNumber();
 
   public:
+    BinaryDataFileWriter();
     BinaryDataFileWriter(int fd);
 
     int good() const {
