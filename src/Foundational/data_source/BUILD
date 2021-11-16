@@ -1,3 +1,4 @@
+package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "binary_data_file",
     visibility = ["//visibility:public"],
@@ -34,6 +35,20 @@ cc_library(
     ],
 )
 
+proto_library(
+    name = "proto_for_testing",
+    srcs = [
+        "proto_for_testing.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "proto_for_testing_cc_proto",
+    deps = [
+        ":proto_for_testing",
+    ],
+)
+
 cc_test(
     name = "binary_data_file_test",
     timeout="short",
@@ -41,7 +56,8 @@ cc_test(
        "binary_data_file_test.cc",
     ],
     deps = [
-      ":binary_data_file",
+        ":binary_data_file",
+        ":proto_for_testing_cc_proto",
         "@googletest//:gtest_main",
     ],
     linkopts = [

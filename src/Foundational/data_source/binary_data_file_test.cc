@@ -9,8 +9,12 @@
 #include "googlemock/include/gmock/gmock.h"
 #include "googletest/include/gtest/gtest.h"
 #include "google/protobuf/text_format.h"
+#include <google/protobuf/util/message_differencer.h>
 
+
+#define BINARY_FILE_PROTO_IMPLEMENTATION
 #include "binary_data_file.h"
+#include "Foundational/data_source/proto_for_testing.pb.h"
 
 namespace {
 // If we ever change from 32 bit item sizes, this will
@@ -159,6 +163,31 @@ TEST_F(TestBinaryDataFileReader, TestLots) {
   EXPECT_TRUE(reader.eof());
   EXPECT_FALSE(reader.Next());
   EXPECT_TRUE(reader.eof());
+}
+
+TEST_F(TestBinaryDataFileReader, TestProto) {
+  JustForTesting::TestMessage message;
+  constexpr double d = 27.4;
+  constexpr int i = 46;
+  constexpr float f = 3.14;
+  const std::string s = "vr46";
+  constexpr uint32_t u = 93;
+
+  message.set_d(d);
+  message.set_i(i);
+  message.set_f(f);
+  message.set_s(s);
+  message.set_u(u);
+  BinaryDataFileWriter writer(_fd);
+  ASSERT_GT(writer.WriteSerializedProto(message), 0);
+  writer.Close();
+
+  BinaryDataFileReader reader(_fname);
+  ASSERT_TRUE(reader.good());
+  auto maybe_proto = reader.ReadProto<JustForTesting::TestMessage>();
+  ASSERT_TRUE(maybe_proto);
+  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(message, *maybe_proto));
+
 }
 
 }  // namespace

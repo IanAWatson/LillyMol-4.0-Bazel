@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -7,6 +8,8 @@
 namespace binary_data_file {
 
 using std::cerr;
+
+constexpr uint32_t kMagicNumber = 3177520567;
 
 unsigned int default_read_buffer_size = 4096; 
 
@@ -44,6 +47,7 @@ BinaryDataFileReader::BinaryDataFileReader() {
 BinaryDataFileReader::BinaryDataFileReader(const char * fname) {
   DefaultValues();
   OpenFile(fname);
+  ReadMagicNumber();
 }
 
 BinaryDataFileReader::BinaryDataFileReader(IWString& fname) {
@@ -60,6 +64,23 @@ BinaryDataFileReader::BinaryDataFileReader(const const_IWSubstring& fname) {
 BinaryDataFileReader::~BinaryDataFileReader() {
 }
 
+bool
+BinaryDataFileReader::ReadMagicNumber() {
+  uint32_t magic;
+  int bytes_read = IW_FD_READ(_fd, &magic, sizeof(magic));
+  if (bytes_read != sizeof(magic)) {
+    cerr << "BinaryDataFileReader::ReadMagicNumber:cannot read\n";
+    return false;
+  }
+  magic = ntohl(magic);
+  if (magic != kMagicNumber) {
+    cerr << "BinaryDataFileReader::ReadMagicNumber:bad magic " << magic << " expected " << kMagicNumber << '\n';
+    return false;
+  }
+
+  return true;
+}
+
 int
 BinaryDataFileReader::Open(const char * fname) {
   return OpenFile(fname);
@@ -67,13 +88,13 @@ BinaryDataFileReader::Open(const char * fname) {
 
 int
 BinaryDataFileReader::Open(IWString& fname) {
-  return OpenFile(fname.null_terminated_chars());
+  return OpenFile(fname);
 }
 
 int
 BinaryDataFileReader::Open(const const_IWSubstring& fname) {
   IWString tmp(fname);
-  return OpenFile(tmp.null_terminated_chars());
+  return OpenFile(tmp);
 }
 
 bool
@@ -85,6 +106,11 @@ BinaryDataFileReader::OpenFile(const char * fname) {
 
   _fd = IW_FD_OPEN(fname, O_RDONLY);
   if (_fd < 0) {
+    _good = false;
+    return false;
+  }
+
+  if (! ReadMagicNumber()) {
     _good = false;
     return false;
   }
@@ -102,7 +128,7 @@ BinaryDataFileReader::GetNextSize() const {
 #ifdef DEBUG_BINARY_DATA_FILE_READER_NEXT
   cerr << "GetNextSize _next " << _next << " size " << (*iptr) << '\n';
 #endif
-  return *iptr;
+  return ntohl(*iptr);
 }
 
 std::optional<const_IWSubstring>
@@ -130,6 +156,7 @@ BinaryDataFileReader::Next() {
   cerr << "After GetNextSize update _next " << _next << " next item size " << bytes_in_next << '\n';
 #endif
   if (bytes_in_next == 0) {
+    ++_items_read;
     return const_IWSubstring();
   }
 
@@ -138,6 +165,7 @@ BinaryDataFileReader::Next() {
   if (_next + bytes_in_next <= _read_buffer.size()) {
     const_IWSubstring result(_read_buffer.rawdata() + _next, bytes_in_next);
     _next += bytes_in_next;
+    ++_items_read;
     return result;
   }
 
@@ -157,6 +185,7 @@ BinaryDataFileReader::Next() {
   _next = bytes_in_next;
 
   const_IWSubstring result(_read_buffer.rawdata(), bytes_in_next);
+  ++_items_read;
   return result;
 }
 
@@ -164,6 +193,7 @@ bool
 BinaryDataFileReader::FillReadBuffer() {
   const int existing_size = _read_buffer.number_elements();
 
+  cerr << "FillReadBuffer: starting pos " << IW_FD_LSEEK(_fd, 0, SEEK_CUR) << " bytes\n";
   unsigned int unused_capacity = _read_buffer.elements_allocated() - existing_size;
   if (unused_capacity < default_read_buffer_size) {
     _read_buffer.resize(_read_buffer.elements_allocated() + default_read_buffer_size);
@@ -184,6 +214,7 @@ BinaryDataFileReader::FillReadBuffer() {
 }
 
 BinaryDataFileWriter::BinaryDataFileWriter(int fd) : _output(fd) {
+  WriteMagicNumber();
 }
 
 int
@@ -192,7 +223,10 @@ BinaryDataFileWriter::Open(const char * fname) {
     std::cerr << "BinaryDataFileWriter::Open:already open\n";
     return 0;
   }
-  return _output.open(fname);
+  if (! _output.open(fname)) {
+    return 0;
+  }
+  return WriteMagicNumber();
 }
 
 int
@@ -201,7 +235,10 @@ BinaryDataFileWriter::Open(IWString& fname) {
     std::cerr << "BinaryDataFileWriter::Open:already open\n";
     return 0;
   }
-  return _output.open(fname.null_terminated_chars());
+  if (! _output.open(fname.null_terminated_chars())) {
+    return 0;
+  }
+  return WriteMagicNumber();
 }
 
 int
@@ -211,13 +248,23 @@ BinaryDataFileWriter::Open(const const_IWSubstring& fname) {
     return 0;
   }
   IWString tmp(fname);
-  return _output.open(tmp.null_terminated_chars());
+  if (! _output.open(tmp.null_terminated_chars())) {
+    return 0;
+  }
+  return WriteMagicNumber();
+}
+
+int
+BinaryDataFileWriter::WriteMagicNumber() {
+  uint32_t magic = htonl(kMagicNumber);
+  const char * cptr = reinterpret_cast<const char *>(&magic);
+  return _output.write(cptr, sizeof(magic));
 }
 
 ssize_t
 BinaryDataFileWriter::Write(const void * data, int nbytes) {
 //cerr << "BinaryDataFileWriter::Write: writing " << nbytes << " bytes\n";
-  const uint32_t mysize = nbytes;
+  const uint32_t mysize = htonl(nbytes);
   const char * cptr = reinterpret_cast<const char *>(&mysize);
   if (_output.write(cptr, sizeof_count) != sizeof_count) {
     std::cerr << "BinaryDataFileWriter::Write:size not written\n";
