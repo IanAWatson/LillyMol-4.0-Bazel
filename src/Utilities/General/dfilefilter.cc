@@ -9,6 +9,9 @@
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwmisc/set_or_unset.h"
 
+using std::cerr;
+using std::endl;
+
 static int verbose = 0;
 
 static int records_read = 0;

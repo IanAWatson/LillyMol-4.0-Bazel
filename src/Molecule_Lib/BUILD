@@ -259,6 +259,7 @@ cc_library(
         "tmpsssr.h",
         "toggle_kekule_form.h",
         "tokenise_atomic_smarts.h",
+        "u3b.h",
     ],
     deps = [
         ":mol2graph_cc_proto",

@@ -64,6 +64,14 @@ static int debug_print_each_molecule = 0;
 static int print_bond_lengths = 0;
 static int print_bond_angles = 0;
 static int print_torsions = 0;
+static int print_max_atom_separation = 0;
+
+// Upon reading, all coordinates get multiplied by a factor.
+static float multiply_coordinates = 0.0f;
+
+// If we are printing the max atom separation for each molecule
+// may as well form summary stats across the entire input.
+Accumulator<double> acc_longest_sep;
 
 static int molecules_read = 0;
 static int molecules_written = 0;
@@ -396,6 +404,8 @@ static int truncate_names_to_first_token = 0;
 static char truncate_name_at_first = '\0';
 static char truncate_name_at_last = '\0';
 
+static int name_token = -1;
+
 static IWString prepend_to_name;
 
 static resizable_array_p<Substructure_Query> aromatise_these_rings;
@@ -413,13 +423,15 @@ static int reset_atom_map_numbers = 0;
 */
 
 static void
-reset_file_scope_variables()
-{
+reset_file_scope_variables() {
   audit_input = 0;
   debug_print_each_molecule = 0;
   print_bond_lengths = 0;
   print_bond_angles = 0;
   print_torsions = 0;
+  print_max_atom_separation = 0;
+  multiply_coordinates = 0.0f;
+  acc_longest_sep.reset();
   molecules_read = 0;
   molecules_written = 0;
   molecules_changed = 0;
@@ -629,6 +641,8 @@ reset_file_scope_variables()
   truncate_name_at_first = '\0';
   truncate_name_at_last = '\0';
 
+  name_token = -1;
+
   IWString prepend_to_name = "";
 
   aromatise_these_rings.resize(0);
@@ -648,8 +662,7 @@ reset_file_scope_variables()
 }
 
 static void
-usage(int rc = 1)
-{
+usage(int rc = 1) {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << "\n";
   cerr << "usage: " << prog_name << " -i <input type> -o <output type> file1 file2...\n";
   cerr << "The following options are recognised\n";
@@ -707,8 +720,7 @@ usage(int rc = 1)
 }
 
 static void
-display_chirality_options()
-{
+display_chirality_options() {
 //cerr << "  -s discard     discard all chiral information in the input\n";
   cerr << "  -s good        ignore erroneous chiral input\n";
   cerr << "  -s find        identify all stereo centres in the molecules (random chirality)\n";        
@@ -767,8 +779,7 @@ display_f_directives (int rc)
 }
 
 static void
-display_dash_F_options (std::ostream & os)
-{
+display_dash_F_options(std::ostream & os) {
   os << "  -F <number>      discard molecules with more than <number> fragments\n";
   os << "  -F mnsz=<n>      when counting fragments only count those with > <n> atoms\n";
 
@@ -797,14 +808,17 @@ display_p_directives (int rc)
 }
 
 static void
-display_dash_y_options (std::ostream & os,
-                        char flag,
-                        int rc)
-{
+display_dash_y_options(std::ostream & os,
+                       char flag,
+                       int rc) {
   os << " -" << flag << " nbvm          No Bad Valence Messages, or strange electron counts\n";
   os << " -" << flag << " okbvi         during valence check, ok to have bad valence on isotopes\n";
   os << " -" << flag << " appchg=xxxx   append 'xxxx' to the name of molecules that are changed\n";
   os << " -" << flag << " pblen         print all bond lengths in the molecules\n";
+  os << " -" << flag << " pbang         print all bond angles in the molecules\n";
+  os << " -" << flag << " ptor          print all torsion angles in the molecules\n";
+  os << " -" << flag << " pmaxd         print the max interatomic distance in each molecule\n";
+  os << " -" << flag << " mcoord=xxxx   multiply all coordinates by xxxx\n";
   os << " -" << flag << " dbg           debug print each molecule\n";
   os << " -" << flag << " namerx=<rx>   discard molecules unless the molecule name matches <rx>\n";
   os << " -" << flag << " ftn           keep only the first token in molecule names\n";
@@ -814,6 +828,7 @@ display_dash_y_options (std::ostream & os,
   os << " -" << flag << " tfirst=char   truncate name at first <char>\n";
   os << " -" << flag << " tlast=char    truncate name at last <char>\n";
   os << " -" << flag << " NPREPEND=s    prepend <s> to each name\n";
+  os << " -" << flag << " ntoken=n      the output name is word 'n' in the input name\n";
   os << " -" << flag << " maxplen=<n>   discard molecules with max path length > <n>\n";
 //os << " -" << flag << " B4F=<fname>   write frag stripped smiles before filtering to <fname> \n";
   os << " -" << flag << " aclf          atom counts are for the largest fragment only\n";
@@ -827,9 +842,8 @@ display_dash_y_options (std::ostream & os,
   exit(rc);
 }
 static void
-display_dash_I_options (char flag,
-                        std::ostream & os)
-{
+display_dash_I_options(char flag,
+                       std::ostream & os) {
   os << " -" << flag << " 0             discard molecules containing any isotopic atoms\n";
   os << " -" << flag << " change        change any isotopic atoms to normal form\n";
   os << " -" << flag << " change=<n>    change any isotope <n> atoms to normal form\n";
@@ -843,9 +857,8 @@ display_dash_I_options (char flag,
 }
 
 static void
-display_dash_O_options (char flag,
-                        std::ostream & os)
-{
+display_dash_O_options(char flag,
+                       std::ostream & os) {
   os << "Specifies elements allowed as ''organic'\n";
   os << "Operates in two different modes\n";
   os << "In the historical mode, fragment stripping is done, then remaining atoms\n";
@@ -858,8 +871,7 @@ display_dash_O_options (char flag,
 }
 
 static void
-display_dash_b_options (std::ostream & os)
-{
+display_dash_b_options(std::ostream & os) {
   os << " -B <nn>        ignore as many as <nn> otherwise fatal input errors\n";
   os << " -B log=<fname> echo (unchanged) rejected input records to <fname>\n";
 
@@ -870,8 +882,7 @@ display_dash_b_options (std::ostream & os)
 static int
 identify_ngroup(const Molecule & m,
                 atom_number_t n,
-                int * ngroup)
-{
+                int * ngroup) {
   ngroup[n] = n + 1;
 
   int rc = 1;
@@ -1188,6 +1199,34 @@ append_bond(const Bond & b,
   return;
 }
 
+// Report max interatomic separation within `m`.
+// Update `acc` with the max value found.
+static int
+do_print_max_atom_separation(const Molecule& m,
+                             Accumulator<double> & acc,
+                             std::ostream& output) {
+
+  const int matoms = m.natoms();
+  float max_sep = 0.0;
+  atom_number_t max1 = INVALID_ATOM_NUMBER;
+  atom_number_t max2 = INVALID_ATOM_NUMBER;
+  for (int i = 0; i < matoms; ++i) {
+    for (int j = i + 1; j < matoms; ++j) {
+      const float d = m.distance_between_atoms(i, j);
+      if (d > max_sep) {
+        max_sep = d;
+        max1 = i;
+        max2 = j;
+      }
+    }
+  }
+  acc.extra(max_sep);
+  output << m.name() << " max sep " << max_sep << " btw atoms " <<
+            max1 << ' ' << m.smarts_equivalent_for_atom(max1) << " and" <<
+            max2 << ' ' << m.smarts_equivalent_for_atom(max2) << '\n';
+  return output.good();
+}
+
 static int
 do_print_torsions(const Molecule & m,
                   const Bond & b,
@@ -1327,6 +1366,14 @@ static int
 do_print_bond_lengths(const Molecule & m,
                       std::ostream & output)
 {
+  float max_bond_length = 0.0f;
+  atom_number_t max1 = INVALID_ATOM_NUMBER;
+  atom_number_t max2 = INVALID_ATOM_NUMBER;
+  // In malformed molecules, it can be useful to know
+  // the number of possibly questionable bonds.
+  constexpr float threshold = 2.0f;
+  int number_above_threshold = 0;
+
   const int matoms = m.natoms();
   for (int i = 0; i < matoms; i++)
   {
@@ -1351,9 +1398,24 @@ do_print_bond_lengths(const Molecule & m,
       else
         output << "huh";
 
-      output << " bond to " << k << " (" << ak->atomic_symbol() << ") dist = " <<
-              ai->distance(*ak) << endl;
+      const float d = ai->distance(*ak);
+      output << " bond to " << k << " (" << ak->atomic_symbol() << ") dist = " << d << '\n';
+      if (d > threshold) {
+        number_above_threshold++;
+      }
+      if (d > max_bond_length) {
+        max_bond_length = d;
+        max1 = i;
+        max2 = k;
+      }
     }
+  }
+
+  output << "max dist " << max_bond_length << " btw " <<
+            max1 << ' ' << m.smarts_equivalent_for_atom(max1) << " and " <<
+            max2 << ' ' << m.smarts_equivalent_for_atom(max2) << '\n';
+  if (number_above_threshold) {
+    output << number_above_threshold << " bond lengths above " << threshold << '\n';
   }
 
   return output.good();
@@ -3454,6 +3516,17 @@ change_name(Molecule & m,
 }
 
 static void
+do_extract_token_as_name(Molecule& m,
+                         int name_token) {
+  IWString token;
+  if (! m.name().word(name_token, token)) {
+    cerr << "do_extract_token_as_name:cannot extract token " << name_token << " from '" << m.name() << "'\n";
+    return;
+  }
+  m.set_name(token);
+}
+
+static void
 do_substitute_for_whitespace_in_name(Molecule & m)
 {
   assert(1 == substitute_for_whitespace_in_name.length());
@@ -3492,15 +3565,29 @@ do_remove_all_possible_square_brackets(Molecule & m)
 }
 
 static int
-do_debug_print (Molecule & m,
-                std::ostream & os)
-{
+do_debug_print(Molecule & m,
+               std::ostream & os) {
   if (0 == verbose)
     os << "Molecule " << molecules_read << '\n';
   m.ring_membership();
   m.debug_print(os);
 
   return os.good();
+}
+
+static int
+do_multiply_coordinates(Molecule& m,
+                        float multiply) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    const Atom& a = m.atom(i);
+    float x = a.x() * multiply;
+    float y = a.y() * multiply;
+    float z = a.z() * multiply;
+    m.setxyz(i, x, y, z);
+  }
+
+  return 1;
 }
 
 static int
@@ -3522,6 +3609,10 @@ fileconv(Molecule & m,
 // if (verbose > 1)
 //   cerr << "Molecule " << input.molecules_read() << " finishes at line " << input.lines_read() << endl;
 
+  if (multiply_coordinates > 0.0f) {
+    do_multiply_coordinates(m, multiply_coordinates);
+  }
+
   if (print_bond_lengths)
     (void) do_print_bond_lengths(m, cout);
 
@@ -3530,6 +3621,9 @@ fileconv(Molecule & m,
 
   if (print_torsions)
     (void) do_print_torsions(m, cout);
+
+  if (print_max_atom_separation)
+    (void) do_print_max_atom_separation(m, acc_longest_sep, cout);
 
   if (verbose)
   {
@@ -3655,6 +3749,9 @@ fileconv(Molecule & m,
     do_truncate_names_to_first_token(m);
   else if (substitute_for_whitespace_in_name.length())
     do_substitute_for_whitespace_in_name(m);
+  else if (name_token >= 0) {
+    do_extract_token_as_name(m, name_token);
+  }
   else if (change_name_rx.get() == nullptr)  // not active.
     ;
   else if (change_name(m, *change_name_rx))
@@ -5422,6 +5519,22 @@ fileconv(int argc, char ** argv)
         if (verbose)
           cerr << "Torsions be printed\n";
       }
+      else if (y == "pmaxd") {
+        print_max_atom_separation = 1;
+        if (verbose) {
+          cerr << "Max atom separation printed\n";
+        }
+      }
+      else if (y.starts_with("mcoord=")) {
+        y.remove_leading_chars(7);
+        if (! y.numeric_value(multiply_coordinates) || multiply_coordinates == 0.0) {
+          cerr << "Invalid coordinate multiplication factor " << y << '\n';
+          return 1;
+        }
+        if (verbose) {
+          cerr << "Coordinates scaled by " << multiply_coordinates << '\n';
+        }
+      }
       else if ("dbg" == y)
       {
         debug_print_each_molecule++;
@@ -5505,6 +5618,16 @@ fileconv(int argc, char ** argv)
         prepend_to_name = y;
         if (verbose)
           cerr << "Will prepend '" << prepend_to_name << "' to all names\n";
+      } else if (y.starts_with("ntoken=")) {
+        y.remove_leading_chars(7);
+        if (! y.numeric_value(name_token) || name_token < 1) {
+          cerr << "Invalid name token specification '" << y << "'\n";
+          return 1;
+        }
+        if (verbose) {
+          cerr << "Will use the " << name_token << " token of the input name as the output name\n";
+        }
+        name_token--;
       }
       else if (y.starts_with("maxplen="))
       {
@@ -5887,6 +6010,9 @@ fileconv(int argc, char ** argv)
     }
 
   }
+#ifdef MAX_ATOM_SEPARATION
+  cerr << "N = " << acc_longest_sep.n() << " btw " << acc_longest_sep.minval() << " " << acc_longest_sep.maxval() << " mean " << acc_longest_sep.average() << '\n';
+#endif
 
   return rc;
 }

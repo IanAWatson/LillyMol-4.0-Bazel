@@ -2466,45 +2466,43 @@ determine_part_of_non_kekule_aromatic (Molecule & m,
 }
 
 static int
-initialise_bond_attributes (Substructure_Bond & sb,
-                            const MDL_Bond_Data * mdlbd,
-                            const Bond * b,
-                            atom_number_t j,
-                            extending_resizable_array<Substructure_Atom *> & completed,
-                            const Molecule_to_Query_Specifications & mqs,
-                            int part_of_non_kekule_aromatic)
+initialise_bond_attributes(Substructure_Bond & sb,
+                           const MDL_Bond_Data * mdlbd,
+                           const Bond * b,
+                           atom_number_t j,
+                           extending_resizable_array<Substructure_Atom *> & completed,
+                           const Molecule_to_Query_Specifications & mqs,
+                           int part_of_non_kekule_aromatic)
 {
 //#define DEBUG_INITIALISE_BOND_ATTRIBUTES
 #ifdef DEBUG_INITIALISE_BOND_ATTRIBUTES
   cerr << "atoms " << b->a1() << " to " << b->a2() << " mdlbd->btype() " << mdlbd->btype() << " aromatic? " << b->is_aromatic() << endl;
 #endif
 
-  if (mqs.just_atomic_number_and_connectivity())
+  if (mqs.just_atomic_number_and_connectivity()) {
     sb.set_match_any();
-  else if (0 == mdlbd->btype())
+  } else if (mqs.all_bonds_become_type_any()) {
+    sb.set_match_any();
+  } else if (0 == mdlbd->btype()) {
     sb.copy(b, mqs.copy_bond_attributes());
-  else if (NULL == b)
+  } else if (NULL == b) {
     sb.set_match_any();
-  else if (b->is_aromatic())
-  {
+  } else if (b->is_aromatic()) {
     int ablki = aromatic_bonds_lose_kekule_identity();
-    if (0 == ablki)
-    {
+    if (0 == ablki) {
       bond_type_t bt = b->btype();
       sb.set_type(bt & BOND_TYPE_ONLY_MASK);
-    }
-    else if (1 == ablki)
+    } else if (1 == ablki) {
       sb.set_type(AROMATIC_BOND);
-    else if (part_of_non_kekule_aromatic)
-    {
+    } else if (part_of_non_kekule_aromatic) {
       bond_type_t bt = b->btype();
       sb.set_type(bt & BOND_TYPE_ONLY_MASK);
-    }
-    else
+    } else {
       sb.set_type(AROMATIC_BOND);
-  }
-  else
+    }
+  } else {
     sb.set_type(mdlbd->btype());
+  }
 
 #ifdef DEBUG_INITIALISE_BOND_ATTRIBUTES
   cerr << "Set bond type " << sb.types_matched() << endl;
@@ -2837,8 +2835,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     ;
   else if (_ncon.is_set() || -3 == mdlad->substitution())
     ;
-  else
-  {
+  else {
     int exh = m.explicit_hydrogens(my_atom_number);
     int ih  = m.implicit_hydrogens(my_atom_number);
 

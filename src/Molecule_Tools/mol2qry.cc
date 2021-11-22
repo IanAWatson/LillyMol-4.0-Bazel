@@ -4,12 +4,13 @@
 
 #include <iostream>
 #include <fstream>
-#include <tuple>
 #include <memory>
+#include <tuple>
 
 #include "google/protobuf/text_format.h"
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/binary_data_file.h"
 #include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/aromatic.h"
@@ -35,14 +36,14 @@ int all_ring_bonds_become_undefined = 0;
 int non_ring_atoms_become_nrings_0 = 0;
 int atoms_conserve_ring_membership = 0;
 
-int isotopically_labelled_from_slicer = 0;
-
-Chemical_Standardisation chemical_standardisation;
-
 /*
   We may get molecules from slicer. These have isotopic labels that indicate
   where the fragment is attached to the rest of the molecule
 */
+
+int isotopically_labelled_from_slicer = 0;
+
+Chemical_Standardisation chemical_standardisation;
 
 IWString stem_for_output;
 
@@ -52,6 +53,10 @@ IWString stem_for_output;
 */
 
 int next_file_name_to_produce = 0;
+
+// If we are writing binary protos, a stream for those.
+
+std::unique_ptr<binary_data_file::BinaryDataFileWriter> proto_destination;
 
 std::ofstream stream_for_names_of_query_files;
 
@@ -123,6 +128,7 @@ usage(int rc = 1)
   cerr << "  -F <fname>     create a file containing the names of all the query files\n";
   cerr << "  -i <type>      specify input file type\n";
   cerr << "  -S <fname>     specify output file name\n";
+  cerr << "  -P <fname>     name for serialized proto output\n";
   cerr << "  -b             put all queries in a single file rather than separate file for each\n";
   cerr << "  -D ...         create proto query files with GeometricConstraints\n";
   cerr << "  -Y ...         more obscure options, enter '-Y help' for info\n";
@@ -578,31 +584,28 @@ display_dash_y_options(std::ostream & os)
 }
 
 int
-mol2qry(int  argc, char ** argv)
-{
-  Command_Line cl(argc, argv, "aA:S:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:");
+mol2qry(int  argc, char ** argv) {
+  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:");
 
   verbose = cl.option_count('v');
 
-  if (cl.unrecognised_options_encountered())
+  if (cl.unrecognised_options_encountered()) {
     usage(2);
+  }
 
-  if (! process_elements(cl))
+  if (! process_elements(cl)) {
     usage(3);
+  }
 
-  if (cl.option_present('g'))
-  {
-    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
-    {
+  if (cl.option_present('g')) {
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g')) {
       cerr << "Cannot process chemical standardisation options (-g)\n";
       usage(32);
     }
   }
 
-  if (cl.option_present('K'))
-  {
-    if (! process_standard_smiles_options(cl, verbose, 'K'))
-    {
+  if (cl.option_present('K')) {
+    if (! process_standard_smiles_options(cl, verbose, 'K')) {
       cerr << "Cannot initialise standard smiles options (-K)\n";
       return 4;
     }
@@ -664,14 +667,12 @@ mol2qry(int  argc, char ** argv)
 
   if (cl.option_present('b'))
   {
-    if (cl.option_present('F'))
-    {
+    if (cl.option_present('F')) {
       cerr << "The -F and -b options don't make sense together\n";
       usage(3);
     }
 
-    if (! cl.option_present('S'))
-    {
+    if (! cl.option_present('S')) {
       cerr << "Sorry, must specify the -S option with the -b option\n";
       usage(5);
     }
@@ -682,26 +683,22 @@ mol2qry(int  argc, char ** argv)
       cerr << "All queries written to a single file\n";
   }
 
-
   if (cl.option_present('S'))
   {
     cl.value('S', stem_for_output);
     if (verbose)
       cerr << "Stem for output is '" << stem_for_output << "'\n";
 
-    if (cl.number_elements() > 1)
-    {
+    if (cl.number_elements() > 1) {
       cerr << "When specifying a stem, only one file can be processed\n";
       return 1;
     }
 
-    if (all_queries_in_one_file)
-    {
+    if (all_queries_in_one_file) {
       stem_for_output << ".qry";
 
       stream_for_all_queries.open(stem_for_output.null_terminated_chars(), std::ios::out);
-      if (! stream_for_all_queries.good())
-      {
+      if (! stream_for_all_queries.good()) {
         cerr << "Cannot open '" << stem_for_output << "'\n";
         return 5;
       }
@@ -711,17 +708,28 @@ mol2qry(int  argc, char ** argv)
     }
   }
 
+  if (cl.option_present('P')) {
+    IWString fname = cl.string_value('P');
+    proto_destination = std::make_unique<binary_data_file::BinaryDataFileWriter>();
+    if (! proto_destination->Open(fname)) {
+      cerr << "Cannot open binary serialized proto file " << fname << '\n';
+      return 1;
+    }
+
+    if (verbose) {
+      cerr << "serialized protos written to " << fname << "'\n";
+    }
+  }
+
 
   FileType input_type = FILE_TYPE_INVALID;
 
-  if (cl.option_present('M') && cl.option_present('i'))
-  {
+  if (cl.option_present('M') && cl.option_present('i')) {
     cerr << "The -M and -i options are mutually exclusive\n";
     usage(11);
   }
 
-  if (cl.option_present('i'))
-  {
+  if (cl.option_present('i')) {
     if (! process_input_type(cl, input_type))
     {
       cerr << "Cannot parse -i directives\n";
@@ -772,19 +780,16 @@ mol2qry(int  argc, char ** argv)
         cerr << "Not all isotopically labelled atoms need substituents\n";
     }
 
-    if (cl.option_present('c'))
-    {
+    if (cl.option_present('c')) {
       set_isotope_count_means_extra_connections(1);
       if (verbose)
         cerr << "Isotopic number indicates number of extra connections\n";
     }
   }
-  else if (cl.option_present('w'))
-  {
+  else if (cl.option_present('w')) {
     set_substitutions_only_at_non_isotopic_atoms(1);
   }
-  else if (cl.option_present('u'))
-  {
+  else if (cl.option_present('u')) {
     const_IWSubstring smarts;
     cl.value('u', smarts);
 
@@ -795,8 +800,7 @@ mol2qry(int  argc, char ** argv)
     }
   }
 
-  if (cl.option_present('f'))
-  {
+  if (cl.option_present('f')) {
     int i = 0;
     const_IWSubstring f;
     while (cl.value('f', f, i++))
@@ -809,22 +813,19 @@ mol2qry(int  argc, char ** argv)
     }
   }
 
-  if (cl.option_present('a'))
-  {
+  if (cl.option_present('a')) {
     mqs.set_only_aromatic_atoms_match_aromatic_atoms(1);
     if (verbose)
       cerr << "Only aromatic atoms will match aromatic atoms\n";
   }
 
-  if (cl.option_present('d'))
-  {
+  if (cl.option_present('d')) {
     mqs.set_preserve_saturation(1);
     if (verbose)
       cerr << "Atom saturation will be preserved\n";
   }
 
-  if (cl.option_present('V'))
-  {
+  if (cl.option_present('V')) {
     const_IWSubstring v = cl.string_value('V');
 
     if (! do_read_environment(v, mqs))
@@ -837,8 +838,7 @@ mol2qry(int  argc, char ** argv)
       cerr << "Read query environment specification from '" << v << "'\n";
   }
 
-  if (cl.option_present('X'))
-  {
+  if (cl.option_present('X')) {
     const_IWSubstring x = cl.string_value('X');
 
     if (! do_read_environment_no_match(x, mqs))
@@ -851,23 +851,20 @@ mol2qry(int  argc, char ** argv)
       cerr << "Read query environment rejection specification from '" << x << "'\n";
   }
 
-  if (cl.option_present('k'))
-  {
+  if (cl.option_present('k')) {
     mqs.set_use_preference_values_to_distinguish_symmetry(1);
 
     if (verbose)
       cerr << "Query atom preference values used to differentiate queries\n";
   }
 
-  if (cl.option_present('o'))
-  {
+  if (cl.option_present('o')) {
     remove_chiral_centres = 1;
     if (verbose)
       cerr << "Chiral centres will be removed from input molecules\n";
   }
 
-  if (cl.option_present('L'))
-  {
+  if (cl.option_present('L')) {
     if (! cl.option_present('l'))
     {
       cerr << "When specifying a coordination point (-L) must also specify bond radius (-l)\n";
@@ -897,16 +894,14 @@ mol2qry(int  argc, char ** argv)
     set_only_include_isotopically_labeled_atoms(1);
   }
 
-  if (cl.option_present('I'))
-  {
+  if (cl.option_present('I')) {
     set_only_include_isotopically_labeled_atoms(1);
 
     if (verbose)
       cerr << "Will only include isotopically labelled atoms in the query\n";
   }
 
-  if (cl.option_present('F'))
-  {
+  if (cl.option_present('F')) {
     const char * f = cl.option_value('F');
 
     stream_for_names_of_query_files.open(f, std::ios::out);
@@ -921,8 +916,7 @@ mol2qry(int  argc, char ** argv)
       cerr << "Query file names written to '" << f << "'\n";
   }
 
-  if (cl.option_present('Y'))
-  {
+  if (cl.option_present('Y')) {
     int i = 0;
     const_IWSubstring y;
 
@@ -1092,14 +1086,13 @@ mol2qry(int  argc, char ** argv)
     }
   }
 
-  if (! cl.option_present('A'))
-  {
+  if (! cl.option_present('A')) {
     set_global_aromaticity_type (Daylight);
     cerr << "Using Daylight aromaticity by default\n";
   }
-  else if (! process_standard_aromaticity_options(cl, verbose))
+  else if (! process_standard_aromaticity_options(cl, verbose)) {
     usage(4);
-
+  }
 
   GeometryConfig geometry_config;
   if (cl.option_present('D')) {
@@ -1113,8 +1106,7 @@ mol2qry(int  argc, char ** argv)
 
   int rc = 0;
 
-  if (cl.option_present('M'))
-  {
+  if (cl.option_present('M')) {
     if (cl.number_elements())
     {
       cerr << "Can specify either the -M option or files on the command line\n";
@@ -1135,26 +1127,23 @@ mol2qry(int  argc, char ** argv)
   }
   else if (0 == cl.number_elements())
     usage(1);
-  else if (0 == input_type && ! all_files_recognised_by_suffix(cl))
-  {
+  else if (0 == input_type && ! all_files_recognised_by_suffix(cl)) {
     cerr << "Cannot discern input type(s) of command line files\n";
     return 8;
   }
 
-  if (! cl.option_present('M'))
-  {
-    for (int i = 0; i < cl.number_elements(); i++)
-    {
-      if (! mol2qry(cl[i], input_type, mqs, geometry_config))
-      {
+  if (! cl.option_present('M')) {
+    for (int i = 0; i < cl.number_elements(); i++) {
+      if (! mol2qry(cl[i], input_type, mqs, geometry_config)) {
         rc = i + 1;
         break;
       }
     }
   }
 
-  if (verbose)
+  if (verbose) {
     cerr << queries_written << " queries written\n";
+  }
 
   return rc;
 }

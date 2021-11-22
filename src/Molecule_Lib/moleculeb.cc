@@ -302,8 +302,8 @@ Molecule::add_molecule(const Molecule * m2)
   {
     const Atom * a2 = m2->_things[i];
 
-    Atom * tmp = new Atom(
-        a2);    // using copy constructor preserves as many properties as possible, including coordinates
+   // Use copy constructor to preserve as many properties as possible, including coordinates
+    Atom * tmp = new Atom(a2);
 
     add(tmp, 1);    // extra arg means partial molecule
 

@@ -19,22 +19,25 @@ class Connection
     bond_type_t   _btype;
 
   public:
-    Connection ();
-    Connection (atom_number_t, bond_type_t);
-    ~Connection ();
+    Connection();
+    Connection(atom_number_t, bond_type_t);
+    ~Connection();
 
-    int           debug_print (std::ostream &) const;
+    int debug_print(std::ostream &) const;
 
-    atom_number_t a2 () const { return _a2; }
+    atom_number_t a2() const { return _a2; }
 
-    bond_type_t   btype () const { return _btype; }
+    bond_type_t btype() const { return _btype; }
 
-    void        set_bond_type   (bond_type_t);
+    void set_atom(atom_number_t s) {
+      _a2 = s;
+    }
+    void set_bond_type(bond_type_t);
 
-    void        set_aromatic ();
-    void        set_non_aromatic ();
+    void set_aromatic();
+    void set_non_aromatic();
 
-    void        set_permanent_aromatic (int);    // 0 or 1 values only
+    void set_permanent_aromatic(int);    // 0 or 1 values only
 };
 
 #define BOND_PROPERTY_UNKNOWN -3

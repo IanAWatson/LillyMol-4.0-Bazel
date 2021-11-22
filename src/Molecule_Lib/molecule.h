@@ -1421,8 +1421,8 @@ class Molecule : private resizable_array_p<Atom>
 
     int recompute_distance_matrix();
 
-    const int * distance_matrix_warning_may_change()
-    { if (NULL == _distance_matrix)
+    const int * distance_matrix_warning_may_change() {
+      if (nullptr == _distance_matrix)
         recompute_distance_matrix();
       return _distance_matrix;
     }

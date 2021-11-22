@@ -356,9 +356,10 @@ cc_binary(
         "mol2qry.cc",
     ],
     deps = [
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:binary_data_file",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
-        "//Foundational/cmdline:iwcmdline",
     ],
     linkopts = [
         "-lz",
@@ -914,24 +915,6 @@ cc_binary(
     ],
 )
 
-
-cc_binary(
-    name = "smu_ring_membership_change",
-    srcs = [
-        "smu_ring_membership_change.cc",
-    ],
-    deps = [
-         "//Foundational/cmdline:iwcmdline",
-         "//Foundational/iwaray:iwaray",
-         "//Foundational/iwmisc:iwmisc",
-         "//Molecule_Lib:iwmolecule",
-         "//Molecule_Lib:moleculeio",
-    ],
-    linkopts = [
-        "-lz",
-    ],
-)
-
 cc_binary(
     name = "smu_rotatable_bond",
     srcs = [
@@ -1231,6 +1214,19 @@ cc_library(
 )
 
 cc_library(
+    name = "partial_symmetry",
+    srcs = [
+        "partial_symmetry.cc",
+    ],
+    hdrs = [
+        "partial_symmetry.h"
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
     name = "reaction_duplicate",
     srcs = [
         "reaction_duplicate.cc",
@@ -1321,6 +1317,23 @@ cc_test(
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",
     ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
+    name = "partial_symmetry_test",
+    srcs = [
+        "partial_symmetry_test.cc",
+    ],
+    deps = [
+        ":partial_symmetry",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ],
+    timeout="short",
     linkopts = [
         "-lz",
     ],

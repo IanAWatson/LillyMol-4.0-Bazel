@@ -36,7 +36,7 @@ set_full_distance_matrix(const int s)
 int
 Molecule::_initialise_distance_matrix()
 {
-  assert(NULL == _distance_matrix);
+  assert(nullptr == _distance_matrix);
   assert(_number_elements > 0);
 
   _distance_matrix = new_int(_number_elements * _number_elements);
@@ -54,7 +54,7 @@ Molecule::_bonds_between (atom_number_t a1, atom_number_t a2)
 {
   assert(a1 < a2);
 
-  if (NULL == _distance_matrix)
+  if (nullptr == _distance_matrix)
     _initialise_distance_matrix();
 
   int * row = &_distance_matrix[_number_elements * a1];
@@ -175,7 +175,7 @@ Molecule::bonds_between (atom_number_t a1, atom_number_t a2)
 
 //cerr << "Molecule::bonds_between: atoms " << a1 << " and " << a2 << " dm = " << _distance_matrix << endl;
 
-  if (NULL == _distance_matrix)
+  if (nullptr == _distance_matrix)
     _initialise_distance_matrix();
   else
   {
@@ -237,7 +237,7 @@ Molecule::_atoms_between (atom_number_t a1,
   cerr << "Molecule::_atoms_between:contine to atom " << a1 << " '" << smarts_equivalent_for_atom(a1) << "' and " << a2 << " '" << smarts_equivalent_for_atom(a2) << "' d = " << distance_needed << endl;
 #endif
 
-  assert(NULL != _distance_matrix);
+  assert(nullptr != _distance_matrix);
 
   const Atom * a = _things[a1];
 
@@ -1014,7 +1014,7 @@ Molecule::_recompute_distance_matrix (int (Molecule::*identify_first_atom) (cons
   else
     set_vector (_ring_membership, _number_elements, 0);
 
-  if (NULL == _distance_matrix)
+  if (nullptr == _distance_matrix)
     _distance_matrix = new_int (_number_elements * _number_elements, _number_elements + 9);
   else
     set_vector (_distance_matrix, _number_elements * _number_elements, _number_elements + 9);
@@ -1092,7 +1092,7 @@ Molecule::recompute_distance_matrix()
   if (! _fragment_information.contains_valid_data())
     (void) number_fragments();
 
-  if (NULL == _distance_matrix)
+  if (nullptr == _distance_matrix)
     _distance_matrix = new_int(_number_elements * _number_elements, _number_elements + 9);
   else
     set_vector(_distance_matrix, _number_elements * _number_elements, _number_elements + 9);

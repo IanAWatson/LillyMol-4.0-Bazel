@@ -201,6 +201,9 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
 
     int _bonds_preserve_ring_membership;
 
+    // Nov 2021. Bond type information dropped.
+    int _all_bonds_become_type_any;
+
 //  private functions
 
 //  template <typename T>
@@ -260,6 +263,7 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     int aromatic_only_matches_aromatic_aliphatic_only_matches_aliphatic() const { return _aromatic_only_matches_aromatic_aliphatic_only_matches_aliphatic;}
     int preserve_smallest_ring_size() const { return _preserve_smallest_ring_size;}
     int bonds_preserve_ring_membership() const { return _bonds_preserve_ring_membership;}
+    int all_bonds_become_type_any() const { return _all_bonds_become_type_any;}
 
     void set_make_embedding(int s) { _make_embedding = s;}
     void set_all_ring_bonds_become_undefined(int s) { _all_ring_bonds_become_undefined = s;}
@@ -284,6 +288,7 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     void set_aromatic_only_matches_aromatic_aliphatic_only_matches_aliphatic(int s) { _aromatic_only_matches_aromatic_aliphatic_only_matches_aliphatic = s;}
     void set_preserve_smallest_ring_size(int s) { _preserve_smallest_ring_size = s;}
     void set_bonds_preserve_ring_membership(int s) { _bonds_preserve_ring_membership = s;}
+    void set_all_bonds_become_type_any(int s) { _all_bonds_become_type_any = s;}
 
     int parse_directives(const const_IWSubstring &);
 

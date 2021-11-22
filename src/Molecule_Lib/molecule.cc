@@ -200,10 +200,10 @@ Molecule::_free_all_dynamically_allocated_things()
 
   DELETE_IF_NOT_NULL(_atom_type);
 
-  if (NULL != _distance_matrix)
+  if (nullptr != _distance_matrix)
   {
     delete [] _distance_matrix;
-    _distance_matrix = NULL;
+    _distance_matrix = nullptr;
   }
 
   if (NULL != _aromaticity)

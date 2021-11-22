@@ -131,6 +131,8 @@ class resizable_array_base
     int  insert_after           (int, T);
     int  insert_in_order        (T, int (*) (const T *, const T *));
     int  swap_elements          (int, int);
+    // Swap the contents of two vectors. Works without copying all the data.
+    int  swap_contents          (resizable_array_base<T>& rhs);
     T    next_after_wrap        (int &, int direction = 1) const;   // returns next item
     int  next_index_after_wrap  (int, int direction = 1) const;     // returns next index
     // what index is from + delta - where delta is signed.
@@ -1593,6 +1595,16 @@ resizable_array_base<T>::swap_elements(int i1, int i2)
   T tmp = _things[i1];
   _things[i1] = _things[i2];
   _things[i2] = tmp;
+
+  return 1;
+}
+
+template <typename T>
+int
+resizable_array_base<T>::swap_contents(resizable_array_base<T>& rhs) {
+  std::swap(_things, rhs._things);
+  std::swap(_number_elements, rhs._number_elements);
+  std::swap(_elements_allocated, rhs._elements_allocated);
 
   return 1;
 }

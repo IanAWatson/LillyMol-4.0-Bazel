@@ -125,6 +125,22 @@ cc_binary(
 )
 
 cc_binary(
+    name = "dfilefilter",
+    srcs = [
+       "dfilefilter.cc",
+    ],
+    deps = [
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:iw_tabular_data",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "feature_scaling",
     srcs = [
         "feature_scaling.cc",

@@ -909,12 +909,13 @@ message SingleSubstructureQuery {
 // queries, held together with a logical expression.
 message SubstructureQuery {
   optional string comment = 1;
+  optional string name = 2;
 
-  repeated SingleSubstructureQuery query = 2;
+  repeated SingleSubstructureQuery query = 3;
 
-  repeated Operator logexp = 3;
+  repeated Operator logexp = 4;
 
-  optional int32 match_each_component = 4;
+  optional int32 match_each_component = 5;
 }
 
 // An interesting design choice. Should the various properties

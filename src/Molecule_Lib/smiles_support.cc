@@ -26,7 +26,7 @@
 static int reuse_ring_closure_numbers = 1;
 
 void
-set_smiles_reuse_ring_closure_numbers (int i)
+set_smiles_reuse_ring_closure_numbers(int i)
 {
   assert (i >= 0);
 
@@ -45,7 +45,7 @@ smiles_reuse_ring_closure_numbers()
 static int include_aromaticity_in_smiles = 0;
 
 void
-set_include_aromaticity_in_smiles (int i)
+set_include_aromaticity_in_smiles(int i)
 {
   if (i == include_aromaticity_in_smiles)
     return;
@@ -64,7 +64,7 @@ get_include_aromaticity_in_smiles()
 static int _include_cis_trans_in_smiles = 1;
 
 void
-set_include_cis_trans_in_smiles (int i)
+set_include_cis_trans_in_smiles(int i)
 {
   _include_cis_trans_in_smiles = i;
 
@@ -80,7 +80,7 @@ include_cis_trans_in_smiles()
 static int _include_chiral_info_in_smiles = 1;
 
 void
-set_include_chiral_info_in_smiles (int i)
+set_include_chiral_info_in_smiles(int i)
 {
   _include_chiral_info_in_smiles = i;
 }
@@ -94,7 +94,7 @@ include_chiral_info_in_smiles()
 static int _ignore_chiral_info_on_input = 0;
 
 void
-set_ignore_chiral_info_on_input (int i)
+set_ignore_chiral_info_on_input(int i)
 {
   _ignore_chiral_info_on_input = i;
 
@@ -110,7 +110,7 @@ ignore_chiral_info_on_input()
 static int append_coordinates_after_each_atom = 0;
 
 void
-set_append_coordinates_after_each_atom (int s)
+set_append_coordinates_after_each_atom(int s)
 {
   append_coordinates_after_each_atom = s;
 }
@@ -124,7 +124,7 @@ set_append_coordinate_box_after_each_atom(int s) {
 static int _write_smiles_with_smarts_atoms = 0;
 
 void
-set_write_smiles_with_smarts_atoms (int s)
+set_write_smiles_with_smarts_atoms(int s)
 {
   _write_smiles_with_smarts_atoms = s;
 
@@ -140,7 +140,7 @@ write_smiles_with_smarts_atoms()
 static int include_implicit_hydrogens_on_aromatic_n_and_p = 1;
 
 void
-set_include_implicit_hydrogens_on_aromatic_n_and_p (int s)
+set_include_implicit_hydrogens_on_aromatic_n_and_p(int s)
 {
   include_implicit_hydrogens_on_aromatic_n_and_p = s;
 }
@@ -148,7 +148,7 @@ set_include_implicit_hydrogens_on_aromatic_n_and_p (int s)
 static int _add_implicit_hydrogens_to_isotopic_atoms_needing_hydrogens = 0;
 
 void
-set_add_implicit_hydrogens_to_isotopic_atoms_needing_hydrogens (int s)
+set_add_implicit_hydrogens_to_isotopic_atoms_needing_hydrogens(int s)
 {
   _add_implicit_hydrogens_to_isotopic_atoms_needing_hydrogens = s;
 }
@@ -168,7 +168,7 @@ write_single_bonds_in_smiles()
 }
 
 void
-set_write_single_bonds_in_smiles (int s)
+set_write_single_bonds_in_smiles(int s)
 {
   _write_single_bonds_in_smiles = s;
 }
@@ -234,7 +234,7 @@ void set_write_formal_charge_as_consecutive_signs(int s) {
 static char sflag = 'K';
 
 int
-display_standard_smiles_options (std::ostream & os)
+display_standard_smiles_options(std::ostream & os)
 {
   os << "  -" << sflag << " <...>       Enter \"-" << sflag << " help\" for SMILES options\n";
 
@@ -242,7 +242,7 @@ display_standard_smiles_options (std::ostream & os)
 }
 
 int
-display_all_smiles_options (char flag, std::ostream & os)
+display_all_smiles_options(char flag, std::ostream & os)
 {
   assert (os.good());
 
@@ -271,8 +271,8 @@ display_all_smiles_options (char flag, std::ostream & os)
 }
 
 int
-process_standard_smiles_options (Command_Line & cl, int verbose,
-                                 const char sflag)
+process_standard_smiles_options(Command_Line & cl, int verbose,
+                                const char sflag)
 {
   int i = 0;
   IWString tmp;
@@ -448,9 +448,9 @@ Molecule::_smiles_write_directional_bond (atom_number_t a,
 */
 
 int
-Molecule::_process_directional_bond_for_smiles (IWString & smiles,
-                                                const Bond * b,
-                                                atom_number_t next_atom)
+Molecule::_process_directional_bond_for_smiles(IWString & smiles,
+                                               const Bond * b,
+                                               atom_number_t next_atom)
 {
 #ifdef DEBUG_PROCESS_DIRECTIONAL_BOND_FOR_SMILES
   cerr << "Directional bond from " << b->a1() << " to " << b->a2() << endl;
@@ -558,8 +558,8 @@ finish_smiles_atom(IWString & smiles,
 */
 
 int
-Molecule::_append_smarts_equivalent (Smiles_Formation_Info & sfi,
-                                     IWString & s)
+Molecule::_append_smarts_equivalent(Smiles_Formation_Info & sfi,
+                                    IWString & s)
 {
   atom_number_t zatom = sfi.zatom();
 
@@ -637,7 +637,7 @@ append_permanent_aromatic(IWString & smiles,
 */
 
 int
-Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
+Molecule::_process_atom_for_smiles(Smiles_Formation_Info & sfi,
                      const int * zorder,
                      const resizable_array<const Bond *> & ring_opening_bonds,
                      const resizable_array<atom_number_t> & ring_closures,
@@ -809,8 +809,8 @@ Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
 */
 
 int
-Molecule::_process_atom_for_smiles (Smiles_Formation_Info & sfi,
-                                    IWString & smiles)
+Molecule::_process_atom_for_smiles(Smiles_Formation_Info & sfi,
+                                   IWString & smiles)
 {
   if (! sfi.write_smiles())
     return _append_smarts_equivalent(sfi, smiles);
@@ -963,7 +963,7 @@ Molecule::_unset_all_implicit_hydrogens_known_attributes()
   return rc;
 }
 
-Smiles_Formation_Info::Smiles_Formation_Info (int na, int nr) : _rnm (nr)
+Smiles_Formation_Info::Smiles_Formation_Info(int na, int nr) : _rnm (nr)
 {
   _natoms = na;
 
@@ -996,7 +996,7 @@ Smiles_Formation_Info::ok() const
 }
 
 int
-Smiles_Formation_Info::make_smarts_embedding (atom_number_t zatom) const
+Smiles_Formation_Info::make_smarts_embedding(atom_number_t zatom) const
 {
   if (nullptr == _make_smarts_embedding)
     return 0;
@@ -1033,7 +1033,7 @@ Temporarily_Set_Include_Chiral_Info_in_Smiles::~Temporarily_Set_Include_Chiral_I
 }
 
 void
-reset_smiles_support_file_scope_variables ()
+reset_smiles_support_file_scope_variables()
 {
   reuse_ring_closure_numbers = 1;
   include_aromaticity_in_smiles = 0;
@@ -1047,6 +1047,7 @@ reset_smiles_support_file_scope_variables ()
   _write_single_bonds_in_smiles = 0;
   include_hcount_in_smiles = 1;
   file_scope_display_unusual_hcount_warning_messages = 1;
+  append_coordinate_box_after_each_atom = 0;
   sflag = 'K';
 
   return;
