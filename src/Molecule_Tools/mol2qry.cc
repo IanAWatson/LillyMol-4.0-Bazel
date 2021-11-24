@@ -367,8 +367,14 @@ mol2qry(MDL_Molecule & m,
     query[0]->set_comment(tmp);
   }
 
-  if (! query.write_msi(output))
+  if (proto_destination) {
+    SubstructureSearch::SubstructureQuery proto = query.BuildProto();
+    std::string serialized;
+    proto.SerializeToString(&serialized);
+    return proto_destination->Write(serialized.data(), serialized.size());
+  } else if (! query.write_msi(output)) {
     return 0;
+  }
 
   queries_written++;
 
@@ -386,6 +392,11 @@ mol2qry(MDL_Molecule & m,
 
   if (all_queries_in_one_file)
     return mol2qry(m, mqs, stream_for_all_queries);
+
+  // If writing protos to a binary file, the output stream is not used, so pass anything.
+  if (proto_destination) {
+    return mol2qry(m, mqs, std::cout);
+  }
 
   IWString output_fname(output_stem);
 
@@ -498,12 +509,11 @@ mol2qry(const char * ifile,
 {
   IWString output_fname;
 
-  if (all_queries_in_one_file)    // file already opened elsewhere
-    ;
-  else if (stem_for_output.length())
+  if (all_queries_in_one_file) {  // file already opened elsewhere
+  } else if (stem_for_output.length()) {
     output_fname = stem_for_output;
-  else
-  {
+  } else if (proto_destination) {
+  } else {
     output_fname = ifile;
     output_fname.remove_suffix();
   }
