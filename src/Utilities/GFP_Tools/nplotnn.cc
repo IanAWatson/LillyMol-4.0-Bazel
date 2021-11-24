@@ -47,8 +47,7 @@ static int append_neighbour_number_to_each_neighbour = 1;
 
 static IWString neighbour_separator('\n');
 
-static IWString space_or_tab(' ');
-
+// Need to keep this in sync with output_separator.
 static IWString cluster(" CLUSTER ");
 
 static IWDigits iwdigits;   // used for neighbour numbers
@@ -102,8 +101,13 @@ static Distance_Scaling distance_scaling;
 
 static int distances_present_in_input = 1;
 
-static char three_column_output_separator = ' ';
+// Used for tabular output.
+static char output_separator = ' ';
+
+// Obsolete, use tabular output.
 static int three_column_output = 0;
+
+static int tabular_with_smiles = 0;
 
 /*
   In addition to the smiles, the ID and the distance, we need a unique identifier for each neighbour.
@@ -156,7 +160,7 @@ usage (int rc)
   cerr << " -j <string>      separator between records (default newline) - use ' ' for tabular output. 'space' and 'tab' OK\n";
   cerr << " -w               remove the constraint that distances must be in [0,1]\n";
   cerr << " -X ...           more obscure options, enter '-X help' for info\n";
-  cerr << " -3               produce three column output 'id1 id2 dist'\n";
+//cerr << " -3               produce three column output 'id1 id2 dist'\n";
   cerr << " -H <fname>       write the nearest neighbour histogram to <fname>\n";
   cerr << " -h               discard neighbours with zero distance and same ID as target\n";
   cerr << " -M <fname>       smiles file to be used for filling missing smiles\n";
@@ -172,7 +176,7 @@ display_dash_x_options (std::ostream & os)
   os << " -X tcol=<col>      just write column <col> from the target molecules\n";
   os << " -X ncol=<col>      just write column <col> from the neighbour molecules\n";
   os << " -X ftn             take the first token of both target and neighbour molecules\n";
-  os << " -X TABS            create tab separated output rather than space separated\n";
+//os << " -X TABS            create tab separated output rather than space separated\n";
   os << " -X minextra=n      neighbours must have at least     <n> atoms more than target\n";
   os << " -X maxextra=n      neighbours must have no more than <n> atoms more than target\n";
   os << " -X nosmi           input does not contain smiles\n";
@@ -185,6 +189,8 @@ display_dash_x_options (std::ostream & os)
   os << " -X SCALE=<tag>     scaled spread output, unscale the distances\n";
   os << " -X table           produce tabular output of near neighbour distances\n";
   os << " -X table1          produce tabular output of nearest neighbour distances\n";
+  os << " -X tsmiles         produce tabular output including smiles\n";
+  os << " -X osep=<char>     tabular data output separator\n";
   os << " -X normh           normalise the -H file to largest count\n";
   os << " -X allh            include all distances in the -H file (not just nearest)\n";
   os << " -X HR=<fname>      create an R file for plotting the -H file\n";
@@ -385,11 +391,11 @@ write_neighbour_list (const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
     const Smiles_ID_Dist_UID * sid = neighbours[i];
 
     if (smiles_tag.length())
-      output << sid->smiles() << space_or_tab;
+      output << sid->smiles() << output_separator;
 
-    output << sid->id() << space_or_tab;
+    output << sid->id() << output_separator;
     if (append_neighbour_number_to_each_neighbour)
-      output << (i + 1) << space_or_tab;
+      output << (i + 1) << output_separator;
 
     if (distances_present_in_input)
     {
@@ -451,25 +457,25 @@ write_neighbour_list (const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
 
 template <typename T>
 void
-write_statistics_for_neighbour_list (const resizable_array_p<T> & neighbours,
-                                     IWString & output)
+write_statistics_for_neighbour_list(const resizable_array_p<T> & neighbours,
+                                    IWString & output)
 {
-  int n = neighbours.number_elements();
+  const int n = neighbours.number_elements();
 
   if (tabular_output_nearest_neighbour_only)
   {
     if (0 == n)
     {
-      output << " 1";
+      output << output_separator << '1';
       return;
     }
 
     float d = neighbours[0]->distance();
     if (d < censor_distances_shorter_than)
-      output << " 0";
+      output << output_separator << '0';
     else
     {
-      output << ' ';
+      output << output_separator;
       output.append_number(d, output_precision);
     }
 
@@ -480,14 +486,14 @@ write_statistics_for_neighbour_list (const resizable_array_p<T> & neighbours,
   {
     if (0 == n)
     {
-      output << " 1";
+      output << output_separator << '1';
       return;
     }
 
     if (n > 1)
-      output << " N=" << n;
+      output << output_separator << "N=" << n;
 
-    output << ' ';
+    output << output_separator;
 
     output.append_number(neighbours[0]->distance(), output_precision);
 
@@ -506,21 +512,21 @@ write_statistics_for_neighbour_list (const resizable_array_p<T> & neighbours,
   if (tabular_output)
   {
     if (from_gfp_leader)
-      output << ' ' << (n + 1) << ' ';
+      output << output_separator << (n + 1) << output_separator;
     else
-      output << ' ' << n << ' ';
+      output << output_separator << n << output_separator;
   }
   else
-    output << " N=" << n << ' ';
+    output << output_separator << "N=" << n << output_separator;
 
   output.append_number(d.minval(), output_precision);
-  output << ' ';
+  output << output_separator;
   output.append_number(d.maxval(), output_precision);
-  output << ' ';
+  output << output_separator;
   if (d.n() > 0)
     output.append_number(static_cast<float>(d.average()), output_precision);
   else
-    output << '.';
+    output << output_separator;
 
   return;
 }
@@ -612,10 +618,42 @@ do_check_distance_ordering (const resizable_array_p<Smiles_ID_Dist_UID> & neighb
 template void random_subset (resizable_array_p<Smiles_ID_Dist_UID> &, int);
 #endif
 
+// Generate delimited output that includes smiles.
 static int
-do_three_column_output (const IWString & id,
-                        const resizable_array_p<Smiles_ID_Dist_UID> & neighbours, 
-                        IWString_and_File_Descriptor & output)
+do_tabular_with_smiles(const IWString& smiles,
+                       const IWString& id,
+                       const resizable_array_p<Smiles_ID_Dist_UID> & neighbours, 
+                       IWString_and_File_Descriptor & output) {
+
+  output << smiles << output_separator << id;
+
+  for (const Smiles_ID_Dist_UID* sid : neighbours) {
+    output << output_separator << sid->smiles() << output_separator << sid->id();
+    output << output_separator;
+    fraction_as_string.append_number(output, sid->distance());
+    if (sid->distance() == 0.0f) {
+      ++zero_distance_neighbours;
+    }
+  }
+
+  output << '\n';
+
+  ++molecules_written;
+
+  if (neighbours.number_elements() == 0) {
+    return 1;
+  }
+
+  nearest_neighbour_stats.extra(neighbours[0]->distance());
+  furthest_neighbour_stats.extra(neighbours.last_item()->distance());
+
+  return 1;
+}
+  
+static int
+do_three_column_output(const IWString & id,
+                       const resizable_array_p<Smiles_ID_Dist_UID> & neighbours, 
+                       IWString_and_File_Descriptor & output)
 {
   const int nn = neighbours.number_elements();
 
@@ -631,16 +669,16 @@ do_three_column_output (const IWString & id,
 
   for (int i = 0; i < nn; ++i)
   {
-    output << first_token_id << three_column_output_separator << neighbours[i]->id();
+    output << first_token_id << output_separator << neighbours[i]->id();
 
     if (fraction_as_string.active())
       fraction_as_string.append_number(output, neighbours[i]->distance());
     else
-      output << three_column_output_separator << neighbours[i]->distance();
+      output << output_separator << neighbours[i]->distance();
 
     output << '\n';
 
-    output.write_if_buffer_holds_more_than(4096);
+    output.write_if_buffer_holds_more_than(IW_FLUSH_BUFFER);
     if (0.0f == neighbours[i]->distance())
       zero_distance_neighbours++;
   }
@@ -651,10 +689,10 @@ do_three_column_output (const IWString & id,
 }
 
 static int
-process_molecule (const IWString & smiles,
-                  const IWString & id,
-                  const resizable_array_p<Smiles_ID_Dist_UID> & neighbours, 
-                  IWString_and_File_Descriptor & output)
+process_molecule(const IWString & smiles,
+                 const IWString & id,
+                 const resizable_array_p<Smiles_ID_Dist_UID> & neighbours, 
+                 IWString_and_File_Descriptor & output)
 {
   molecules_processed++;
 
@@ -668,6 +706,10 @@ process_molecule (const IWString & smiles,
 
   if (three_column_output)
     return do_three_column_output(id, neighbours, output);
+
+  if (tabular_with_smiles) {
+    return do_tabular_with_smiles(smiles, id, neighbours, output);
+  }
 
   if (number_needed_within_distance >= 0 && ! passes_number_needed_within_distance(neighbours))
     return write_targets_not_written_if_requested(smiles, id, stream_for_targets_not_written);
@@ -695,7 +737,7 @@ process_molecule (const IWString & smiles,
   if (print_target_molecules)
   {
     if (smiles_tag.length())
-      output << smiles << space_or_tab;
+      output << smiles << output_separator;
 
     output << id;
 
@@ -703,7 +745,7 @@ process_molecule (const IWString & smiles,
       write_statistics_for_neighbour_list(neighbours, output);
 
     if (append_to_target_record.length())
-      output << space_or_tab << append_to_target_record;
+      output << output_separator << append_to_target_record;
 
     output << neighbour_separator;
 
@@ -1258,9 +1300,9 @@ process_neighbour_list_record (const IWString & id_of_target,
 }
 
 static int
-process_molecule (iwstring_data_source & input,
-                  int & fatal,
-                  IWString_and_File_Descriptor & output)
+process_molecule(iwstring_data_source & input,
+                 int & fatal,
+                 IWString_and_File_Descriptor & output)
 {
   IWString smiles, id;
 
@@ -1328,9 +1370,9 @@ process_molecule (iwstring_data_source & input,
 }
 
 static int
-process_molecule_gfp_leader (iwstring_data_source & input,
-                             int & fatal,
-                             IWString_and_File_Descriptor & output)
+process_molecule_gfp_leader(iwstring_data_source & input,
+                            int & fatal,
+                            IWString_and_File_Descriptor & output)
 {
   IWString smiles, id;
 
@@ -1384,13 +1426,11 @@ process_molecule_gfp_leader (iwstring_data_source & input,
   if (tabular_output || tabular_output_nearest_neighbour_only)
     ;
   else if (! distances_present_in_input && tabular_leader_output)
-    id << space_or_tab << clusters_found << space_or_tab << 'P';
+    id << output_separator << clusters_found << output_separator << 'P';
   else if (tabular_leader_output)
-    id << space_or_tab << clusters_found << space_or_tab << 'P' << space_or_tab << '0';
-  else if (' ' == space_or_tab)
-    id << cluster << clusters_found << " (" << (neighbours_initially_found + 1) << " members)";
-  else
-    id << cluster << clusters_found << "\t(" << (neighbours_initially_found + 1) << "\tmembers)";
+    id << output_separator << clusters_found << output_separator << 'P' << output_separator << '0';
+  else 
+    id << cluster << clusters_found << output_separator << "(" << (neighbours_initially_found + 1) << output_separator << "members)";
 
   int n = neighbours.number_elements();
 
@@ -1400,7 +1440,7 @@ process_molecule_gfp_leader (iwstring_data_source & input,
 
     IWString tmp(ni->id());
     if (tabular_leader_output)
-      tmp << space_or_tab << clusters_found << space_or_tab << 'C';
+      tmp << output_separator << clusters_found << output_separator << 'C';
     else
       tmp << cluster << clusters_found << '.' << (i + 1);
     ni->set_id(tmp);
@@ -1412,8 +1452,8 @@ process_molecule_gfp_leader (iwstring_data_source & input,
 }
 
 static int
-plotnn_gfp_leader (iwstring_data_source & input,
-                   IWString_and_File_Descriptor & output)
+plotnn_gfp_leader(iwstring_data_source & input,
+                  IWString_and_File_Descriptor & output)
 {
   int fatal;
   while (process_molecule_gfp_leader(input, fatal, output))
@@ -1428,8 +1468,8 @@ plotnn_gfp_leader (iwstring_data_source & input,
 }
 
 static int
-plotnn (iwstring_data_source & input,
-        IWString_and_File_Descriptor & output)
+plotnn(iwstring_data_source & input,
+       IWString_and_File_Descriptor & output)
 {
   int fatal;
 
@@ -1445,8 +1485,8 @@ plotnn (iwstring_data_source & input,
 }
 
 static int
-plotnn (const char * fname,
-        IWString_and_File_Descriptor & output)
+plotnn(const char * fname,
+       IWString_and_File_Descriptor & output)
 {
   iwstring_data_source input(fname);
 
@@ -1463,8 +1503,8 @@ plotnn (const char * fname,
 }
 
 static int
-read_possibly_missing_smiles_record (const const_IWSubstring & buffer,
-                                     IW_STL_Hash_Map_String & missing_smiles)
+read_possibly_missing_smiles_record(const const_IWSubstring & buffer,
+                                    IW_STL_Hash_Map_String & missing_smiles)
 {
   const_IWSubstring smiles, id;
 
@@ -1517,8 +1557,8 @@ read_possibly_missing_smiles (const const_IWSubstring & fname,
 }
 
 static int
-write_normalised_histogram (const IWHistogram & nearest_neighbour_histogram,
-                            std::ostream & stream_for_nearest_neighbour_histogram)
+write_normalised_histogram(const IWHistogram & nearest_neighbour_histogram,
+                           std::ostream & stream_for_nearest_neighbour_histogram)
 {
   const int b = nearest_neighbour_histogram.nbuckets();
 
@@ -1540,7 +1580,7 @@ write_normalised_histogram (const IWHistogram & nearest_neighbour_histogram,
 
     float y = static_cast<float>(raw_counts[i]) / float_max_count;
 
-    stream_for_nearest_neighbour_histogram << d << ' ' << y << endl;
+    stream_for_nearest_neighbour_histogram << d << output_separator << y << endl;
   }
 
   return 1;
@@ -2039,20 +2079,6 @@ plotnn (int argc, char ** argv)
       cerr << "Output precision " << output_precision << endl;
   }
 
-  if (! cl.option_present('w'))
-  {
-    if (three_column_output)
-    {
-      IWString tmp(three_column_output_separator);
-      fraction_as_string.set_leading_string(tmp);
-    }
-
-    fraction_as_string.initialise(0.0, 1.0, output_precision);
-
-    if (! three_column_output)
-      fraction_as_string.append_to_each_stored_string(neighbour_separator);
-  }
-
   if (cl.option_present('L'))
   {
     from_gfp_leader = 1;
@@ -2178,7 +2204,7 @@ plotnn (int argc, char ** argv)
       }
       else if ("TABS" == x)
       {
-        space_or_tab = '\t';
+        output_separator = '\t';
         cluster = "\tCLUSTER\t";
       }
       else if ("nosmi" == x)
@@ -2317,6 +2343,22 @@ plotnn (int argc, char ** argv)
           return 3;
         }
       }
+      else if (x == "tsmiles") {
+        tabular_with_smiles = 1;
+        if (verbose) {
+          cerr << "Tabular output with smiles\n";
+        }
+      }
+      else if (x.starts_with("osep=")) {
+        x.remove_leading_chars(5);
+        IWString tmp(x);
+        if (! char_name_to_char(tmp)) {
+          cerr << "Invalid output separator specification '" << tmp << "'\n";
+        }
+        output_separator = tmp[0];
+        cluster[0] = output_separator;
+        cluster[cluster.length() - 1] = output_separator;
+      }
       else if ("normh" == x)
       {
         normalise_h_file = 1;
@@ -2422,7 +2464,23 @@ plotnn (int argc, char ** argv)
   if (append_neighbour_number_to_each_neighbour)
   {
     iwdigits.initialise(200);
-    iwdigits.append_to_each_stored_string(space_or_tab);
+    iwdigits.append_to_each_stored_string(output_separator);
+  }
+
+  if (! cl.option_present('w'))
+  {
+    if (three_column_output)
+    {
+      IWString tmp(output_separator);
+      fraction_as_string.set_leading_string(tmp);
+    }
+
+    fraction_as_string.initialise(0.0, 1.0, output_precision);
+
+    if (tabular_with_smiles || three_column_output) {
+    } else {
+      fraction_as_string.append_to_each_stored_string(neighbour_separator);
+    }
   }
 
   if (cl.option_present('M'))
@@ -2471,21 +2529,24 @@ plotnn (int argc, char ** argv)
 
   if (tabular_output)
   {
-    output << "ID ";
-    if (from_gfp_leader)
-    {
+    output << "ID" << output_separator;
+    if (from_gfp_leader) {
       output << "CSIZE";
-    }
-    else
-    {
+    } else {
       output << "NBRS";
     }
 
-    output << " Min Max\n";
+    output << output_separator << "Min" << output_separator << "Max\n";
   }
   else if (tabular_output_nearest_neighbour_only)
   {
-    output << "ID Min\n";
+    output << "ID" << output_separator << "Min\n";
+  } else if (tabular_with_smiles) {
+    output << "Smiles" << output_separator << "Id";
+    for (int i = 0; i < neighbours_per_structure; ++i) {
+      output << output_separator << "Smiles." << i << output_separator << "Id." << i << output_separator << "Dist." << i;
+    }
+    output << '\n';
   }
 
   int rc = 0;
@@ -2546,7 +2607,7 @@ plotnn (int argc, char ** argv)
     if (duplicate_neighbours_suppressed)
       cerr << duplicate_neighbours_suppressed << " duplicate neighbours suppressed by -u option\n";
 
-    if (three_column_output)
+    if (three_column_output || tabular_output)
       cerr << "Wrote " << molecules_written << " distance values\n";
     else
       cerr << "Wrote " << molecules_written << " molecules\n";
