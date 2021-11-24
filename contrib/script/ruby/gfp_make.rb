@@ -17,6 +17,7 @@ def usage(config_dirs, retcode)
   $stderr << "To pass options to a fingerprint generator an opening and closing option are needed\n"
   $stderr << "   gfp_make -oFOO -a 1 -B foo -cFOO ...\n"
   $stderr << " will pass '-a 1 -B foo' to the FOO fingerprint generator\n"
+  $stderr << " -all ... -all    common options passed to all programmes\n"
   $stderr << " -v               verbose output\n"
   exit(retcode)
 end
@@ -34,12 +35,16 @@ verbose = 0
 is_filter = false
 remaining_args = []
 argptr = 0
+all_present = false
 while argptr < ARGV.size
   arg = ARGV[argptr]
   argptr += 1
   if arg == '-v'
     verbose += 1
     next
+  end
+  if arg == '-all'
+    all_present = true
   end
   if /^--?DIR$/.match(arg)
     config_dirs.push!(ARGV[argptr])
@@ -86,6 +91,19 @@ while remaining_args.size.positive?
   files.push(remaining_args.pop)
 end
 files = files.reverse
+
+# Remove the -all...-all construct if present
+
+common_options = ""
+if all_present
+  all_start = remaining_args.find_index('-all')
+  all_end = remaining_args.rindex('-all')
+  $stderr << "Indices " << all_start << " and " << all_end << ' in ' << remaining_args << "\n"
+  common_options = remaining_args[all_start + 1..all_end - 1].join(' ')
+  $stderr << "Set common_options #{common_options}\n" if verbose.positive?
+  remaining_args.slice!(all_start, all_end - all_start + 1)
+  $stderr << "remaining_args " << remaining_args << "\n"
+end
 
 fp_args = GfpMakeSupport.group_args(remaining_args)
 unless fp_args
@@ -148,6 +166,7 @@ fp_args.each do |fp_option|
   cmdline.push(fp_option_to_known_fp[fp_option.option].expand(fp_option.option,
                                                               first_in_pipeline: first_token,
                                                               extra_qualifiers: fp_option.value))
+  cmdline[-1] << ' ' << common_options if common_options
   if first_token
     first_token = false
     cmdline[-1] << " #{files}"
