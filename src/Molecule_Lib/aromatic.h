@@ -97,4 +97,6 @@ extern void add_aliphatic(aromaticity_type_t & arom);
 extern bool is_aromatic_atom(aromaticity_type_t arom);
 extern bool is_aliphatic_atom(aromaticity_type_t arom);
 
+extern void set_allow_two_electron_systems_to_be_aromatic(int s);
+
 #endif

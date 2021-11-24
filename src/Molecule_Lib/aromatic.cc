@@ -1,5 +1,4 @@
 #include <memory>
-#include <stdlib.h>
 
 /*
   In order to get the private Molecule:: functions in this file,
@@ -526,7 +525,7 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
     Atom * aj = _things[j];
 
 #ifdef DEBUG_AROMATICITY_DETERMINATION
-    cerr << "Check > 3 connected, atom " << j << ", ncon = " << aj->ncon() << " + "
+    cerr << "Atom " << j << " check > 3 connected ncon = " << aj->ncon() << " + "
          << aj->implicit_hydrogens() << " = " << aj->ncon() + aj->implicit_hydrogens() << endl;
 #endif
 
@@ -594,8 +593,8 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
     //  Mostly this is to catch saturated carbon, but may also catch others...
 
 #ifdef DEBUG_AROMATICITY_DETERMINATION
-    cerr << "Atom has " << tmp << " pi electrons, ncon = " << ncon(j)
-         << " nbonds(j) = " << nbonds(j) << endl;
+    cerr << "Atom " << j << " has " << tmp << " pi electrons, ncon = " << ncon(j)
+         << " nbonds() = " << nbonds(j) << endl;
 #endif
 
     const int jbonds = aj->nbonds();
@@ -815,7 +814,7 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
       cerr << "Checking for multiple bonds outside the ring from atom " << j << endl;
 #endif
 
-      for (int k = 0; k < jcon && tmp >= 0; k++)
+      for (int k = 0; k < jcon; k++)
       {
         const Bond * b = aj->item(k);
 
@@ -853,15 +852,14 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
         if (zj == al->atomic_number())    // both atom types the same, ignore
           continue;
 
-        if (p.contains(l))
+        if (p.contains(l))  // Is in the ring being determined.
           continue;
 
         //      Atom J is doubly bonded to something outside the ring
 
         if (1 == al->ncon() || is_non_ring_atom(l) || (! in_same_ring(j, l)))
         {
-          if (16 ==
-              zj)    // mar 2004. The S atom in O=C1NS(=O)NC2=CC=CC=C12 PBCHM71359875 contributes electrons
+          if (16 == zj)    // mar 2004. The S atom in O=C1NS(=O)NC2=CC=CC=C12 PBCHM71359875 contributes electrons
             ;
           else
             tmp--;
@@ -891,7 +889,7 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
     pe += tmp;
 
 #ifdef DEBUG_AROMATICITY_DETERMINATION
-    cerr << "After adjustments, pi count is " << tmp << " total = " << pe << endl;
+    cerr << "After adjustments, pi count is " << tmp << " total = " << pe << " finished atom " << j << '\n';
 #endif
   }
 
@@ -902,15 +900,18 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
     return 1;
   }
 
-  if (EVERYTHING_HAS_A_PI_ELECTRON == aromaticity_determination_type)
+  if (EVERYTHING_HAS_A_PI_ELECTRON == aromaticity_determination_type) {
     result = AROMATIC;
-  else if (Simple_4n_plus_2 == aromaticity_determination_type &&
-           allow_two_electron_systems_to_be_aromatic() && 2 == pe)
+  } else if (Simple_4n_plus_2 == aromaticity_determination_type && 
+           allow_two_electron_systems_to_be_aromatic() && 2 == pe) {
     result = AROMATIC;
-  else if (pe > 2 && 2 == pe % 4)
+  } else if (pe > 2 && 2 == pe % 4) {
     result = AROMATIC;
-  else
+  } else if (pe == 2 && allow_two_electron_systems_to_be_aromatic()) {
+    result = AROMATIC;
+  } else {
     result = NOT_AROMATIC;
+  }
 
 #ifdef DEBUG_AROMATICITY_DETERMINATION
   cerr << "Pi electron count " << pe << " arom is " << (AROMATIC == result) << endl;
@@ -1220,8 +1221,6 @@ Molecule::__compute_aromaticity_for_ring(const Ring & p, aromaticity_type_t & ar
 */
 
   int ring_size = p.number_elements();
-
-  //cerr << "Checking for no contributing electrons\n";
 
 #ifdef ONLY_SINGLE_BONDS
   for (int i = 0; i < ring_size; i++)
@@ -6904,7 +6903,7 @@ reset_aromatic_file_scope_variables()
   x_convert_chain_aromatic_bonds = 0;
   _aromatic_chain_bonds_are_ok = 0;
   _non_kekule_systems_ok_to_be_aromatic = 0;
-  global_aromaticity_determination_type = Pearlman;
+  global_aromaticity_determination_type = Daylight;
   all_bonds_in_aromatic_ring_must_be_aromatic = 1;
   warn_aromatic_chain_atoms = 1;
   kekule_try_positive_nitrogen = 0;

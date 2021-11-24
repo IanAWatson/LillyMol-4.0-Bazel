@@ -41,6 +41,7 @@ void
 TestSubstructure::SetUp()
 {
   set_global_aromaticity_type(Daylight);
+  reset_aromatic_file_scope_variables();
 }
 
 TEST_F(TestSubstructure, SingleAtom)
@@ -2478,5 +2479,24 @@ TEST_F(TestSubstructure, TestImplicitRingConditionRingMet)
   EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
 }
 #endif
+
+TEST_F(TestSubstructure, TestTwoPiElectronsAromatic) {
+  _string_proto = R"(query {
+    smarts: "[ND1H2]-c(:c):c=O"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  set_allow_two_electron_systems_to_be_aromatic(1);
+//_smiles = "CN(C)C1=C(N)C(=O)C1=O";
+  _smiles = "CN(C)c1c(N)c(=O)c1=O";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+}
 
 }  // namespace

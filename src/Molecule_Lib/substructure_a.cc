@@ -1088,7 +1088,7 @@ Substructure_Atom::matches(Target_Atom & target, const int * already_matched)
   cerr << "Query atom " << _unique_id;
   if (_parent)
     cerr << " (anchor matched with " << _parent->current_hold_atom()->atom_number() << ")";
-  cerr << " trying to match atom " << target.atom_number() << endl;
+  cerr << " trying to match atom " << target.atom_number() << ' ' << target.m()->atomic_symbol(target.atom_number()) << '\n';
 #endif
 
   int rc = _matches(target, already_matched);
