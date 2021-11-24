@@ -704,6 +704,26 @@ process_molecule(const IWString & smiles,
   if (verbose > 1)
     cerr << id << " has " << nn << " neighbours\n";
 
+  if (nn > 0)
+  {
+    nearest_neighbour_stats.extra(neighbours[0]->distance());
+
+    if (nearest_neighbour_histogram.active())
+    {
+      if (place_all_distances_in_nn_histogram)
+      {
+        for (int i = 0; i < nn; i++)
+        {
+          nearest_neighbour_histogram.extra(neighbours[i]->distance());
+        }
+      }
+      else
+        nearest_neighbour_histogram.extra(neighbours[0]->distance());
+    }
+
+    furthest_neighbour_stats.extra(neighbours.last_item()->distance());
+  }
+
   if (three_column_output)
     return do_three_column_output(id, neighbours, output);
 
@@ -750,26 +770,6 @@ process_molecule(const IWString & smiles,
     output << neighbour_separator;
 
     molecules_written++;
-  }
-
-  if (nn > 0)
-  {
-    nearest_neighbour_stats.extra(neighbours[0]->distance());
-
-    if (nearest_neighbour_histogram.active())
-    {
-      if (place_all_distances_in_nn_histogram)
-      {
-        for (int i = 0; i < nn; i++)
-        {
-          nearest_neighbour_histogram.extra(neighbours[i]->distance());
-        }
-      }
-      else
-        nearest_neighbour_histogram.extra(neighbours[0]->distance());
-    }
-
-    furthest_neighbour_stats.extra(neighbours.last_item()->distance());
   }
 
   int rc = write_neighbour_list(neighbours, smiles, output);
@@ -1542,8 +1542,8 @@ read_possibly_missing_smiles (iwstring_data_source & input,
 }
 
 static int
-read_possibly_missing_smiles (const const_IWSubstring & fname,
-                              IW_STL_Hash_Map_String & missing_smiles)
+read_possibly_missing_smiles(const const_IWSubstring & fname,
+                             IW_STL_Hash_Map_String & missing_smiles)
 {
   iwstring_data_source input(fname);
 
@@ -1574,6 +1574,7 @@ write_normalised_histogram(const IWHistogram & nearest_neighbour_histogram,
 
   float float_max_count = static_cast<float>(max_count);
 
+  stream_for_nearest_neighbour_histogram << "Distance" << output_separator << "Fraction" << '\n';
   for (int i = 0; i < b; i++)
   {
     float d = static_cast<float>(i) * 0.01;
@@ -2564,10 +2565,12 @@ plotnn (int argc, char ** argv)
 
   if (nearest_neighbour_histogram.active())
   {
-    if (normalise_h_file)
+    if (normalise_h_file) {
       write_normalised_histogram(nearest_neighbour_histogram, stream_for_nearest_neighbour_histogram);
-    else
-      nearest_neighbour_histogram.write_terse(stream_for_nearest_neighbour_histogram, 0);
+    } else {
+      stream_for_nearest_neighbour_histogram << "Distance" << output_separator << "Count" << '\n';
+      nearest_neighbour_histogram.write_terse(stream_for_nearest_neighbour_histogram, 0, output_separator);
+    }
 
     if (rfile_for_histogram_plot.length())
       do_create_rfle_for_histogram_plot(nearest_neighbour_histogram, normalise_h_file, cumulative_rfile, rfile_for_histogram_plot);

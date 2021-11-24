@@ -55,7 +55,7 @@ class IWHistogram
     int extra (double);
 
     int write (std::ostream &) const;
-    int write_terse (std::ostream &, int = 1) const;
+    int write_terse (std::ostream &, int = 1, char output_separator=' ') const;
 
     int reset ();
 

@@ -267,8 +267,9 @@ IWHistogram::write (std::ostream & os) const
 }
 
 int
-IWHistogram::write_terse (std::ostream & os,
-                          int write_zero_values) const
+IWHistogram::write_terse(std::ostream & os,
+                         int write_zero_values,
+                         char output_separator) const
 {
   assert (ok ());
 
@@ -282,7 +283,7 @@ IWHistogram::write_terse (std::ostream & os,
     if (! write_zero_values && 0 == _count[i])
       ;
     else
-      os << xstart << ' ' << _count[i] << endl;
+      os << xstart << output_separator << _count[i] << endl;
   }
 
   return os.good ();
