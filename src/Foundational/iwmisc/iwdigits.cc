@@ -237,3 +237,16 @@ IWDigits::append_to_each_stored_string(const const_IWSubstring & s)
 
   return 1;
 }
+
+int
+IWDigits::append_to_each_stored_string(char s) {
+  for (int i = 0; i < _number_elements; i++)    // may be empty
+  {
+    _things[i] << s;
+  }
+
+  _appended_string = s;
+
+  return 1;
+}
+
