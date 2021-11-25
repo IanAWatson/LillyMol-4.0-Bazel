@@ -8,6 +8,7 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/proto_support.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/iwreaction.h"
 #include "Molecule_Lib/standardise.h"
 
@@ -415,6 +416,10 @@ MolecularVariants(int argc, char ** argv) {
   }
 
   FileType input_type = FILE_TYPE_SMI;
+  if (!  process_standard_aromaticity_options(cl)) {
+    cerr << "Cannot process aromaticity specifications\n";
+    return 1;
+  }
 
   if (cl.option_present('i')) {
     if (! process_input_type(cl, input_type)) {
