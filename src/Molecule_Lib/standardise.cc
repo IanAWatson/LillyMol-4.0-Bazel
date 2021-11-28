@@ -5203,6 +5203,26 @@ Chemical_Standardisation::_do_imidazole(Molecule & m,
   return 1;
 }
 
+// Return true if `zatom` has an exocyclic double bond, doubly bonded
+// to an atom not in `ring`.
+int
+ExocyclicDoubleBond(Molecule& m,
+                    atom_number_t zatom,
+                    const Set_of_Atoms& ring) {
+  const Atom& atom = m.atom(zatom);
+  for (const Bond * b : atom) {
+    if (! b->is_double_bond()) {
+      continue;
+    }
+    atom_number_t other = b->other(zatom);
+    if (! ring.contains(other)) {
+      return true;
+    }
+  }
+
+  return 0;
+}
+
 //#define DEBUG_DO_CHARGED_IMIDAZOLE
 
 int
@@ -5238,6 +5258,8 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
 
     if (atoms[a]->formal_charge() == 1) {
       if (nplus >= 0)
+        return 0;
+      if (ncon[a] == 3 && ExocyclicDoubleBond(m, a, r))   // [O-][n]1cco[n+]1=C
         return 0;
       nplus = i;
     } else if (nd3 >= 0)

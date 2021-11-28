@@ -120,7 +120,7 @@ WriteFixedWidth(Molecule& m,
   }
 
   IWString tmp;
-  bits.daylight_ascii_representation_including_nset_info (tmp);
+  bits.daylight_ascii_representation_including_nset_info(tmp);
 
   output << tag << tmp << ">\n";
 

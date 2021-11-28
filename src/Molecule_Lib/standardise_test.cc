@@ -181,6 +181,14 @@ TEST_F(TestStandardisation, TestChargedPyrazole)
   }
 }
 
+TEST_F(TestStandardisation, TestChargedImidazole3ConnectedNplus) {
+  _smiles = "[O-][n]1cco[n+]1=C";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
 TEST_F(TestStandardisation, TestHRemoval) {
   _smiles = "CC";
   ASSERT_TRUE(_m1.build_from_smiles(_smiles));

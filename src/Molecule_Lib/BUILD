@@ -268,6 +268,7 @@ cc_library(
         ":toggle_kekule_form_cc_proto",
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:binary_data_file",
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwmisc:iwconfig",
         "//Foundational/iwmisc:iwmisc",

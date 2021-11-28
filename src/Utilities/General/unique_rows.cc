@@ -741,7 +741,6 @@ write_count_data(const IW_STL_Hash_Map_int & times_seen,
   {
       const int c = (*i).second;
 
-      cerr << "LINE " << __LINE__ << endl;
       if (c >= show_counts)
         os << (*i).first << " seen " << c << " times\n";
 
