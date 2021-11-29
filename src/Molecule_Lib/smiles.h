@@ -66,6 +66,8 @@ extern void set_tdt_append_dataitem_content(int s);
 
 extern int smiles_error_message(const char *, int, int, const char *);
 
+// Note that this is independent of the global aromaticity type,
+// which opens the door for subtle bugs.
 extern int set_default_unique_smiles_aromaticity(int a);
 
 extern void set_unset_implicit_hydrogens_known_if_possible(int s);

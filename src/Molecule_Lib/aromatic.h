@@ -7,6 +7,7 @@
 
 /*
   Aromaticity can be either by Daylight rules, or Pearlman's
+  TODO: Convert these to an enum.
 */
 
 #define Simple_4n_plus_2 1
@@ -77,7 +78,7 @@ extern void set_max_aromatic_ring_size(int s);
 extern void set_perform_kekule_perception(int s);
 
 extern void reset_aromatic_file_scope_variables();
-extern void  reset_mdl_file_scope_variables();
+extern void reset_mdl_file_scope_variables();
 
 extern void set_strongly_fused_rings_can_be_aromatic(int);
 extern void set_aromatic_rings_must_contain_unsaturation(const int s);

@@ -2330,7 +2330,7 @@ Molecule::_unique_smiles(const Fragment_Information & frag_info,
 static int default_unique_smiles_aromaticity = Daylight;
 
 int
-set_default_unique_smiles_aromaticity (int a)
+set_default_unique_smiles_aromaticity(int a)
 {
   default_unique_smiles_aromaticity = a;
 
@@ -2497,7 +2497,7 @@ Molecule::UniqueKekuleSmiles() {
 
   Hold_and_Restore_Global_Settings hrgs(1, 0);  // aromatic atoms, kekule bonds.
   _smiles_information.set_smiles_is_smarts(0);
-  compute_aromaticity();
+  compute_aromaticity();  // Always recompute.
 
   return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, nullptr);
 }

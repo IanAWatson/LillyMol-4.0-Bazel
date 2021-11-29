@@ -427,6 +427,20 @@ cc_library(
 )
 
 cc_test(
+    name = "aromatic_test",
+    srcs = ["aromatic_test.cc"],
+    timeout = "short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_test(
     name = "atom_test",
     srcs = ["atom_test.cc"],
     timeout = "short",

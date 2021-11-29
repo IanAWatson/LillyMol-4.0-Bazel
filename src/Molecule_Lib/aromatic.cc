@@ -394,8 +394,9 @@ set_global_aromaticity_type(int na)
     global_aromaticity_determination_type = PUBCHEM_AROMATICITY;
   else if (EVERYTHING_HAS_A_PI_ELECTRON == na)
     global_aromaticity_determination_type = EVERYTHING_HAS_A_PI_ELECTRON;
-  else
-  {
+  else if (na == ANY_EVEN_NUMBER_OF_PI_ELECTRONS) {
+    global_aromaticity_determination_type = ANY_EVEN_NUMBER_OF_PI_ELECTRONS;
+  } else {
     cerr << "set_global_aromaticity_type: unknown aromaticity type " << na << endl;
     return 0;
   }
@@ -512,7 +513,7 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
   impossible_aromatic = 0;
 
 #ifdef DEBUG_AROMATICITY_DETERMINATION
-  cerr << "Begin aromaticity determination for " << p << endl;
+  cerr << "Begin aromaticity determination for " << p << " arom " << aromaticity_determination_type << '\n';
 #endif
 
   int unsaturation = 0;
@@ -908,6 +909,8 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
   } else if (pe > 2 && 2 == pe % 4) {
     result = AROMATIC;
   } else if (pe == 2 && allow_two_electron_systems_to_be_aromatic()) {
+    result = AROMATIC;
+  } else if (aromaticity_determination_type == ANY_EVEN_NUMBER_OF_PI_ELECTRONS && (pe / 2) * 2 == pe) {
     result = AROMATIC;
   } else {
     result = NOT_AROMATIC;
