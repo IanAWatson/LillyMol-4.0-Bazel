@@ -958,18 +958,32 @@ class Molecule : private resizable_array_p<Atom>
 //  If you want a subset, you need to pass a Smiles_Information object to hold the subset into. It
 //  is never stored in the molecule itself
 
-    const IWString & smiles(Smiles_Information &, const int *);
-    const IWString & unique_smiles();
-    const IWString & unique_smiles(Smiles_Information &, const int *);
-    const IWString & non_aromatic_unique_smiles();   // use only in special circumstances
-    const IWString & random_smiles();
-    const IWString & smiles_starting_with_atom(atom_number_t);
-    const IWString & smiles_starting_with_atom(atom_number_t, Smiles_Information &, const int *);
-    const IWString & smiles_using_order(const int * zorder);
+    const IWString& smiles(Smiles_Information &, const int *);
+    const IWString& unique_smiles();
+    const IWString& unique_smiles(Smiles_Information &, const int *);
 
-    const Smiles_Information & smiles_information() const { return _smiles_information;}
+    // Two variants of unique smiles that preserve Kekule forms.
+    // non_aromatic_unique_smiles generates a unique smiles, including aromaticity,
+    // and writes the resulting smiles in Kekule form. For that reason, it is not
+    // a unique smiles.
+    // UniqueKekuleSmiles will generate a canonical Kekule form. It works
+    // by generating a normal unique smiles. Then it rebuilds the molecule
+    // from that unique smiles, which then ensures that ring perception and
+    // aromaticity determinations follow a fixed path.
+    // Clearly this is quite expensive.
+    const IWString& non_aromatic_unique_smiles();   // use only in special circumstances
+    // Note that if smiles interpretation fails the molecule will have been destroyed.
+    // Make a copy if that is important - hopefully rare enough to not be a problem.
+    const IWString& UniqueKekuleSmiles();
 
-    IWString         isotopically_labelled_smiles();
+    const IWString& random_smiles();
+    const IWString& smiles_starting_with_atom(atom_number_t);
+    const IWString& smiles_starting_with_atom(atom_number_t, Smiles_Information &, const int *);
+    const IWString& smiles_using_order(const int * zorder);
+
+    const Smiles_Information& smiles_information() const { return _smiles_information;}
+
+    IWString isotopically_labelled_smiles();
 
     int  change_to_graph_form();
     int  change_to_graph_form(const Mol2Graph &);

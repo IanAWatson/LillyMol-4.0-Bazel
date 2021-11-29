@@ -56,14 +56,6 @@ extern void set_convert_chain_aromatic_bonds(int);
 
 extern void set_aromatic_chain_bonds_are_ok(int s);
 
-/*
-  When outputting forms other than SMILES, are aromatic bonds written as
-  aromatic, or as kekule forms
-*/
-
-extern void set_write_aromatic_bonds(int);
-extern int write_aromatic_bonds();
-
 extern void set_warn_aromatic_chain_atoms(int);
 
 extern void set_kekule_try_positive_nitrogen(int s);

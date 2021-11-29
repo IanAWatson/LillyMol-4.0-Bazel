@@ -610,6 +610,10 @@ Bond::append_bond_type (IWString & smiles,
   return;
 }
 
+// The bond is being used to form a smiles. If this bond results in there
+// being a character added to `smiles` add it, otherwise add a space.
+// For example if single bonds are not being written, or of the bond
+// is aromatic and aromatic bonds are not written, then add a space.
 void
 Bond::append_bond_type_space_for_nothing(IWString & smiles,
                         atom_number_t ato,

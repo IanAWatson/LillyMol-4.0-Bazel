@@ -26,8 +26,7 @@
 static int reuse_ring_closure_numbers = 1;
 
 void
-set_smiles_reuse_ring_closure_numbers(int i)
-{
+set_smiles_reuse_ring_closure_numbers(int i) {
   assert (i >= 0);
 
   reuse_ring_closure_numbers = i;
@@ -43,22 +42,30 @@ smiles_reuse_ring_closure_numbers()
 
 
 static int include_aromaticity_in_smiles = 0;
+static int _write_bonds_as_aromatic = 0;
 
 void
-set_include_aromaticity_in_smiles(int i)
-{
-  if (i == include_aromaticity_in_smiles)
-    return;
-
-  include_aromaticity_in_smiles = i;
+set_include_aromaticity_in_smiles(int s) {
+  include_aromaticity_in_smiles = s;
+  _write_bonds_as_aromatic = s;
 
   return;
 }
 
+void
+set_include_aromaticity_in_smiles(int atom_arom, int bond_arom) {
+  include_aromaticity_in_smiles = atom_arom;
+  _write_bonds_as_aromatic = bond_arom;
+}
+
 int
-get_include_aromaticity_in_smiles()
-{
+get_include_aromaticity_in_smiles() {
   return include_aromaticity_in_smiles;
+}
+
+int
+include_bond_aromaticity_in_smiles() {
+  return _write_bonds_as_aromatic;
 }
 
 static int _include_cis_trans_in_smiles = 1;
@@ -1037,6 +1044,7 @@ reset_smiles_support_file_scope_variables()
 {
   reuse_ring_closure_numbers = 1;
   include_aromaticity_in_smiles = 0;
+  _write_bonds_as_aromatic = 0;
   _include_cis_trans_in_smiles = 1;
   _include_chiral_info_in_smiles = 1;
   _ignore_chiral_info_on_input = 0;

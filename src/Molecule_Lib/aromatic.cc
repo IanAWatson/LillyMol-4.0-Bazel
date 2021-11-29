@@ -2274,7 +2274,6 @@ display_all_aromaticity_options(std::ostream & os)
   os << "  -A ipp         when reading smiles, allow aromatic forms from Pipeline Pilot\n";
   os << "  -A sfrna       strongly fused can never be aromatic\n";
   os << "  -A arallsat    a ring can be aromatic even if it contains all fully saturated atoms\n";
-  //os << "  -A RDY         relax all rules to read Daylight \"aromatic\" smiles\n";
 
   return os.good();
 }
@@ -2293,19 +2292,6 @@ input_aromatic_structures()
   return _input_aromatic_structures;
 }
 
-static int _write_aromatic_bonds = 0;
-
-void
-set_write_aromatic_bonds(int i)
-{
-  _write_aromatic_bonds = i;
-}
-
-int
-write_aromatic_bonds()
-{
-  return _write_aromatic_bonds;
-}
 
 static int _allow_input_without_valid_kekule_form = 0;
 
@@ -2457,7 +2443,6 @@ process_standard_aromaticity_options(Command_Line & cl, int verbose, char aflag)
     else if ('O' == c)
     {
       set_include_aromaticity_in_smiles(1);
-      set_write_aromatic_bonds(1);
       if (verbose)
         cerr << "Aromaticity included in all structure files written\n";
     }
@@ -2729,7 +2714,7 @@ Kekule_Temporary_Arrays::Kekule_Temporary_Arrays(int matoms, int nr, int * a, co
   if (_nr > 6)
     _smallest_ring_size = new int[matoms];
   else
-    _smallest_ring_size = NULL;
+    _smallest_ring_size = nullptr;
 
   _additional_fused_pi_electrons = 0;
 
@@ -2753,7 +2738,7 @@ Kekule_Temporary_Arrays::~Kekule_Temporary_Arrays()
 
   delete[] _pi_electrons;
 
-  if (NULL != _smallest_ring_size)
+  if (nullptr != _smallest_ring_size)
     delete[] _smallest_ring_size;
 
   return;
@@ -2762,7 +2747,7 @@ Kekule_Temporary_Arrays::~Kekule_Temporary_Arrays()
 int
 Kekule_Temporary_Arrays::establish_smallest_ring_size(Molecule & m)
 {
-  if (NULL == _smallest_ring_size)
+  if (nullptr == _smallest_ring_size)
     return 0;
 
   assert(_nr == m.nrings());
@@ -4893,9 +4878,8 @@ int
 Molecule::_kekule_cannot_be_aromatic(int * process_these_atoms, int & aromatic_atoms_found,
                                      int & a_atoms_found)
 {
-  int * rm = new int[_number_elements];
-  std::unique_ptr<int[]> free_rm(
-      rm);    // To avoid recomputing ring membership, keep a copy of the initial ring membmership
+  // To avoid recomputing ring membership, keep a copy of the initial ring membmership
+  int * rm = new int[_number_elements]; std::unique_ptr<int[]> free_rm(rm);
 
   ring_membership(rm);    // force SSSR
 
@@ -6909,7 +6893,6 @@ reset_aromatic_file_scope_variables()
   kekule_try_positive_nitrogen = 0;
   kekule_try_positive_oxygen = 0;
   _input_aromatic_structures = 1;
-  _write_aromatic_bonds = 0;
   _allow_input_without_valid_kekule_form = 0;
   _allow_delocalised_carbonyl_bonds = 0;
   _discard_non_aromatic_kekule_input = 0;

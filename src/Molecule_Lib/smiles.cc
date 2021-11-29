@@ -58,7 +58,7 @@ Atom_Chooser_Default::next_starting_atom(const Molecule & m, const int * zorder,
     if (zorder[i] >= 0)   // already in smiles
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[i])
+    if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
     const Chiral_Centre * c = m.chiral_centre_at_atom(i);
@@ -135,7 +135,7 @@ Atom_Chooser_Default::next_atom (const Molecule & m, const int * zorder, const a
     if (zorder[j] >= 0)    // atom already classified
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[j])
+    if (include_atom != nullptr && 0 == include_atom[j])
       continue;
 
     if (1 == m.ncon(j))
@@ -191,7 +191,7 @@ Atom_Chooser_Lowest_Rank::next_starting_atom (const Molecule & m,
     if (zorder[i] >= 0)   // already in smiles
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[i])
+    if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
     const Chiral_Centre * c = m.chiral_centre_at_atom(i);
@@ -238,7 +238,7 @@ Atom_Chooser_Lowest_Rank::next_atom(const Molecule & m, const int * zorder, cons
     if (zorder[j] >= 0)
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[j])
+    if (include_atom != nullptr && 0 == include_atom[j])
       continue;
 
     if (INVALID_ATOM_NUMBER == atom_with_lowest_score || _rank[j] < lowest_score)
@@ -306,7 +306,7 @@ Atom_Chooser_Random::next_starting_atom (const Molecule & m,
     if (zorder[ndx] >= 0)
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[ndx])
+    if (include_atom != nullptr && 0 == include_atom[ndx])
       continue;
 
     const Chiral_Centre * c= m.chiral_centre_at_atom(ndx);
@@ -351,7 +351,7 @@ Atom_Chooser_Random::next_atom(const Molecule & m, const int * zorder, const ato
     if (zorder[j] >= 0)
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[j])
+    if (include_atom != nullptr && 0 == include_atom[j])
       continue;
 
     if (! IS_SINGLE_BOND(bt))
@@ -450,13 +450,13 @@ Atom_Chooser_Unique::next_starting_atom(const Molecule & m, const int * zorder, 
 }
 
 //#define DEBUG_UNIQUE_SMILES_ORDERING
-//#define DEBUG_UNIQUE_SMILES_ORDERING
-//#define DEBUG_UNIQUE_SMILES_ORDERING
 
 
 
 int
-Atom_Chooser_Unique::next_atom (const Molecule & m, const int * zorder, const atom_number_t current_atom, atom_number_t & b, const int * include_atom) const
+Atom_Chooser_Unique::next_atom(const Molecule & m, const int * zorder,
+                               const atom_number_t current_atom, atom_number_t & b,
+                               const int * include_atom) const
 {
 // Variables for bond order decisions
 
@@ -476,19 +476,24 @@ Atom_Chooser_Unique::next_atom (const Molecule & m, const int * zorder, const at
     if (zorder[j] >= 0)
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[j])
+    if (include_atom != nullptr && 0 == include_atom[j])
       continue;
 
     int bcount;
 
 //  Note that the counting here is different from in the function number_of_bonds().
 //  In that function, single and double bonds are counted first, here we want to catch
-//  aromatic bonds first as contributing one to the bond count
+//  aromatic bonds first as contributing one to the bond count,
+//  modulo include_bond_aromaticity_in_smiles
 
-    if (b->is_aromatic())
-      bcount = 1;
-    else
+    if (b->is_aromatic()) {
+      if (! include_bond_aromaticity_in_smiles())
+        bcount = b->number_of_bonds();
+      else
+        bcount = 1;
+    } else {
       bcount = b->number_of_bonds();
+    }
 
 #ifdef DEBUG_UNIQUE_SMILES_ORDERING
     cerr << "Choosing next unique atom, " << j << " (bcount = " << bcount << ", rj = " << canonical_rank(j) << ")\n";
@@ -558,7 +563,7 @@ Atom_Chooser_Specific_Atom::_first_unselected (const int matoms,
     if (zorder[i] >= 0)
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[i])
+    if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
     a = i;
@@ -586,7 +591,7 @@ Atom_Chooser_Specific_Atom::next_starting_atom(const Molecule & m, const int * z
     if (zorder[j] >= 0)     // at this stage we could remove j from the array if we wanted to
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[j])
+    if (include_atom != nullptr && 0 == include_atom[j])
     {
       cerr << "Atom_Chooser_Specific_Atom:warning, selected start atom not included " << m.name() << endl;
       continue;
@@ -702,7 +707,7 @@ operator << (ostream & os, const Smiles_First_Atom & smfa)
 static int _write_aromatic_bonds_as_colons = 0;
 
 void
-set_write_smiles_aromatic_bonds_as_colons (int s)
+set_write_smiles_aromatic_bonds_as_colons(int s)
 {
   _write_aromatic_bonds_as_colons = s;
 }
@@ -718,18 +723,18 @@ Smiles_Information::_default_values()
 {
   _smiles_order_type = INVALID_SMILES_ORDER_TYPE;
 
-  _smiles_order = NULL;
+  _smiles_order = nullptr;
 
   _smiles_is_smarts = 0;
 
-  _create_smarts_embedding = NULL;
+  _create_smarts_embedding = nullptr;
 
-  _user_specified_atomic_smarts = NULL;
+  _user_specified_atomic_smarts = nullptr;
 
   return;
 }
 
-Smiles_Information::Smiles_Information (int natoms) : _natoms(natoms)
+Smiles_Information::Smiles_Information(int natoms) : _natoms(natoms)
 {
   _default_values();
 
@@ -745,22 +750,22 @@ Smiles_Information::Smiles_Information() : _natoms(-1)
 
 Smiles_Information::~Smiles_Information()
 {
-  if (NULL != _smiles_order)
+  if (nullptr != _smiles_order)
     delete [] _smiles_order;
 
-  if (NULL != _create_smarts_embedding)
+  if (nullptr != _create_smarts_embedding)
     delete [] _create_smarts_embedding;
 
-  if (NULL != _user_specified_atomic_smarts)
+  if (nullptr != _user_specified_atomic_smarts)
     delete [] _user_specified_atomic_smarts;
 
   return;
 }
 
 int
-Smiles_Information::debug_print (std::ostream & os) const
+Smiles_Information::debug_print(std::ostream & os) const
 {
-  if (NULL != _smiles_order)
+  if (nullptr != _smiles_order)
   {
     if (UNIQUE_SMILES_ORDER_TYPE == _smiles_order_type)
       os << "Unique smiles order computed\n";
@@ -795,21 +800,21 @@ Smiles_Information::make_empty()
 {
   _smiles = EMPTY_MOLECULE_SMILES;
 
-  if (NULL != _smiles_order)
+  if (_smiles_order != nullptr)
   {
     delete [] _smiles_order;
-    _smiles_order = NULL;
+    _smiles_order = nullptr;
   }
 
   return;
 }
 
 int
-Smiles_Information::prepare_to_build_ordering (int matoms)
+Smiles_Information::prepare_to_build_ordering(int matoms)
 {
   _smiles_order_type = INVALID_SMILES_ORDER_TYPE;
 
-  if (NULL == _smiles_order)
+  if (_smiles_order == nullptr)
     _smiles_order = new_int(matoms, -1);
   else
     set_vector(_smiles_order, matoms, -1);
@@ -826,7 +831,7 @@ Smiles_Information::prepare_to_build_ordering (int matoms)
 
 
 int
-Smiles_Information::prepare_to_build_smiles (int matoms)
+Smiles_Information::prepare_to_build_smiles(int matoms)
 {
   _smiles.resize_keep_storage(0);
 
@@ -852,30 +857,30 @@ Smiles_Information::invalidate()
 
   _smiles.resize_keep_storage(0);
 
-  if (NULL != _smiles_order)
+  if (_smiles_order != nullptr)
   {
     delete [] _smiles_order;
-    _smiles_order = NULL;
+    _smiles_order = nullptr;
   }
 
   return;
 }
 
 int
-Smiles_Information::create_smarts_embedding (atom_number_t zatom) const
+Smiles_Information::create_smarts_embedding(atom_number_t zatom) const
 {
-  if (NULL == _create_smarts_embedding)  // should be a fatal error
+  if (nullptr == _create_smarts_embedding)  // should be a fatal error
     return 0;
 
   return _create_smarts_embedding[zatom];
 }
 
 int
-Smiles_Information::set_create_smarts_embedding (int s)
+Smiles_Information::set_create_smarts_embedding(int s)
 {
   assert(_natoms > 0);
 
-  if (NULL == _create_smarts_embedding)
+  if (nullptr == _create_smarts_embedding)
     _create_smarts_embedding = new_int(_natoms, s);
   else
     set_vector(_create_smarts_embedding, _natoms, s);
@@ -884,12 +889,12 @@ Smiles_Information::set_create_smarts_embedding (int s)
 }
 
 int
-Smiles_Information::set_create_smarts_embedding (atom_number_t zatom,
-                                                 int s)
+Smiles_Information::set_create_smarts_embedding(atom_number_t zatom,
+                                                int s)
 {
   assert(_natoms > 0 && zatom >= 0 && zatom < _natoms);
 
-  if (NULL == _create_smarts_embedding)
+  if (nullptr == _create_smarts_embedding)
     _create_smarts_embedding = new_int(_natoms);
 
   _create_smarts_embedding[zatom] = s;
@@ -901,10 +906,10 @@ Smiles_Information::set_create_smarts_embedding (atom_number_t zatom,
 */
 
 int
-Molecule::_smiles_choose_first_atom (const int * zorder,
-                                     Smiles_First_Atom & smfa,
-                                     atom_number_t & first_atom,
-                                     const int * include_atom)
+Molecule::_smiles_choose_first_atom(const int * zorder,
+                                    Smiles_First_Atom & smfa,
+                                    atom_number_t & first_atom,
+                                    const int * include_atom)
 {
 #ifdef DEBUG_SMILES_CHOOSE_FIRST_ATOM
   cerr << "INto _smiles_choose_first_atom " << smfa << endl;
@@ -919,7 +924,7 @@ Molecule::_smiles_choose_first_atom (const int * zorder,
 
   if (smfa.unique())
   {
-    if (NULL == include_atom)
+    if (include_atom == nullptr)
       return _smiles_choose_unique_first_atom(zorder, first_atom);
     else
       return _smiles_choose_unique_first_atom(zorder, first_atom, include_atom);
@@ -940,9 +945,9 @@ Molecule::_smiles_choose_first_atom (const int * zorder,
 */
 
 int
-Molecule::_smiles_choose_first_atom (const int * zorder,
-                                     atom_number_t & first_atom,
-                                     const int * include_atom)
+Molecule::_smiles_choose_first_atom(const int * zorder,
+                                    atom_number_t & first_atom,
+                                    const int * include_atom)
 {
   int include_chiral_info = include_chiral_info_in_smiles();
 
@@ -953,7 +958,7 @@ Molecule::_smiles_choose_first_atom (const int * zorder,
     if (zorder[i] >= 0)    // already done
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[i])
+    if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
 //  A smiles cannot START at a chiral atom
@@ -1013,7 +1018,7 @@ set_smiles_random_number_seed_random()
 */
 
 /*int
-Molecule::_smiles_choose_random_first_atom (const int * zorder,
+Molecule::_smiles_choose_random_first_atom(const int * zorder,
                     atom_number_t & first_atom,
                     const int * include_atom)
 {
@@ -1028,7 +1033,7 @@ Molecule::_smiles_choose_random_first_atom (const int * zorder,
     if (zorder[i] >= 0)    // already done
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[i])
+    if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
 //  A smiles cannot START at a chiral atom
@@ -1082,8 +1087,8 @@ Molecule::_smiles_choose_random_first_atom (const int * zorder,
 */
 
 int
-Molecule::_smiles_choose_unique_first_atom (const int * zorder,
-                                            atom_number_t & first_atom)
+Molecule::_smiles_choose_unique_first_atom(const int * zorder,
+                                           atom_number_t & first_atom)
 {
   const int * canonical_rank = _symmetry_class_and_canonical_rank.canonical_rank();
 
@@ -1150,15 +1155,14 @@ Molecule::_smiles_choose_unique_first_atom (const int * zorder,
 */
 
 int
-Molecule::_smiles_choose_unique_first_atom (const int * zorder,
-                                            atom_number_t & first_atom,
-                                            const int * include_atom)
+Molecule::_smiles_choose_unique_first_atom(const int * zorder,
+                                           atom_number_t & first_atom,
+                                           const int * include_atom)
 {
   const int * canonical_rank = _symmetry_class_and_canonical_rank.canonical_rank();
 
   assert(NULL != canonical_rank);
-
-  assert(NULL != include_atom);
+  assert(include_atom != nullptr);
 
   int include_chiral_info = include_chiral_info_in_smiles();
 
@@ -1213,7 +1217,7 @@ Molecule::_smiles_choose_unique_first_atom (const int * zorder,
 */
 
 int
-Molecule::_smiles_choose_next_atom (const int * zorder,
+Molecule::_smiles_choose_next_atom(const int * zorder,
                          atom_number_t current_atom,
                          atom_number_t & next_atom,
                          const int * include_atom)
@@ -1232,7 +1236,7 @@ Molecule::_smiles_choose_next_atom (const int * zorder,
     if (zorder[j] >= 0)    // atom already classified
       continue;
 
-    if (NULL != include_atom && 0 == include_atom[j])
+    if (include_atom != nullptr && 0 == include_atom[j])
       continue;
 
     if (1 == _things[j]->ncon())
@@ -1279,12 +1283,12 @@ Molecule::_smiles_choose_next_atom (const int * zorder,
 
 template <typename N>
 int
-Molecule::_build_smiles_ordering_fctr (N identify_next_atom,
-                                       const atom_number_t previous_atom,
-                                       const atom_number_t zatom,
-                                       int & icounter,
-                                       const int * include_atom,
-                                       Smiles_Information & smi_info)
+Molecule::_build_smiles_ordering_fctr(N identify_next_atom,
+                                      const atom_number_t previous_atom,
+                                      const atom_number_t zatom,
+                                      int & icounter,
+                                      const int * include_atom,
+                                      Smiles_Information & smi_info)
 {
   int * zorder = smi_info.smiles_order();
 
@@ -1325,7 +1329,7 @@ Molecule::_build_smiles_ordering_fctr (N identify_next_atom,
 
     if (zorder[j] >= 0)     // we have found a ring closure
       smi_info.add_ring_closure_bond(zatom, j);
-    else if (NULL != include_atom && 0 == include_atom[j])
+    else if (include_atom != nullptr && 0 == include_atom[j])
       ;
     else 
       unprocessed_connections.add(j);
@@ -1350,12 +1354,12 @@ Molecule::_build_smiles_ordering_fctr (N identify_next_atom,
 
 template <typename N>
 int
-Molecule::_build_smiles_ordering_fctr (N identify_next_atom,
-                                       atom_number_t previous_atom,
-                                       atom_number_t zatom,
-                                       int & icounter,
-                                       const int * include_atom,
-                                       Smiles_Information & smi_info)
+Molecule::_build_smiles_ordering_fctr(N identify_next_atom,
+                                      atom_number_t previous_atom,
+                                      atom_number_t zatom,
+                                      int & icounter,
+                                      const int * include_atom,
+                                      Smiles_Information & smi_info)
 {
   int * zorder = smi_info.smiles_order();
 
@@ -1396,7 +1400,7 @@ Molecule::_build_smiles_ordering_fctr (N identify_next_atom,
 
       if (zorder[j] >= 0)     // we have found a ring closure
         smi_info.add_ring_closure_bond(zatom, j);
-      else if (NULL != include_atom && 0 == include_atom[j])
+      else if (include_atom != nullptr && 0 == include_atom[j])
         ;
       else if (INVALID_ATOM_NUMBER == next_unprocessed_connection)
         next_unprocessed_connection = j;
@@ -1433,9 +1437,9 @@ Molecule::_build_smiles_ordering_fctr (N identify_next_atom,
 
 template <typename N>
 int
-Molecule::_build_smiles_ordering_fctr (N next_atom_selector,
-                                       const int * include_atom,
-                                       Smiles_Information & smi_info)
+Molecule::_build_smiles_ordering_fctr(N next_atom_selector,
+                                      const int * include_atom,
+                                      Smiles_Information & smi_info)
 {
   if (! _fragment_information.contains_valid_data())
     (void) number_fragments();
@@ -1470,7 +1474,7 @@ Molecule::_build_smiles_ordering_fctr (N next_atom_selector,
     return 0;
   }
 
-  assert(NULL == include_atom ? frag == _fragment_information.number_fragments() : frag > 0);
+  assert(include_atom == nullptr ? frag == _fragment_information.number_fragments() : frag > 0);
 
 #ifdef DEBUG_BUILD_SMILES_ORDERING
   cerr << "Smiles order array constructed, " << frag << " fragments\n";
@@ -1502,9 +1506,9 @@ Molecule::_build_smiles_ordering_fctr (N next_atom_selector,
 
 #ifdef SEEMS_NOT_BEING_USED
 int
-Molecule::_ring_bond_in_subset (const int * include_atom,
-                                atom_number_t a1,
-                                atom_number_t a2)
+Molecule::_ring_bond_in_subset(const int * include_atom,
+                               atom_number_t a1,
+                               atom_number_t a2)
 {
   int nr = nrings();
 
@@ -1635,10 +1639,10 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
   const int * include_atom = sfi.include_atom();
 
 #ifdef DOES_NOT_HELP
-  if (0 == _things[zatom]->ncon() && NULL != include_atom && include_atom[zatom])     // a counterion
+  if (0 == _things[zatom]->ncon() && include_atom != nullptr && include_atom[zatom])     // a counterion
   {
     _process_atom_for_smiles(sfi, smiles);
-    if (NULL != include_atom)
+    if (include_atom != nullptr)
       include_atom[zatom] = 1;
     return 1;
   }
@@ -1653,6 +1657,19 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
   open_paren.add(' ');
   clse_paren.add(' ');
   bond_char.add(' ');
+
+  // How cis trans bonds and aromaticity are handled.
+
+  const int inc_ctb = include_cis_trans_in_smiles();    // do the call once for efficiency
+
+  unsigned int inc_arom;    // aromatic bonds or not
+  if (! sfi.write_smiles())
+    inc_arom = 1;
+  else
+    inc_arom = include_bond_aromaticity_in_smiles();
+
+  if (write_single_bonds_in_smiles())
+    inc_arom |= 2;
 
   const int * zorder = smi_info.smiles_order();
 
@@ -1724,7 +1741,7 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
     ring_closures_found.resize_keep_storage(0);
     process_these_bonds.resize_keep_storage(0);
 
-    if (NULL == include_atom)
+    if (include_atom == nullptr)
     {
       for (int i = 0; i < acon; i++)
       {
@@ -1792,9 +1809,6 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
 
     rnm.append_ring_closing_and_opening_digits(smiles, zatom, ring_closures_found, ring_opening_bonds, c);
 
-//  if ('(' == cparen)
-//    smiles += ')';
-
 #ifdef DEBUG_SMILES_FORMATION
     cerr << "After atom " << zatom << " smiles is now '" << smiles << "'\n";
     if (ring_closures_found.number_elements())
@@ -1805,37 +1819,22 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
 //  If there are no connections, there should not be any ring openings
 
     acon = process_these_bonds.number_elements();
-    if (0 == acon)
-    {
+    if (0 == acon) {
       if (ring_opening_bonds.number_elements())
         cerr << "No connections, but " << ring_opening_bonds.number_elements() << " ring openings\n";
-      assert( (NULL == include_atom) ? (ring_opening_bonds.empty()) : 1);
+      assert( (include_atom == nullptr) ? (ring_opening_bonds.empty()) : 1);
       if (clse_paren.number_elements() && ' ' != clse_paren.pop())
         smiles += ')';
       continue;
     }
 
-    const int inc_ctb = include_cis_trans_in_smiles();    // do the call once for efficiency
-
-    unsigned int inc_arom;    // aromatic bonds or not
-    if (! sfi.write_smiles())
-      inc_arom = 1;
-    else
-      inc_arom = get_include_aromaticity_in_smiles();
-
-    if (write_single_bonds_in_smiles())
-      inc_arom |= 2;
-
-    for (int i = acon - 1; i >= 0; --i)
-    {
+    for (int i = acon - 1; i >= 0; --i) {
       const Bond * b = process_these_bonds[i];
 
       const atom_number_t j = b->other(zatom);
 
       if (inc_ctb && b->is_directional())
         _process_directional_bond_for_smiles(bond_char, b, j);
-      else if (_write_aromatic_bonds_as_colons && b->is_aromatic())
-        bond_char += ':';
       else
         b->append_bond_type_space_for_nothing(bond_char, j, inc_arom);
 
@@ -1849,8 +1848,7 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
     }
   }
 
-  while (clse_paren.number_elements())
-  {
+  while (clse_paren.number_elements()) {
     if (' ' != clse_paren.pop())
       smiles += ')';
   }
@@ -1864,14 +1862,14 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
 */
 
 const Bond *
-Molecule::_identify_first_smiles_bond (atom_number_t zatom,
-                                       const int * zorder)
+Molecule::_identify_first_smiles_bond(atom_number_t zatom,
+                                      const int * zorder)
 {
   const Atom * a = _things[zatom];
   int acon = a->ncon();
 
   int smallest_zorder = -1;
-  const Bond * rc = NULL;
+  const Bond * rc = nullptr;
 
   for (int i = 0; i < acon; i++)
   {
@@ -1908,7 +1906,7 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
   for (int i = 0; i < _number_elements; i++)
   {
     cerr << "Atom " << i << " (" << atomic_symbol(i) << ") order is " << zorder[i];
-    if (NULL != include_atom)
+    if (include_atom != nullptr)
       cerr << " include_atom " << include_atom[i];
     cerr << endl;
   }
@@ -1929,7 +1927,7 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
   for (int i = 0; i < _number_elements; i++)
   {
     cerr << " atom " << i << " '" << smarts_equivalent_for_atom(i) << " in fragment " << frag_info.fragment_membership(i);
-    if (NULL != include_atom)
+    if (include_atom != nullptr)
       cerr << " include " << include_atom[i];
     cerr << endl;
   }
@@ -1943,7 +1941,7 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
 
     int f = frag_info.fragment_membership(astart);
 
-    if (NULL == include_atom)    // no need to check anything
+    if (include_atom == nullptr)    // no need to check anything
       ;
     else if (include_atom[astart])    // great, that atom is being processed
       ;
@@ -2023,7 +2021,7 @@ Molecule::smiles()
   if (! _smiles_information.contains_valid_ordering())
   {
     Atom_Chooser_Default acd;
-    if (! _build_smiles_ordering_fctr(acd, NULL, _smiles_information))
+    if (! _build_smiles_ordering_fctr(acd, nullptr, _smiles_information))
     {
       cerr << "Molecule::smiles: cannot construct ordering\n";
       _smiles_information.set_error();
@@ -2035,15 +2033,15 @@ Molecule::smiles()
 
   _smiles_information.smiles().resize(4 * _number_elements);
 
-  _construct_smiles(_fragment_information, _smiles_information, NULL);
+  _construct_smiles(_fragment_information, _smiles_information, nullptr);
 
   return _smiles_information.smiles();
 }
 
 
 const IWString &
-Molecule::smiles (Smiles_Information & smi_info,
-                  const int * include_atom)
+Molecule::smiles(Smiles_Information & smi_info,
+                 const int * include_atom)
 {
   if (0 == _number_elements)
   {
@@ -2088,11 +2086,11 @@ Molecule::random_smiles()
 
   Atom_Chooser_Random acr(set_smiles_random_number_seed_random());
 
-  (void) _build_smiles_ordering_fctr(acr, NULL, _smiles_information);
+  (void) _build_smiles_ordering_fctr(acr, nullptr, _smiles_information);
 
   _smiles_information.set_smiles_order_type(RANDOM_SMILES_ORDER_TYPE);
 
-  _construct_smiles(_fragment_information, _smiles_information, NULL);
+  _construct_smiles(_fragment_information, _smiles_information, nullptr);
 
   return _smiles_information.smiles();
 }
@@ -2105,15 +2103,15 @@ Molecule::random_smiles()
 */
 
 const IWString &
-Molecule::smiles_starting_with_atom (atom_number_t astart)
+Molecule::smiles_starting_with_atom(atom_number_t astart)
 {
-  return smiles_starting_with_atom(astart, _smiles_information, NULL);
+  return smiles_starting_with_atom(astart, _smiles_information, nullptr);
 }
 
 const IWString &
-Molecule::smiles_starting_with_atom (atom_number_t astart,
-                                     Smiles_Information & smi_info,
-                                     const int * include_atom)
+Molecule::smiles_starting_with_atom(atom_number_t astart,
+                                    Smiles_Information & smi_info,
+                                    const int * include_atom)
 {
   if (0 == _number_elements)
   {
@@ -2121,7 +2119,7 @@ Molecule::smiles_starting_with_atom (atom_number_t astart,
     return smi_info.smiles();
   }
 
-  assert(NULL == include_atom ? 1 : 0 != include_atom[astart]);
+  assert(include_atom == nullptr ? 1 : 0 != include_atom[astart]);
 
   smi_info.invalidate();
 
@@ -2153,7 +2151,7 @@ Molecule::smiles_starting_with_atom (atom_number_t astart,
 */
 
 int
-Molecule::smiles_atom_order (int * s)
+Molecule::smiles_atom_order(int * s)
 {
   (void) smiles();     // will force construction of the array(s)
 
@@ -2167,15 +2165,14 @@ Molecule::smiles_atom_order (int * s)
 //#define DEBUG_UNIQUE_SMILES
 
 const IWString &
-Molecule::_unique_smiles (const Fragment_Information & frag_info,
-                          Smiles_Information & smi_info,
-                          Symmetry_Class_and_Canonical_Rank & sccr,
-                          const int * include_atom)
+Molecule::_unique_smiles(const Fragment_Information & frag_info,
+                         Smiles_Information & smi_info,
+                         Symmetry_Class_and_Canonical_Rank & sccr,
+                         const int * include_atom)
 {
 //cerr << "Allocated? " << sccr.arrays_allocated() << endl;
 
-  if (0 == _number_elements)
-  {
+  if (0 == _number_elements) {
     smi_info.make_empty();
     return smi_info.smiles();
   }
@@ -2201,7 +2198,7 @@ Molecule::_unique_smiles (const Fragment_Information & frag_info,
   for (int i = 0; i < _number_elements; i++)
   {
     cerr << "Atom " << i << " type " << _things[i]->atomic_symbol();
-    if (NULL != include_atom)
+    if (include_atom != nullptr)
       cerr << " include " << include_atom[i];
     cerr << " rank " << c[i] << endl;
   }
@@ -2221,7 +2218,7 @@ Molecule::_unique_smiles (const Fragment_Information & frag_info,
   Atom_Chooser_Unique acn(canonical_ranks());
   (void) _build_smiles_ordering_fctr(acn, include_atom, smi_info);
 
-  if (NULL == include_atom)
+  if (include_atom == nullptr)
     smi_info.set_smiles_order_type(UNIQUE_SMILES_ORDER_TYPE);
   else
     smi_info.set_smiles_order_type(SUBSET_SMILES_ORDER_TYPE);
@@ -2243,10 +2240,10 @@ Molecule::_unique_smiles (const Fragment_Information & frag_info,
 
 #ifdef VERSION_USING_FUNCTION_POINTER
 const IWString &
-Molecule::_unique_smiles (const Fragment_Information & frag_info,
-                          Smiles_Information & smi_info,
-                          Symmetry_Class_and_Canonical_Rank & sccr,
-                          const int * include_atom)
+Molecule::_unique_smiles(const Fragment_Information & frag_info,
+                         Smiles_Information & smi_info,
+                         Symmetry_Class_and_Canonical_Rank & sccr,
+                         const int * include_atom)
 {
 //cerr << "Allocated? " << sccr.arrays_allocated() << endl;
 
@@ -2277,7 +2274,7 @@ Molecule::_unique_smiles (const Fragment_Information & frag_info,
   for (int i = 0; i < _number_elements; i++)
   {
     cerr << "Atom " << i << " type " << _things[i]->atomic_symbol();
-    if (NULL != include_atom)
+    if (include_atom != nullptr)
       cerr << " include " << include_atom[i];
     cerr << " rank " << c[i] << endl;
   }
@@ -2299,7 +2296,7 @@ Molecule::_unique_smiles (const Fragment_Information & frag_info,
                                  include_atom,
                                  smi_info);
 
-  if (NULL == include_atom)
+  if (include_atom != nullptr)
     smi_info.set_smiles_order_type(UNIQUE_SMILES_ORDER_TYPE);
   else
     smi_info.set_smiles_order_type(SUBSET_SMILES_ORDER_TYPE);
@@ -2352,16 +2349,18 @@ class Hold_and_Restore_Global_Settings
 
     int _incaromsave;  // save the include aromaticity in smiles definition
 
+    int _include_bond_aromaticity_save;
+
     int _inc_atom_map_save;
 
   public:
-    Hold_and_Restore_Global_Settings (int incarom);
+    Hold_and_Restore_Global_Settings (int aromatic_atom, int aromatic_bond);
     ~Hold_and_Restore_Global_Settings();
 
     int aromaticity_changed() const { return _aromsave != default_unique_smiles_aromaticity;}
 };
 
-Hold_and_Restore_Global_Settings::Hold_and_Restore_Global_Settings (int incarom)
+Hold_and_Restore_Global_Settings::Hold_and_Restore_Global_Settings(int aromatic_atom, int aromatic_bond)
 {
   _aromsave = global_aromaticity_type();
 
@@ -2369,7 +2368,9 @@ Hold_and_Restore_Global_Settings::Hold_and_Restore_Global_Settings (int incarom)
 
   _incaromsave = get_include_aromaticity_in_smiles();
 
-  set_include_aromaticity_in_smiles(incarom);
+  _include_bond_aromaticity_save = include_bond_aromaticity_in_smiles();
+
+  set_include_aromaticity_in_smiles(aromatic_atom, aromatic_bond);
 
   _inc_atom_map_save = include_atom_map_with_smiles();
 
@@ -2382,7 +2383,7 @@ Hold_and_Restore_Global_Settings::~Hold_and_Restore_Global_Settings()
 {
   set_global_aromaticity_type(_aromsave);
 
-  set_include_aromaticity_in_smiles(_incaromsave);
+  set_include_aromaticity_in_smiles(_incaromsave, _include_bond_aromaticity_save);
 
   set_include_atom_map_with_smiles(_inc_atom_map_save);
 
@@ -2395,7 +2396,7 @@ Molecule::unique_smiles()
   if (UNIQUE_SMILES_ORDER_TYPE == _smiles_information.smiles_order_type())
     return _smiles_information.smiles();
 
-  Hold_and_Restore_Global_Settings hrgs(1);
+  Hold_and_Restore_Global_Settings hrgs(1, 1);
 
   if (hrgs.aromaticity_changed())    // we may have Pearlman aromaticity, but need Daylight for unique smiles
     compute_aromaticity();
@@ -2404,14 +2405,14 @@ Molecule::unique_smiles()
 
   _smiles_information.set_smiles_is_smarts(0);
 
-  return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, NULL);
+  return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, nullptr);
 }
 
 const IWString &
-Molecule::unique_smiles (Smiles_Information & smi_info,
-                         const int * include_atom)
+Molecule::unique_smiles(Smiles_Information & smi_info,
+                        const int * include_atom)
 {
-  assert(NULL != include_atom);
+  assert(include_atom != nullptr);
 
   if (0 == _number_elements)
   {
@@ -2423,7 +2424,7 @@ Molecule::unique_smiles (Smiles_Information & smi_info,
 
 //_fragment_information.debug_print(cerr);
 
-  Hold_and_Restore_Global_Settings hrgs(1);
+  Hold_and_Restore_Global_Settings hrgs(1, 1);
 
   if (hrgs.aromaticity_changed())
     compute_aromaticity();
@@ -2474,12 +2475,31 @@ Molecule::non_aromatic_unique_smiles()
 
   _smiles_information.set_smiles_is_smarts(0);
 
-  Hold_and_Restore_Global_Settings hrgs(0);
+  Hold_and_Restore_Global_Settings hrgs(0, 0);   // kekule atoms, kekule bonds
 
   if (hrgs.aromaticity_changed())
     compute_aromaticity();
 
-  return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, NULL);
+  return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, nullptr);
+}
+
+const IWString&
+Molecule::UniqueKekuleSmiles() {
+  if (! contains_aromatic_atoms()) {
+    return unique_smiles();
+  }
+
+  IWString usmi = unique_smiles();  // Our own copy.
+  if (! build_from_smiles(usmi)) {
+    cerr << "Molecule::UniqueKekuleSmiles:cannot interpret " << usmi << '\n';
+    return _smiles_information.set_error();
+  }
+
+  Hold_and_Restore_Global_Settings hrgs(1, 0);  // aromatic atoms, kekule bonds.
+  _smiles_information.set_smiles_is_smarts(0);
+  compute_aromaticity();
+
+  return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, nullptr);
 }
 
 /*
@@ -2492,10 +2512,10 @@ Molecule::non_aromatic_unique_smiles()
 */
 
 int
-Molecule::_merge_fused_system_identifiers (resizable_array<Ring *> & rings,
-                                           int rstart,
-                                           int fused_system_identifier,
-                                           resizable_array<int> & fused_sys_ids_to_be_changed)
+Molecule::_merge_fused_system_identifiers(resizable_array<Ring *> & rings,
+                                          int rstart,
+                                          int fused_system_identifier,
+                                          resizable_array<int> & fused_sys_ids_to_be_changed)
 {
   int rc = 0;
   int nr = rings.number_elements();
@@ -2671,7 +2691,7 @@ Molecule::_find_raw_rings(const atom_number_t previous_atom,
 */
 
 int
-Molecule::_find_raw_rings_for_fragment (int id, int * already_done)
+Molecule::_find_raw_rings_for_fragment(int id, int * already_done)
 {
   if (0 == nrings())
     return 1;
@@ -2868,7 +2888,7 @@ Molecule::_assign_fsid_values_to_isolated_rings()
 
 #ifdef IS_THIS_BEING_CALLED_NO
 int
-Molecule::_update_ring_membership (const Ring * r)
+Molecule::_update_ring_membership(const Ring * r)
 {
   int ring_size = r->number_elements();
   atom_number_t prev_atom = r->last_item();
@@ -2904,7 +2924,7 @@ Molecule::_update_ring_membership (const Ring * r)
 #endif
 
 int
-Molecule::_find_raw_rings (int * already_done)
+Molecule::_find_raw_rings(int * already_done)
 {
   int nf = _fragment_information.number_fragments();
 
@@ -2971,7 +2991,7 @@ smiles_error_message (const char * smiles,
 }
 
 void
-Molecule::_add_ring_to_sssr (Ring * ri)
+Molecule::_add_ring_to_sssr(Ring * ri)
 {
   ri->set_ring_number(_sssr_rings.number_elements());
   _sssr_rings.add(ri);
@@ -3008,7 +3028,7 @@ Molecule::_add_ring_to_sssr (Ring * ri)
 */
 
 int
-Molecule::_handle_spiro_between_isolated_and_fused (const resizable_array<Ring *> & rings,
+Molecule::_handle_spiro_between_isolated_and_fused(const resizable_array<Ring *> & rings,
                                                     int fsid,
                                                     int * atmp)
 {
@@ -3038,7 +3058,7 @@ Molecule::_handle_spiro_between_isolated_and_fused (const resizable_array<Ring *
 
 #ifdef NOT_USED
 int
-Molecule::_all_atoms_are_chain_atoms (const int * process_these_atoms)
+Molecule::_all_atoms_are_chain_atoms(const int * process_these_atoms)
 {
   for (int i = 0; i < _number_elements; i++)
   {
@@ -3054,10 +3074,10 @@ Molecule::_all_atoms_are_chain_atoms (const int * process_these_atoms)
 #endif
 
 /*int
-Molecule::_determine_ring_closure_bonds (const int * zorder,
-                                         const int * include_atom)
+Molecule::_determine_ring_closure_bonds(const int * zorder,
+                                        const int * include_atom)
 {
-  assert(NULL != include_atom);
+  assert(include_atom != nullptr);
 
   int * already_done = new_int (_number_elements); std::unique_ptr<int[]> free_already_done (already_done);
 
@@ -3067,7 +3087,7 @@ Molecule::_determine_ring_closure_bonds (const int * zorder,
   {
     atom_number_t astart = _smiles_start_atom[i];
 
-    if (NULL == include_atom)
+    if (include_atom == nullptr)
       ;
     else if (include_atom[astart])
       ;
@@ -3090,13 +3110,13 @@ Molecule::_determine_ring_closure_bonds (const int * zorder,
 */
 
 /*int
-Molecule::_determine_ring_closure_bonds (atom_number_t aprev,
-                                         atom_number_t zatom,
-                                         const int * zorder,
-                                         const int * include_atom,
-                                         int * already_done)
+Molecule::_determine_ring_closure_bonds(atom_number_t aprev,
+                                        atom_number_t zatom,
+                                        const int * zorder,
+                                        const int * include_atom,
+                                        int * already_done)
 {
-  assert(NULL != include_atom);    // subset only
+  assert(include_atom != nullptr);    // subset only
 
   already_done[zatom] = 1;
 
@@ -3154,9 +3174,9 @@ Molecule::_determine_ring_closure_bonds (atom_number_t aprev,
 */
 
 atom_number_t
-Molecule::_choose_highest_canonical_order_in_fragment (int f,
-                                                       const int * zorder,
-                                                       const int * include_atom) const
+Molecule::_choose_highest_canonical_order_in_fragment(int f,
+                                                      const int * zorder,
+                                                      const int * include_atom) const
 {
   atom_number_t rc = INVALID_ATOM_NUMBER;
   int z;
@@ -3184,13 +3204,13 @@ Molecule::_choose_highest_canonical_order_in_fragment (int f,
 int
 Smiles_Information::allocate_user_specified_atomic_smarts()
 {
-  assert(NULL == _user_specified_atomic_smarts);
+  assert(nullptr == _user_specified_atomic_smarts);
 
   assert(_natoms > 0);
 
   _user_specified_atomic_smarts = new IWString[_natoms];
 
-  assert(NULL != _user_specified_atomic_smarts);
+  assert(nullptr != _user_specified_atomic_smarts);
 
   return 1;
 }
@@ -3211,7 +3231,7 @@ void
 Smiles_Information::set_user_specified_atomic_smarts(atom_number_t zatom,
                                                 const IWString & s)
 {
-  if (NULL != _user_specified_atomic_smarts)
+  if (nullptr != _user_specified_atomic_smarts)
     ;
   else if (_natoms <= 0)
   {
@@ -3232,7 +3252,7 @@ Molecule::isotopically_labelled_smiles()
   if (0 == _number_elements)
     return (".");
 
-  int * isave = NULL;
+  int * isave = nullptr;
 
   for (int i = 0; i < _number_elements; i++)
   {
@@ -3244,7 +3264,7 @@ Molecule::isotopically_labelled_smiles()
       continue;
     }
 
-    if (NULL == isave)
+    if (isave == nullptr)
       isave = new_int(_number_elements);
 
     isave[i] = iso;
@@ -3258,7 +3278,7 @@ Molecule::isotopically_labelled_smiles()
 
   Atom_Chooser_Default acd;
 
-  if (! _build_smiles_ordering_fctr(acd, NULL, sminfo))
+  if (! _build_smiles_ordering_fctr(acd, nullptr, sminfo))
   {
     cerr << "Molecule::isotopically_labelled_smiles: cannot construct ordering\n";
     _smiles_information.set_error();
@@ -3267,9 +3287,9 @@ Molecule::isotopically_labelled_smiles()
 
   sminfo.set_smiles_order_type(DEFAULT_SMILES_ORDER_TYPE);
 
-  _construct_smiles(_fragment_information, sminfo, NULL);
+  _construct_smiles(_fragment_information, sminfo, nullptr);
 
-  if (NULL != isave)
+  if (isave != nullptr)
   {
     for (int i = 0; i < _number_elements; i++)
     {
@@ -3290,7 +3310,7 @@ Molecule::isotopically_labelled_smiles()
 }
 
 const IWString &
-Molecule::smiles_using_order (const int * user_specified_rank)
+Molecule::smiles_using_order(const int * user_specified_rank)
 {
   if (0 == _number_elements)
   {
@@ -3308,14 +3328,14 @@ Molecule::smiles_using_order (const int * user_specified_rank)
 
   Atom_Chooser_Lowest_Rank aclr(user_specified_rank);
 
-  int rc = _build_smiles_ordering_fctr(aclr, NULL, _smiles_information);
+  int rc = _build_smiles_ordering_fctr(aclr, nullptr, _smiles_information);
 
   if (0 == rc)
     return _smiles_information.smiles();
 
   _smiles_information.set_smiles_order_type(USER_SPECIFIED_SMILES_ORDER);
 
-  _construct_smiles(_fragment_information, _smiles_information, NULL);
+  _construct_smiles(_fragment_information, _smiles_information, nullptr);
 
   return _smiles_information.smiles();
 }
