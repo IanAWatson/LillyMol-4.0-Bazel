@@ -1256,6 +1256,9 @@ class Molecule : private resizable_array_p<Atom>
 
     int  highest_coordinate_dimensionality() const;
 
+    // Multiply all coordinates by a constant.
+    int ScaleCoordinates(float scale);
+
     atomic_mass_t atomic_mass(atom_number_t) const;
 
     exact_mass_t exact_mass() const;

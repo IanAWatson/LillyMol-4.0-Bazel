@@ -66,9 +66,6 @@ static int print_bond_angles = 0;
 static int print_torsions = 0;
 static int print_max_atom_separation = 0;
 
-// Upon reading, all coordinates get multiplied by a factor.
-static float multiply_coordinates = 0.0f;
-
 // If we are printing the max atom separation for each molecule
 // may as well form summary stats across the entire input.
 Accumulator<double> acc_longest_sep;
@@ -430,7 +427,6 @@ reset_file_scope_variables() {
   print_bond_angles = 0;
   print_torsions = 0;
   print_max_atom_separation = 0;
-  multiply_coordinates = 0.0f;
   acc_longest_sep.reset();
   molecules_read = 0;
   molecules_written = 0;
@@ -818,7 +814,6 @@ display_dash_y_options(std::ostream & os,
   os << " -" << flag << " pbang         print all bond angles in the molecules\n";
   os << " -" << flag << " ptor          print all torsion angles in the molecules\n";
   os << " -" << flag << " pmaxd         print the max interatomic distance in each molecule\n";
-  os << " -" << flag << " mcoord=xxxx   multiply all coordinates by xxxx\n";
   os << " -" << flag << " dbg           debug print each molecule\n";
   os << " -" << flag << " namerx=<rx>   discard molecules unless the molecule name matches <rx>\n";
   os << " -" << flag << " ftn           keep only the first token in molecule names\n";
@@ -3576,21 +3571,6 @@ do_debug_print(Molecule & m,
 }
 
 static int
-do_multiply_coordinates(Molecule& m,
-                        float multiply) {
-  const int matoms = m.natoms();
-  for (int i = 0; i < matoms; ++i) {
-    const Atom& a = m.atom(i);
-    float x = a.x() * multiply;
-    float y = a.y() * multiply;
-    float z = a.z() * multiply;
-    m.setxyz(i, x, y, z);
-  }
-
-  return 1;
-}
-
-static int
 name_matches_name_rx(const IWString& mname)
 {
   if (!name_rx)  // not active, always matches.
@@ -3608,10 +3588,6 @@ fileconv(Molecule & m,
 
 // if (verbose > 1)
 //   cerr << "Molecule " << input.molecules_read() << " finishes at line " << input.lines_read() << endl;
-
-  if (multiply_coordinates > 0.0f) {
-    do_multiply_coordinates(m, multiply_coordinates);
-  }
 
   if (print_bond_lengths)
     (void) do_print_bond_lengths(m, cout);
@@ -5523,16 +5499,6 @@ fileconv(int argc, char ** argv)
         print_max_atom_separation = 1;
         if (verbose) {
           cerr << "Max atom separation printed\n";
-        }
-      }
-      else if (y.starts_with("mcoord=")) {
-        y.remove_leading_chars(7);
-        if (! y.numeric_value(multiply_coordinates) || multiply_coordinates == 0.0) {
-          cerr << "Invalid coordinate multiplication factor " << y << '\n';
-          return 1;
-        }
-        if (verbose) {
-          cerr << "Coordinates scaled by " << multiply_coordinates << '\n';
         }
       }
       else if ("dbg" == y)
