@@ -46,13 +46,13 @@ set_perceive_sssr_rings(int s)
 static int file_scope_accumulate_non_sssr_rings = 1;
 
 void
-set_accumulate_non_sssr_rings (int s)
+set_accumulate_non_sssr_rings(int s)
 {
   file_scope_accumulate_non_sssr_rings = 1;
 }
 
 int
-accumulate_non_sssr_rings ()
+accumulate_non_sssr_rings()
 {
   return file_scope_accumulate_non_sssr_rings;
 }
@@ -74,7 +74,7 @@ Beep::Beep()
   return;
 }
 
-Beep::Beep (int bonds_in_molecule) : IW_Bits_Base (bonds_in_molecule)
+Beep::Beep(int bonds_in_molecule) : IW_Bits_Base(bonds_in_molecule)
 {
   _default_values();
 
@@ -170,7 +170,7 @@ Path_Message::Path_Message(const Path_Message * p) :
 }
 
 int
-Path_Message::debug_print (std::ostream & os)
+Path_Message::debug_print(std::ostream & os)
 {
   assert(os.good());
 
@@ -203,7 +203,7 @@ Path_Message::include_in_path(const atom_number_t a, const int zbond,
 }
 
 int
-Path_Message::node_collision (const Path_Message * p) const
+Path_Message::node_collision(const Path_Message * p) const
 {
   if (_start_atom == p->_start_atom && _start_edge != p->_start_edge)
     ;
@@ -214,7 +214,7 @@ Path_Message::node_collision (const Path_Message * p) const
 }
 
 int
-Path_Message::inverse_edge_collision (const Path_Message * p) const
+Path_Message::inverse_edge_collision(const Path_Message * p) const
 {
   if (_start_atom != p->_start_atom && _start_edge == p->_start_edge)
     ;
@@ -226,7 +226,7 @@ Path_Message::inverse_edge_collision (const Path_Message * p) const
 
 //#define DEBUG_PATH_MESSAGES
 
-Rings_Found::Rings_Found (int nr, int nb) :
+Rings_Found::Rings_Found(int nr, int nb) :
                                     _expected_nrings(nr),
                                     _bonds_in_molecule(nb)
 {
@@ -259,7 +259,7 @@ Rings_Found::~Rings_Found()
 }
 
 void
-Rings_Found::initialise_single_bond_count (const Molecule & m)
+Rings_Found::initialise_single_bond_count(const Molecule & m)
 {
   _is_single_bond.allocate_space_for_bits(_bonds_in_molecule);
 
@@ -273,8 +273,8 @@ Rings_Found::initialise_single_bond_count (const Molecule & m)
 }
 
 static int
-is_duplicate (const resizable_array_p<Beep> & beeps,
-              const Beep * b)
+is_duplicate(const resizable_array_p<Beep> & beeps,
+             const Beep * b)
 {
   int nb = beeps.number_elements();
   for (int i = 0; i < nb; i++)
@@ -298,7 +298,7 @@ is_duplicate (const resizable_array_p<Beep> & beeps,
 //#define DEBUG_RINGS_FOUND
 
 void
-Rings_Found::node_collision_ring (Beep * r)
+Rings_Found::node_collision_ring(Beep * r)
 {
 #ifdef DEBUG_RINGS_FOUND
   cerr << "Rings_Found::node_collision_ring checking\n";
@@ -325,7 +325,7 @@ Rings_Found::node_collision_ring (Beep * r)
 }
 
 void
-Rings_Found::inverse_edge_collision_ring (Beep * r)
+Rings_Found::inverse_edge_collision_ring(Beep * r)
 {
 #ifdef DEBUG_RINGS_FOUND
   cerr << "Rings_Found::inverse_edge_collision_ring checking\n";
@@ -465,7 +465,7 @@ beep_comparator(Beep * const * bp1, Beep * const * bp2)
 */
 
 int
-Rings_Found::_beep_is_unique_over_non_sssr_beeps (const Beep * new_beep) const
+Rings_Found::_beep_is_unique_over_non_sssr_beeps(const Beep * new_beep) const
 {
   int nq = _non_sssr_rings.number_elements();
   if (0 == nq)
@@ -494,7 +494,7 @@ Rings_Found::_beep_is_unique_over_non_sssr_beeps (const Beep * new_beep) const
 */
 
 int
-Rings_Found::_beep_is_unique (const Beep * b) const
+Rings_Found::_beep_is_unique(const Beep * b) const
 {
   if (! global_setting_perceive_sssr_rings)
     return 1;
@@ -534,7 +534,7 @@ Rings_Found::_beep_is_unique (const Beep * b) const
 */
 
 int
-Rings_Found::_is_sssr_ring (const Beep * b)
+Rings_Found::_is_sssr_ring(const Beep * b)
 {
   Beep * tmp = new Beep;
   *tmp = *b;
@@ -582,7 +582,7 @@ Rings_Found::_is_sssr_ring (const Beep * b)
 */
 
 int
-Rings_Found::_is_esssr_ring (const Beep * b)
+Rings_Found::_is_esssr_ring(const Beep * b)
 {
   Beep tmp = (*b);
 
@@ -614,7 +614,7 @@ Rings_Found::_is_esssr_ring (const Beep * b)
 
 #ifdef NOT_USED
 static void
-remove_duplicate_beeps (resizable_array_p<Beep> & beeps)
+remove_duplicate_beeps(resizable_array_p<Beep> & beeps)
 {
   int n = beeps.number_elements();
 
@@ -673,7 +673,7 @@ Rings_Found::_assign_single_bond_counts(resizable_array_p<Beep> & beeps)
 */
 
 void
-Rings_Found::_determine_uniqueness (resizable_array_p<Beep> & beeps)
+Rings_Found::_determine_uniqueness(resizable_array_p<Beep> & beeps)
 {
   int nb = beeps.number_elements();
 
@@ -825,7 +825,7 @@ Rings_Found::process_new_rings(const Molecule & m)
 
 //#define DEBUG_TNODES
 
-Tnode::Tnode (atom_number_t a, int acon, int pi, int bonds_in_molecule, int h) :
+Tnode::Tnode(atom_number_t a, int acon, int pi, int bonds_in_molecule, int h) :
                   _a(a), _acon(acon), 
                   _bonds_in_molecule( bonds_in_molecule),
                   _pi_electrons(pi),
@@ -857,11 +857,11 @@ Tnode::~Tnode()
 }
 
 int
-Molecule::_initialise_tnode (atom_number_t zatom,
-                             const int * process_these, int id,
-                             Tnode ** tnodes,
-                             const int * pi,
-                             const int * sac)
+Molecule::_initialise_tnode(atom_number_t zatom,
+                            const int * process_these, int id,
+                            Tnode ** tnodes,
+                            const int * pi,
+                            const int * sac)
 {
   Tnode * tn = tnodes[zatom];
 
@@ -919,7 +919,7 @@ Tnode::ok() const
 }
 
 int
-Tnode::debug_print (std::ostream & os) const
+Tnode::debug_print(std::ostream & os) const
 {
   os << "Info on Tnode for atom " << _a << " acon = " << _acon << 
         ' ' << _pi_electrons << " pi electrons\n";
@@ -936,9 +936,9 @@ Tnode::debug_print (std::ostream & os) const
 }
 
 void 
-Tnode::is_connected_to (int ndx,
-                        atom_number_t a,
-                        int bond_number)
+Tnode::is_connected_to(int ndx,
+                       atom_number_t a,
+                       int bond_number)
 {
   _con[ndx] = a;
   _bond[ndx] = bond_number;
@@ -949,7 +949,7 @@ Tnode::is_connected_to (int ndx,
 }
 
 int
-Tnode::print_paths (std::ostream & os) const
+Tnode::print_paths(std::ostream & os) const
 {
   assert(os.good());
 
@@ -987,7 +987,7 @@ Tnode::print_paths (std::ostream & os) const
 */
 
 void
-Tnode::send (Tnode ** tnodes)
+Tnode::send(Tnode ** tnodes)
 {
 #ifdef DEBUG_TNODES
   cerr << "Tnode for atom " << _a << " sending " << 
@@ -1728,6 +1728,7 @@ FC1=CN2C(O)N(C2=O)C1=O PBCHM68787938
   If bonded to an exocyclic double bond then it has zero pi electrons to share
 */
 
+#ifdef NEWER_VERSION_IS_CLEANER
 int
 Molecule::_pi_electrons_in_ring(const atom_number_t zatom, int & result) const
 {
@@ -1762,6 +1763,36 @@ Molecule::_pi_electrons_in_ring(const atom_number_t zatom, int & result) const
 
   return a->pi_electrons(result);
 }
+#endif
+
+int
+Molecule::_pi_electrons_in_ring(const atom_number_t zatom, int & result) const
+{
+  Atom * a = const_cast<Atom *>(_things[zatom]);
+//return a->pi_electrons(result);     can turn this on or off. Works slightly better turned off
+
+  if (! a->pi_electrons(result)) {
+    return 0;
+  }
+  if (result > 2) {
+    result = 2;
+  }
+
+  // An obviously exocyclic double bond to a heteroatom contributes zero.
+  for (const Bond * b : *a) {
+    if (b->is_single_bond()) {
+      continue;
+    }
+    const Atom * aj = _things[b->other(zatom)];
+    if (aj->ncon() == 1 && aj->atomic_number() != 6) {
+      result = 0;
+      return 1;
+    }
+  }
+
+  return 1;
+}
+
 
 int
 Molecule::_pearlman_sssr(const int * process_these, int id,
@@ -1777,8 +1808,8 @@ Molecule::_pearlman_sssr(const int * process_these, int id,
       tmp[i] = 2;    // not really pi count, just to indicate favoured
     else if (! _pi_electrons_in_ring(i, tmp[i]))    // could not be computed
       ;
-    else if (tmp[i] > 2)
-      tmp[i] = 2;
+//  else if (tmp[i] > 2)
+//    tmp[i] = 2;
 
 //  cerr << "atom " << i << " " << _things[i]->atomic_symbol() << " ncon " << _things[i]->ncon() << " nbonds " << _things[i]->nbonds() << " pi " << tmp[i] << endl;
 

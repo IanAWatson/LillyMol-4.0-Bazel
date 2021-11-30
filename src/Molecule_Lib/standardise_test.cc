@@ -198,4 +198,10 @@ TEST_F(TestStandardisation, TestHRemoval) {
   EXPECT_GT(_chemical_standardisation.process(_m1), 0);
 }
 
+TEST_F(TestStandardisation, NoChargedPyrazolones) {
+  _smiles = "[O-]C1=C2C3=[N+](N1)C23";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+
 }  // namespace

@@ -64,6 +64,7 @@ int DoLookup(Molecule& m, const IWString& smiles,
   }
 
   if (stream_for_not_found_structures.active()) {
+    m.invalidate_smiles();
     stream_for_not_found_structures.write(m);
   }
 

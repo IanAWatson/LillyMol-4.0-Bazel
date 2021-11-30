@@ -221,7 +221,7 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target)
     if (! _ring_size.matches(rsize))
       continue;
 
-    cerr << "Ring has " << r->fused_ring_neighbours() << endl;
+//  cerr << "Ring has " << r->fused_ring_neighbours() << endl;
     if (! _fused.matches(r->fused_ring_neighbours()))
       continue;
 

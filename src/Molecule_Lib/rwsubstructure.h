@@ -811,14 +811,14 @@ process_files_of_queries (Command_Line & cl, resizable_array_p<T> & queries,
 
 template <typename T>
 int
-process_cmdline_token (char option,
-                       const const_IWSubstring & token,
-                       resizable_array_p<T> & queries,
-                       int verbose)
+process_cmdline_token(char option,
+                      const const_IWSubstring & token,
+                      resizable_array_p<T> & queries,
+                      int verbose)
 {
   const_IWSubstring mytoken(token);
 
-  std::cerr << "Examining token '" << mytoken << "'\n";
+//std::cerr << "Examining token '" << mytoken << "'\n";
   if (mytoken.starts_with("F:") || mytoken.starts_with("Q:"))
   {
     mytoken.remove_leading_chars(2);

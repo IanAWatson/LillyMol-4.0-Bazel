@@ -3098,6 +3098,7 @@ Chemical_Standardisation::_process (Molecule & m,
 // that have both a lactam/lactim AND an aromatic nitrogen issue, we must do the 
 // lactam/lactim thing first
 
+//cerr << "Before _transform_pyrazolone " << rc << '\n';
   if (_transform_pyrazolone.active())
     rc += _do_transform_pyrazolone(m, atom_already_changed, current_molecule_data);
 
@@ -5634,9 +5635,9 @@ determine_fused_aromatic_pyrazole (const Molecule & m,
 */
 
 static int
-switch_fused_pyrazole (Molecule & m,
-                       atom_number_t a1,
-                       atom_number_t a2)
+switch_fused_pyrazole(Molecule & m,
+                      atom_number_t a1,
+                      atom_number_t a2)
 {
 //#define DEBUG_SWITCH_FUSED_PYRAZOLE
 #ifdef DEBUG_SWITCH_FUSED_PYRAZOLE
@@ -7247,7 +7248,7 @@ identity_exocyclic_singly_bonded_oxygen(const Molecule & m,
 
     const atom_number_t j = b->other(c);
 
-    if (8 == z[j] && 1 == ncon[j])
+    if (8 == z[j] && 1 == ncon[j] && m.formal_charge(j) == 0)  // guard against [O-]C1=C2C3=[N+](N1)C23
     {
       oxygen = j;
       return 1;
@@ -7348,6 +7349,10 @@ Chemical_Standardisation::_do_transform_pyrazolone(Molecule & m,
 
   if (7 != z[n1] || 7 != z[n2])
     return 0;
+
+  if (m.formal_charge(n2) != 0) {  // [O-]C1=C2C3=[N+](N1)C23
+    return 0;
+  }
 
   const Bond * b = m.bond_between_atoms(c, n1);
 

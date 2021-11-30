@@ -425,7 +425,7 @@ int Reaction_Query::matchesOneQuery(vector<Molecule *> &m,
           vector<Reaction_Query_Component *>&queries,
           const int queryIndex)
 {
-  for (int i=0; i < m.size(); ++i)
+  for (unsigned int i=0; i < m.size(); ++i)
   {
     if (molDoneFlags[i])
       continue;       // already used - not available
@@ -435,7 +435,7 @@ int Reaction_Query::matchesOneQuery(vector<Molecule *> &m,
                 
     // if we have matches all queries, it is a match!
     
-    if (queryIndex + 1 == queries.size())
+    if (queryIndex + 1 == static_cast<int>(queries.size()))
         return 1;
         
     // see if matches can be found to the subsquent queries

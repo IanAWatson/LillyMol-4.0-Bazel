@@ -244,7 +244,7 @@ Toggle_Kekule_Form::_all_bonds_correct (const Molecule & m,
 }
 
 int
-Toggle_Kekule_Form::_all_bonds_aromatic (Molecule & m,
+Toggle_Kekule_Form::_all_bonds_aromatic(Molecule & m,
                                         const Set_of_Atoms & embedding) const
 {
   int nb = _bond.number_elements();
@@ -416,7 +416,7 @@ Toggle_Kekule_Form::process (Molecule & m,
 #endif
   if (! _all_bonds_aromatic(m, embedding))
   {
-    cerr << "Toggle_Kekule_Form::process:not all bonds aromatic '" << m.name() << "'\n";
+    cerr << "Toggle_Kekule_Form::process:not all bonds aromatic " << m.name() << " : " << embedding << '\n';
     return 0;
   }
 

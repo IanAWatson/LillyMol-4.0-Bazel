@@ -60,7 +60,7 @@ set_explicit_hydrogens_need_square_brackets_in_smiles (int s)
 static int _atomic_symbols_can_have_arbitrary_length = 0;
 
 void
-set_atomic_symbols_can_have_arbitrary_length (int s)
+set_atomic_symbols_can_have_arbitrary_length(int s)
 {
   _atomic_symbols_can_have_arbitrary_length = s;
 
@@ -103,8 +103,8 @@ int interpret_t_as_tritium() {
 */
 
 const Element *
-get_element_from_long_symbols (const char * asymbol,
-                               int nchars)
+get_element_from_long_symbols(const char * asymbol,
+                              int nchars)
 {
 //#define DEBUG_GET_ELEMENT_FROM_LONG_SYMBOLS
 #ifdef DEBUG_GET_ELEMENT_FROM_LONG_SYMBOLS
@@ -267,8 +267,8 @@ symbol_for_atomic_symbol_hash_value (int h,
 */
 
 static int
-element_symbol_hash_function_arbitrary_length (const char * s,
-                                               const int nchars)
+element_symbol_hash_function_arbitrary_length(const char * s,
+                                              const int nchars)
 {
   uint64_t rc = SIZE_OF_ELEMENT_HASH_TABLE;
 
@@ -292,7 +292,7 @@ element_symbol_hash_function_arbitrary_length (const char * s,
 }
 
 static void
-init_elements (void)
+init_elements(void)
 {
   assert (elements.empty());
 
@@ -317,8 +317,8 @@ init_elements (void)
 */
 
 static int
-check_valid_element_via_hash (const char * s, int nchars,
-                              const Element * & result)
+check_valid_element_via_hash(const char * s, int nchars,
+                             const Element * & result)
 {
   const int hash = element_symbol_hash_function(s, nchars);
 
@@ -379,7 +379,7 @@ static element_creator foo;      // the constructor will cause the elements to b
 */
 
 void
-Element::_default_values (atomic_number_t i)
+Element::_default_values(atomic_number_t i)
 {
   assert (PLAUSIBLE_ATOMIC_NUMBER(i) || NOT_AN_ELEMENT == i); 
 
@@ -1320,7 +1320,7 @@ Element::_default_values (atomic_number_t i)
 }
 
 void
-Element::_set_symbol (const char * symbol)
+Element::_set_symbol(const char * symbol)
 {
   if (nullptr == symbol)
     _set_symbol(nullptr, 0);
@@ -1331,7 +1331,7 @@ Element::_set_symbol (const char * symbol)
 }
 
 void
-Element::_set_symbol (const char * symbol, int nchars)
+Element::_set_symbol(const char * symbol, int nchars)
 {
   if (nullptr == symbol || 0 == nchars)
   {
@@ -1375,14 +1375,14 @@ Element::_set_symbol (const char * symbol, int nchars)
 }
 
 void
-Element::_set_symbol (const const_IWSubstring & symbol )
+Element::_set_symbol(const const_IWSubstring & symbol )
 {
   _set_symbol(symbol.rawchars(), symbol.nchars());
 
   return;
 }
 
-Element::Element (int i)
+Element::Element(int i)
 {
   _default_values(i);
 
@@ -1394,7 +1394,7 @@ Element::Element (int i)
 */
 
 void
-Element::_non_periodic_table_element_constructor (const char * s,
+Element::_non_periodic_table_element_constructor(const char * s,
                                int nchars)
 {
   assert (nullptr != s);
@@ -1417,21 +1417,21 @@ Element::_non_periodic_table_element_constructor (const char * s,
   return;
 }
 
-Element::Element (const char * symbol)
+Element::Element(const char * symbol)
 {
   _non_periodic_table_element_constructor(symbol, static_cast<int>(::strlen(symbol)));
 
   return;
 }
 
-Element::Element (const char * symbol, int nchars)
+Element::Element(const char * symbol, int nchars)
 {
   _non_periodic_table_element_constructor(symbol, nchars);
 
   return;
 }
 
-Element::Element (const const_IWSubstring & symbol)
+Element::Element(const const_IWSubstring & symbol)
 {
   _non_periodic_table_element_constructor(symbol.rawchars(), symbol.length());
 
@@ -1451,7 +1451,7 @@ Element::~Element()
 }
 
 int
-Element::debug_print (std::ostream & os) const
+Element::debug_print(std::ostream & os) const
 {
   assert(os.good());
 
@@ -2104,7 +2104,7 @@ Element::is_halogen() const
 }
 
 int
-Element::pi_electrons (int ncon, formal_charge_t fc, int & result) const
+Element::pi_electrons(int ncon, formal_charge_t fc, int & result) const
 {
   if (OUTER_SHELL_ELECTRONS_NOT_KNOWN == _outer_shell_electrons)
   {
@@ -2137,7 +2137,7 @@ Element::pi_electrons (int ncon, formal_charge_t fc, int & result) const
 }
 
 int
-Element::lone_pairs (int nbonds, formal_charge_t fc, int & result) const
+Element::lone_pairs(int nbonds, formal_charge_t fc, int & result) const
 {
   if (OUTER_SHELL_ELECTRONS_NOT_KNOWN == _outer_shell_electrons)
     return 0;
@@ -2164,7 +2164,7 @@ Element::lone_pairs (int nbonds, formal_charge_t fc, int & result) const
 }
 
 int
-Element::outer_shell_electrons (int & result) const
+Element::outer_shell_electrons(int & result) const
 {
   if (OUTER_SHELL_ELECTRONS_NOT_KNOWN == _outer_shell_electrons)
     return 0;
@@ -2181,7 +2181,7 @@ Element::outer_shell_electrons (int & result) const
 static int automatically_create_new_elements = 0;
 
 int
-set_auto_create_new_elements (int i)
+set_auto_create_new_elements(int i)
 {
   return automatically_create_new_elements = i;
 }
@@ -2194,7 +2194,7 @@ auto_create_new_elements()
 
 
 static int
-read_ptable (const const_IWSubstring & buffer)
+read_ptable(const const_IWSubstring & buffer)
 {
   int nw = buffer.nwords();
   if (0 == nw)     // ignore blank lines
@@ -2226,7 +2226,7 @@ read_ptable (const const_IWSubstring & buffer)
 }
 
 static int
-read_ptable (iwstring_data_source & input)
+read_ptable(iwstring_data_source & input)
 {
   const_IWSubstring buffer;
 
@@ -2247,7 +2247,7 @@ read_ptable (iwstring_data_source & input)
 }
 
 static int
-read_ptable_file (const const_IWSubstring & fname)
+read_ptable_file(const const_IWSubstring & fname)
 {
   iwstring_data_source input(fname);
   if (! input.ok())
@@ -2260,7 +2260,7 @@ read_ptable_file (const const_IWSubstring & fname)
 }
       
 int
-display_standard_element_options (std::ostream & os)
+display_standard_element_options(std::ostream & os)
 {
   os << "  -E autocreate  automatically create new elements when encountered\n";
   os << "  -E PTABLE=file use 'file' for element data\n";
@@ -2391,7 +2391,7 @@ Element::is_in_periodic_table() const
 }
 
 int
-Element::read_ptable_record (const const_IWSubstring & buffer)
+Element::read_ptable_record(const const_IWSubstring & buffer)
 {
   int nw = buffer.nwords();
 
@@ -2446,7 +2446,7 @@ Element::read_ptable_record (const const_IWSubstring & buffer)
 */
 
 void
-Element::copy_element_data (const Element * rhs)
+Element::copy_element_data(const Element * rhs)
 {
   _atomic_number  = rhs->_atomic_number;
   _atomic_mass    = rhs->_atomic_mass;
@@ -2473,7 +2473,7 @@ de_allocate_periodic_table()
 */
 
 void
-reset_element_file_scope_variables ()
+reset_element_file_scope_variables()
 {
   include_isotopes_in_smiles = 1;
   explicit_hydrogens_need_square_brackets_in_smiles = 1;
