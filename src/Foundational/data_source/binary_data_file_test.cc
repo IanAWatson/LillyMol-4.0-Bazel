@@ -190,4 +190,31 @@ TEST_F(TestBinaryDataFileReader, TestProto) {
 
 }
 
+TEST_F(TestBinaryDataFileReader, TestSnappy) {
+  JustForTesting::TestMessage message;
+  constexpr double d = 27.4;
+  constexpr int i = 46;
+  constexpr float f = 3.14;
+  std::string s = "mm93";
+  for (int i = 0; i < 1000; ++i) {
+    s.append("a very long meaningless string designed to make the string long");
+  }
+  constexpr uint32_t u = 93;
+
+  message.set_d(d);
+  message.set_i(i);
+  message.set_f(f);
+  message.set_s(s);
+  message.set_u(u);
+  BinaryDataFileWriter writer(_fd, binary_data_file::kSnappy);
+  ASSERT_GT(writer.WriteSerializedProto(message), 0);
+  writer.Close();
+
+  BinaryDataFileReader reader(_fname);
+  ASSERT_TRUE(reader.good());
+  auto maybe_proto = reader.ReadProto<JustForTesting::TestMessage>();
+  ASSERT_TRUE(maybe_proto);
+  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(message, *maybe_proto));
+}
+
 }  // namespace

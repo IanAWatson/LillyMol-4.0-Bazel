@@ -40,5 +40,23 @@ class TestBinary(absltest.TestCase):
 
     self.assertIsNone(reader.next())
 
+  def testSnappy(self):
+    """Test many items"""
+    nitems = 100
+    items = [f"foo{i}" * 1000 for i in range(0, nitems)]
+    fname = self.create_tempfile()
+    writer = binary_file.BinaryDataFileWriter()
+    writer.set_compression(binary_file.CompressionType.ctype_snappy)
+    self.assertTrue(writer.open(fname))
+    for item in items:
+      self.assertTrue(writer.write(item))
+    writer.close()
+
+    reader = binary_file.BinaryDataFileReader(fname)
+    for i in range(0, nitems):
+      returned = reader.next()
+      self.assertEqual(items[i], returned.decode("utf-8"))
+
+
 if __name__ == "__main__":
   absltest.main()

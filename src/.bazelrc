@@ -1,4 +1,4 @@
-build --cxxopt=-std=c++17 --copt=-march=core-avx2
+build --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz
 build:asan --strip=never
 build:asan --copt -fsanitize=address
 build:asan --copt -DADDRESS_SANITIZER
@@ -12,14 +12,16 @@ build:debug --javacopt="-g"
 build:debug --copt="-g"
 build:debug --strip="never"
 
-build:msam --strip=never
-build:msan --copt -fsanitize=memory
-build:msan --copt -fsanitize-memory-track-origins=2
-build:msan --copt -DMEMORY_SANITIZER
-build:msan --copt -O1
-build:msan --copt -g
-build:msan --copt -fno-omit-frame-pointer
-build:msan --linkopt -fsanitize=memory
+build:msan --strip=never
+build:msan --copt=-fsanitize=memory
+build:msan --copt=-O0
+build:msan --copt=-fsanitize-memory-track-origins
+build:msan --copt=-fsanitize-memory-use-after-dtor
+build:msan --copt=-fno-omit-frame-pointer
+build:msan --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:msan --linkopt=-fsanitize=memory
+build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
+
 
 #Taken from https://docs.bazel.build/versions/main/tutorial/cc-toolchain-config.html
 build:clang_config --crosstool_top=//toolchain:clang_suite
@@ -33,3 +35,4 @@ build:clang_config --cpu=skylake
 
 build:clang_config --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
 
+test --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz

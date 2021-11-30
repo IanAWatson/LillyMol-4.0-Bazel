@@ -2,10 +2,22 @@
 #define FOUNDATIONAL_DATA_SOURCE_BINARY_DATA_FILE_H
 
 #include <optional>
+#include <string>
+
+#include "snappy.h"
 
 #include "Foundational/iwstring/iwstring.h"
 
 namespace binary_data_file {
+
+// Data can be optionally compressed.
+enum CompressionType {
+  kUncompressed,
+  kSnappy,
+  // Last entry which is used for determining if a value is valid or not.
+  // Insert new compression types before this.
+  kInvalid,
+};
 
 // The BinaryDataFileWriter and BinaryDataFileReader classes
 // write files containing blobs.
@@ -30,6 +42,14 @@ class BinaryDataFileReader {
     // Data is read from _fd into _read_buffer.
     resizable_array<char> _read_buffer;
 
+    // Optional compression.
+
+    CompressionType _compression_type;
+
+    // If compression is active, we need somewhere to hold
+    // the uncompressed data, since we always return a const_IWSubstring.
+    std::string _uncompressed;
+
     // For monitoring.
     int _items_read;
 
@@ -47,6 +67,15 @@ class BinaryDataFileReader {
   // and make sure it is correct.
   // Returns true if the word can be read and is correct.
   bool ReadMagicNumber();
+  // Following the header is a 4 byte word for the compression type.
+  bool ReadCompressionType();
+  // Reads both the magic number and the compression type.
+  int ReadHeader();
+
+  // Raw data has been read. If no compression is active, just return
+  // `data`. If uncompression is needed, then do that.
+  // 
+  const_IWSubstring MaybeExpand(const const_IWSubstring& data);
 
   public:
     BinaryDataFileReader();
@@ -89,16 +118,32 @@ class BinaryDataFileWriter {
     // methods for writing.
     IWString_and_File_Descriptor _output;
 
+    // Optional compression.
+    CompressionType _compression_type;
+
+    // And if compressed, a buffer to hold uncompressed data
+    std::string _compressed;
+
   // private functions
+    void DefaultValues();
+
     int WriteMagicNumber();
+    int WriteCompressionType();
+    // Function that writes both the magic number and the compression type.
+    int WriteHeader();
+
+    const_IWSubstring MaybeCompressed(const void * data, int nbytes);
 
   public:
     BinaryDataFileWriter();
-    BinaryDataFileWriter(int fd);
+    BinaryDataFileWriter(int fd, CompressionType ctype = kUncompressed);
 
     int good() const {
       return _output.good();
     }
+
+    // Compression must be specified before the file is opened.
+    bool SetCompression(CompressionType compression_type);
 
     int Open(const char * fname);
     int Open(IWString& fname);

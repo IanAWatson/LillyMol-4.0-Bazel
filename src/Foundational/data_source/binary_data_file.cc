@@ -37,6 +37,8 @@ BinaryDataFileReader::DefaultValues() {
 
   _read_buffer.resize(default_read_buffer_size);
 
+  _compression_type = kUncompressed;
+
   _items_read = 0;
 }
 
@@ -47,7 +49,6 @@ BinaryDataFileReader::BinaryDataFileReader() {
 BinaryDataFileReader::BinaryDataFileReader(const char * fname) {
   DefaultValues();
   OpenFile(fname);
-  ReadMagicNumber();
 }
 
 BinaryDataFileReader::BinaryDataFileReader(IWString& fname) {
@@ -64,6 +65,13 @@ BinaryDataFileReader::BinaryDataFileReader(const const_IWSubstring& fname) {
 BinaryDataFileReader::~BinaryDataFileReader() {
 }
 
+int
+BinaryDataFileReader::ReadHeader() {
+  ReadMagicNumber();
+  ReadCompressionType();
+  return _good;
+}
+
 bool
 BinaryDataFileReader::ReadMagicNumber() {
   uint32_t magic;
@@ -76,6 +84,38 @@ BinaryDataFileReader::ReadMagicNumber() {
   if (magic != kMagicNumber) {
     cerr << "BinaryDataFileReader::ReadMagicNumber:bad magic " << magic << " expected " << kMagicNumber << '\n';
     return false;
+  }
+
+  return true;
+}
+
+bool
+BinaryDataFileReader::ReadCompressionType() {
+  uint32_t compression_type;
+  int bytes_read = IW_FD_READ(_fd, &compression_type, sizeof(compression_type));
+  if (bytes_read != sizeof(compression_type)) {
+    cerr << "BinaryDataFileReader::ReadCompressionType:cannot read\n";
+    return false;
+  }
+  compression_type = ntohl(compression_type);
+  if (compression_type >= CompressionType::kInvalid) {
+    cerr << "BinaryDataFileReader::ReadCompressionType:invalid value " << compression_type << '\n';
+    return false;
+  }
+
+  switch (compression_type) {
+    case kUncompressed:
+      _compression_type = kUncompressed;
+      break;
+    case kSnappy:
+      _compression_type = kSnappy;
+      break;
+    case kInvalid:
+      cerr << "BinaryDataFileReader::ReadCompressionType:Invalid compression\n";
+      return false;
+    default:
+      cerr << "BinaryDataFileReader::ReadCompressionType:Unknown compression " << compression_type << '\n';
+      return false;
   }
 
   return true;
@@ -110,7 +150,7 @@ BinaryDataFileReader::OpenFile(const char * fname) {
     return false;
   }
 
-  if (! ReadMagicNumber()) {
+  if (! ReadHeader()) {
     _good = false;
     return false;
   }
@@ -166,7 +206,7 @@ BinaryDataFileReader::Next() {
     const_IWSubstring result(_read_buffer.rawdata() + _next, bytes_in_next);
     _next += bytes_in_next;
     ++_items_read;
-    return result;
+    return MaybeExpand(result);
   }
 
   // Will need to read more data, remove all the stuff we have previously consumed.
@@ -186,14 +226,34 @@ BinaryDataFileReader::Next() {
 
   const_IWSubstring result(_read_buffer.rawdata(), bytes_in_next);
   ++_items_read;
-  return result;
+  return MaybeExpand(result);
+}
+
+const_IWSubstring
+BinaryDataFileReader::MaybeExpand(const const_IWSubstring& data) {
+  if (_compression_type == kUncompressed) {
+    return data;
+  }
+
+  switch (_compression_type) {
+    case kUncompressed:
+      return data;
+    case kSnappy:
+      snappy::Uncompress(data.data(), data.length(), &_uncompressed);
+      return const_IWSubstring(_uncompressed.data(), _uncompressed.size());
+    case kInvalid:
+      cerr << "BinaryDataFileReader::MaybeExpand:expand the invalid type??\n";
+      return data;
+  }
+
+  return data;
 }
 
 bool
 BinaryDataFileReader::FillReadBuffer() {
   const int existing_size = _read_buffer.number_elements();
 
-  cerr << "FillReadBuffer: starting pos " << IW_FD_LSEEK(_fd, 0, SEEK_CUR) << " bytes\n";
+//cerr << "FillReadBuffer: starting pos " << IW_FD_LSEEK(_fd, 0, SEEK_CUR) << " bytes\n";
   unsigned int unused_capacity = _read_buffer.elements_allocated() - existing_size;
   if (unused_capacity < default_read_buffer_size) {
     _read_buffer.resize(_read_buffer.elements_allocated() + default_read_buffer_size);
@@ -214,10 +274,32 @@ BinaryDataFileReader::FillReadBuffer() {
 }
 
 BinaryDataFileWriter::BinaryDataFileWriter() {
+  _compression_type = kUncompressed;
 }
 
-BinaryDataFileWriter::BinaryDataFileWriter(int fd) : _output(fd) {
-  WriteMagicNumber();
+BinaryDataFileWriter::BinaryDataFileWriter(int fd, CompressionType ctype) : _output(fd) {
+  _compression_type = ctype;
+  WriteHeader();
+}
+
+int
+BinaryDataFileWriter::WriteHeader() {
+  if (! WriteMagicNumber()) {
+    return 0;
+  }
+  return WriteCompressionType();
+}
+
+bool
+BinaryDataFileWriter::SetCompression(CompressionType compression_type) {
+  if (_output.is_open()) {
+    std::cerr << "BinaryDataFileWriter::SetCompression:already open\n";
+    return false;
+  }
+
+  _compression_type = compression_type;
+
+  return true;
 }
 
 int
@@ -229,7 +311,7 @@ BinaryDataFileWriter::Open(const char * fname) {
   if (! _output.open(fname)) {
     return 0;
   }
-  return WriteMagicNumber();
+  return WriteHeader();
 }
 
 int
@@ -241,7 +323,7 @@ BinaryDataFileWriter::Open(IWString& fname) {
   if (! _output.open(fname.null_terminated_chars())) {
     return 0;
   }
-  return WriteMagicNumber();
+  return WriteHeader();
 }
 
 int
@@ -254,7 +336,7 @@ BinaryDataFileWriter::Open(const const_IWSubstring& fname) {
   if (! _output.open(tmp.null_terminated_chars())) {
     return 0;
   }
-  return WriteMagicNumber();
+  return WriteHeader();
 }
 
 int
@@ -264,18 +346,47 @@ BinaryDataFileWriter::WriteMagicNumber() {
   return _output.write(cptr, sizeof(magic));
 }
 
+int
+BinaryDataFileWriter::WriteCompressionType() {
+  uint32_t to_write = htonl(_compression_type);
+  const char * cptr = reinterpret_cast<const char *>(&to_write);
+  return _output.write(cptr, sizeof(to_write));
+}
+
+// Return a possibly compressed version of the input.
+const_IWSubstring
+BinaryDataFileWriter::MaybeCompressed(const void * data, int nbytes) {
+  const char * as_char = reinterpret_cast<const char *>(data);
+  switch (_compression_type) {
+    case kUncompressed:
+      return const_IWSubstring(as_char, nbytes);
+    case kSnappy:
+      snappy::Compress(as_char, nbytes, &_compressed);
+      return const_IWSubstring(_compressed.data(), _compressed.size());
+    case kInvalid:
+      cerr << "BinaryDataFileWriter::MaybeCompressed:compression type kInvalid\n";
+      return const_IWSubstring(as_char, nbytes);
+    default:  // should not happen.
+      return const_IWSubstring(as_char, nbytes);
+  }
+}
+
 ssize_t
 BinaryDataFileWriter::Write(const void * data, int nbytes) {
 //cerr << "BinaryDataFileWriter::Write: writing " << nbytes << " bytes\n";
-  const uint32_t mysize = htonl(nbytes);
+
+  const const_IWSubstring to_store = MaybeCompressed(data, nbytes);
+
+  const uint32_t mysize = htonl(to_store.length());
   const char * cptr = reinterpret_cast<const char *>(&mysize);
   if (_output.write(cptr, sizeof_count) != sizeof_count) {
     std::cerr << "BinaryDataFileWriter::Write:size not written\n";
     return 0;
   }
-  const auto bytes_written = _output.write(reinterpret_cast<const char *>(data), nbytes);
-  if (bytes_written != nbytes) {
-    std::cerr << "BinaryDataFileWriter::Write:wrote " << bytes_written << " of " << nbytes << " bytes\n";
+//const auto bytes_written = _output.write(reinterpret_cast<const char *>(data), nbytes);
+  const auto bytes_written = _output.write(to_store.data(), to_store.length());
+  if (bytes_written != to_store.length()) {
+    std::cerr << "BinaryDataFileWriter::Write:wrote " << bytes_written << " of " << to_store.length() << " bytes\n";
     return 0;
   }
   _output.write_if_buffer_holds_more_than(default_write_buffer_size);

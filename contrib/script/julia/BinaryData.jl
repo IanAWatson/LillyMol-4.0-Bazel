@@ -16,5 +16,8 @@ export BinaryDataFileWriter
 #export open(::BinaryDataFileWriter, ::String)
 #export open
 #export read
+export set_compression
+export CompressionType
+export snappy
 
 end # module BinaryData
