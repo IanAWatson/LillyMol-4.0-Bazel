@@ -147,7 +147,7 @@ Molecule::read_molecule_mol2_ds(iwstring_data_source & input)
   if (assign_default_formal_charges)
     _mol2_assign_default_formal_charges();
 
-  if (NULL == _atom_type)    // strange
+  if (nullptr == _atom_type)    // strange
     ;
   else if (_atom_type->number_elements() > 0 && 0 == _atom_type->ztype().length())
     _atom_type->set_type(ATOM_TYPE_SYBYL);
@@ -334,11 +334,11 @@ Molecule::_read_molecule_mol2_ds (iwstring_data_source & input)
   if (nb > 0)
     aromatic_bonds = new_int(nb);
   else
-    aromatic_bonds = NULL;
+    aromatic_bonds = nullptr;
 
   std::unique_ptr<int[]> free_aromatic_bonds(aromatic_bonds);
 
-  Tripos_Residue_Information * tri = NULL;
+  Tripos_Residue_Information * tri = nullptr;
 
   if (place_mol2_residue_information_in_user_specified_void_ptr)
   {
@@ -379,7 +379,7 @@ Molecule::_read_molecule_mol2_ds (iwstring_data_source & input)
     _molecule_name += " (invalid KEKULE form)";
   }
 
-  if (NULL != _charges)
+  if (nullptr != _charges)
     _charges->set_type(charge_type);
 
 #ifdef USE_IWMALLOC
@@ -599,7 +599,7 @@ Molecule::_parse_tripos_atom_record (const const_IWSubstring & buffer,
   (void) token.truncate_at_first('.');     // may do nothing
 
   const Element * e = get_element_from_symbol_no_case_conversion(token);
-  if (NULL == e)
+  if (nullptr == e)
   {
     if (! auto_create_new_elements())
     {
@@ -608,11 +608,11 @@ Molecule::_parse_tripos_atom_record (const const_IWSubstring & buffer,
     }
 
     e = create_element_with_symbol(token);
-    assert (NULL != e);
+    assert (nullptr != e);
   }
 
   Atom * a = new Atom(e);
-  assert (NULL != a);
+  assert (nullptr != a);
 
   a->setxyz(x, y, z);
 
@@ -643,16 +643,16 @@ Molecule::_parse_tripos_atom_record (const const_IWSubstring & buffer,
     return 0;
   }
 
-  if (NULL != tri)
+  if (nullptr != tri)
     tri->update_residue_information(_number_elements - 1, residue_number, residue_name);
 
   if (mol2_read_charge_column_contains_formal_charges)
     ;
-  else if (NULL == _charges)
+  else if (nullptr == _charges)
   {
     allocate_charges();
 
-    assert (NULL != _charges);
+    assert (nullptr != _charges);
   }
 
   if (! buffer.nextword(token, i))
@@ -900,7 +900,7 @@ append_sybyl_atom_type (std::ostream & os, int atype, const IWString & asymbol)
     }
   }
 
-  assert (NULL == "should not come to here");
+  assert (nullptr == "should not come to here");
 
   return 1;
 }
@@ -969,7 +969,7 @@ Molecule::write_molecule_mol2 (std::ostream & os)
 int
 Molecule::_write_molecule_mol2 (std::ostream & os, const int * atype)
 {
-  if (sybyl_write_assigned_atom_types && NULL == _atom_type)
+  if (sybyl_write_assigned_atom_types && nullptr == _atom_type)
   {
     cerr << "MOLECULE::_write_molecule_mol2:no atom types available\n";
     return 0;
@@ -989,7 +989,7 @@ Molecule::_write_molecule_mol2 (std::ostream & os, const int * atype)
 
   if (mol2_write_formal_charge_as_partial_charge)
     os << "USER_CHARGES\n";
-  else if (NULL == _charges)
+  else if (nullptr == _charges)
     os << "NO_CHARGES\n";
   else if (_charges->ztype().length())
     os << _charges->ztype() << '\n';
@@ -1031,7 +1031,7 @@ Molecule::_write_molecule_mol2 (std::ostream & os, const int * atype)
       cerr << "Atom " << i << " type " << a->atomic_symbol() << ", " << a->ncon() << " connections\n";
     }
 
-    if (mol2_write_formal_charge_as_partial_charge || NULL != _charges)
+    if (mol2_write_formal_charge_as_partial_charge || nullptr != _charges)
     {
       os << "     1 <1>       ";
 

@@ -13,9 +13,9 @@ int
 string_substitute (char *buffer, int len, 
                    const char *old_string, const char *new_string)
 {
-  assert (NULL != buffer);
-  assert (NULL != old_string);
-  assert (NULL != new_string);
+  assert (nullptr != buffer);
+  assert (nullptr != old_string);
+  assert (nullptr != new_string);
 
   char *c;
   if (NULL == (c = strstr (buffer, old_string)))    /* not present at all */
@@ -32,7 +32,7 @@ string_substitute (char *buffer, int len,
   int number_changes = 0;
   char *t1 = buffer;
   char *t2 = new_buffer;
-  while (NULL != c)
+  while (nullptr != c)
   {
     while (t1 < c)
       *t2++ = *t1++;

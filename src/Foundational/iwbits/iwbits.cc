@@ -20,7 +20,7 @@ IW_Bits_Base::_default_values()
 {
   _nbits  = 0;
 
-  _bits = NULL;
+  _bits = nullptr;
 
   _whole_bytes = 0;
   _extra_bits = 0;
@@ -78,7 +78,7 @@ IW_Bits_Base::operator =(const IW_Bits_Base & rhs)
 
   if (_nbits != rhs._nbits)
   {
-    if (NULL != _bits)
+    if (nullptr != _bits)
       delete [] _bits;
 
     _default_values();
@@ -86,7 +86,7 @@ IW_Bits_Base::operator =(const IW_Bits_Base & rhs)
     allocate_space_for_bits(rhs._nbits);
   }
 
-  assert (NULL != _bits);
+  assert (nullptr != _bits);
 
   _copy_bits(rhs);
 
@@ -103,10 +103,10 @@ IW_Bits_Base::~IW_Bits_Base()
   _whole_bytes = -807;
 #endif
 
-  if (NULL != _bits)
+  if (nullptr != _bits)
   {
     delete [] _bits;
-    _bits = NULL;
+    _bits = nullptr;
   }
 
 #ifdef IWB_CHECK_ALREADY_DELETED
@@ -119,7 +119,7 @@ IW_Bits_Base::~IW_Bits_Base()
 int
 IW_Bits_Base::ok() const
 {
-  if (0 == _nbits && NULL == _bits && 
+  if (0 == _nbits && nullptr == _bits && 
       0 == _whole_bytes && 0 == _extra_bits)
     return 1;
 
@@ -151,7 +151,7 @@ IW_Bits_Base::debug_print(std::ostream & os) const
 int
 IW_Bits_Base::is_empty() const
 {
-  return (0 == _nbits && NULL == _bits);
+  return (0 == _nbits && nullptr == _bits);
 }
 
 /*
@@ -163,7 +163,7 @@ IW_Bits_Base::allocate_space_for_bits(int nb)
 {
   assert (nb > 0);
 
-  if (NULL == _bits)
+  if (nullptr == _bits)
     return _allocate_space_for_bits(nb);
   else if (nb != _nbits)
     return _increase_size_for_bits(nb);
@@ -194,7 +194,7 @@ IW_Bits_Base::_allocate_space_for_bits(int nb)
 
   _bits = new unsigned char[whole_words * IW_BYTES_PER_WORD];
 
-  if (NULL == _bits)
+  if (nullptr == _bits)
   {
     cerr << "Memory failure in IW_Bits_Base::allocate_space_for_bits\n";
     return 0;
@@ -355,7 +355,7 @@ IW_Bits_Base::nset() const
 bool
 IW_Bits_Base::any_bits_set() const
 {
-  if (NULL == _bits)
+  if (nullptr == _bits)
     return 0;
 
   int istop = _whole_bytes;
@@ -1514,7 +1514,7 @@ IW_Bits_Base::set(int ibit, int new_value)
   if (ibit >= _nbits)
   {
     cerr << "IW_Bits_Base::set: illegal bit " << ibit << " nbits = " << _nbits << endl;
-    assert (NULL == "Death");
+    assert (nullptr == "Death");
   }
 
   int ibyte = ibit / IW_BITS_PER_BYTE;
@@ -1888,7 +1888,7 @@ IW_Bits_Base::operator += (const IW_Bits_Base & rhs)
   if (0 != _nbits % IW_BITS_PER_BYTE)
   {
     cerr << "IW_Bits_Base::operator += incorrect bit count(s) " << _nbits << endl;
-    assert (NULL == "Cannot do this!");
+    assert (nullptr == "Cannot do this!");
     return;
   }
 
@@ -2497,10 +2497,10 @@ IW_Bits_Base::copy_to_contiguous_storage(void * p) const
 {
   assert (ok());
 
-  if (NULL == _bits)
+  if (nullptr == _bits)
   {
     cerr << "IW_Bits_Base::copy_to_contiguous: cannot copy empty object\n";
-    return NULL;
+    return nullptr;
   }
 
   memcpy(p, this, sizeof(IW_Bits_Base));
@@ -2525,10 +2525,10 @@ IW_Bits_Base::copy_to_contiguous_storage_gpu(void * p) const
 {
   assert (ok());
 
-  if (NULL == _bits)
+  if (nullptr == _bits)
   {
     cerr << "IW_Bits_Base::copy_to_contiguous: cannot copy empty object\n";
-    return NULL;
+    return nullptr;
   }
 
   memcpy(p, &_nbits, sizeof(int));
@@ -2548,11 +2548,11 @@ const void *
 IW_Bits_Base::build_from_contiguous_storage(const void * p,
                                              int allocate_arrays)
 {
-  if (allocate_arrays && NULL != _bits)
+  if (allocate_arrays && nullptr != _bits)
   {
     delete [] _bits;
     _nbits = 0;
-    _bits = NULL;
+    _bits = nullptr;
   }
 
   memcpy(this, p, sizeof(IW_Bits_Base));

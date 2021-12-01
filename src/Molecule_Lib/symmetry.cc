@@ -14,8 +14,8 @@ void
 Symmetry_Info::_default_values()
 {
   _matoms = 0;
-  _symmetry_class = NULL;
-  _degree = NULL;
+  _symmetry_class = nullptr;
+  _degree = nullptr;
 
   return;
 }
@@ -39,13 +39,13 @@ Symmetry_Info::~Symmetry_Info()
 int
 Symmetry_Info::ok() const
 {
-  if (_number_elements && NULL == _symmetry_class)
+  if (_number_elements && nullptr == _symmetry_class)
     return 0;
 
   if (_symmetry_class && 0 == _number_elements)
     return 0;
 
-  if (NULL == _symmetry_class && 0 == _number_elements && 0 == _matoms)
+  if (nullptr == _symmetry_class && 0 == _number_elements && 0 == _matoms)
     return 1;
 
   if (_number_elements > _matoms)

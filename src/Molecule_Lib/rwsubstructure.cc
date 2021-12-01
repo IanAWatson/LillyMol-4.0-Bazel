@@ -192,7 +192,7 @@ is_rejection(const msi_object & msi)
 {
   const msi_attribute * rj = msi.attribute(NAME_OF_REJECTION_ATTRIBUTE);
 
-  if (NULL == rj)    // no rejection attribute present
+  if (nullptr == rj)    // no rejection attribute present
    return 0;
 
   int rc;
@@ -214,13 +214,13 @@ fetch_aromaticity(const msi_object & msi, aromaticity_type_t & aromaticity)
 
   const msi_attribute * arom;
   int i = 0;
-  while (NULL != (arom = msi.attribute(NAME_OF_AROMATICITY_ATTRIBUTE, i++)))
+  while (nullptr != (arom = msi.attribute(NAME_OF_AROMATICITY_ATTRIBUTE, i++)))
   {
     int tmp;
     if (! arom->value(tmp))
     {
       cerr << "fetch_aromaticity: bad value '" << arom->stringval() << "'\n";
-      assert (NULL == "This is not good");
+      assert (nullptr == "This is not good");
     }
 
     if (0 == tmp)
@@ -261,7 +261,7 @@ fetch_elements(const msi_object & msi,
   int ii = 0;
 
   const msi_attribute * attribute;
-  while (NULL != (attribute = msi.attribute(NAME_OF_ATOMIC_NUMBER_ATTRIBUTE, ii++)))
+  while (nullptr != (attribute = msi.attribute(NAME_OF_ATOMIC_NUMBER_ATTRIBUTE, ii++)))
   {
     int n = attribute->number_int_values();
     if (0 == n)
@@ -280,7 +280,7 @@ fetch_elements(const msi_object & msi,
       }
 
       const Element * e = get_element_from_atomic_number(z);
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "fetch_elements:no element for atomic number " << z << endl;
         return 0;
@@ -292,7 +292,7 @@ fetch_elements(const msi_object & msi,
   }
 
   ii = 0;
-  while (NULL != (attribute = msi.attribute(NAME_OF_ATOMIC_SYMBOL_ATTRIBUTE, ii++)))
+  while (nullptr != (attribute = msi.attribute(NAME_OF_ATOMIC_SYMBOL_ATTRIBUTE, ii++)))
   {
     int n = attribute->number_string_values();
     if (0 == n)
@@ -307,10 +307,10 @@ fetch_elements(const msi_object & msi,
 //    cerr << "ATOMIC SYMBOL " << *s << endl;
 
       const Element * e = get_element_from_symbol_no_case_conversion(*s);
-      if (NULL == e && auto_create_new_elements())
+      if (nullptr == e && auto_create_new_elements())
         e = create_element_with_symbol(*s);
 
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "fetch atomic numbers, no element for '" << (*attribute) << "'\n";
         return 0;
@@ -338,7 +338,7 @@ get_float_attribute(const msi_object & msi,
 {
   const msi_attribute * att = msi.attribute(att_name);
 
-  if (NULL == att)
+  if (nullptr == att)
     return 1;
 
   if (! att->value(v) || v < minval || v > maxval)
@@ -372,7 +372,7 @@ append_int_values(const msi_object & msi,
   int ii = 0;
 
   const msi_attribute * attribute;
-  while (NULL != (attribute = msi.attribute(attribute_name, ii++)))
+  while (nullptr != (attribute = msi.attribute(attribute_name, ii++)))
   {
     if (0 == attribute->number_int_values())
     {
@@ -448,7 +448,7 @@ really_gruesome (resizable_array<int> & specifier, const msi_object * msi,
   int ii = 0;
 
   const msi_attribute * attribute;
-  while (NULL != (attribute = msi->attribute (attribute_name, ii++)))
+  while (nullptr != (attribute = msi->attribute (attribute_name, ii++)))
   {
     int tmp;
 
@@ -491,7 +491,7 @@ _really_gruesome (Min_Max_Specifier<T> & specifier, const msi_object & msi,
 
   IWString name = "min_" + attribute_name;
   const msi_attribute * attribute;
-  if (NULL != (attribute = msi.attribute(name)))
+  if (nullptr != (attribute = msi.attribute(name)))
   {
     int tmp;
     if (! set_int_value(*attribute, tmp, min_value_allowed, max_value_allowed))
@@ -501,7 +501,7 @@ _really_gruesome (Min_Max_Specifier<T> & specifier, const msi_object & msi,
   }
 
   name = "max_" + attribute_name;
-  if (NULL != (attribute = msi.attribute(name)))
+  if (nullptr != (attribute = msi.attribute(name)))
   {
     int tmp;
     if (! set_int_value(*attribute, tmp, min_value_allowed, max_value_allowed))
@@ -561,7 +561,7 @@ fetch_attribute (const msi_object & msi,
                  int ok_not_present = 1)
 {
   const msi_attribute * att = msi.attribute(attribute_name);
-  if (NULL == att)
+  if (nullptr == att)
     return ok_not_present;       // attribute not present
 
   int tmp;
@@ -605,7 +605,7 @@ Substructure_Atom_Specifier::construct_from_msi_object(const msi_object & msi)
   att = msi.attribute(NAME_OF_CHARGED_ATTRIBUTE);
   if (att)
   {
-    if(NULL != msi.attribute(NAME_OF_FORMAL_CHARGE_ATTRIBUTE))
+    if(nullptr != msi.attribute(NAME_OF_FORMAL_CHARGE_ATTRIBUTE))
       cerr << "Substructure_Atom_Specifier::construct_from_msi_object: warning, the " << NAME_OF_CHARGED_ATTRIBUTE << " and " << NAME_OF_FORMAL_CHARGE_ATTRIBUTE << " attributes may clash\n";
 
     _formal_charge.resize(8);
@@ -748,7 +748,7 @@ Substructure_Atom_Specifier::construct_from_msi_object(const msi_object & msi)
     return 0;
 
   att = msi.attribute(NAME_OF_ALL_RINGS_KEKULE);
-  if (NULL != att)
+  if (nullptr != att)
   {
     att->value(_all_rings_kekule);    // should check the value...
     _attributes_specified++;
@@ -766,7 +766,7 @@ int
 Substructure_Atom_Specifier::_fetch_symmetry_group(const msi_object & msi)
 {
   const msi_attribute * att = msi.attribute(NAME_OF_SYMMETRY_GROUP_ATTRIBUTE);
-  if (NULL == att)
+  if (nullptr == att)
     return 1;
 
   if (1 != att->number_int_values())
@@ -866,14 +866,14 @@ Substructure_Bond::construct_from_msi_object (const msi_object * msi,
     return 0;
 
   const msi_attribute * att = msi->attribute ("other");
-  if (NULL == att)
+  if (nullptr == att)
   {
     cerr << "msi object for bond has no \"other\" attribute\n";
     return 0;
   }
 
   int i;
-  if (! att->value (i) || i < 0 || NULL == completed[i] ||
+  if (! att->value (i) || i < 0 || nullptr == completed[i] ||
       ! completed[i]->ok())
   {
     cerr << "Atom specifier at other end invalid '" << (*att) << "'\n";
@@ -904,7 +904,7 @@ Substructure_Bond::write_as_msi_attribute (std::ostream & os,
 
   os << ind;
 
-  if (NULL != _b)
+  if (nullptr != _b)
     return _write_as_smarts(os);
 
   os << "(A I ";
@@ -1015,7 +1015,7 @@ Substructure_Bond::__write_as_smarts (std::ostream & os) const
   if (0 != _bond_types)
     write_ord_bond_types(_bond_types, os);
 
-  if (NULL == _b)
+  if (nullptr == _b)
     return os.good();
 
   if (0 != _bond_types)
@@ -1118,7 +1118,7 @@ Substructure_Bond::write_as_msi_object_or_attribute (std::ostream & os,
                                                      int & object_id,
                                                      int indentation) const
 {
-  if (NULL == b)
+  if (nullptr == b)
     return write_as_msi_attribute (os, indentation);
   else
     return write_as_msi_object (os, object_id, indentation);
@@ -1705,7 +1705,7 @@ Substructure_Atom::_process_attribute_smarts_bond (const msi_attribute * att,
 
   const atom_number_t o = other_end[0];
 
-  if (NULL == completed[o])
+  if (nullptr == completed[o])
   {
     cerr << "Substructure_Atom::_process_attribute_smarts_bond: atom " << o << " has not been defined\n";
     return 0;
@@ -1763,7 +1763,7 @@ Substructure_Atom::_process_attribute_bond (const msi_attribute * att,
     return 0;
   }
 
-  if (NULL == completed[other_end])
+  if (nullptr == completed[other_end])
   {
     cerr << "Substructure_Atom::_process_attribute_bond: atom " << other_end << " has not been defined\n";
     return 0;
@@ -1834,7 +1834,7 @@ Substructure_Environment::_process_attribute_bond (const msi_attribute * att,
       return 0;
     }
 
-    if (NULL == completed[a])
+    if (nullptr == completed[a])
     {
       cerr << "Substructure_Environment::_process_attribute_bond: atom " << a << " not defined\n";
       return 0;
@@ -1857,7 +1857,7 @@ Substructure_Environment::_process_attribute_bond (const msi_attribute * att,
       return 0;
     }
 
-    if (NULL == completed[a])
+    if (nullptr == completed[a])
     {
       cerr << "Substructure_Environment::_process_attribute_bond: atom " << a << " has not been defined\n";
       return 0;
@@ -1951,7 +1951,7 @@ Substructure_Atom::_process_attribute_bonds (const msi_object & msi,
 {
   const msi_attribute * att;
   int i = 0;
-  while (NULL != (att = msi.attribute(i++)))
+  while (nullptr != (att = msi.attribute(i++)))
   {
     if (NAME_OF_BOND_SMARTS_ATTRIBUTE == att->name())
     {
@@ -1986,7 +1986,7 @@ Substructure_Environment::_process_attribute_bonds (const msi_object & msi,
 
   const msi_attribute * att;
   int i = 0;
-  while (NULL != (att = msi.attribute(i++)))
+  while (nullptr != (att = msi.attribute(i++)))
   {
 //  cerr << "Substructure_Environment::_process_attribute_bonds: examining " << *att << endl;
 
@@ -2015,7 +2015,7 @@ Substructure_Environment::_process_attribute_bonds (const msi_object & msi,
 // If no bond directives, maybe a bond smarts directive
 
   i = 0;
-  while (NULL != (att = msi.attribute(i++)))
+  while (nullptr != (att = msi.attribute(i++)))
   {
     if (NAME_OF_BOND_SMARTS_ATTRIBUTE != att->name())
       continue;
@@ -2041,7 +2041,7 @@ Substructure_Environment::_process_attribute_bonds (const msi_object & msi,
     {
       const atom_number_t a = other_end[j];
 
-      if (NULL == completed[a])
+      if (nullptr == completed[a])
       {
         cerr << "Substructure_Environment::_process_attribute_bonds: atom " << a << " has not been defined\n";
         return 0;
@@ -2167,7 +2167,7 @@ Substructure_Atom::_construct_from_msi_object (const msi_object & msi,
 
   _unique_id = msi.object_id();
 
-  if (NULL != completed[_unique_id])
+  if (nullptr != completed[_unique_id])
   {
     cerr << "Substructure_Atom::_construct_from_msi_object:Yipes, atom " << _unique_id << " already allocated\n";
     cerr << msi;
@@ -2176,7 +2176,7 @@ Substructure_Atom::_construct_from_msi_object (const msi_object & msi,
   }
 
   const msi_attribute * att = msi.attribute(NAME_OF_INITIAL_ATOM_NUMBER_ATTRIBUTE);
-  if (NULL != att)
+  if (nullptr != att)
   {
     if (! att->value(_initial_atom_number) || _initial_atom_number < 0)
     {
@@ -2250,9 +2250,9 @@ Substructure_Atom::_construct_from_msi_object (const msi_object & msi,
 
 // For simplicity, one can specify only one of atom smarts, smiles and smarts
 
-  if ((NULL !=  msi.attribute(NAME_OF_ATOM_SMARTS_ATTRIBUTE)) +
-      (NULL !=  msi.attribute(NAME_OF_SMARTS_ATTRIBUTE)) +
-      (NULL !=  msi.attribute(NAME_OF_SMILES_ATTRIBUTE)) > 1)
+  if ((nullptr !=  msi.attribute(NAME_OF_ATOM_SMARTS_ATTRIBUTE)) +
+      (nullptr !=  msi.attribute(NAME_OF_SMARTS_ATTRIBUTE)) +
+      (nullptr !=  msi.attribute(NAME_OF_SMILES_ATTRIBUTE)) > 1)
   {
       cerr << "The '" << NAME_OF_ATOM_SMARTS_ATTRIBUTE << "', '" <<
               NAME_OF_SMILES_ATTRIBUTE << "' and '" <<
@@ -2485,7 +2485,7 @@ initialise_bond_attributes(Substructure_Bond & sb,
     sb.set_match_any();
   } else if (0 == mdlbd->btype()) {
     sb.copy(b, mqs.copy_bond_attributes());
-  } else if (NULL == b) {
+  } else if (nullptr == b) {
     sb.set_match_any();
   } else if (b->is_aromatic()) {
     int ablki = aromatic_bonds_lose_kekule_identity();
@@ -2674,7 +2674,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
   _unique_id = my_atom_number;
   _initial_atom_number = my_atom_number;
 
-  assert (NULL == completed[my_atom_number]);
+  assert (nullptr == completed[my_atom_number]);
 
   completed[my_atom_number] = this;
 
@@ -2794,7 +2794,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
   }
   else
   {
-    if (1 == acon && NULL != my_parent)    // doesn't make sense to specify anything
+    if (1 == acon && nullptr != my_parent)    // doesn't make sense to specify anything
       ;
     else
       set_min_ncon(acon);
@@ -3018,7 +3018,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     Substructure_Bond * sb = new Substructure_Bond;
 
     const Bond * b = m.bond_between_atoms(my_atom_number, parent_atom_number);
-    assert (NULL != b);
+    assert (nullptr != b);
 
     int bnumber = m.which_bond(my_atom_number, parent_atom_number);
 
@@ -3026,7 +3026,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
 
     if (1 == e->atomic_number() && (mqs.convert_explicit_hydrogens_to_match_any_atom() || mqs.convert_explicit_hydrogens_to_match_any_atom_including_hydrogen()))
     {
-      initialise_bond_attributes(*sb, mdlfd.mdl_bond_data(bnumber), NULL, parent_atom_number, completed, mqs, 0);
+      initialise_bond_attributes(*sb, mdlfd.mdl_bond_data(bnumber), nullptr, parent_atom_number, completed, mqs, 0);
     }
     else if (bnumber >= mdlfd.number_bonds())   // underlying mdl_molecule may have been expanded
       ;
@@ -3079,7 +3079,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     if (j == parent_atom_number)
       continue;
 
-    if (NULL == completed[j])     // not yet done, further down the tree
+    if (nullptr == completed[j])     // not yet done, further down the tree
       continue;
 
     if (only_include_isotopically_labeled_atoms() && 0 == m.isotope(j))
@@ -3103,7 +3103,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
 #ifdef DEBUG_CREATE_FROM_MOLECULE
     cerr << "Ring closure bond back to atom " << j << endl;
 #endif
-    assert (NULL != completed[j]);
+    assert (nullptr != completed[j]);
   }
 
 // Do the children now
@@ -3113,14 +3113,14 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     const atom_number_t j = a->other(my_atom_number, i);
 
 #ifdef DEBUG_CREATE_FROM_MOLECULE
-    cerr << "From atom " << my_atom_number << " child " << j << " inc " << (NULL == include_these_atoms ? '1' : include_these_atoms[j]) << " complete " << completed[j] << ' ' << m.smarts_equivalent_for_atom(j) << endl;
+    cerr << "From atom " << my_atom_number << " child " << j << " inc " << (nullptr == include_these_atoms ? '1' : include_these_atoms[j]) << " complete " << completed[j] << ' ' << m.smarts_equivalent_for_atom(j) << endl;
 #endif
 
-    if (NULL != include_these_atoms && ! include_these_atoms[j])
+    if (nullptr != include_these_atoms && ! include_these_atoms[j])
       continue;
 
 #ifdef DEBUG_CREATE_FROM_MOLECULE
-    if (NULL != include_these_atoms)
+    if (nullptr != include_these_atoms)
       cerr << "include_these_atoms[" << j << "] " << include_these_atoms[j] << endl;
     else
       cerr << "include_these_atoms not set\n";
@@ -3233,7 +3233,7 @@ Substructure_Atom::parse_smiles_specifier (const IWString & smiles)
     return 0;
   }
 
-  extending_resizable_array<Substructure_Atom *> completed(NULL);
+  extending_resizable_array<Substructure_Atom *> completed(nullptr);
   completed.resize(m.natoms());
 
 // Unique numbers get scrambled in the process, so save it
@@ -3287,7 +3287,7 @@ std::ostream &
 operator << (std::ostream & os, const Substructure_Atom & a)
 {
   os << "Atom " << a.unique_id();
-  if (NULL == a.current_hold_atom())
+  if (nullptr == a.current_hold_atom())
     os << ", not matched\n";
   else
     os << ", matched to " << a.current_hold_atom()->atom_number();
@@ -3347,7 +3347,7 @@ Single_Substructure_Query::_initialise_sub_array (Molecule & m,
   int matoms = m.natoms();
 
   int * sub = new int[matoms]; std::unique_ptr<int[]> free_sub(sub);
-  assert (NULL != sub);
+  assert (nullptr != sub);
 
   m.ncon(sub);     // sub[i] = m.ncon(i)
 
@@ -3397,7 +3397,7 @@ Single_Substructure_Query::create_from_molecule (MDL_Molecule & m,
 #ifdef FINGERPRINT_SUBSTRUCTURE_SEARCHES
   if (use_fingerprints_for_screening_substructure_searches())
   {
-    assert (NULL == _fingerprint);
+    assert (nullptr == _fingerprint);
     IWMFingerprint iwmfingerprint;
     iwmfingerprint.construct_fingerprint(m);
 
@@ -3436,7 +3436,7 @@ Single_Substructure_Query::_build_element_hits_needed (const MDL_Molecule & m,
 
   for (int i = 0; i < matoms; i++)
   {
-    if (NULL != include_these_atoms && 0 == include_these_atoms[i])
+    if (nullptr != include_these_atoms && 0 == include_these_atoms[i])
       continue;
 
     if (only_include_isotopically_labeled_atoms() && 0 == m.isotope(i))
@@ -3513,14 +3513,14 @@ first_allowed_atom_in_fragment (Molecule & m,
 
   for (int i = 0; i < matoms; ++i)
   {
-    if (NULL == include_these_atoms)
+    if (nullptr == include_these_atoms)
       ;
     else if (0 == include_these_atoms[i])
       continue;
 
     if (i >= atoms_already_done.number_elements())
       ;
-    else if (NULL != atoms_already_done[i])
+    else if (nullptr != atoms_already_done[i])
       continue;
 
     if (m.fragment_membership(i) != f)
@@ -3548,7 +3548,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
 
   if (mqs.condense_explicit_hydrogens_to_anchor_atoms())
   {
-    if (NULL != include_these_atoms)
+    if (nullptr != include_these_atoms)
     {
       cerr << "Single_Substructure_Query::_create_from_molecule:include_these_atoms not handled, contact LillyMol on github (https://github.com/EliLillyCo/LillyMol)\n";
       exit(1);
@@ -3621,7 +3621,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
 
       Substructure_Atom * r = new Substructure_Atom;
 
-      if (! r->create_from_molecule(m, m, astart, NULL, mqs, tmp))
+      if (! r->create_from_molecule(m, m, astart, nullptr, mqs, tmp))
       {
         cerr << "Single_Substructure_Query::_create_from_molecule:failure for fragment " << i << endl;
         return 0;
@@ -3630,7 +3630,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
       _root_atoms.add(r);
     }
   }
-  else if (NULL != include_these_atoms)
+  else if (nullptr != include_these_atoms)
   {
 //#define ECHO_SUBSET
 #ifdef ECHO_SUBSET
@@ -3647,7 +3647,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
       {
         Substructure_Atom * r = new Substructure_Atom;
 
-        if (! r->create_from_molecule(m, m, astart, NULL, mqs, tmp, include_these_atoms))
+        if (! r->create_from_molecule(m, m, astart, nullptr, mqs, tmp, include_these_atoms))
         {
           cerr << "Single_Substructure_Query::_create_from_molecule:failure to build from atom " << astart << " in fragment " << i << endl;
           return 0;
@@ -3665,7 +3665,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
 
       atom_number_t astart = m.first_atom_in_fragment(i);
       
-      if (! r->create_from_molecule(m, m, astart, NULL, mqs, tmp))
+      if (! r->create_from_molecule(m, m, astart, nullptr, mqs, tmp))
       {
         cerr << "Single_Substructure_Query::_create_from_molecule:failure for fragment " << i << endl;
         return 0;
@@ -3689,7 +3689,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
   {
     // some time put in a computation of the number of rings with isotopes - is complicated by fused rings...
   }
-  else if (NULL != include_these_atoms)   // again, kind of hard
+  else if (nullptr != include_these_atoms)   // again, kind of hard
     ;
   else if (nr)
     _nrings.set_min(nr);
@@ -3720,7 +3720,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
     }
   }
 
-  if (NULL != include_these_atoms)
+  if (nullptr != include_these_atoms)
   {
     int * xref = new_int(matoms); std::unique_ptr<int[]> free_xref(xref);
     int ndx = 0;
@@ -3885,14 +3885,14 @@ Single_Substructure_Query::_add_environment_according_to_matched_atoms (Molecule
     return 0;
   }
 
-  extending_resizable_array<Substructure_Atom *> completed(NULL);
+  extending_resizable_array<Substructure_Atom *> completed(nullptr);
 
   _collect_all_atoms(completed);
 
 #ifdef CHECK_ATOMS_DEFINED
   for (int i = 0; i < completed.number_elements(); i++)
   {
-    if (NULL == completed[i])
+    if (nullptr == completed[i])
       cerr << "No atom " << i << endl;
     else
       cerr << "Atom " << i << " is defined\n";
@@ -3903,7 +3903,7 @@ Single_Substructure_Query::_add_environment_according_to_matched_atoms (Molecule
   {
     atom_number_t s = substitution_points[i];
 
-    if (NULL == completed[s])
+    if (nullptr == completed[s])
     {
       cerr << "Single_Substructure_Query::_add_environment_according_to_matched_atoms:no atom " << s << endl;
       return 0;
@@ -4175,7 +4175,7 @@ Single_Substructure_Query::write_msi (std::ostream & os)
 int
 Single_Substructure_Query::write (const char * fname)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   std::ofstream os(fname, std::ios::out);
   if (! os.good())
@@ -4460,7 +4460,7 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
 // Now construct the structural specification. There can be any number
 
   int i = 0;
-  while (NULL != (att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE, i++)))
+  while (nullptr != (att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE, i++)))
   {
     Substructure_Atom * a = new Substructure_Atom;
     a->set_unique_id(msi.object_id());
@@ -4505,7 +4505,7 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
   }
 
   i = 0;
-  while (NULL != (att = msi.attribute(NAME_OF_SMILES_ATTRIBUTE, i++)))
+  while (nullptr != (att = msi.attribute(NAME_OF_SMILES_ATTRIBUTE, i++)))
   {
     Substructure_Atom * a = new Substructure_Atom;
     a->set_unique_id(msi.object_id());
@@ -4777,7 +4777,7 @@ fetch_heteroatom_definitions(const msi_attribute * att,
     while (s.nextword(token, i))
     {
       const Element * e = get_element_from_symbol_no_case_conversion(token);
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "fetch_heteroatom_definitions:unrecognised element specification '" << s << "'\n";
         return 0;
@@ -5547,7 +5547,7 @@ Single_Substructure_Query::construct_from_msi_object(const msi_object & msi)
 
 // We need an array to mark each attribute as recognised or not.
 
-  int * attribute_recognised = NULL;
+  int * attribute_recognised = nullptr;
   int nat = msi.attribute_count();
   if (nat)
     attribute_recognised = new_int(nat);
@@ -5588,7 +5588,7 @@ Single_Substructure_Query::construct_from_msi_object(const msi_object & msi)
     }
   }
 
-  if (NULL != attribute_recognised)
+  if (nullptr != attribute_recognised)
     delete [] attribute_recognised;
 
   _preferences_present = 0;
@@ -6040,7 +6040,7 @@ Substructure_Query::read (const const_IWSubstring & zname)
     const_IWSubstring fname(zname);
     fname.remove_leading_chars(2);
     MDL_Molecule * m = read_first_molecule_from_file(fname);
-    if (NULL == m)
+    if (nullptr == m)
     {
       cerr << "Cannot read query molecule from '" << fname << "'\n";
       return 0;
@@ -6376,7 +6376,7 @@ Substructure_Query::_composite_query_construct_from_msi_object (const msi_object
   int nmsi = msi.number_elements();
   const msi_attribute * att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE);
 
-  if (0 == nmsi && NULL == att)
+  if (0 == nmsi && nullptr == att)
   {
     cerr << "Substructure_Query::_composite_query_construct_from_msi_object: no objects or smarts\n";
     return 0;
@@ -6385,7 +6385,7 @@ Substructure_Query::_composite_query_construct_from_msi_object (const msi_object
 // Looks like we should do something about operators here
 
   int aptr = 0;
-  while (NULL != (att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE, aptr++)))
+  while (nullptr != (att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE, aptr++)))
   {
     IWString smarts;
     att->value(smarts);
@@ -6459,11 +6459,11 @@ Substructure_Query::_composite_query_construct_from_msi_object (const msi_object
   assert (_number_elements == _operator.number_operators() + 1);
 
   att = msi.attribute(NAME_OF_COMMENT_ATTRIBUTE);
-  if (NULL != att)
+  if (nullptr != att)
     att->value(_comment);
 
   att = msi.attribute(NAME_OF_EACH_COMPONENT_SEARCH_ATTRIBUTE);
-  if (NULL != att)
+  if (nullptr != att)
   {
     if (! att->value(_each_component_search))
     {
@@ -6473,7 +6473,7 @@ Substructure_Query::_composite_query_construct_from_msi_object (const msi_object
   }
 
   att = msi.attribute(NAME_OF_OPERATOR_ATTRIBUTE);
-  if (NULL == att)
+  if (nullptr == att)
     return 1;
 
 // Any operator specified in the composite (silently) overrides any operators
@@ -6520,7 +6520,7 @@ Substructure_Query::construct_from_msi_object (const msi_object & msi)
   {
     rc = _composite_query_construct_from_msi_object(msi);
   }
-  else if (NULL != (att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE)))
+  else if (nullptr != (att = msi.attribute(NAME_OF_SMARTS_ATTRIBUTE)))
   {
     IWString smarts;
     att->value(smarts);
@@ -6940,7 +6940,7 @@ Elements_Needed::construct_from_msi_object (const msi_object & msi)
   }
 
   const msi_attribute * att = msi.attribute(NAME_OF_ATOMIC_NUMBER_ATTRIBUTE);
-  if (NULL == att)
+  if (nullptr == att)
   {
     cerr << "Elements_Needed::construct_from_msi_object: must give '" << NAME_OF_ATOMIC_NUMBER_ATTRIBUTE << "' attribute\n";
     return 0;

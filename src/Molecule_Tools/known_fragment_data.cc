@@ -95,7 +95,7 @@ Known_Fragment_Data::_common_read(data_source_and_type<Molecule> & input,
 
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 

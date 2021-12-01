@@ -970,7 +970,7 @@ int
 Molecule::fragment_membership(int * f)
 {
   assert(ok());
-  assert(NULL != f);
+  assert(nullptr != f);
 
   if (! _fragment_information.contains_valid_data())
     (void) number_fragments();
@@ -1241,7 +1241,7 @@ Molecule::create_subset_by_bond (Molecule & subset,
 
   int * bond_lookup_table = new_int(bond_lookup_table_size);
 
-  if (NULL == bond_lookup_table)
+  if (nullptr == bond_lookup_table)
   {
     cerr << "Molecule::create_subset_by_bond:cannot allocate bond lookup table " << _number_elements << endl;
     return 0;
@@ -1250,7 +1250,7 @@ Molecule::create_subset_by_bond (Molecule & subset,
   std::unique_ptr<int[]> free_bond_lookup_table(bond_lookup_table);
 
   int * xref = new_int(_number_elements, -1);
-  if (NULL == xref)
+  if (nullptr == xref)
   {
     cerr << "Molecule::create_subset_by_bond:cannot allocate xref array " << _number_elements << endl;
     return 0;
@@ -1367,14 +1367,14 @@ Fragment_Information::Fragment_Information()
 {
   _number_fragments = -1;
 
-  _fragment_membership = NULL;
+  _fragment_membership = nullptr;
 
   return;
 }
 
 Fragment_Information::~Fragment_Information()
 {
-  if (NULL != _fragment_membership)
+  if (nullptr != _fragment_membership)
     delete [] _fragment_membership;
 
   _number_fragments = -2;
@@ -1414,10 +1414,10 @@ Fragment_Information::debug_print (std::ostream & os) const
 int
 Fragment_Information::initialise (int matoms)
 {
-  if (NULL == _fragment_membership)
+  if (nullptr == _fragment_membership)
   {
     _fragment_membership = new_int(matoms, FRAGMENT_MEMBERSHIP_NOT_SET);
-    if (NULL == _fragment_membership)
+    if (nullptr == _fragment_membership)
     {
       cerr << "Fragment_Information::initialise:cannot allocate " << matoms << " atoms\n";
       return 0;
@@ -1449,10 +1449,10 @@ Fragment_Information::invalidate()
 {
   _number_fragments = -1;
 
-  if (NULL != _fragment_membership)
+  if (nullptr != _fragment_membership)
   {
     delete [] _fragment_membership;
-    _fragment_membership = NULL;
+    _fragment_membership = nullptr;
   }
 
   _atoms_in_fragment.resize_keep_storage(0);
@@ -1466,7 +1466,7 @@ Fragment_Information::all_atoms_in_one_fragment (int natoms, int nbonds)
 {
   _number_fragments = 1;
 
-  if (NULL != _fragment_membership)
+  if (nullptr != _fragment_membership)
     delete [] _fragment_membership;
 
   _fragment_membership = new_int(natoms, 0);
@@ -1607,7 +1607,7 @@ Molecule::_compute_fragment_information (Fragment_Information & fragment_informa
   if (! update_ring_info)
     return nf;
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
   int * fragment_membership = fragment_information.fragment_membership();
@@ -1630,7 +1630,7 @@ next_available_atom (int needle,
                      const int * include_atom,
                      int & istart)
 {
-  assert(NULL != include_atom);
+  assert(nullptr != include_atom);
 
   for ( ; istart < n; istart++)
   {
@@ -1680,7 +1680,7 @@ Molecule::compute_fragment_information(Fragment_Information & fragment_informati
 
   fragment_information.initialise(_number_elements);
 
-  if (NULL != include_atom)
+  if (nullptr != include_atom)
     return _compute_fragment_information_subset(fragment_information, include_atom);
 
   int * fragment_membership = fragment_information.fragment_membership();

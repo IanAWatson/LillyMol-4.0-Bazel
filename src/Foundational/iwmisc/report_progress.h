@@ -91,7 +91,7 @@ Report_Progress_Template<T>::report(const char * leading,
   if (! operator()())
     return 0;
 
-  if (NULL != leading)
+  if (nullptr != leading)
     output << leading;
 
   output << _times_called;
@@ -103,7 +103,7 @@ Report_Progress_Template<T>::report(const char * leading,
     _tprev = tnow;
   }
 
-  if (NULL != trailing)
+  if (nullptr != trailing)
     output << trailing;
 
   return 1;

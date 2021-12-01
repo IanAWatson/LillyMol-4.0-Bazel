@@ -886,7 +886,7 @@ Single_Substructure_Query::_spinach_match_requirements_satisfied(Query_Atoms_Mat
 
     Target_Atom * a = sai->current_hold_atom();
 
-    if (NULL == a)
+    if (nullptr == a)
       continue;
 
     atom_number_t matched_to = a->atom_number();
@@ -1388,7 +1388,7 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
 
   Substructure_Atom * r = _root_atoms[_iroot];
 
-  assert (NULL == r->current_hold_atom());
+  assert (nullptr == r->current_hold_atom());
 
   int istart, istop;
   if (! r->determine_start_stop(target_molecule, istart, istop))
@@ -1697,11 +1697,11 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
         cerr << "(" << a->atom_number_matched() << ")";
     }
     cerr << endl;
-    if (NULL == a->parent())
+    if (nullptr == a->parent())
       cerr << "Returning " << rc << endl;
 #endif
 
-    if (NULL == a->parent())    // must be a root atom, done
+    if (nullptr == a->parent())    // must be a root atom, done
       return rc;
 
     if (! a->move_to_next_match_from_current_anchor(already_matched, matched_atoms))
@@ -2284,7 +2284,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
   if (_do_not_perceive_symmetry_equivalent_matches)
     results.set_symmetry_class(target_molecule.molecule()->symmetry_classes());
   else
-    results.set_symmetry_class(NULL);
+    results.set_symmetry_class(nullptr);
 
   if (_atom_typing != nullptr)
   {
@@ -2379,7 +2379,7 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
 // of bond types. Even if the query doesn't specify aromatic bonds, we
 // need to convert aromatic rings so they match single bonds
 
-  bond_type_t * save_bt = NULL;
+  bond_type_t * save_bt = nullptr;
 
   if (2 == aromatic_bonds_lose_kekule_identity())
   {
@@ -2392,7 +2392,7 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
     if (0 == m->set_bond_types_for_isis_aromaticity_matching())
     {
       delete [] save_bt;
-      save_bt = NULL;
+      save_bt = nullptr;
     }
   }
   else if (_need_to_compute_aromaticity)
@@ -2415,7 +2415,7 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
 
 //target_molecule.debug_print(cerr);
 
-  if (NULL != save_bt)
+  if (nullptr != save_bt)
   {
     target_molecule.molecule()->set_bond_types_no_set_modified(save_bt);
     delete [] save_bt;
@@ -2845,11 +2845,11 @@ Single_Substructure_Query::query_atom_with_initial_atom_number (atom_number_t a)
   {
     Substructure_Atom * rc = _root_atoms[i]->query_atom_with_initial_atom_number(a);
 
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 Substructure_Atom *
@@ -2859,11 +2859,11 @@ Single_Substructure_Query::query_atom_with_atom_map_number(atom_number_t a) cons
   {
     Substructure_Atom * rc = _root_atoms[i]->query_atom_with_atom_map_number(a);
 
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -2929,27 +2929,27 @@ Single_Substructure_Query::bond_between_atoms (int a1, int a2) const
   {
     rc = _root_atoms[i]->bond_between_atoms(a1, a2);
 
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 const Substructure_Bond *
 Single_Substructure_Query::bond_between_atom_map_numbers(int a1, int a2) const
 {
-  const Substructure_Bond * rc = NULL;
+  const Substructure_Bond * rc = nullptr;
 
   for (int i = 0; i < _root_atoms.number_elements(); ++i)
   {
     rc = _root_atoms[i]->bond_between_atom_map_numbers(a1, a2);
 
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -3018,7 +3018,7 @@ Single_Substructure_Query::_unmatched_atoms_attached_matched(const Query_Atoms_M
 int
 Molecule_to_Match::AssignAtomTypes(Atom_Typing_Specification& atom_typing) 
 {
-  if (_m == NULL)
+  if (_m == nullptr)
   {
     cerr << "Molecule_to_Match::AssignAtomTypes:no molecule\n";
     return 0;

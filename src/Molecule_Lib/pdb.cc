@@ -127,7 +127,7 @@ atom_from_pdb_element(const const_IWSubstring& sym)
   if (slen > 4)
   {
     cerr << "atom atom_from_pdb_element: cannot parse '" << sym << "'\n";
-    return NULL;
+    return nullptr;
   }
 
   //  If there is just one character, assume that it is C N O F P S
@@ -135,10 +135,10 @@ atom_from_pdb_element(const const_IWSubstring& sym)
   if (1 == slen)
   {
     const Element* e = get_element_from_symbol_no_case_conversion(sym);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "atom_from_pdb_element:unrecognised element '" << sym << "'\n";
-      return NULL;
+      return nullptr;
     }
 
     return new Atom(e);
@@ -160,7 +160,7 @@ atom_from_pdb_element(const const_IWSubstring& sym)
 
   const Element* e = get_element_from_symbol_no_case_conversion(mysym);
 
-  if (NULL != e)
+  if (nullptr != e)
     return new Atom(e);
 
   // Now things get ambiguous. We just focus on the first letter of the name.
@@ -191,7 +191,7 @@ atom_from_pdb_element(const const_IWSubstring& sym)
 
   cerr << "No element for '" << sym << "'\n";
 
-  return NULL;
+  return nullptr;
 }
 
 static int
@@ -245,7 +245,7 @@ parse_pdb_atom_record(IWString& buffer,    // not const
     //  cerr << "From " << buffer << endl;
     //  cerr << "Getting element from '" << s << "'\n";
     const Element* e = get_element_from_symbol_no_case_conversion(s);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "Molecule::read_molecule_pdb_ds:unrecognised element '" << s << "'\n";
       return 0;
@@ -256,7 +256,7 @@ parse_pdb_atom_record(IWString& buffer,    // not const
   {
     a = atom_from_pdb_element(atom_name);
 
-    if (NULL == a)
+    if (nullptr == a)
     {
       cerr << "read pdb: unrecognised element '" << atom_name << "'\n";
       return 0;
@@ -415,11 +415,11 @@ CONECT 2556 2557 2558 2559 2578                                                 
 
   const Atom** tmp = new const Atom*[na];
   std::unique_ptr<const Atom*[]> free_tmp(tmp);
-  assert(NULL != tmp);
+  assert(nullptr != tmp);
 
   for (int i = 0; i < na; i++)
   {
-    tmp[i] = NULL;
+    tmp[i] = nullptr;
   }
 
   for (int i = 0; i < na; i++)
@@ -428,7 +428,7 @@ CONECT 2556 2557 2558 2559 2578                                                 
 
     int k = atom_number_to_atom_number[j];
 
-    if (NULL != tmp[k])
+    if (nullptr != tmp[k])
     {
       cerr << "Molecule::read_molecule_pdb_ds:duplicate atom " << k << endl;
       return 0;
@@ -441,7 +441,7 @@ CONECT 2556 2557 2558 2559 2578                                                 
 
   for (int i = 0; i < na; i++)
   {
-    if (NULL == tmp[i])
+    if (nullptr == tmp[i])
     {
       cerr << "Molecule::read_molecule_pdb_ds:no atom " << i << endl;
       return 0;
@@ -647,7 +647,7 @@ write_pdb_atom(const Atom* a, int* ecount, int atom_number, int fragment_number,
 
   IWString number_to_append;
 
-  if (NULL == ecount)
+  if (nullptr == ecount)
     number_to_append << atom_number;
   else
   {
@@ -718,7 +718,7 @@ Molecule::write_connection_table_pdb(std::ostream& os)
 
   //fmtflags ff = os.flags ();   // save state of os
 
-  int* element_count = NULL;
+  int* element_count = nullptr;
 
   if (number_by_element_count)
     element_count = new_int(HIGHEST_ATOMIC_NUMBER + 1);
@@ -740,12 +740,12 @@ Molecule::write_connection_table_pdb(std::ostream& os)
 
         if (use_stored_atom_information_when_writing_pdb_files)
           write_pdb_atom(_things[j], j + 1, stored_pdb_atom_information[j], f + 1, os);
-        else if (NULL != element_count)
+        else if (nullptr != element_count)
           write_pdb_atom(_things[j], element_count, (j + 1), f + 1, os);
         else if (number_within_sequence)
-          write_pdb_atom(_things[j], NULL, atoms_this_fragment, f + 1, os);
+          write_pdb_atom(_things[j], nullptr, atoms_this_fragment, f + 1, os);
         else
-          write_pdb_atom(_things[j], NULL, (j + 1), f + 1, os);
+          write_pdb_atom(_things[j], nullptr, (j + 1), f + 1, os);
       }
     }
   }
@@ -798,7 +798,7 @@ Molecule::write_molecule_pdb(std::ostream& os, const IWString& comments)
   static const char* month[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
                                 "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
 
-  time_t t = time(NULL);
+  time_t t = time(nullptr);
   struct tm* tm = gmtime(&t);
 
   os << "HEADER    UNK                                     " << tm->tm_mday << '-'

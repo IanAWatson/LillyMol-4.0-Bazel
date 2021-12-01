@@ -39,7 +39,7 @@ write_fixed_size_counted_fingerprint(const int * c,
                                      int bits_in_original_fingerprint,
                                      ostream & output)
 {
-  if (0 == n || NULL == c)
+  if (0 == n || nullptr == c)
   {
     cerr << "write_fixed_size_counted_fingerprint:invalid input\n";
     return 0;
@@ -53,7 +53,7 @@ write_fixed_size_counted_fingerprint(const int * c,
 
   char * bytes = du_bin2ascii (&bytes_allocated, n, reinterpret_cast<char *> (b));
 
-  if (NULL == bytes)
+  if (nullptr == bytes)
   {
     cerr << "write_fixed_size_counted_fingerprint:cannot allocate fingerprint\n";
     return 0;
@@ -75,7 +75,7 @@ append_fixed_size_counted_fingerprint (const int * c,
                                       int bits_in_original_fingerprint,
                                       IWString & output)
 {
-  if (0 == n || NULL == c)
+  if (0 == n || nullptr == c)
   {
     cerr << "write_fixed_size_counted_fingerprint:invalid input\n";
     return 0;
@@ -89,7 +89,7 @@ append_fixed_size_counted_fingerprint (const int * c,
 
   char * bytes = du_bin2ascii (&bytes_allocated, n, reinterpret_cast<char *> (b));
 
-  if (NULL == bytes)
+  if (nullptr == bytes)
   {
     cerr << "write_fixed_size_counted_fingerprint:cannot allocate fingerprint\n";
     return 0;

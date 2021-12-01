@@ -193,12 +193,12 @@ Molecule::bond_between_atoms(atom_number_t a1, atom_number_t a2) const
 
   const Bond * rc = _things[a1]->bond_to_atom(a2);
 
-  if (NULL != rc)
+  if (nullptr != rc)
     return rc;
 
   cerr << "Molecule::bond_between_atoms: atoms " << a1 << " and " << a2 << " not bonded\n";
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 /*
@@ -210,7 +210,7 @@ const Bond *
 Molecule::bond_between_atoms_if_present(const atom_number_t a1, const atom_number_t a2) const
 {
   if (a1 == a2)
-    return NULL;
+    return nullptr;
 
   assert(ok_2_atoms(a1, a2));
 
@@ -781,7 +781,7 @@ Molecule::set_bond_type_between_atoms(atom_number_t a1, atom_number_t a2, bond_t
   assert(OK_BOND_TYPE(bt));
 
   Bond * b = const_cast<Bond *>(_things[a1]->bond_to_atom(a2));    // loss of const OK
-  if (NULL == b)
+  if (nullptr == b)
   {
     cerr << "Molecule::set_bond_type_between_atoms: atoms " << a1 << " and " << a2
          << ", no bond found\n";
@@ -810,10 +810,10 @@ Molecule::set_bond_type_between_atoms(atom_number_t a1, atom_number_t a2, bond_t
 
   if (! b->is_single_bond())
   {
-    if (NULL != chiral_centre_at_atom(a1))
+    if (nullptr != chiral_centre_at_atom(a1))
       remove_chiral_centre_at_atom(a1);
 
-    if (NULL != chiral_centre_at_atom(a2))
+    if (nullptr != chiral_centre_at_atom(a2))
       remove_chiral_centre_at_atom(a2);
   }
 
@@ -852,7 +852,7 @@ Molecule::set_wedge_bond_between_atoms(atom_number_t a1, atom_number_t a2, int d
   assert(ok_2_atoms(a1, a2));
 
   Bond * b = const_cast<Bond *>(_things[a1]->bond_to_atom(a2));    // loss of const OK
-  if (NULL == b)
+  if (nullptr == b)
   {
     cerr << "Molecule::set_bond_type_between_atoms: atoms " << a1 << " and " << a2
          << ", no bond found\n";

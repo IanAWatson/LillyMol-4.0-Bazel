@@ -434,12 +434,12 @@ suffix_for_file_type(FileType file_type)
         break;
 
     default:
-      return NULL;
+      return nullptr;
       break;
   }
   
   iwabort();
-  return NULL;    // should never come here
+  return nullptr;    // should never come here
 }
 
 #ifdef NOLONGER_NEEDED_ASDASD
@@ -541,12 +541,12 @@ suffix_for_file_type(int file_type)
       break;
 
     default:
-      return NULL;
+      return nullptr;
       break;
   }
   
   iwabort();
-  return NULL;    // should never come here
+  return nullptr;    // should never come here
 }
 #endif
 
@@ -611,7 +611,7 @@ create_file_with_appropriate_name(const const_IWSubstring & old_name,
                                    int keep_existing_suffix)
 {
   const char * new_suffix = suffix_for_file_type(file_type);
-  if (NULL == new_suffix)
+  if (nullptr == new_suffix)
   {
     cerr << "create_file_with_appropriate_name: unrecognised type " << 
             file_type << endl;
@@ -642,7 +642,7 @@ int
 append_appropriate_suffix(IWString & fname, FileType file_type)
 {
   const char * new_suffix = suffix_for_file_type(file_type);
-  if (NULL == new_suffix)
+  if (nullptr == new_suffix)
   {
     cerr << "append_appropriate_suffix: unrecognised type " << 
             file_type << endl;
@@ -1145,7 +1145,7 @@ template <typename T>
 int
 rwmolecule_error(const char * message, T & input)
 {
-  assert (NULL != message);
+  assert (nullptr != message);
 
   cerr << message << ", line " << input.lines_read() << "\n";
   if (input.at_eof())

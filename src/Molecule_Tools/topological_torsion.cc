@@ -93,7 +93,7 @@ Args::DebugPrint(std::ostream& output) const {
 bool
 Args::AddRingClosureBond(const Molecule& m) {
   const Bond * b = m.bond_between_atoms_if_present(first_atom, current_atom);
-  if (b == NULL) {
+  if (b == nullptr) {
     return false;
   }
 

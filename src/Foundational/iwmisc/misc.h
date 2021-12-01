@@ -84,7 +84,7 @@ template <typename T>
 int
 index_of_smallest (int n, const T * items)
 {
-  assert (NULL != items);
+  assert (nullptr != items);
 
   T minval = items[0];
   int rc = 0;
@@ -105,7 +105,7 @@ template <typename T>
 int
 index_of_largest (int n, const T * items)
 {
-  assert (NULL != items);
+  assert (nullptr != items);
 
   T maxval = items[0];
   int rc = 0;
@@ -277,7 +277,7 @@ iw_write_array (const T * a,
 {
   for (int i = 0; i < n; i++)
   {
-    if (NULL == array_name || 0 == strlen (array_name))
+    if (nullptr == array_name || 0 == strlen (array_name))
       output << " i = " << i;
     else
       output << array_name << '[' << i << ']';

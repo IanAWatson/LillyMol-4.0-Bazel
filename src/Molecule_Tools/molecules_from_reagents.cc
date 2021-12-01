@@ -31,7 +31,7 @@ using std::endl;
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/iwstandard.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -729,7 +729,7 @@ Set_of_Molecules_to_Generate<T>::read_targets (data_source_and_type<T> & input)
 {
   T * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     preprocess(*m);
 
@@ -1084,7 +1084,7 @@ read_reagents (data_source_and_type<T> & input,
 {
   T * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     preprocess(*m);
 
@@ -1490,7 +1490,7 @@ molecules_from_reactions (int argc, char ** argv)
     const char * x = cl.option_value('X');
 
     const Element * e = get_element_from_symbol_no_case_conversion(x);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "NO element of type '" << x << "'\n";
       return 1;

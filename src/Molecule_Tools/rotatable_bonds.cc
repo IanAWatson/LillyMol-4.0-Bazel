@@ -586,7 +586,7 @@ compute_rotatable_bonds (Molecule & m,
 
 //  Great, we have a rotatable bond
 
-    if (NULL != isotope)
+    if (nullptr != isotope)
     {
       isotope[a1] = mark_rotatable_bonds;
       isotope[a2] = mark_rotatable_bonds;
@@ -614,11 +614,11 @@ compute_rotatable_bonds (Molecule & m,
   if (mark_rotatable_bonds)
     isotope = new_int(m.natoms());
   else
-    isotope = NULL;
+    isotope = nullptr;
 
   int rc = compute_rotatable_bonds(m, non_rotabable_bonds, isotope);
 
-  if (NULL != isotope)
+  if (nullptr != isotope)
   {
     m.set_isotopes(isotope);
 
@@ -723,7 +723,7 @@ rotatable_bonds (data_source_and_type<Molecule> & input)
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 

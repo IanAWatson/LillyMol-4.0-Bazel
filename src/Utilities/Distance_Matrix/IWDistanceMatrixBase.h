@@ -153,7 +153,7 @@ class IWDistanceMatrixBase : public IW_STL_Hash_Map_int
     int resize (int);
     int resize (int, T);    // 2nd arg is initialiser
 
-    int active () const { return NULL != _zdata;}
+    int active () const { return nullptr != _zdata;}
 
     int number_molecules () const { return _number_molecules;}
 
@@ -407,15 +407,15 @@ IWDistanceMatrixBase<T>::IWDistanceMatrixBase ()
 {
   _number_molecules = 0;
 
-  _zdata = NULL;
+  _zdata = nullptr;
 
-  _end = NULL;
+  _end = nullptr;
 
-  _row_offset = NULL;
+  _row_offset = nullptr;
 
   _initialiser = static_cast<T>(0);
 
-  _id = NULL;
+  _id = nullptr;
 
   return;
 }
@@ -430,22 +430,22 @@ template <typename T>
 void
 IWDistanceMatrixBase<T>::_free_all_dynamically_allocated_arrays ()
 {
-  if (NULL != _zdata)
+  if (nullptr != _zdata)
   {
     delete [] _zdata;
-    _zdata = NULL;
+    _zdata = nullptr;
   }
 
-  if (NULL != _row_offset)
+  if (nullptr != _row_offset)
   {
     delete [] _row_offset;
-    _row_offset = NULL;
+    _row_offset = nullptr;
   }
 
-  if (NULL != _id)
+  if (nullptr != _id)
   {
     delete [] _id;
-    _id = NULL;
+    _id = nullptr;
   }
 
   return;
@@ -537,7 +537,7 @@ IWDistanceMatrixBase<T>::resize (int n,
     return 1;
   }
 
-  assert (NULL == _zdata);
+  assert (nullptr == _zdata);
   assert (n > 0);
 
   const uint64_t un = static_cast<uint64_t>(n);
@@ -547,7 +547,7 @@ IWDistanceMatrixBase<T>::resize (int n,
 //cerr << "n = " << n << " Allocating " << items_needed << " items of size " << sizeof(T) << endl;
 
   _zdata = new T[items_needed];
-  if (NULL == _zdata)
+  if (nullptr == _zdata)
   {
     cerr << "IWDistanceMatrixBase::resize: cannot allocate array for size " << n << ", number items = " << items_needed << '\n';
     return 0;
@@ -563,7 +563,7 @@ IWDistanceMatrixBase<T>::resize (int n,
 //cerr << "Problem size " << n << " needs " << items_needed << " items stored\n";
 
   _row_offset = new uint64_t[n];
-  if (NULL == _row_offset)
+  if (nullptr == _row_offset)
   {
     cerr << "IWDistanceMatrixBase::resize: cannot allocate row offset array for size " << n << '\n';
     return 0;
@@ -573,7 +573,7 @@ IWDistanceMatrixBase<T>::resize (int n,
 
   _id = new IWString[n];
 
-  if (NULL == _id)
+  if (nullptr == _id)
   {
     cerr << "IWDistanceMatrixBase::resize:cannot allocate " << n << " ids\n";
     return 0;
@@ -800,10 +800,10 @@ IWDistanceMatrixBase<T>::do_read (iwstring_data_source & input,
                                   int ignore_unrecognised_header_records)
 {
   _number_molecules = 0;
-  if (NULL != _zdata)
+  if (nullptr != _zdata)
   {
     delete _zdata;
-    _zdata = NULL;
+    _zdata = nullptr;
   }
 
   const_IWSubstring buffer;
@@ -851,7 +851,7 @@ IWDistanceMatrixBase<T>::_read_the_data (iwstring_data_source & input)
 {
   assert (_number_molecules > 0);
 
-  if (NULL == _zdata)
+  if (nullptr == _zdata)
   {
     if (! IWDistanceMatrixBase::resize(_number_molecules))
     {
@@ -1171,10 +1171,10 @@ IWDistanceMatrixBase<T>::_process_id_directive (const_IWSubstring directive,    
     return;
   }
   
-  if (NULL == _id)
+  if (nullptr == _id)
   {
     _id = new IWString[_number_molecules];
-    if (NULL == _id)
+    if (nullptr == _id)
     {
       cerr << "IWDistanceMatrixBase::return: sorry, cannot allocate " << _number_molecules << " ID strings\n";
       error_encountered = 1;

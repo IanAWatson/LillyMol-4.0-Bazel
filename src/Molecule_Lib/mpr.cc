@@ -51,7 +51,7 @@ Molecular_Properties_Generator::_molecular_properties_generation (Molecule & m,
 
   if (nr)    // the molecule has rings
   {
-    assert (NULL != ring_membership);
+    assert (nullptr != ring_membership);
 
     for (int i = 0; i < matoms; i++)
     {
@@ -118,7 +118,7 @@ Molecular_Properties_Generator::operator() (Molecule & m,
   int nr = m.nrings();
 
   if (0 == nr)
-    return _molecular_properties_generation(m, NULL, properties);
+    return _molecular_properties_generation(m, nullptr, properties);
 
   int * ring_membership = new int[m.natoms()]; std::unique_ptr<int[]> free_ring_membership(ring_membership);
 

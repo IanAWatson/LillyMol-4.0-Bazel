@@ -185,7 +185,7 @@ Bond_list::invalidate_ring_info()
 int
 Bond_list::copy_bond_types (bond_type_t * b) const
 {
-  assert(NULL != b);
+  assert(nullptr != b);
 
   for (int i = 0; i < _number_elements; i++)
   {

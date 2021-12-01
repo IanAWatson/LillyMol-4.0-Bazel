@@ -90,7 +90,7 @@ contains_unmarked_or_wrong_chirality(Molecule& m) {
 
   const int matoms = m.natoms();
   for (int i = 0; i < matoms; ++i) {
-    if (m.chiral_centre_at_atom(i) != NULL) {
+    if (m.chiral_centre_at_atom(i) != nullptr) {
       if (! is_actually_chiral(m, i)) {
         m.remove_chiral_centre_at_atom(i);  // Could get strange, hopefully OK.
       }
@@ -154,7 +154,7 @@ tsmiles(Molecule& m) {
 int
 tsmiles(data_source_and_type<Molecule>& input) {
   Molecule * m;
-  while ((m = input.next_molecule()) != NULL) {
+  while ((m = input.next_molecule()) != nullptr) {
     std::unique_ptr<Molecule> free_m(m);
     molecules_read++;
     preprocess(*m);

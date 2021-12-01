@@ -27,7 +27,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 int verbose = 0;     // note, is externally visible
 
@@ -708,7 +708,7 @@ test_operators()
   }
 #endif
 
-  const char * rhs = NULL;
+  const char * rhs = nullptr;
   IWString nn = rhs;
 
   if (0 != nn.length())
@@ -1157,7 +1157,7 @@ test_numeric_value()
     }
   }
 
-  srand (time (NULL));
+  srand (time(NULL));
 
   int numeric_value_differences = 0;    // very bad
   int numerically_equivalent = 0;       // close enough

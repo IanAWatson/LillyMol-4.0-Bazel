@@ -140,7 +140,7 @@ class value_count : public resizable_array<T>, public Accumulator<T>
 template <typename T>
 value_count<T>::value_count()
 {
-  _count = NULL;
+  _count = nullptr;
 
   _missing_values = 0;
 
@@ -151,14 +151,14 @@ template <typename T>
 value_count<T>::~value_count()
 {
   delete [] _count;
-  _count = NULL;
+  _count = nullptr;
 }
 
 template <typename T>
 int
 value_count<T>::initialise(int nkeep)
 {
-  assert (NULL == _count);
+  assert (nullptr == _count);
 
   resizable_array_base<T>::resize(nkeep);
 
@@ -850,7 +850,7 @@ value_count<T>::_find_quantile(int number_needed) const
     return _interpolate(number_needed, number_encountered, i);    // found too many, need to interpolate back
   }
 
-  assert (NULL == "Should not come here");
+  assert (nullptr == "Should not come here");
 
   return 0.0;
 }
@@ -991,13 +991,13 @@ template class resizable_array_base<value_count_float *>;
 template class value_count<float>;
 #endif
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
 static int print_statistics = 0;
 
-static value_count_float * counters = NULL;
+static value_count_float * counters = nullptr;
 
 static int translate_tabs = 0;
 
@@ -1011,7 +1011,7 @@ static int translate_tabs = 0;
 
 static resizable_array<int> ignore_columns_from_cl;
 
-static int * ignore_column = NULL;
+static int * ignore_column = nullptr;
 
 /*
   Alternatively, we can process only columns which match a regexp (descriptor files only)
@@ -1107,7 +1107,7 @@ static int remove_if_all_greater_than_zero = 0;
 
 static float remove_if_all_values_less_than = static_cast<float>(0.0);
 
-static IWString * column_title = NULL;
+static IWString * column_title = nullptr;
 
 /*
   Generic routine for writing column info.
@@ -1237,7 +1237,7 @@ static int
 establish_column_titles(const const_IWSubstring & buffer)
 {
   assert (columns_in_input > 0);
-  assert (NULL != ignore_column);
+  assert (nullptr != ignore_column);
 
   column_title = new IWString[columns_in_input + 1];    // need an extra one at the end for the last call
 
@@ -1688,7 +1688,7 @@ notenoughvariance(iwstring_data_source & input,
 //    figure out all the cases in which we need to convert to an actual number
 
       if (normalise_output && (nlines > nskip) &&
-          (NULL == ignore_column || 0 == ignore_column[iword])
+          (nullptr == ignore_column || 0 == ignore_column[iword])
           && missing_value != token)
       {
         float tmp;
@@ -1790,7 +1790,7 @@ notenoughvariance(const char * fname,
   {
     value_count_float & v = counters[i];
 
-    if (NULL == ignore_column || ! ignore_column[i])
+    if (nullptr == ignore_column || ! ignore_column[i])
       v.initialise(nkeep);
   }
 
@@ -2291,10 +2291,10 @@ notenoughvariance(int argc, char ** argv)
     }
   }
 
-  if (NULL != ignore_column)
+  if (nullptr != ignore_column)
     delete [] ignore_column;
 
-  if (NULL != column_title)
+  if (nullptr != column_title)
     delete [] column_title;
 
   return rc;

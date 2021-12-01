@@ -82,7 +82,7 @@ MCFirstPass::Build(Command_Line& cl) {
     IWString e;
     for (int i = 0; cl.value('e', e, i); ++i) {
       const Element * o = get_element_from_symbol_no_case_conversion(e);
-      if (NULL == o) {
+      if (nullptr == o) {
         cerr << "Sorry, non periodic table element '" << e << "', cannot be OK\n";
         return 0;
       }
@@ -601,7 +601,7 @@ count_interesting_atoms(const Molecule & m,
 
   for (int i = 0; i < matoms; ++i)
   {
-    if (NULL != include_atom && flag != include_atom[i])
+    if (nullptr != include_atom && flag != include_atom[i])
       continue;
 
     atomic_number_t z = m.atomic_number(i);
@@ -684,7 +684,7 @@ MCFirstPass::ExcludeForTooFewInterestingAtoms(Molecule & m,
   const int nf = m.number_fragments();
 
   if (nf == 1) {
-    const int interesting_atoms = count_interesting_atoms(m, NULL, 0);
+    const int interesting_atoms = count_interesting_atoms(m, nullptr, 0);
     if (Fraction(interesting_atoms, m.natoms()) >=
                 _min_fraction_interesting_atoms)
       return 0;                // not rejected

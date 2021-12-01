@@ -362,6 +362,10 @@ Accumulator_Base<T, SUMMER>::variance () const
 {       
   assert (_n > 1);
 
+  if (_n < 2) {
+    return 0;
+  }
+
   double tave = Accumulator_Base<T, SUMMER>::average();
   double rc = _x2sum - _n * tave * tave;
 

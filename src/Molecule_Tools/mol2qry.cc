@@ -83,7 +83,7 @@ int remove_chiral_centres = 0;
 
 int add_explicit_hydrogens = 0;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 Substructure_Query coordination_point;
 
@@ -459,7 +459,7 @@ mol2qry(data_source_and_type<MDL_Molecule> & input,
 {
   MDL_Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<MDL_Molecule> free_m(m);
 

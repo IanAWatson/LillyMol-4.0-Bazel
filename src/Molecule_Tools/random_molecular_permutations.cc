@@ -1892,10 +1892,10 @@ permutation_make_ring(Molecule & m,
   return 0;
 }
 
-static const Element * element_carbon = NULL;
-static const Element * element_oxygen = NULL;
-static const Element * element_nitrogen = NULL;
-static const Element * element_sulphur = NULL;
+static const Element * element_carbon = nullptr;
+static const Element * element_oxygen = nullptr;
+static const Element * element_nitrogen = nullptr;
+static const Element * element_sulphur = nullptr;
 
 static int
 permutation_change_nitrogen_to_carbon(Molecule & m,
@@ -2530,7 +2530,7 @@ is_part_of_ring_system(Molecule & m,
 
   const Ring * r = m.ring_containing_atom(zatom);
 
-  assert (NULL != r);
+  assert (nullptr != r);
 
   if (r->fused_system_identifier() >= 0)
     return 1;
@@ -5618,7 +5618,7 @@ random_molecular_permutations(data_source_and_type<Molecule> & input,
                               Molecule_Output_Object & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     preprocess(*m);
 
@@ -5917,7 +5917,7 @@ read_fragments(data_source_and_type<M> & input,
 {
   M * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules.add(m);
   }

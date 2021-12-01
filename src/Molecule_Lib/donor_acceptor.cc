@@ -10,7 +10,7 @@
 #include "target.h"
 
 void
-display_standard_donor_acceptor_assigner_options (std::ostream & os, char cflag)
+display_standard_donor_acceptor_assigner_options(std::ostream & os, char cflag)
 {
   os << "  -" << cflag << " a=<query>   specify query(s) for acceptors\n";
   os << "  -" << cflag << " d=<query>   specify query(s) for donors\n";
@@ -170,7 +170,7 @@ Donor_Acceptor_Assigner::_assign_acceptors(Molecule_to_Match & target, int * iso
 //#define DEBUG_ASSIGN_DONORS
 
 int
-Donor_Acceptor_Assigner::_assign_donors (Molecule_to_Match & target, int * isotope)
+Donor_Acceptor_Assigner::_assign_donors(Molecule_to_Match & target, int * isotope)
 {
   int na = _donor_queries.number_elements();
 
@@ -221,8 +221,8 @@ Donor_Acceptor_Assigner::_assign_donors (Molecule_to_Match & target, int * isoto
 }
 
 int
-Donor_Acceptor_Assigner::_process (Molecule_to_Match & target,
-                                  int * isotope)
+Donor_Acceptor_Assigner::_process(Molecule_to_Match & target,
+                                 int * isotope)
 {
   int rc = _assign_acceptors(target, isotope);
   rc    += _assign_donors(target, isotope);
@@ -231,8 +231,8 @@ Donor_Acceptor_Assigner::_process (Molecule_to_Match & target,
 }
 
 int
-Donor_Acceptor_Assigner::__process (Molecule & m, 
-                                    int * isotope)
+Donor_Acceptor_Assigner::__process(Molecule & m, 
+                                   int * isotope)
 {
   Molecule_to_Match target(&m);
 
@@ -254,8 +254,8 @@ Donor_Acceptor_Assigner::__process (Molecule & m,
 }
 
 int
-Donor_Acceptor_Assigner::_process (Molecule & m,
-                                  int * isotope)
+Donor_Acceptor_Assigner::_process(Molecule & m,
+                                 int * isotope)
 {
   _temp_detach_hydrogens.detach_atoms(m);
 
@@ -267,13 +267,13 @@ Donor_Acceptor_Assigner::_process (Molecule & m,
 }
 
 int
-Donor_Acceptor_Assigner::process (Molecule & m, int * isotope)
+Donor_Acceptor_Assigner::process(Molecule & m, int * isotope)
 {
   int i_own_the_vector;
 
   const int matoms = m.natoms();
 
-  if (NULL == isotope)
+  if (nullptr == isotope)
   {
     isotope = new int[matoms];
     i_own_the_vector = 1;
@@ -294,7 +294,7 @@ Donor_Acceptor_Assigner::process (Molecule & m, int * isotope)
 }
 
 int
-Donor_Acceptor_Assigner::_do_apply_isotopic_labels (Molecule & m, const int * isotope) const
+Donor_Acceptor_Assigner::_do_apply_isotopic_labels(Molecule & m, const int * isotope) const
 {
   int matoms = m.natoms();
 
@@ -320,8 +320,8 @@ Donor_Acceptor_Assigner::_do_apply_isotopic_labels (Molecule & m, const int * is
 */
 
 void
-Donor_Acceptor_Assigner::_do_apply_atom_type_labels (Molecule & m,
-                                                     const int * isotope) const
+Donor_Acceptor_Assigner::_do_apply_atom_type_labels(Molecule & m,
+                                                    const int * isotope) const
 {
   int matoms = m.natoms();
 
@@ -343,8 +343,8 @@ Donor_Acceptor_Assigner::_do_apply_atom_type_labels (Molecule & m,
 }
 
 int
-Donor_Acceptor_Assigner::_fetch_queries (const_IWSubstring & c,
-                                         resizable_array_p<Substructure_Hit_Statistics> & queries)
+Donor_Acceptor_Assigner::_fetch_queries(const_IWSubstring & c,
+                                        resizable_array_p<Substructure_Hit_Statistics> & queries)
 {
   assert ('=' == c[1]);
 
@@ -376,7 +376,7 @@ Donor_Acceptor_Assigner::_fetch_queries (const_IWSubstring & c,
 }
 
 int
-Donor_Acceptor_Assigner::_open_stream_for_labelled_molecules (const IWString & stem)
+Donor_Acceptor_Assigner::_open_stream_for_labelled_molecules(const IWString & stem)
 {
   _stream_for_labelled_molecules.add_output_type(FILE_TYPE_SMI);
 
@@ -398,7 +398,7 @@ Donor_Acceptor_Assigner::deactivate()
 }
 
 int
-Donor_Acceptor_Assigner::build (const const_IWSubstring & s)
+Donor_Acceptor_Assigner::build(const const_IWSubstring & s)
 {
   const_IWSubstring c;
   for (auto i = 0; s.nextword(c, i); )

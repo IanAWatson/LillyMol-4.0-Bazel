@@ -196,7 +196,7 @@ Molecule::write_molecule_psf (std::ostream & os)
       charge_t q;
 
       // template charge
-      if (NULL == _charges)
+      if (nullptr == _charges)
         q = static_cast<charge_t>(0.0);
       else
         q = _charges->item(i);

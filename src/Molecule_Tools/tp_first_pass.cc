@@ -271,7 +271,7 @@ count_interesting_atoms(Molecule & m,
 
   for (int i = 0; i < matoms; ++i)
   {
-    if (NULL != include_atom && flag != include_atom[i])
+    if (nullptr != include_atom && flag != include_atom[i])
       continue;
 
     atomic_number_t z = m.atomic_number(i);
@@ -351,7 +351,7 @@ exclude_for_too_few_interesting_atoms(Molecule & m)
 
   if (1 == nf)
   {
-    const int interesting_atoms = count_interesting_atoms(m, NULL, 0);
+    const int interesting_atoms = count_interesting_atoms(m, nullptr, 0);
     if (static_cast<double>(interesting_atoms) / static_cast<double>(m.natoms()) >= min_fraction_interesting_atoms)
       return 0;                // not rejected
     rejection_reason = "too few interesting atoms";
@@ -737,7 +737,7 @@ tp_first_pass(data_source_and_type<Molecule> & input,
               Molecule_Output_Object & output_object)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -772,7 +772,7 @@ tp_first_pass(const char *fname,
               FileType input_type,
               Molecule_Output_Object & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {
@@ -1235,7 +1235,7 @@ tp_first_pass(int argc, char ** argv)
     while (cl.value('e', e, i++))
     {
       const Element * o = get_element_from_symbol_no_case_conversion(e);
-      if (NULL == o)
+      if (nullptr == o)
       {
         cerr << "Sorry, non periodic table element '" << e << "', cannot be OK\n";
         return 5;

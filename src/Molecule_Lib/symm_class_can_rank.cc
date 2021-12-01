@@ -6,8 +6,8 @@
 
 Symmetry_Class_and_Canonical_Rank::Symmetry_Class_and_Canonical_Rank()
 {
-  _canonical_rank = NULL;
-  _symmetry_class = NULL;
+  _canonical_rank = nullptr;
+  _symmetry_class = nullptr;
 
   return;
 }
@@ -31,12 +31,12 @@ Symmetry_Class_and_Canonical_Rank::invalidate()
 static int
 common_allocate_array(int*& p, int s)
 {
-  if (NULL == p)
+  if (nullptr == p)
     delete[] p;
 
   p = new int[s];
 
-  return (NULL != p);
+  return (nullptr != p);
 }
 
 int
@@ -54,24 +54,24 @@ Symmetry_Class_and_Canonical_Rank::allocate_arrays(int s)
 static int
 common_copy(int*& lhs, const int* rhs, int n)
 {
-  if (NULL == lhs && NULL == rhs)
+  if (nullptr == lhs && nullptr == rhs)
     return 1;
 
-  if (NULL != lhs && NULL == rhs)
+  if (nullptr != lhs && nullptr == rhs)
   {
     delete lhs;
-    lhs = NULL;
+    lhs = nullptr;
     return 1;
   }
 
   // At this stage rhs is NOT null
 
-  assert(NULL != rhs);
+  assert(nullptr != rhs);
 
-  if (NULL == lhs)
+  if (nullptr == lhs)
   {
     lhs = new int[n];
-    if (NULL == lhs)
+    if (nullptr == lhs)
     {
       cerr << "common_copy:memory failure, cannot allocate " << n << " items\n";
       return 0;

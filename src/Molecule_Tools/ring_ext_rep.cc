@@ -13,7 +13,7 @@ Ring_Extraction_Replacement_Conditions::Ring_Extraction_Replacement_Conditions()
 
   _isotope_for_ring_fusion = 0;
 
-  _ring_fusion_element = NULL;
+  _ring_fusion_element = nullptr;
 
   _isotope_for_substitution_points = 0;
 
@@ -69,10 +69,10 @@ Ring_Extraction_Replacement_Conditions::initialise (Command_Line & cl,
     else
     {
       _ring_fusion_element = get_element_from_symbol_no_case_conversion(f);
-      if (NULL == _ring_fusion_element)
+      if (nullptr == _ring_fusion_element)
         _ring_fusion_element = create_element_with_symbol(f);
 
-      if (NULL == _ring_fusion_element)
+      if (nullptr == _ring_fusion_element)
       {
         cerr << "INvalid ring fusion element '" << f << "'\n";
         return 4;
@@ -246,7 +246,7 @@ Ring_Extraction_Replacement_Conditions::identify_atoms_associated_with_ring (Mol
 
       if (in_same_ring[j * matoms + l])   // part of a fusion
       {
-        if (NULL != _ring_fusion_element)
+        if (nullptr != _ring_fusion_element)
         {
           m.set_element (l, _ring_fusion_element);
           include_atom[l] = 1;

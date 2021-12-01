@@ -37,8 +37,9 @@ using std::endl;
 
 #include "Molecule_Tools/nvrtspsa.h"
 #include "Molecule_Tools/qry_wcharge.h"
+#include "Molecule_Tools/partial_symmetry.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int reduce_to_largest_fragment = 0;
 
@@ -71,6 +72,8 @@ static int do_complexity_descriptors = 0;
 static int perform_expensive_chirality_perception = 0;
 
 static int do_ramey_descriptors = 1;
+
+static int do_partial_symmetry_descriptors = 0;
 
 /*
   Strongly fused is intended to apply to molecules that will have strained systems.
@@ -402,6 +405,11 @@ enum IWDescr_Enum
   iwdescr_flsepsymatom,
   iwdescr_maxsymmclass,
 
+  iwdescr_maxpsymd,
+  iwdescr_fmaxpsymd,
+  iwdescr_maxpsymdmean,
+  iwdescr_psymdnumzero,
+
 // Ramey descriptors
 
   iwdescr_obalance,
@@ -414,6 +422,12 @@ enum IWDescr_Enum
   iwdescr_rmynbr,
   iwdescr_rmyni
 };
+
+template <typename T>
+T
+Fraction(T numerator, T denominator) {
+  return static_cast<T>(numerator) / static_cast<T>(denominator);
+}
 
 /*
   In order to keep the array large enough, make sure you use the last
@@ -489,6 +503,19 @@ class Descriptor : public Set_or_Unset<float>, public Accumulator<float>
     void set(double s) { Set_or_Unset<float>::set(static_cast<float>(s));}
 
     Descriptor operator++ (int);
+
+    Descriptor& operator= (int s) {
+      set(s);
+      return *this;
+    }
+    Descriptor& operator= (float s) {
+      set(s);
+      return *this;
+    }
+    Descriptor& operator= (double s) {
+      set(s);
+      return *this;
+    }
 };
 
 Descriptor::Descriptor()
@@ -875,6 +902,11 @@ fill_descriptor_extremeties (Descriptor * d,
   d[iwdescr_flsepsymatom].set_min_max_resolution(0.0f, 1.0f, resolution);
   d[iwdescr_maxsymmclass].set_min_max_resolution(0.0f, 12.0f, resolution);
 
+  d[iwdescr_maxpsymd].set_min_max_resolution(0, 30.0f, resolution);
+  d[iwdescr_fmaxpsymd].set_min_max_resolution(0, 30.0f, resolution);
+  d[iwdescr_maxpsymdmean].set_min_max_resolution(0, 10.0f, resolution);
+  d[iwdescr_psymdnumzero].set_min_max_resolution(0, 10.0f, resolution);
+
   d[iwdescr_rmync].set_min_max_resolution(0.0f, 48.2944f, resolution);
   d[iwdescr_rmyncl].set_min_max_resolution(0.0f, 3.300221f, resolution);
   d[iwdescr_rmynn].set_min_max_resolution(0.0f, 10.8482f, resolution);
@@ -896,7 +928,7 @@ Descriptor::operator++ (int)
   return *this;
 }*/
 
-static Descriptor * descriptor = NULL;
+static Descriptor * descriptor = nullptr;
 
 class Descriptor_Filter
 {
@@ -1118,7 +1150,7 @@ Descriptor_Filter::report (std::ostream & os) const
   return 1;
 }
 
-static Descriptor_Filter * filter = NULL;
+static Descriptor_Filter * filter = nullptr;
 static int number_filters = 0;
 static IWString smiles_as_input;
 
@@ -1127,11 +1159,11 @@ static int rejected_by_filters = 0;
 static int
 allocate_descriptors()
 {
-  assert (NULL == descriptor);
+  assert (nullptr == descriptor);
 
   descriptor = new Descriptor[NUMBER_DESCRIPTORS];
 
-  if (NULL == descriptor)
+  if (nullptr == descriptor)
   {
     cerr << "Memory failure, cannot allocate " << NUMBER_DESCRIPTORS << " descriptors\n";
     return 0;
@@ -1403,6 +1435,13 @@ allocate_descriptors()
   descriptor[iwdescr_flsepsymatom].set_name("flsepsymatom");
   descriptor[iwdescr_maxsymmclass].set_name("maxsymmclass");
 
+  if (do_partial_symmetry_descriptors) {
+    descriptor[iwdescr_maxpsymd].set_name("maxpsymd");
+    descriptor[iwdescr_fmaxpsymd].set_name("fmaxpsymd");
+    descriptor[iwdescr_maxpsymdmean].set_name("maxpsymdmean");
+    descriptor[iwdescr_psymdnumzero].set_name("psymdnzero");
+  }
+
   if (do_ramey_descriptors)
   {
     descriptor[iwdescr_obalance].set_name("obalance");
@@ -1504,7 +1543,7 @@ initialise_descriptor_defaults()
   previously computed results
 */
 
-static Set_or_Unset<float> * saved_result = NULL;
+static Set_or_Unset<float> * saved_result = nullptr;
 
 
 static int
@@ -1544,8 +1583,8 @@ write_fingerprint (Molecule & m,
 }
 
 static int
-create_header (IWString & header,
-               const char output_separator)
+create_header(IWString & header,
+              const char output_separator)
 {
   header.resize(500);
 
@@ -1574,9 +1613,9 @@ write_header(IWString_and_File_Descriptor & output,
 
   int tokens = create_header(header, output_separator);
 
-  output << "Name ";
+  output << "Name" << output_separator;
   if (include_smiles_as_descriptor)
-    output << "smiles ";
+    output << "smiles" << output_separator;
   output << header << '\n';
 
   if (verbose)
@@ -1724,10 +1763,10 @@ compute_ring_substitution_descriptors (extending_resizable_array<int> & diffs,
 }
 
 static int
-compute_ring_substitution_descriptors (Molecule & m,
-                                       const int * ncon,
-                                       const Set_of_Atoms & par,
-                                       extending_resizable_array<int> & diffs)
+compute_ring_substitution_descriptors(Molecule & m,
+                                      const int * ncon,
+                                      const Set_of_Atoms & par,
+                                      extending_resizable_array<int> & diffs)
 {
 //#define DEBUG_COMPUTE_RING_SUBSTITUTION_DESCRIPTORS
 #ifdef DEBUG_COMPUTE_RING_SUBSTITUTION_DESCRIPTORS
@@ -1795,10 +1834,10 @@ compute_ring_substitution_descriptors (Molecule & m,
 */
 
 static int
-compute_ring_substitution_ratios (Molecule & m,
-                                  const int * ncon,
-                                  const Atom * const * atom,
-                                  const int * ring_membership)
+compute_ring_substitution_ratios(Molecule & m,
+                                 const int * ncon,
+                                 const Atom * const * atom,
+                                 const int * ring_membership)
 {
   int ring_atoms = 0;
   int substituted_outside_ring = 0;
@@ -1846,11 +1885,11 @@ compute_ring_substitution_ratios (Molecule & m,
 }
 
 static int
-bonds_to_nearest_ring (const Molecule & m,
-                       atom_number_t previous_atom,
-                       atom_number_t current_atom,
-                       const Atom * const * atom,
-                       const int * fsid)
+bonds_to_nearest_ring(const Molecule & m,
+                      atom_number_t previous_atom,
+                      atom_number_t current_atom,
+                      const Atom * const * atom,
+                      const int * fsid)
 {
   const Atom * a = atom[current_atom];
 
@@ -1888,9 +1927,9 @@ bonds_to_nearest_ring (const Molecule & m,
 }
 
 static int
-compute_between_ring_descriptors (Molecule & m,
-                                  const int * ncon,
-                                  const Atom * const * atom)
+compute_between_ring_descriptors(Molecule & m,
+                                 const int * ncon,
+                                 const Atom * const * atom)
 {
   int nr = m.nrings();
 
@@ -1987,9 +2026,9 @@ count_ring_bonds(const Atom & a)
 */
 
 static int
-compute_adjacent_ring_fusion_descriptors (Molecule & m,
-                                          const int * ncon,
-                                          const int * ring_membership)
+compute_adjacent_ring_fusion_descriptors(Molecule & m,
+                                         const int * ncon,
+                                         const int * ring_membership)
 {
   int single_bonds_found = 0;
   int double_bonds_found = 0;
@@ -2054,8 +2093,8 @@ compute_adjacent_ring_fusion_descriptors (Molecule & m,
 }
 
 static int
-compute_ring_substitution_descriptors (Molecule & m,
-                                       const int * ncon)
+compute_ring_substitution_descriptors(Molecule & m,
+                                      const int * ncon)
 {
   int nr = m.nrings();
 
@@ -2284,8 +2323,8 @@ compute_ramey_descriptors(Molecule & m,
 */
 
 static int
-is_spiro_fused (Molecule & m,
-                atom_number_t a)
+is_spiro_fused(Molecule & m,
+               atom_number_t a)
 {
   int nr = m.nrings();
   for (int i = 0; i < nr; i++)
@@ -2323,9 +2362,9 @@ is_spiro_fused (Molecule & m,
 }
 
 static int
-do_compute_spiro_fusions (Molecule & m,
-                          const int * ncon,
-                          const int * ring_membership)
+do_compute_spiro_fusions(Molecule & m,
+                         const int * ncon,
+                         const int * ring_membership)
 {
   int nr = m.nrings();
 
@@ -2357,9 +2396,9 @@ do_compute_spiro_fusions (Molecule & m,
 }
 
 static int
-do_compute_chirality_descriptors (Molecule & m,
-                                  const atomic_number_t * z,
-                                  const int * ncon)
+do_compute_chirality_descriptors(Molecule & m,
+                                 const atomic_number_t * z,
+                                 const int * ncon)
 {
   int matoms = m.natoms();
 
@@ -2386,7 +2425,7 @@ do_compute_chirality_descriptors (Molecule & m,
     else
       continue;
 
-    if (NULL != m.chiral_centre_at_atom(i))
+    if (nullptr != m.chiral_centre_at_atom(i))
     {
       chiral_centres++;
       continue;
@@ -2404,6 +2443,22 @@ do_compute_chirality_descriptors (Molecule & m,
   descriptor[iwdescr_nchiral].set(static_cast<float>(chiral_centres));
 
   return 1;
+}
+
+// Partial symmetry descriptors.
+void
+NearSymmetricDescriptors(Molecule& m) {
+  partial_symmetry::PartialSymmetry psim(m);
+  const int * symmetry = psim.SymmetricAtRadius();
+  Accumulator_Int<int> acc;
+  const int matoms = m.natoms();
+  acc.extra(symmetry, matoms);
+  int nzero = std::count(symmetry, symmetry + matoms, 0);
+  descriptor[iwdescr_maxpsymd] = acc.maxval();
+  descriptor[iwdescr_fmaxpsymd] = Fraction<float>(acc.maxval(), matoms);
+  descriptor[iwdescr_maxpsymdmean] = acc.average();
+  descriptor[iwdescr_psymdnumzero] = nzero;
+  return;
 }
 
 void
@@ -2557,10 +2612,10 @@ do_compute_descriptors_related_to_centroid_atom(Molecule & m,
 }
 
 static void
-compute_shortest_distance_from_longest_path (Molecule & m,
-                                             const int * dm,
-                                             const int * in_path,
-                                             int * shortest_distance_from_longest_path)
+compute_shortest_distance_from_longest_path(Molecule & m,
+                                            const int * dm,
+                                            const int * in_path,
+                                            int * shortest_distance_from_longest_path)
 {
   int matoms = m.natoms();
 
@@ -2621,12 +2676,12 @@ do_compute_distances_from_longest_path_descriptors(Molecule & m,
 }
 
 static int
-do_compute_distances_from_longest_path_descriptors (Molecule & m,
-                                                    const int * dm,
-                                                    atom_number_t a1,
-                                                    atom_number_t a2,
-                                                    int * in_path,
-                                                    const int longest_path)
+do_compute_distances_from_longest_path_descriptors(Molecule & m,
+                                                   const int * dm,
+                                                   atom_number_t a1,
+                                                   atom_number_t a2,
+                                                   int * in_path,
+                                                   const int longest_path)
 {
   int matoms = m.natoms();
   
@@ -2668,12 +2723,12 @@ do_compute_distances_from_longest_path_descriptors (Molecule & m,
 */
 
 static int
-do_compute_distances_from_longest_path_descriptors (Molecule & m,
-                                                    const int * dm,
-                                                    const int longest_path,
-                                                    int * in_path)
+do_compute_distances_from_longest_path_descriptors(Molecule & m,
+                                                   const int * dm,
+                                                   const int longest_path,
+                                                   int * in_path)
 {
-  assert (NULL != dm);
+  assert (nullptr != dm);
 
   const int matoms = m.natoms();
 
@@ -2723,11 +2778,11 @@ do_compute_distances_from_longest_path_descriptors (Molecule & m,
 }
 
 static int
-do_compute_distance_matrix_descriptors (Molecule & m,
-                                        const atomic_number_t * z,
-                                        const int * ncon,
-                                        int * eccentricity,
-                                        const int * dm)
+do_compute_distance_matrix_descriptors(Molecule & m,
+                                       const atomic_number_t * z,
+                                       const int * ncon,
+                                       int * eccentricity,
+                                       const int * dm)
 {
   const auto matoms = m.natoms();
   if (1 == matoms)    // these parameters don't make sense
@@ -2908,9 +2963,9 @@ do_compute_distance_matrix_descriptors (Molecule & m,
 }
 
 static int
-do_compute_distance_matrix_descriptors (Molecule & m,
-                                        const atomic_number_t * z,
-                                        const int * ncon)
+do_compute_distance_matrix_descriptors(Molecule & m,
+                                       const atomic_number_t * z,
+                                       const int * ncon)
 {
   const auto matoms = m.natoms();
 
@@ -2919,13 +2974,13 @@ do_compute_distance_matrix_descriptors (Molecule & m,
   int * eccentricity = new_int(matoms + matoms);std::unique_ptr<int[]> free_eccentricity(eccentricity);
 
   int * dm = new int[matoms * matoms]; std::unique_ptr<int[]> free_dm(dm);
-  assert (NULL != dm);
+  assert (nullptr != dm);
 
   std::copy_n(m.distance_matrix_warning_may_change(), matoms * matoms, dm);
 
   int longest_path = do_compute_distance_matrix_descriptors(m, z, ncon, eccentricity, dm);
 
-  assert (NULL != dm);
+  assert (nullptr != dm);
   do_compute_distances_from_longest_path_descriptors(m, dm, longest_path, eccentricity);   // re-use eccentricity array
 
   do_compute_descriptors_related_to_centroid_atom(m, dm, longest_path, z, ncon, eccentricity);   // eccentricity just used as a temporary array, existing contents destroyed
@@ -2936,9 +2991,9 @@ do_compute_distance_matrix_descriptors (Molecule & m,
 }
                                     
 static int
-compute_polar_bond_descriptors (Molecule & m,
-                                const atomic_number_t * z,
-                                const int * ncon)
+compute_polar_bond_descriptors(Molecule & m,
+                               const atomic_number_t * z,
+                               const int * ncon)
 {
   int nb = m.nedges();
 
@@ -3044,8 +3099,8 @@ compute_crowding_descriptors(Molecule & m,
 }
 
 static int
-compute_crowding_descriptors (Molecule & m,
-                              const int * ncon)
+compute_crowding_descriptors(Molecule & m,
+                             const int * ncon)
 {
   const Atom ** a = new const Atom *[m.natoms()]; std::unique_ptr<const Atom *[]> free_a(a);
 
@@ -3065,7 +3120,7 @@ compute_crowding_descriptors (Molecule & m,
 */
 
 static void
-check_for_no_values (int & shortest, int & nshortest, const int matoms)
+check_for_no_values(int & shortest, int & nshortest, const int matoms)
 {
   if (matoms == shortest)
     shortest = nshortest = 0;
@@ -3076,7 +3131,7 @@ check_for_no_values (int & shortest, int & nshortest, const int matoms)
 }
 
 static void
-compute_average (Accumulator_Int<int> & acc, double & zresult)
+compute_average(Accumulator_Int<int> & acc, double & zresult)
 {
   if (0 == acc.n())
   {
@@ -3097,7 +3152,7 @@ compute_average (Accumulator_Int<int> & acc, double & zresult)
 */
 
 static void
-check_against_two (int tocheck, int & shortest, int & nshortest)
+check_against_two(int tocheck, int & shortest, int & nshortest)
 {
   if (tocheck < shortest)
   {
@@ -3111,8 +3166,8 @@ check_against_two (int tocheck, int & shortest, int & nshortest)
 }
 
 static int
-compute_bond_separation_parameters (Molecule & m,
-                                    const int * isotope)
+compute_bond_separation_parameters(Molecule & m,
+                                   const int * isotope)
 {
   int matoms = m.natoms();
 
@@ -3208,9 +3263,9 @@ compute_bond_separation_parameters (Molecule & m,
 */
 
 static int
-compute_ring_fusion_descriptors (Molecule & m,
-                                 const int * ncon,
-                                 const int * ring_membership)
+compute_ring_fusion_descriptors(Molecule & m,
+                                const int * ncon,
+                                const int * ring_membership)
 {
   int ar5 = 0;
   int ar6 = 0;
@@ -3363,8 +3418,8 @@ compute_ring_fusion_descriptors (Molecule & m,
 */
 
 static int
-atoms_not_already_marked (const Ring & r,
-                          int * atom_already_done)
+atoms_not_already_marked(const Ring & r,
+                         int * atom_already_done)
 {
   int rc = 0;       // the number of items not already set
 
@@ -3486,10 +3541,10 @@ compute_exocyclic_bonds(Molecule & m,
 */
 
 static int
-just_terminal_groups_outside_ring (const Molecule & m,
-                                   const int * ncon,
-                                   const Ring & r,
-                                   atom_number_t a)
+just_terminal_groups_outside_ring(const Molecule & m,
+                                  const int * ncon,
+                                  const Ring & r,
+                                  atom_number_t a)
 {
   const Atom * ai = m.atomi(a);
 
@@ -3511,9 +3566,9 @@ just_terminal_groups_outside_ring (const Molecule & m,
 }
 
 static float
-compute_ring_isolation (Molecule & m,
-                        const int * ncon,
-                        const Ring & r)
+compute_ring_isolation(Molecule & m,
+                       const int * ncon,
+                       const Ring & r)
 {
   int ring_size = r.number_elements();
 
@@ -3541,8 +3596,8 @@ compute_ring_isolation (Molecule & m,
 }
 
 static int
-heteroatoms_in_ring (const Ring * r,
-                     const atomic_number_t * z)
+heteroatoms_in_ring(const Ring * r,
+                    const atomic_number_t * z)
 {
   int rc = 0;
 
@@ -3562,7 +3617,7 @@ heteroatoms_in_ring (const Ring * r,
 */
 
 static int
-compute_ring_descriptors (Molecule & m,
+compute_ring_descriptors(Molecule & m,
                const atomic_number_t * z,
                const int * ncon,
                int * ring_already_done,
@@ -3769,7 +3824,7 @@ compute_ring_descriptors (Molecule & m,
 }
 
 static int
-compute_ring_descriptors (Molecule & m,
+compute_ring_descriptors(Molecule & m,
                const atomic_number_t * z,
                const int * ncon)
 {
@@ -3852,10 +3907,10 @@ compute_hbond_descriptors (Molecule & m,
 */
 
 static int
-compute_substructure_based_charge_descriptors (Molecule & m,
-                                               IWString & output,
-                                               Query_and_Charge_Stats * query,
-                                               int ii)
+compute_substructure_based_charge_descriptors(Molecule & m,
+                                              IWString & output,
+                                              Query_and_Charge_Stats * query,
+                                              int ii)
 {
   Substructure_Results sresults;
 
@@ -3932,12 +3987,12 @@ compute_substructure_based_charge_descriptors (Molecule & m,
 }
 
 static int
-compute_radha_entropy_descriptors (Molecule & m,
-                                   atom_number_t zatom,
-                                   const int * ncon,
-                                   const int * ring_membership,
-                                   const Atom ** atom,
-                                   int * already_done)
+compute_radha_entropy_descriptors(Molecule & m,
+                                  atom_number_t zatom,
+                                  const int * ncon,
+                                  const int * ring_membership,
+                                  const Atom ** atom,
+                                  int * already_done)
 {
   const Atom * ai = atom[zatom];
 
@@ -3977,11 +4032,11 @@ compute_radha_entropy_descriptors (Molecule & m,
 */
 
 static int
-compute_radha_entropy_descriptors (Molecule & m,
-                                   const int * ncon,
-                                   const int * ring_membership,
-                                   const Atom ** atom,
-                                   int * already_done)
+compute_radha_entropy_descriptors(Molecule & m,
+                                  const int * ncon,
+                                  const int * ring_membership,
+                                  const Atom ** atom,
+                                  int * already_done)
 {
   int matoms = m.natoms();
 
@@ -4043,10 +4098,10 @@ compute_radha_entropy_descriptors (Molecule & m,
 }
 
 static int
-compute_radha_entropy_descriptors (Molecule & m,
-                                   const int * ncon,
-                                   const int * ring_membership,
-                                   const Atom ** atom)
+compute_radha_entropy_descriptors(Molecule & m,
+                                  const int * ncon,
+                                  const int * ring_membership,
+                                  const Atom ** atom)
 {
   int * tmp = new_int(m.natoms()); std::unique_ptr<int[]> free_tmp(tmp);
 
@@ -4068,12 +4123,12 @@ compute_substructure_based_charge_descriptors (Molecule & m,
 }
 
 static int
-look_for_inter_ring_atoms (const Molecule & m,
-                           atom_number_t avoid,
-                           atom_number_t zatom, 
-                           int * inter_ring,
-                           const int * ring_membership,
-                           const Atom ** atom)
+look_for_inter_ring_atoms(const Molecule & m,
+                          atom_number_t avoid,
+                          atom_number_t zatom, 
+                          int * inter_ring,
+                          const int * ring_membership,
+                          const Atom ** atom)
 {
   const Atom * a = atom[zatom];
 
@@ -4111,10 +4166,10 @@ look_for_inter_ring_atoms (const Molecule & m,
 */
 
 static void
-id_inter_ring_atoms (const Molecule & m,
-                     int * inter_ring,
-                     const int * ring_membership,
-                     const Atom ** atom)
+id_inter_ring_atoms(const Molecule & m,
+                    int * inter_ring,
+                    const int * ring_membership,
+                    const Atom ** atom)
 {
   int matoms = m.natoms();
 
@@ -4153,10 +4208,10 @@ id_inter_ring_atoms (const Molecule & m,
 }
 
 static int
-id_spinach (const Molecule & m,
-            int * spinach,
-            const int * ring_membership,
-            const Atom ** atom)
+id_spinach(const Molecule & m,
+           int * spinach,
+           const int * ring_membership,
+           const Atom ** atom)
 {
   id_inter_ring_atoms(m, spinach, ring_membership, atom);
 
@@ -4212,11 +4267,11 @@ id_spinach (const Molecule & m,
 */
 
 static int
-compute_ring_chain_descriptors (Molecule & m,
-                                const atomic_number_t * z,
-                                const int * ncon,
-                                const Atom ** atom,
-                                const int * ring_membership)
+compute_ring_chain_descriptors(Molecule & m,
+                               const atomic_number_t * z,
+                               const int * ncon,
+                               const Atom ** atom,
+                               const int * ring_membership)
 {
   int ring_chain_join_count = 0;
   int ring_chain_heteroatom_join_count = 0;
@@ -4327,15 +4382,15 @@ count_spinach_connections(const Molecule & m,
 }
 
 static int
-compute_spinach_descriptors (Molecule & m, int matoms,
-                             int * spinach,
-                             const atomic_number_t * z,
-                             const int * ncon,
-                             const int * ring_membership,
-                             const Atom ** atom)
+compute_spinach_descriptors(Molecule & m, int matoms,
+                            int * spinach,
+                            const atomic_number_t * z,
+                            const int * ncon,
+                            const int * ring_membership,
+                            const Atom ** atom)
 {
   assert (matoms > 0);
-  assert (NULL != spinach);
+  assert (nullptr != spinach);
 
   if (0 == m.nrings())
   {
@@ -4493,7 +4548,7 @@ compute_spinach_descriptors (Molecule & m, int matoms,
 }
 
 static int
-compute_spinach_descriptors (Molecule & m,
+compute_spinach_descriptors(Molecule & m,
                const atomic_number_t * z,
                const int * ncon,
                const int * ring_membership,
@@ -4507,8 +4562,8 @@ compute_spinach_descriptors (Molecule & m,
 }
 
 static int
-compute_rule_of_five_stuff (Molecule & m,
-                            const atomic_number_t * z)
+compute_rule_of_five_stuff(Molecule & m,
+                           const atomic_number_t * z)
 {
   int matoms = m.natoms();
 
@@ -4542,11 +4597,11 @@ compute_rule_of_five_stuff (Molecule & m,
 #ifdef PSA_NOW_IN_SEPARATE_FILE_ASDLKAJSD
 
 static void
-report_novartis_psa_unclassified_atom (Molecule & m,
-                                       atom_number_t zatom,
-                                       const Atom & a,
-                                       int hcount,
-                                       int is_aromatic)
+report_novartis_psa_unclassified_atom(Molecule & m,
+                                      atom_number_t zatom,
+                                      const Atom & a,
+                                      int hcount,
+                                      int is_aromatic)
 {
   if (! report_unclassified_atoms)
     return;
@@ -4575,10 +4630,10 @@ report_novartis_psa_unclassified_atom (Molecule & m,
 }
 
 static double
-novartis_polar_suface_area_nitrogen (Molecule & m,
-                                     atom_number_t zatom,
-                                     Atom & a,
-                                     int is_aromatic)
+novartis_polar_suface_area_nitrogen(Molecule & m,
+                                    atom_number_t zatom,
+                                    Atom & a,
+                                    int is_aromatic)
 {
   int ncon = a.ncon();
 
@@ -4671,10 +4726,10 @@ novartis_polar_suface_area_nitrogen (Molecule & m,
 }
 
 static double
-novartis_polar_suface_area_oxygen (Molecule & m,
-                                   atom_number_t zatom,
-                                   Atom & a,
-                                   int is_aromatic)
+novartis_polar_suface_area_oxygen(Molecule & m,
+                                  atom_number_t zatom,
+                                  Atom & a,
+                                  int is_aromatic)
 {
   int ncon = a.ncon();
 
@@ -4726,10 +4781,10 @@ novartis_polar_suface_area_oxygen (Molecule & m,
 }
 
 static double
-novartis_polar_suface_area_sulphur (Molecule & m,
-                                    atom_number_t zatom,
-                                    Atom & a,
-                                    int is_aromatic)
+novartis_polar_suface_area_sulphur(Molecule & m,
+                                   atom_number_t zatom,
+                                   Atom & a,
+                                   int is_aromatic)
 {
   int ncon = a.ncon();
 
@@ -4786,10 +4841,10 @@ novartis_polar_suface_area_sulphur (Molecule & m,
 }
 
 static double
-novartis_polar_suface_area_phosphorus (Molecule & m,
-                                       atom_number_t zatom,
-                                       Atom & a,
-                                       int is_aromatic)
+novartis_polar_suface_area_phosphorus(Molecule & m,
+                                      atom_number_t zatom,
+                                      Atom & a,
+                                      int is_aromatic)
 {
   int ncon = a.ncon();
 
@@ -4835,10 +4890,10 @@ novartis_polar_suface_area_phosphorus (Molecule & m,
 */
 
 static int
-compute_novartis_polar_surface_area (Molecule & m, 
-                                     const atomic_number_t * z,
-                                     const Atom ** atom,
-                                     const int * is_aromatic)
+compute_novartis_polar_surface_area(Molecule & m, 
+                                    const atomic_number_t * z,
+                                    const Atom ** atom,
+                                    const int * is_aromatic)
 {
   int matoms = m.natoms();
 
@@ -4877,9 +4932,9 @@ compute_novartis_polar_surface_area (Molecule & m,
 #endif
 
 static double
-identify_mr_halogen (const Molecule & m,
-                     const atomic_number_t * z,
-                     int * already_done)
+identify_mr_halogen(const Molecule & m,
+                    const atomic_number_t * z,
+                    int * already_done)
 {
   int matoms = m.natoms();
 
@@ -4913,10 +4968,10 @@ identify_mr_halogen (const Molecule & m,
 }
 
 static double
-identify_mr_oxygen (const Molecule & m,
-                    const atomic_number_t * z,
-                    const Atom * const * atom,
-                    int * already_done)
+identify_mr_oxygen(const Molecule & m,
+                   const atomic_number_t * z,
+                   const Atom * const * atom,
+                   int * already_done)
 {
   int matoms = m.natoms();
 
@@ -4974,10 +5029,10 @@ identify_mr_oxygen (const Molecule & m,
 }
 
 static double
-identify_mr_sulphur (const Molecule & m,
-                     const atomic_number_t * z,
-                     const Atom * const * atom,
-                     int * already_done)
+identify_mr_sulphur(const Molecule & m,
+                    const atomic_number_t * z,
+                    const Atom * const * atom,
+                    int * already_done)
 {
   double rc = 0.0;
 
@@ -5061,10 +5116,10 @@ identify_mr_sulphur (const Molecule & m,
 */
 
 static double
-identify_mr_phosphorus (const Molecule & m,
-                        const atomic_number_t * z,
-                        const Atom * const * atom,
-                        int * already_done)
+identify_mr_phosphorus(const Molecule & m,
+                       const atomic_number_t * z,
+                       const Atom * const * atom,
+                       int * already_done)
 {
   double rc = 0.0;
 
@@ -5083,10 +5138,10 @@ identify_mr_phosphorus (const Molecule & m,
 }
 
 static double
-identify_mr_nitro (const Molecule & m,
-                   const atomic_number_t * z,
-                   const Atom * const * atom,
-                   int * already_done)
+identify_mr_nitro(const Molecule & m,
+                  const atomic_number_t * z,
+                  const Atom * const * atom,
+                  int * already_done)
 {
   int matoms = m.natoms();
 
@@ -5154,10 +5209,10 @@ identify_mr_nitro (const Molecule & m,
 }
 
 static double
-identify_mr_nitrogen (Molecule & m,
-                      const atomic_number_t * z,
-                      const Atom * const * atom,
-                      int * already_done)
+identify_mr_nitrogen(Molecule & m,
+                     const atomic_number_t * z,
+                     const Atom * const * atom,
+                     int * already_done)
 {
   int matoms = m.natoms();
 
@@ -5248,10 +5303,10 @@ identify_mr_nitrogen (Molecule & m,
 
 
 static double
-identify_mr_carbon (Molecule & m,
-                    const atomic_number_t * z,
-                    const Atom * const * atom,
-                    int * already_done)
+identify_mr_carbon(Molecule & m,
+                   const atomic_number_t * z,
+                   const Atom * const * atom,
+                   int * already_done)
 {
   int matoms = m.natoms();
 
@@ -5323,7 +5378,7 @@ identify_mr_carbon (Molecule & m,
 }
 
 static int
-compute_molar_refractivity (Molecule & m,
+compute_molar_refractivity(Molecule & m,
                     const atomic_number_t * z,
                     const Atom * const * atom,
                     const int * is_aromatic)
@@ -5378,11 +5433,11 @@ compute_molar_refractivity (Molecule & m,
 
 
 static float
-identify_acm_n (const Molecule & m,
-                 int matoms,
-                 const atomic_number_t * z,
-                 const Atom * const * atom,
-                 int * already_done)
+identify_acm_n(const Molecule & m,
+                int matoms,
+                const atomic_number_t * z,
+                const Atom * const * atom,
+                int * already_done)
 {
   int nplus = 0;
   int n = 0;
@@ -5407,11 +5462,11 @@ identify_acm_n (const Molecule & m,
 }
 
 static float
-identify_acm_c (const Molecule & m,
-                 int matoms,
-                 const atomic_number_t * z,
-                 const Atom * const * atom,
-                 int * already_done)
+identify_acm_c(const Molecule & m,
+               int matoms,
+               const atomic_number_t * z,
+               const Atom * const * atom,
+               int * already_done)
 {
   int csp2 = 0;
   int csp3 = 0;
@@ -5438,7 +5493,7 @@ identify_acm_c (const Molecule & m,
 }
 
 static float
-identify_acm_halogen (const Molecule & m,
+identify_acm_halogen(const Molecule & m,
                  int matoms,
                  const atomic_number_t * z,
                  const Atom * const * atom,
@@ -5470,11 +5525,11 @@ identify_acm_halogen (const Molecule & m,
 }
 
 static float
-identify_acm_os (const Molecule & m,
-                 int matoms,
-                 const atomic_number_t * z,
-                 const Atom * const * atom,
-                 int * already_done)
+identify_acm_os(const Molecule & m,
+                int matoms,
+                const atomic_number_t * z,
+                const Atom * const * atom,
+                int * already_done)
 {
   int rc = 0;
 
@@ -5494,11 +5549,11 @@ identify_acm_os (const Molecule & m,
 }
 
 static float
-identify_acm_co (const Molecule & m,
-                    int matoms,
-                    const atomic_number_t * z,
-                    const Atom * const * atom,
-                    int * already_done)
+identify_acm_co(const Molecule & m,
+                int matoms,
+                const atomic_number_t * z,
+                const Atom * const * atom,
+                int * already_done)
 {
   int rc = 0;
 
@@ -5532,11 +5587,11 @@ identify_acm_co (const Molecule & m,
 }
 
 static float
-identify_acm_oh (const Molecule & m,
-                    int matoms,
-                    const atomic_number_t * z,
-                    const Atom * const * atom,
-                    int * already_done)
+identify_acm_oh(const Molecule & m,
+                int matoms,
+                const atomic_number_t * z,
+                const Atom * const * atom,
+                int * already_done)
 {
   int rc = 0;
 
@@ -5559,11 +5614,11 @@ identify_acm_oh (const Molecule & m,
 }
 
 static float
-identify_acm_acids (const Molecule & m,
-                    int matoms,
-                    const atomic_number_t * z,
-                    const Atom * const * atom,
-                    int * already_done)
+identify_acm_acids(const Molecule & m,
+                   int matoms,
+                   const atomic_number_t * z,
+                   const Atom * const * atom,
+                   int * already_done)
 {
   int rc = 0;
 
@@ -5635,7 +5690,7 @@ identify_acm_acids (const Molecule & m,
 }
 
 static float
-identify_acm_phosphoric_acids (const Molecule & m,
+identify_acm_phosphoric_acids(const Molecule & m,
                     int matoms,
                     const atomic_number_t * z,
                     const Atom * const * atom,
@@ -5690,9 +5745,9 @@ identify_acm_phosphoric_acids (const Molecule & m,
 }
 
 static int
-andrews_craik_martin (Molecule & m,
-                      const atomic_number_t * z,
-                      const Atom * const * atom)
+andrews_craik_martin(Molecule & m,
+                     const atomic_number_t * z,
+                     const Atom * const * atom)
 {
   int matoms = m.natoms();
 
@@ -5729,11 +5784,11 @@ andrews_craik_martin (Molecule & m,
 */
 
 static int
-compute_halogen_attachments (Molecule & m,
-                             int matoms,
-                             const atomic_number_t * z,
-                             const int * ncon,
-                             const Atom ** atom)
+compute_halogen_attachments(Molecule & m,
+                            int matoms,
+                            const atomic_number_t * z,
+                            const int * ncon,
+                            const Atom ** atom)
 {
   int rc = 0;
   for (int i = 0; i < matoms; i++)
@@ -5767,10 +5822,10 @@ compute_halogen_attachments (Molecule & m,
 */
 
 static int
-compute_electron_rich (const Molecule & m,
-                       atom_number_t a,
-                       const Atom ** atom,
-                       int * already_done)
+compute_electron_rich(const Molecule & m,
+                      atom_number_t a,
+                      const Atom ** atom,
+                      int * already_done)
 {
   already_done[a] = 1;
 
@@ -5807,13 +5862,13 @@ compute_electron_rich (const Molecule & m,
   A doubly bonded N has been identified. Is it a guanidine
 */
 static int
-guanidine (Molecule & m,
-           atom_number_t doubly_bonded_nitrogen,
-           int * nitrogens,
-           const Atom ** atom,
-           const atomic_number_t * z,
-           const int * ncon,
-           const int * ring_membership)
+guanidine(Molecule & m,
+          atom_number_t doubly_bonded_nitrogen,
+          int * nitrogens,
+          const Atom ** atom,
+          const atomic_number_t * z,
+          const int * ncon,
+          const int * ring_membership)
 {
   atom_number_t c = atom[doubly_bonded_nitrogen]->other (doubly_bonded_nitrogen, 0);
 
@@ -5861,9 +5916,9 @@ guanidine (Molecule & m,
 }
 
 static int
-compute_symmetry_related_descriptors (Molecule & m,
-                                      const int longest_path)
-{
+compute_symmetry_related_descriptors(Molecule & m) {
+  const int * dm = m.distance_matrix_warning_may_change();
+
   const int matoms = m.natoms();
 
   const int * s = m.symmetry_classes();
@@ -5874,22 +5929,31 @@ compute_symmetry_related_descriptors (Molecule & m,
 
   int max_equivalent_atoms = 0;
 
-  for (int i = 0; i < matoms; ++i)
-  {
-    const int si = s[i];
+  int longest_path = 0;
 
+  extending_resizable_array<int> class_done;
+
+  for (int i = 0; i < matoms; ++i) {
+    const int si = s[i];
+    if (class_done[si] > 0) {
+      continue;
+    }
+
+    class_done[si] = 1;
+
+    // Counters for the atoms in this class.
     int ns = 1;
     int maxsep = 0;
-
-    for (int j = 0; j < matoms; ++j)
-    {
+    for (int j = 0; j < matoms; ++j) {
       if (i == j) {
         continue;
       }
-      if (si == s[j])
-      {
+      const int d = dm[i * matoms + j];
+      if (d > longest_path) {
+        longest_path = d;
+      }
+      if (si == s[j]) {
         ns++;
-        const int d = m.bonds_between(i, j);
         if (d > maxsep)
           maxsep = d;
       }
@@ -5909,17 +5973,16 @@ compute_symmetry_related_descriptors (Molecule & m,
   }
 
   descriptor[iwdescr_symmatom].set(matoms - asymmetric);
-  descriptor[iwdescr_fsymmatom].set(static_cast<float>(matoms - asymmetric) / static_cast<float>(matoms));
+  descriptor[iwdescr_fsymmatom].set(Fraction<float>(matoms - asymmetric, matoms));
   descriptor[iwdescr_lsepsymatom].set(furthest_separated_symmetry_related_atoms);
   if (longest_path > 0)
-    descriptor[iwdescr_flsepsymatom].set(static_cast<float>(furthest_separated_symmetry_related_atoms) / static_cast<float>(longest_path));
+    descriptor[iwdescr_flsepsymatom].set(Fraction<float>(furthest_separated_symmetry_related_atoms, longest_path));
   else
     descriptor[iwdescr_flsepsymatom].set(0.0f);
   descriptor[iwdescr_maxsymmclass].set(max_equivalent_atoms);
 
   return 1;
 }
-
 
 /*
   Counts the number of 4 connected carbons that are in chains and rings
@@ -5995,10 +6058,10 @@ is_nitro (Molecule & m,
 */
 
 static int
-strongly_fused (const Ring & r1,
-                const Ring & r2,
-                int matoms,
-                int * tmp)
+strongly_fused(const Ring & r1,
+               const Ring & r2,
+               int matoms,
+               int * tmp)
 {
 
   set_vector(tmp, matoms, 0);
@@ -6030,12 +6093,12 @@ strongly_fused (const Ring & r1,
 */
 
 static int
-grow_fused_system (Molecule & m,
-                   int i,
-                   int * ring_already_done,
-                   int flag,
-                   int * atmp,
-                   int growing_strongly_fused_system)
+grow_fused_system(Molecule & m,
+                  int i,
+                  int * ring_already_done,
+                  int flag,
+                  int * atmp,
+                  int growing_strongly_fused_system)
 {
   const Ring * ri = m.ringi(i);
 
@@ -6084,10 +6147,10 @@ grow_fused_system (Molecule & m,
 }
 
 static int
-compute_planar_fused_rings (Molecule & m,
-                            const atomic_number_t * z,
-                            int * ring_already_done,
-                            int * atmp)
+compute_planar_fused_rings(Molecule & m,
+                           const atomic_number_t * z,
+                           int * ring_already_done,
+                           int * atmp)
 {
   int matoms = m.natoms();
 
@@ -6173,9 +6236,9 @@ compute_planar_fused_rings (Molecule & m,
 */
 
 static int
-joined_rings_too_different_in_size (Molecule & m,
-                                    const Ring & r,
-                                    int * tmp)
+joined_rings_too_different_in_size(Molecule & m,
+                                   const Ring & r,
+                                   int * tmp)
 {
   int matoms = m.natoms();
 
@@ -6194,10 +6257,10 @@ joined_rings_too_different_in_size (Molecule & m,
 */
 
 static int
-compute_non_planar_fused_rings (Molecule & m,
-                                const atomic_number_t * z,
-                                int * ring_already_done,
-                                int * atmp)
+compute_non_planar_fused_rings(Molecule & m,
+                               const atomic_number_t * z,
+                               int * ring_already_done,
+                               int * atmp)
 {
   int matoms = m.natoms();
 
@@ -6362,10 +6425,10 @@ discern_conjugated_section(Molecule & m,
 */
 
 static int
-compute_extended_conjugation (Molecule & m,
-                              const Atom ** atom,
-                              const int * is_aromatic,
-                              int * already_done)
+compute_extended_conjugation(Molecule & m,
+                             const Atom ** atom,
+                             const int * is_aromatic,
+                             int * already_done)
 {
   int matoms = m.natoms();
 
@@ -6439,9 +6502,9 @@ compute_extended_conjugation (Molecule & m,
 }
 
 static int
-compute_extended_conjugation (Molecule & m,
-                              const Atom ** atom,
-                              const int * is_aromatic)
+compute_extended_conjugation(Molecule & m,
+                             const Atom ** atom,
+                             const int * is_aromatic)
 {
   int * already_done = new_int(m.natoms()); std::unique_ptr<int[]> free_already_done(already_done);
 
@@ -6449,9 +6512,9 @@ compute_extended_conjugation (Molecule & m,
 }
 
 static int
-compute_double_bond_substitution (Molecule & m,
-                                  const atomic_number_t * z,
-                                  const int * ncon)
+compute_double_bond_substitution(Molecule & m,
+                                 const atomic_number_t * z,
+                                 const int * ncon)
 {
   int nb = m.nedges();
 
@@ -6494,12 +6557,12 @@ compute_double_bond_substitution (Molecule & m,
   return 1;
 }
 static int
-compute_amine_count (Molecule & m,
-                     const Atom ** atom,
-                     const atomic_number_t * z,
-                     const int * ncon,
-                     const int * ring_membership,
-                     int * already_done)
+compute_amine_count(Molecule & m,
+                    const Atom ** atom,
+                    const atomic_number_t * z,
+                    const int * ncon,
+                    const int * ring_membership,
+                    int * already_done)
 {
 // First perceive any guanadines  CNC(=N)N
 
@@ -6525,11 +6588,11 @@ compute_amine_count (Molecule & m,
 }
 
 static int
-compute_pyridine_pyrrole (Molecule & m,
-                          const Atom ** atom,
-                          const atomic_number_t * z,
-                          const int * ncon,
-                          const int * ring_membership)
+compute_pyridine_pyrrole(Molecule & m,
+                         const Atom ** atom,
+                         const atomic_number_t * z,
+                         const int * ncon,
+                         const int * ring_membership)
 {
   int matoms = m.natoms();
 
@@ -6563,7 +6626,7 @@ compute_pyridine_pyrrole (Molecule & m,
 }
 
 static int
-carboxylic_acid (const Atom ** atom, atom_number_t doubly_bonded_oxygen,
+carboxylic_acid(const Atom ** atom, atom_number_t doubly_bonded_oxygen,
                const atomic_number_t * z,
                const int * ncon)
 {
@@ -6593,7 +6656,7 @@ carboxylic_acid (const Atom ** atom, atom_number_t doubly_bonded_oxygen,
 }
 
 static int
-compute_topological_descriptors (Molecule & m,
+compute_topological_descriptors(Molecule & m,
                const atomic_number_t * z,
                const int * ncon,
                const int * ring_membership,
@@ -6979,12 +7042,16 @@ compute_topological_descriptors (Molecule & m,
 
   compute_extended_conjugation(m, atom, is_aromatic);
 
+  if (do_partial_symmetry_descriptors) {
+    NearSymmetricDescriptors(m);
+  }
+
   return 1;
 }
 
 static int
-compute_distance_charge_descriptors (Molecule & m, 
-                                     IWString & output)
+compute_distance_charge_descriptors(Molecule & m, 
+                                    IWString & output)
 {
   const int maxdist = 5;
   int matoms = m.natoms();
@@ -7085,7 +7152,7 @@ compute_distance_4_charge_heteroatom_descriptors(Molecule & mol,
 }
 
 static int
-compute_distance_3_charge_heteroatom_descriptors (Molecule & mol, 
+compute_distance_3_charge_heteroatom_descriptors(Molecule & mol, 
                IWString & output,
                const atomic_number_t * z,
                const int * ncon,
@@ -7135,7 +7202,7 @@ compute_distance_3_charge_heteroatom_descriptors (Molecule & mol,
 }
 
 static int
-compute_distance_2_charge_heteroatom_descriptors (Molecule & m, 
+compute_distance_2_charge_heteroatom_descriptors(Molecule & m, 
                IWString & output,
                const atomic_number_t * z,
                atom_number_t * conn)
@@ -7177,7 +7244,7 @@ compute_distance_2_charge_heteroatom_descriptors (Molecule & m,
 }
 
 static int
-compute_distance_charge_heteroatom_descriptors (Molecule & m, 
+compute_distance_charge_heteroatom_descriptors(Molecule & m, 
                IWString & output,
                const atomic_number_t * z,
                const int * ncon,
@@ -7407,9 +7474,9 @@ compute_charge_descriptors(Molecule & m,
 }
 
 static void
-store_charge_assigner_results (const Molecule & m,
-                               const atomic_number_t * z,
-                               const Atom ** atom)
+store_charge_assigner_results(const Molecule & m,
+                              const atomic_number_t * z,
+                              const Atom ** atom)
 {
   int npos = 0;
   int nneg = 0;
@@ -7448,7 +7515,7 @@ store_charge_assigner_results (const Molecule & m,
 }
 
 static void
-store_donor_acceptor_assigner_results (int matoms, const int * isotope)
+store_donor_acceptor_assigner_results(int matoms, const int * isotope)
 {
   int acc = 0;
   int dual = 0;
@@ -7477,15 +7544,15 @@ store_donor_acceptor_assigner_results (int matoms, const int * isotope)
 }
 
 static int
-iwdescriptors (Molecule & m, 
-               IWString_and_File_Descriptor & output, 
-               const atomic_number_t * z,
-               const int * ncon,
-               const int * ring_membership,
-               atom_number_t * conn,
-               const Atom ** atom,
-               const int * is_aromatic,
-               const char output_separator)
+iwdescriptors(Molecule & m, 
+              IWString_and_File_Descriptor & output, 
+              const atomic_number_t * z,
+              const int * ncon,
+              const int * ring_membership,
+              atom_number_t * conn,
+              const Atom ** atom,
+              const int * is_aromatic,
+              const char output_separator)
 {
   assert (m.ok());
   assert (output.good());
@@ -7523,14 +7590,11 @@ iwdescriptors (Molecule & m,
     andrews_craik_martin(m, z, atom);
   }
 
-  int maxd = 0;
-
-  if (compute_distance_matrix_descriptors && matoms > 1 && m.nedges() > 0)
-  {
-    maxd = do_compute_distance_matrix_descriptors(m, z, ncon);
+  if (compute_distance_matrix_descriptors && matoms > 1 && m.nedges() > 0) {
+    do_compute_distance_matrix_descriptors(m, z, ncon);
   }
 
-  compute_symmetry_related_descriptors(m, maxd);
+  compute_symmetry_related_descriptors(m);
 
   if (donor_acceptor_assigner.active())
   {
@@ -7618,8 +7682,8 @@ values_are_equivalent(const Set_or_Unset<float> & s1,
 static int
 results_are_different (const IWString & mname)
 {
-  assert (NULL != descriptor);
-  assert (NULL != saved_result);
+  assert (nullptr != descriptor);
+  assert (nullptr != saved_result);
 
   int rc = 0;
 
@@ -7658,7 +7722,7 @@ results_are_different (const IWString & mname)
 */
 
 static int
-test_iwdescriptors (const IWString * rsmi, const IWString & mname)
+test_iwdescriptors(const IWString * rsmi, const IWString & mname)
 {
   assert (ntest > 0);
 
@@ -7702,7 +7766,7 @@ test_iwdescriptors (const IWString * rsmi, const IWString & mname)
 }
 
 static int
-test_iwdescriptors (Molecule & m)
+test_iwdescriptors(Molecule & m)
 {
   IWString * rsmi = new IWString[ntest]; std::unique_ptr<IWString[]> free_rsmi(rsmi);
   for (int i = 0; i < ntest; i++)
@@ -7726,7 +7790,7 @@ test_iwdescriptors (Molecule & m)
 }
 
 static void
-preprocess (Molecule & m)
+preprocess(Molecule & m)
 {
   if (1 == m.natoms() && 1 == m.atomic_number(0))   // we want to be able to compute a result for Hydrogen "molecule"
     ;
@@ -7784,8 +7848,8 @@ preprocess (Molecule & m)
 }
 
 static int
-handle_zero_atom_molecule (const Molecule & m,
-                           IWString_and_File_Descriptor & output)
+handle_zero_atom_molecule(const Molecule & m,
+                          IWString_and_File_Descriptor & output)
 {
   if (verbose)
     cerr << "No atoms in " << m.name() << endl;
@@ -7822,12 +7886,12 @@ alarm_handler(int sig)
 }
 
 static int
-iwdescriptors_alarm (data_source_and_type<Molecule> & input,
-                     const char output_separator,
-                     IWString_and_File_Descriptor & output)
+iwdescriptors_alarm(data_source_and_type<Molecule> & input,
+                    const char output_separator,
+                    IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -7880,14 +7944,14 @@ iwdescriptors_alarm (data_source_and_type<Molecule> & input,
 }
 
 static int
-iwdescriptors (data_source_and_type<Molecule> & input,
-               const char output_separator,
-               IWString_and_File_Descriptor & output)
+iwdescriptors(data_source_and_type<Molecule> & input,
+              const char output_separator,
+              IWString_and_File_Descriptor & output)
 {
   assert (input.ok());
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -7919,9 +7983,9 @@ iwdescriptors (data_source_and_type<Molecule> & input,
 }
 
 static int
-iwdescriptors_filter (iwstring_data_source & input,
-                      const char output_separator,
-                      IWString_and_File_Descriptor & output)
+iwdescriptors_filter(iwstring_data_source & input,
+                     const char output_separator,
+                     IWString_and_File_Descriptor & output)
 {
   const_IWSubstring buffer;
 
@@ -7951,9 +8015,9 @@ iwdescriptors_filter (iwstring_data_source & input,
 }
 
 static int
-iwdescriptors_filter (const char * fname,
-                      const char output_separator,
-                      IWString_and_File_Descriptor & output)
+iwdescriptors_filter(const char * fname,
+                     const char output_separator,
+                     IWString_and_File_Descriptor & output)
 {
   iwstring_data_source input(fname);
 
@@ -7967,10 +8031,10 @@ iwdescriptors_filter (const char * fname,
 }
 
 static int
-iwdescriptors (const char * fname,
-               FileType input_type,
-               const char output_separator,
-               IWString_and_File_Descriptor & output)
+iwdescriptors(const char * fname,
+              FileType input_type,
+              const char output_separator,
+              IWString_and_File_Descriptor & output)
 {
   data_source_and_type<Molecule> input(input_type, fname);
   if (! input.ok())
@@ -7989,7 +8053,7 @@ iwdescriptors (const char * fname,
 }
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Usage : " << prog_name << " options file1 file2 file3 ....\n";
@@ -8025,8 +8089,8 @@ usage (int rc)
 }
 
 static int
-parse_replicates_specification (const_IWSubstring & dname,
-                                int & replicates)
+parse_replicates_specification(const_IWSubstring & dname,
+                               int & replicates)
 {
   if (! dname.contains(':'))
     return 1;
@@ -8041,7 +8105,7 @@ parse_replicates_specification (const_IWSubstring & dname,
 }
 
 int
-iwdescr (int argc, char ** argv)
+iwdescr(int argc, char ** argv)
 {
   Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:szSB:d");
 
@@ -8110,6 +8174,12 @@ iwdescr (int argc, char ** argv)
         if (verbose)
           cerr << "Will check all unlabelled atoms for possible chirality\n";
       }
+      else if (o == "psim") {
+        do_partial_symmetry_descriptors = 1;
+        if (verbose) {
+          cerr << "Will perform partial symmetry calculations\n";
+        }
+      }
       else if ("quiet" == o)
       {
         report_unclassified_atoms = 0;
@@ -8122,6 +8192,7 @@ iwdescr (int argc, char ** argv)
         do_complexity_descriptors = 1;
         do_ramey_descriptors = 1;
         perform_expensive_chirality_perception = 1;
+        do_partial_symmetry_descriptors = 1;
       }
       else
       {
@@ -8130,6 +8201,8 @@ iwdescr (int argc, char ** argv)
       }
     }
   }
+
+  char output_separator = ' ';
 
   if (cl.option_present('B')) {
     IWString b;
@@ -8142,6 +8215,15 @@ iwdescr (int argc, char ** argv)
           cerr << "Descriptors generated with prefix '" << descriptor_prefix << "'\n";
       }
       else if (b == "help") {
+        cerr << " -B prefix=...   prefix for descriptor names\n";
+        cerr << " -B sep=.        output token separator (def space)\n";
+      } else if (b.starts_with("sep=")) {
+        b.remove_leading_chars(4);
+        char_name_to_char(b);  // Should check this...
+        output_separator = b[0];
+        if (verbose) {
+          cerr << "Output separator set to '" << output_separator << "'\n";
+        }
       } else {
         cerr << "Unrecognized -B qualifier '" << b << "'\n";
         return 1;
@@ -8473,8 +8555,6 @@ iwdescr (int argc, char ** argv)
     if (verbose)
       cerr << "Will write zero descriptors for empty molecules\n";
   }
-
-  char output_separator = ' ';
 
   mwc.set_ignore_isotopes(1);
 

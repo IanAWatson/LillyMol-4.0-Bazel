@@ -214,7 +214,7 @@ Reaction_Change_Element::ConstructFromProto(const ReactionProto::ChangeElement& 
   const IWString mystring(proto.element());
 
   const Element * e = get_element_from_symbol_no_case_conversion(mystring);
-  if (NULL == e)
+  if (nullptr == e)
     return WriteError("Reaction_Change_Element::ConstructFromProto:invalid element", proto);
 
   _atom = proto.atom();

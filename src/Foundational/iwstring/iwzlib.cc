@@ -14,13 +14,13 @@ using std::cerr;
 
 #define IWZLIB_BUF_SIZE 1024
 
-IW_ZLib_Wrapper::IW_ZLib_Wrapper ()
+IW_ZLib_Wrapper::IW_ZLib_Wrapper()
 {
-  _gzfile = NULL;
+  _gzfile = nullptr;
 
  _record_delimiter = '\n';
 
- _buffer = NULL;
+ _buffer = nullptr;
 
  _chars_in_buffer = 0;
 
@@ -29,33 +29,33 @@ IW_ZLib_Wrapper::IW_ZLib_Wrapper ()
   return;
 }
 
-IW_ZLib_Wrapper::~IW_ZLib_Wrapper ()
+IW_ZLib_Wrapper::~IW_ZLib_Wrapper()
 {
-  if (NULL != _gzfile)
+  if (nullptr != _gzfile)
     gzclose (_gzfile);
 
-  if (NULL != _buffer)
+  if (nullptr != _buffer)
     delete [] _buffer;
   
   return;
 }
 
 int
-IW_ZLib_Wrapper::open_file (const char * fname)
+IW_ZLib_Wrapper::open_file(const char * fname)
 {
-  if (NULL != _gzfile)
-    close_file ();
+  if (nullptr != _gzfile)
+    close_file();
 
 #if (__GNUC__ >= 6)
-  _gzfile = gzopen64 (fname, "r");
+  _gzfile = gzopen64(fname, "r");
 #else
-  _gzfile = gzopen (fname, "r");
+  _gzfile = gzopen(fname, "r");
 #endif
 
-  if (NULL == _gzfile)
+  if (nullptr == _gzfile)
   {
     int errnum;
-    cerr << "IW_ZLib_Wrapper::open_file:cannot open '" << fname << "' " << gzerror (_gzfile, &errnum) << '\n';
+    cerr << "IW_ZLib_Wrapper::open_file:cannot open '" << fname << "' " << gzerror(_gzfile, &errnum) << '\n';
     return 0;
   }
 
@@ -65,7 +65,7 @@ IW_ZLib_Wrapper::open_file (const char * fname)
 
   _buffer = new char[IWZLIB_BUF_SIZE];
 
-  if (NULL == _buffer)
+  if (nullptr == _buffer)
   {
     cerr << "IW_ZLib_Wrapper::open_file:cannot allocate buffer " << IWZLIB_BUF_SIZE << " bytes\n";
     return 0;
@@ -75,16 +75,16 @@ IW_ZLib_Wrapper::open_file (const char * fname)
 }
 
 int
-IW_ZLib_Wrapper::close_file ()
+IW_ZLib_Wrapper::close_file()
 {
-  if (NULL == _gzfile)
+  if (nullptr == _gzfile)
   {
     cerr << "IW_ZLib_Wrapper::close_file:no file open\n";
     return 0;
   }
 
-  gzclose (_gzfile);
-  _gzfile = NULL;
+  gzclose(_gzfile);
+  _gzfile = nullptr;
 
   return 1;
 }
@@ -92,11 +92,11 @@ IW_ZLib_Wrapper::close_file ()
 //#define DEBUG_NEXT_RECORD
 
 size_t
-IW_ZLib_Wrapper::next_record (IWString & destination)
+IW_ZLib_Wrapper::next_record(IWString & destination)
 {
-  assert (NULL != _gzfile);
+  assert (nullptr != _gzfile);
 
-  destination.resize_keep_storage (0);
+  destination.resize_keep_storage(0);
 
 #ifdef DEBUG_NEXT_RECORD
   cerr << "Fetching record\n";
@@ -104,7 +104,7 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
   cerr << "_chars_in_buffer " << _chars_in_buffer << " EOF? " << gzeof(_gzfile) << '\n';
 #endif
 
-  if (0 == _chars_in_buffer && gzeof (_gzfile))
+  if (0 == _chars_in_buffer && gzeof(_gzfile))
     return 0;
 
   while (1)
@@ -119,7 +119,7 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
 
     if (_start_of_next_record > _chars_in_buffer)   // read some more data
     {
-      _chars_in_buffer = gzread (_gzfile, _buffer, IWZLIB_BUF_SIZE);
+      _chars_in_buffer = gzread(_gzfile, _buffer, IWZLIB_BUF_SIZE);
 
 #ifdef DEBUG_NEXT_RECORD
       cerr << "Read " << _chars_in_buffer << " bytes\n";
@@ -128,14 +128,14 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
       if (_chars_in_buffer < 0)
       {
         int errnum;
-        cerr << "IW_ZLib_Wrapper::next_record:fatal error '" << gzerror (_gzfile, &errnum) << "'\n";
-        close_file ();
+        cerr << "IW_ZLib_Wrapper::next_record:fatal error '" << gzerror(_gzfile, &errnum) << "'\n";
+        close_file();
         return 0;
       }
 
       if (0 == _chars_in_buffer)
       {
-        if (destination.length () > 0)
+        if (destination.length() > 0)
         {
           cerr << "IW_ZLib_Wrapper::next_record:no record terminator\n";
           return 1;
@@ -149,16 +149,16 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
 
 //  Now that our buffer has some data, copy it to DESTINATION
 
-    const void * c = ::memchr (static_cast<const void *> (_buffer + _start_of_next_record), _record_delimiter, _chars_in_buffer - _start_of_next_record);
+    const void * c = ::memchr(static_cast<const void *>(_buffer + _start_of_next_record), _record_delimiter, _chars_in_buffer - _start_of_next_record);
 
-    if (NULL == c)    // no record delimiter found, fetch another record
+    if (nullptr == c)    // no record delimiter found, fetch another record
     {
-      destination.strncat (_buffer + _start_of_next_record, _chars_in_buffer - _start_of_next_record);
+      destination.strncat(_buffer + _start_of_next_record, _chars_in_buffer - _start_of_next_record);
       _start_of_next_record = _chars_in_buffer + 1;    // force reading more data
       continue;
     }
 
-    int chars_to_copy = static_cast<const char *> (c) - (_buffer + _start_of_next_record);
+    int chars_to_copy = static_cast<const char *>(c) - (_buffer + _start_of_next_record);
 
     if (0 == chars_to_copy)     // blank line
     {
@@ -170,7 +170,7 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
     cerr << "Found " << chars_to_copy << " characters to copy\n";
 #endif
 
-    destination.strncat (_buffer + _start_of_next_record, chars_to_copy);
+    destination.strncat(_buffer + _start_of_next_record, chars_to_copy);
     _start_of_next_record += chars_to_copy + 1;
 
     return 1;
@@ -178,9 +178,9 @@ IW_ZLib_Wrapper::next_record (IWString & destination)
 }
 
 int
-IW_ZLib_Wrapper::seekg (z_off_t o)
+IW_ZLib_Wrapper::seekg(z_off_t o)
 {
-  assert (NULL != _gzfile);
+  assert (nullptr != _gzfile);
 
 //cerr << "Seeking to " << o << ", eof? " << gzeof(_gzfile) << '\n';
 
@@ -199,14 +199,14 @@ IW_ZLib_Wrapper::seekg (z_off_t o)
 
   int errnum;
 
-  cerr << "IW_ZLib_Wrapper::seekg:cannot seek '" << gzerror (_gzfile, &errnum) << "'\n";
+  cerr << "IW_ZLib_Wrapper::seekg:cannot seek '" << gzerror(_gzfile, &errnum) << "'\n";
   return 0;
 }
 
 z_off_t
-IW_ZLib_Wrapper::tellg () const
+IW_ZLib_Wrapper::tellg() const
 {
-  assert (NULL != _gzfile);
+  assert (nullptr != _gzfile);
 
 #if (__GNUC__ >= 6)
   z_off_t o = gztell64(_gzfile);
@@ -232,28 +232,28 @@ IW_ZLib_Wrapper::tellg () const
 }
 
 int
-IW_ZLib_Wrapper::eof () const
+IW_ZLib_Wrapper::eof() const
 {
-  assert (NULL != _gzfile);
+  assert (nullptr != _gzfile);
 
-  return gzeof (_gzfile);
+  return gzeof(_gzfile);
 }
 
 int
-IW_ZLib_Wrapper::read_bytes (void * destination, int nbytes)
+IW_ZLib_Wrapper::read_bytes(void * destination, int nbytes)
 {
-  assert (NULL != _gzfile);
+  assert (nullptr != _gzfile);
 
-  if (gzeof (_gzfile))
+  if (gzeof(_gzfile))
     return 0;
 
-  int rc = gzread (_gzfile, destination, nbytes);
+  int rc = gzread(_gzfile, destination, nbytes);
 
   if (rc >= 0)
     return rc;
 
   int errnum;
-  cerr << "IW_ZLib_Wrapper::read_bytes:fatal error '" << gzerror (_gzfile, &errnum) << "'\n";
+  cerr << "IW_ZLib_Wrapper::read_bytes:fatal error '" << gzerror(_gzfile, &errnum) << "'\n";
 
   return 0;
 }

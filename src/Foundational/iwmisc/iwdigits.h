@@ -77,7 +77,7 @@ class Fraction_as_String
 
     int nbuckets() const { return _nbuckets;}
 
-    int active() const { return NULL != _fraction;}
+    int active() const { return nullptr != _fraction;}
 
     int set_include_leading_space(int);
 

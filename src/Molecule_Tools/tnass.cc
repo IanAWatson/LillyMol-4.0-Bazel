@@ -27,7 +27,7 @@ using std::endl;
 
 #include "nass.h"
 
-static const char * prog_name = NULL;
+static const char * prog_name = nullptr;
 
 static void
 usage (int rc)
@@ -103,11 +103,11 @@ static Molecule_Output_Object stream_for_matching_structures;
 
 static Set_of_NA_Substructure_Query queries;
 
-static int * results = NULL;
+static int * results = nullptr;
 
 static Donor_Acceptor_Assigner donor_acceptor_assigner;
 
-static int * hits_per_molecule = NULL;
+static int * hits_per_molecule = nullptr;
 
 static int max_hits = std::numeric_limits<int>::max();
 
@@ -357,7 +357,7 @@ tnass (data_source_and_type<Molecule> & input,
        IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 

@@ -10,7 +10,7 @@ using std::cerr;
 using std::endl;
 
 static int verbose = 0;
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #include "Foundational/accumulator/accumulator.h"
@@ -72,8 +72,8 @@ static int data_is_quoted_tokens = 0;
 static std::ofstream stream_for_count;
 
 static int token_length_n = 0;
-static Accumulator_Int<int> * acc_token_length = NULL;
-static int * zero_length = NULL;
+static Accumulator_Int<int> * acc_token_length = nullptr;
+static int * zero_length = nullptr;
 
 static int contains_backslashed_separators = 0;
 

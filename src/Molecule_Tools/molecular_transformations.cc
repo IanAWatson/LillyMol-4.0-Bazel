@@ -421,7 +421,7 @@ Set_of_Reactions::debug_print(std::ostream & output) const
     output << ' ' << i << ' ' << _reaction[i]->comment();
 
     const auto ao = reinterpret_cast<const AndORProb *>(_reaction[i]->user_specified_void_ptr());
-    if (NULL != ao)
+    if (nullptr != ao)
       output << " group " << ao->group() << " regioIsomer " << ao->regioIsomer()<< " and/or " << ao->andor();
 
     output << '\n';
@@ -771,7 +771,7 @@ Set_of_Reactions::set_probability(const double p)
   for (int i = 0; i < _number_reactions; ++i)
   {
     const AndORProb * ao = reinterpret_cast<const AndORProb *>(_reaction[i]->user_specified_void_ptr());
-    if (NULL == ao)
+    if (nullptr == ao)
       continue;
 
     if (OR_GROUPING != ao->andor())
@@ -2526,7 +2526,7 @@ molecular_transformations(data_source_and_type<Molecule> & input,
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -2858,7 +2858,7 @@ Set_of_Reactions::prepOneSideChain(IWString &rxn_string,
 
   if (smilesList.size() == 0)
   {
-    currentMolAndEmbeddings[sideChainIndex] = NULL;
+    currentMolAndEmbeddings[sideChainIndex] = nullptr;
 
     // process the next side chain recursively
 
@@ -3296,7 +3296,7 @@ Set_of_Reactions::_build(const resizable_array_p<IWString> & zdata,
 
   for (int i = 0; i < _number_reactions; ++i)
   {
-    if (NULL != _reaction[i]->user_specified_void_ptr())
+    if (nullptr != _reaction[i]->user_specified_void_ptr())
       continue;
 
     cerr << "Reaction " << i << " no andor\n";
@@ -3477,7 +3477,7 @@ Set_of_Reactions::build(Command_Line & cl,
   const int grp = 1;
   for (int i = 0; i < _number_reactions; ++i)
   {
-    if (NULL != _reaction[i]->user_specified_void_ptr())   //
+    if (nullptr != _reaction[i]->user_specified_void_ptr())   //
       continue;
 
     AndORProb * a = new AndORProb(grp, 0);

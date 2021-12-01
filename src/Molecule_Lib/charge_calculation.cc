@@ -1050,10 +1050,10 @@ Molecule::compute_Gasteiger_partial_charges ()
   atom_type_t * sybyl_atom_type = new atom_type_t[n_atoms];
   std::unique_ptr<atom_type_t[]> free_sybyl_atom_type(sybyl_atom_type);
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     {
       allocate_atom_types();
-      assert ( NULL != _atom_type);
+      assert ( nullptr != _atom_type);
     }
 
   if ("SYBYL" == _atom_type->ztype())
@@ -1096,10 +1096,10 @@ Molecule:: compute_Gasteiger_partial_charges_with_pi_charges()
   atom_type_t * sybyl_atom_type = new atom_type_t[n_atoms];
   std::unique_ptr<atom_type_t[]> free_sybyl_atom_type(sybyl_atom_type);
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     {
       allocate_atom_types();
-      assert ( NULL != _atom_type);
+      assert ( nullptr != _atom_type);
     }
 
   if ("SYBYL" == _atom_type->ztype())
@@ -4264,10 +4264,10 @@ Molecule:: compute_Huckel_partial_charges()
   int n_atoms = natoms();
   atom_type_t * sybyl_atom_type = new atom_type_t[n_atoms]; std::unique_ptr<atom_type_t[]> free_sybyl_atom_type(sybyl_atom_type);
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     {
       allocate_atom_types();
-      assert ( NULL != _atom_type);
+      assert ( nullptr != _atom_type);
     }
 
   if ("SYBYL" == _atom_type->ztype())
@@ -4341,10 +4341,10 @@ Molecule:: compute_Gasteiger_Huckel_partial_charges()
   
   atom_type_t * sybyl_atom_type = new atom_type_t[n_atoms]; std::unique_ptr<atom_type_t[]> free_sybyl_atom_type(sybyl_atom_type);
   
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     {
       allocate_atom_types();
-      assert ( NULL != _atom_type);
+      assert ( nullptr != _atom_type);
     }
   
   if ("SYBYL" == _atom_type->ztype())

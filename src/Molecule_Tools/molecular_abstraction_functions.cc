@@ -403,7 +403,7 @@ Molecular_Abstraction_Base_Class::_do_any_writing_needed (Molecule_With_Info_Abo
     {
       int * atype = new int[matoms]; std::unique_ptr<int[]> free_atype(atype);
       _atom_typing_specification.assign_atom_types(m, atype);
-      fp.construct_fingerprint(m, atype, NULL);
+      fp.construct_fingerprint(m, atype, nullptr);
     }
     else
       fp.construct_fingerprint(m);
@@ -532,7 +532,7 @@ Molecular_Abstraction_Transform::build(const Molecular_Abstraction_Directives_No
     _smarts.add(q);
 
     const Element * e = get_element_from_symbol_no_case_conversion(ele);
-    if (NULL == e)
+    if (nullptr == e)
       e = create_element_with_symbol(ele);
 
     _eto.add(e);
@@ -574,7 +574,7 @@ Molecular_Abstraction_Transform::process (Molecule_With_Info_About_Parent & m,
   const Element ** new_element = new const Element *[matoms]; std::unique_ptr<const Element *[]> free_new_element(new_element);
   for (int i = 0; i < matoms; i++)
   {
-    new_element[i] = NULL;
+    new_element[i] = nullptr;
   }
 
   int rc = 0;
@@ -605,7 +605,7 @@ Molecular_Abstraction_Transform::process (Molecule_With_Info_About_Parent & m,
     _molecules_changed++;
     for (int i = 0; i < matoms; i++)
     {
-      if (NULL != new_element[i])
+      if (nullptr != new_element[i])
         m.set_element(i, new_element[i]);
     }
   }
@@ -615,7 +615,7 @@ Molecular_Abstraction_Transform::process (Molecule_With_Info_About_Parent & m,
 
 Molecular_Abstraction_All_Transform::Molecular_Abstraction_All_Transform()
 {
-  _eto = NULL;
+  _eto = nullptr;
 
   return;
 }
@@ -639,10 +639,10 @@ Molecular_Abstraction_All_Transform::build(const Molecular_Abstraction_Directive
 //  Must be an element
 
     _eto = get_element_from_symbol_no_case_conversion(token);
-    if (NULL == _eto)
+    if (nullptr == _eto)
     {
       _eto = create_element_with_symbol(token);
-      if (NULL == _eto)
+      if (nullptr == _eto)
       {
         cerr << "Molecular_Abstraction_Base_Class::build:invalid element '" << token << "'\n";
         return 0;
@@ -651,7 +651,7 @@ Molecular_Abstraction_All_Transform::build(const Molecular_Abstraction_Directive
 
   }
 
-  if (NULL == _eto)
+  if (nullptr == _eto)
   {
     cerr << "Molecular_Abstraction_Base_Class::build:no element, assuming Carbon\n";
     _eto = get_element_from_atomic_number(6);
@@ -1594,7 +1594,7 @@ Molecular_Abstraction_Rings::process(Molecule_With_Info_About_Parent & m,
 Set_of_Molecular_Abstractions::Set_of_Molecular_Abstractions()
 {
   _n = 0;
-  _a = NULL;
+  _a = nullptr;
 
   return;
 }
@@ -1709,8 +1709,8 @@ Molecular_Abstraction_Largest_Ring_System::process(Molecule_With_Info_About_Pare
 
 Molecular_Abstraction_Abstract_Ring_Form::Molecular_Abstraction_Abstract_Ring_Form()
 {
-  _arom_ele = NULL;
-  _aliph_ele = NULL;
+  _arom_ele = nullptr;
+  _aliph_ele = nullptr;
   _label_by_ring_size = 0;
 
   return;
@@ -1755,7 +1755,7 @@ Molecular_Abstraction_Abstract_Ring_Form::build (const Molecular_Abstraction_Dir
     }
 
     const Element * e = get_element_from_symbol_no_case_conversion(t2);
-    if (NULL == e)
+    if (nullptr == e)
       e = create_element_with_symbol(t2);
 
     if ("ELE" == t1)
@@ -1774,13 +1774,13 @@ Molecular_Abstraction_Abstract_Ring_Form::build (const Molecular_Abstraction_Dir
     }
   }
 
-  if (NULL == _arom_ele && NULL == _aliph_ele)
+  if (nullptr == _arom_ele && nullptr == _aliph_ele)
   {
 //  cerr << "Molecular_Abstraction_Abstract_Ring_Form::build:no element\n";
     _arom_ele = get_element_from_symbol_no_case_conversion("Ar");
     _aliph_ele = get_element_from_symbol_no_case_conversion("Al");
   }
-  else if (NULL != _arom_ele && NULL != _aliph_ele)
+  else if (nullptr != _arom_ele && nullptr != _aliph_ele)
     ;
   else
   {
@@ -2260,7 +2260,7 @@ identify_spiro_atom_and_attachments(Molecule_With_Info_About_Parent & m,
 
 //#define DEBUG_SPREAD_APART_ANY_SPIRO_RINGS
 
-static const Element * spiro_element = NULL;
+static const Element * spiro_element = nullptr;
 
 int
 Molecular_Abstraction_Abstract_Ring_Form::_spread_apart_any_spiro_rings(Molecule_With_Info_About_Parent & m,
@@ -2304,7 +2304,7 @@ Molecular_Abstraction_Abstract_Ring_Form::_spread_apart_any_spiro_rings(Molecule
   if (n > 1)
     n = eliminate_duplicate_fusions(spiro_joined, conn1, conn2);
 
-  if (NULL == spiro_element)
+  if (nullptr == spiro_element)
     spiro_element = get_element_from_symbol_no_case_conversion("Sg");
 
 #ifdef DEBUG_SPREAD_APART_ANY_SPIRO_RINGS
@@ -2410,7 +2410,7 @@ Molecular_Abstraction_Abstract_Ring_Form::process(Molecule_With_Info_About_Paren
 
 Molecular_Abstraction_Replace_Linker::Molecular_Abstraction_Replace_Linker()
 {
-  _linker_atom = NULL;
+  _linker_atom = nullptr;
 
   return;
 }
@@ -2437,18 +2437,18 @@ Molecular_Abstraction_Replace_Linker::build(const Molecular_Abstraction_Directiv
     {
       token.remove_leading_chars(4);
       _linker_atom = get_element_from_symbol_no_case_conversion(token);
-      if (NULL == _linker_atom)
+      if (nullptr == _linker_atom)
         _linker_atom = create_element_with_symbol(token);
 
-      assert (NULL != _linker_atom);
+      assert (nullptr != _linker_atom);
     }
     else
     {
       _linker_atom = get_element_from_symbol_no_case_conversion(token);
-      if (NULL == _linker_atom)
+      if (nullptr == _linker_atom)
         _linker_atom = create_element_with_symbol(token);
 
-      assert (NULL != _linker_atom);
+      assert (nullptr != _linker_atom);
     }
 //  else
 //  {
@@ -2457,7 +2457,7 @@ Molecular_Abstraction_Replace_Linker::build(const Molecular_Abstraction_Directiv
 //  }
   }
 
-  if (NULL == _linker_atom)
+  if (nullptr == _linker_atom)
     _linker_atom = get_element_from_atomic_number(3);  //  Lithium
 
   return 1;
@@ -3398,7 +3398,7 @@ Molecular_Abstraction_Compress_Consecutive::process(Molecule_With_Info_About_Par
 
 Set_of_Molecular_Abstractions::~Set_of_Molecular_Abstractions()
 {
-  if (NULL != _a)
+  if (nullptr != _a)
   {
     for (int i = 0; i < _n; i++)
     {
@@ -3644,7 +3644,7 @@ Set_of_Molecular_Abstractions::build(const Molecular_Abstraction_Directives_Node
 
   for (int i = 0; i < _n; i++)
   {
-    assert (NULL != m);
+    assert (nullptr != m);
 
     int t = m->ztype();
 //  cerr << "Type t is " << t <<endl;
@@ -3848,7 +3848,7 @@ Molecular_Abstraction_Remove_Ring_CH2::Molecular_Abstraction_Remove_Ring_CH2()
 
 Molecular_Abstraction_Inverse_Scaffold::Molecular_Abstraction_Inverse_Scaffold ()
 {
-  _scaffold_chain_element = NULL;
+  _scaffold_chain_element = nullptr;
 
   return;
 }
@@ -3864,9 +3864,9 @@ Molecular_Abstraction_Spinach::Molecular_Abstraction_Spinach ()
 {
   _remove_doubly_bonded_atoms_in_spinach = 0;
 
-  _aromatic_element_replacement = NULL;
-  _aliphatic_element_replacement = NULL;
-  _chain_element_replacement = NULL;
+  _aromatic_element_replacement = nullptr;
+  _aliphatic_element_replacement = nullptr;
+  _chain_element_replacement = nullptr;
 
   return;
 }
@@ -3902,7 +3902,7 @@ Molecular_Abstraction_Remove_Ring_CH2::build (const Molecular_Abstraction_Direct
 
   if (0 == zsymbol.length())
     ;
-  else if (NULL != (_element = get_element_from_symbol_no_case_conversion(zsymbol)))
+  else if (nullptr != (_element = get_element_from_symbol_no_case_conversion(zsymbol)))
     ;
   else
   {
@@ -3947,7 +3947,7 @@ Molecular_Abstraction_Inverse_Scaffold::build (const Molecular_Abstraction_Direc
 
   if (0 == zsymbol.length())
     ;
-  else if (NULL != (_scaffold_chain_element = get_element_from_symbol_no_case_conversion(zsymbol)))
+  else if (nullptr != (_scaffold_chain_element = get_element_from_symbol_no_case_conversion(zsymbol)))
     ;
   else
   {
@@ -4322,14 +4322,14 @@ Molecular_Abstraction_Inverse_Scaffold::process (Molecule_With_Info_About_Parent
     }
     else if (SCAFFOLD_CHAIN == scaffold[i])
     {
-      if (NULL != _scaffold_chain_element)
+      if (nullptr != _scaffold_chain_element)
         m.set_element(i, _scaffold_chain_element);
     }
     else
       m.remove_atom(i);
   }
 
-  if (NULL != _scaffold_chain_element)    // remove doubly bonded connections to scaffold
+  if (nullptr != _scaffold_chain_element)    // remove doubly bonded connections to scaffold
   {
     for (int i = m.natoms() - 1; i >= 0; i--)
     {
@@ -4420,7 +4420,7 @@ Molecular_Abstraction_Spinach::process (Molecule_With_Info_About_Parent & m,
     m.set_bond_type_between_atoms(a1, a2, SINGLE_BOND);
   }
 
-  if (NULL != _aromatic_element_replacement || NULL != _aliphatic_element_replacement || NULL != _chain_element_replacement || _remove_doubly_bonded_atoms_in_spinach)
+  if (nullptr != _aromatic_element_replacement || nullptr != _aliphatic_element_replacement || nullptr != _chain_element_replacement || _remove_doubly_bonded_atoms_in_spinach)
   {
     for (auto i = matoms - 1; i >= 0; --i)
     {
@@ -4431,17 +4431,17 @@ Molecular_Abstraction_Spinach::process (Molecule_With_Info_About_Parent & m,
 
       if (_remove_doubly_bonded_atoms_in_spinach && 1 == a->ncon())
         m.remove_atom(i);
-      else if (NULL != _aromatic_element_replacement && arom[i])
+      else if (nullptr != _aromatic_element_replacement && arom[i])
       {
         m.set_element(i, _aromatic_element_replacement);
         m.set_formal_charge_if_different(i, 0);
       }
-      else if (NULL != _chain_element_replacement && 0 == nrings[i])
+      else if (nullptr != _chain_element_replacement && 0 == nrings[i])
       {
         m.set_element(i, _chain_element_replacement);
         m.set_formal_charge_if_different(i, 0);
       }
-      else if (NULL != _aliphatic_element_replacement && nrings[i] && 0 == arom[i])
+      else if (nullptr != _aliphatic_element_replacement && nrings[i] && 0 == arom[i])
       {
         m.set_element(i, _aliphatic_element_replacement);
         m.set_formal_charge_if_different(i, 0);

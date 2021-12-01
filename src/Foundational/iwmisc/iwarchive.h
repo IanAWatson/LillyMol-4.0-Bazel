@@ -213,7 +213,7 @@ iwarchive<T>::add_values_from_msi_object(const msi_object * msi,
 {
   int i = 0;
   const msi_attribute * msi_attribute;
-  while (NULL != (msi_attribute = msi->attribute(attribute_name, i++)))
+  while (nullptr != (msi_attribute = msi->attribute(attribute_name, i++)))
   {
     T x;
     if (! msi_attribute->value(x))

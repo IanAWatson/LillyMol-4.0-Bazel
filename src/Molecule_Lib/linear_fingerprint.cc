@@ -79,7 +79,7 @@ LinearFpStatus::LinearFpStatus(const Options& opt, const Molecule& m,
   
   _bond_in_path = new_int(_nedges);
 
-  if (NULL != include_atom) {
+  if (nullptr != include_atom) {
     for (int i = 0; i < _matoms; ++i)
     {
       if (include_atom[i])

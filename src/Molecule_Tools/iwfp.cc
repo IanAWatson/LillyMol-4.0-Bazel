@@ -22,7 +22,7 @@ using std::endl;
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -483,7 +483,7 @@ static void
 do_accumulate_statistics (const IWMFingerprint & fp)
 {
   const int * bvector = fp.vector();
-  assert (NULL != bvector);
+  assert (nullptr != bvector);
 
   int bits_set_this_fingerprint = 0;
 
@@ -511,7 +511,7 @@ iwfp (Molecule & m, IWMFingerprint & fp)
     fp.set_min_heteroatoms_at_path_ends(min_heteroatoms_at_ends);
 
   if (atom_typing_specification.active())
-    fp.construct_fingerprint(m, atom_typing_specification, NULL);
+    fp.construct_fingerprint(m, atom_typing_specification, nullptr);
   else
     fp.construct_fingerprint(m);
 
@@ -656,7 +656,7 @@ iwfp (data_source_and_type<Molecule> & input,
       IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -677,7 +677,7 @@ static int
 iwfp (const char * fname, FileType input_type, 
       IWString_and_File_Descriptor & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (function_as_filter)
     return iwfp(fname, output);

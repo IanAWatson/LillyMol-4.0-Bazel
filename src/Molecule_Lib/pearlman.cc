@@ -233,7 +233,7 @@ Rings_Found::Rings_Found(int nr, int nb) :
   _matrix_of_beeps = new Beep *[_bonds_in_molecule];
   for (int i = 0; i < _bonds_in_molecule; i++)
   {
-    _matrix_of_beeps[i] = NULL;
+    _matrix_of_beeps[i] = nullptr;
   }
 
 // Make these large to avoid resizing
@@ -249,7 +249,7 @@ Rings_Found::~Rings_Found()
 {
   for (int i = 0; i < _bonds_in_molecule; i++)
   {
-    if (NULL != _matrix_of_beeps[i])
+    if (nullptr != _matrix_of_beeps[i])
       delete _matrix_of_beeps[i];
   }
 
@@ -508,10 +508,10 @@ Rings_Found::_beep_is_unique(const Beep * b) const
     assert(f >= 0);
 
     const Beep * bf = _matrix_of_beeps[f];
-//  if (NULL == bf)
+//  if (nullptr == bf)
 //    cerr << "Matrix entry " << f << " is empty, new ring accepted\n";
 
-    if (NULL == bf)
+    if (nullptr == bf)
       return 1;
 
     tmp.iwxor(*bf);
@@ -554,7 +554,7 @@ Rings_Found::_is_sssr_ring(const Beep * b)
 
     const Beep * bf = _matrix_of_beeps[f];
 
-    if (NULL == bf)
+    if (nullptr == bf)
     {
       _matrix_of_beeps[f] = tmp;
       return 1;
@@ -810,7 +810,7 @@ Rings_Found::process_new_rings(const Molecule & m)
   {
     cerr << " Row " << setw(2) << i << " ";
     const Beep * b = _matrix_of_beeps[i];
-    if (NULL == b)
+    if (nullptr == b)
       cerr << "NULL";
     else
       b->printon(cerr);
@@ -912,7 +912,7 @@ Tnode::ok() const
   if (_acon > _bonds_in_molecule)
     return 0;
 
-  if (NULL == _con)
+  if (nullptr == _con)
     return 0;
 
   return 1;
@@ -1015,7 +1015,7 @@ Tnode::send(Tnode ** tnodes)
     {
       atom_number_t k = _con[j];
 
-      assert(NULL != tnodes[k]);
+      assert(nullptr != tnodes[k]);
 
       if (k != p->last_atom() && ! p->is_set(_bond[j]))
       {
@@ -1804,7 +1804,7 @@ Molecule::_pearlman_sssr(const int * process_these, int id,
 
   for (int i = 0; i < _number_elements; i++)
   {
-    if (NULL != _aromaticity && AROMATIC == _aromaticity[i])   // oct 05. No this is wrong... 2017
+    if (nullptr != _aromaticity && AROMATIC == _aromaticity[i])   // oct 05. No this is wrong... 2017
       tmp[i] = 2;    // not really pi count, just to indicate favoured
     else if (! _pi_electrons_in_ring(i, tmp[i]))    // could not be computed
       ;
@@ -1854,7 +1854,7 @@ Molecule::_pearlman_sssr(const int * process_these, int id)
   if (_number_elements <= 2)
     return 1;
 
-  assert(NULL != _ring_membership);
+  assert(nullptr != _ring_membership);
 
 //debug_print(cerr);
 

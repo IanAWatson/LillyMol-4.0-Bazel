@@ -108,7 +108,7 @@ class const_IWSubstring
 
     int debug_print (std::ostream &) const;
 
-    void make_empty () { _data = NULL; _nchars = 0;};
+    void make_empty () { _data = nullptr; _nchars = 0;};
     void set (const char * s, int l) { _data = s; _nchars = l;}
     void set (const char * s, size_t l) { _data = s; _nchars = static_cast<int>(l);}
 
@@ -517,7 +517,7 @@ class IWString : public resizable_array<char>
     const char * chars ();
     const char * null_terminated_chars ();
     const char * c_str() { return null_terminated_chars();}
-    operator const char * () { if (0 == _number_elements) return NULL; else return null_terminated_chars ();}
+    operator const char * () { if (0 == _number_elements) return nullptr; else return null_terminated_chars ();}
     const char * rawchars () const { return _things;}
 
     const char * data () const { return _things;}    // for compatability with std::string
@@ -1036,8 +1036,8 @@ class IWString_and_File_Descriptor : public IWString
 
     int fd() const { return _fd;}
 
-    int active () const { return _fd > 0 || NULL != _gzfile;}
-    int is_open() const { return _fd > 0 || NULL != _gzfile;}
+    int active () const { return _fd > 0 || nullptr != _gzfile;}
+    int is_open() const { return _fd > 0 || nullptr != _gzfile;}
 
     int open(const char *);
     int close();

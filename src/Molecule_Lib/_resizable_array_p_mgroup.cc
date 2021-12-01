@@ -17,7 +17,7 @@ unused ()
   resizable_array_base<Molecule_Subset *> mb;
 
   mb[0];
-  mb.add (NULL);
+  mb.add(nullptr);
 
   m.transfer_in (m);
 }

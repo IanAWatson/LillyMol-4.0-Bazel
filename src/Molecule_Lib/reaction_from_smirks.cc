@@ -478,7 +478,7 @@ IWReaction::_create_orphan_molecule(const resizable_array<int> & orphan_atoms,  
     else                                    // was simple
       si = qi;
 
-    assert (NULL != qi);
+    assert (nullptr != qi);
 
     const auto & e = si->element();
     if (e.empty())
@@ -582,14 +582,14 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
       continue;
 
     Reaction_Site * r1 = _reaction_site_with_atom_map_number(i);
-    assert (NULL != r1);
+    assert (nullptr != r1);
 
     const Substructure_Atom * q1 = r1->query_atom_with_atom_map_number(i);
-    assert (NULL != q1);
+    assert (nullptr != q1);
 
     const Substructure_Atom * q2 = product_molecule.query_atom_with_atom_map_number(i);
 
-    if (NULL == q2)     // atom eliminated in products
+    if (nullptr == q2)     // atom eliminated in products
       atoms_lost.add(i);
     else
       _discern_atomic_changes(*r1, *q1, *q2);
@@ -602,10 +602,10 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
       const int j = atoms_lost[i];
 
       Reaction_Site * r = _reaction_site_with_atom_map_number(j);
-      assert (NULL != r);
+      assert (nullptr != r);
 
       const Substructure_Atom * s = r->query_atom_with_atom_map_number(j);
-      assert (NULL != s);
+      assert (nullptr != s);
 
       const int x = s->initial_atom_number();
 
@@ -641,7 +641,7 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
 
       Reaction_Site * j_site = _reaction_site_with_atom_map_number(j);    // may be NULL
 
-      if (NULL == i_site && NULL == j_site)          // should not happen
+      if (nullptr == i_site && nullptr == j_site)          // should not happen
         continue;
 
       const Substructure_Bond * bonded_in_product = product_molecule.bond_between_atom_map_numbers(i, j);  
@@ -651,15 +651,15 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
       if (i_site == j_site)           // two mapped atoms in same reagent
         bonded_in_reagent = i_site->bond_between_atom_map_numbers(i, j);
       else           // not in same reagent, therefore not bonded
-        bonded_in_reagent = NULL; 
+        bonded_in_reagent = nullptr; 
 
 //    cerr << "bonded? " << bonded_in_reagent << ' ' << bonded_in_product << endl;
 
-      if (NULL == bonded_in_reagent && NULL == bonded_in_product)    // no bond btw I and J either side
+      if (nullptr == bonded_in_reagent && nullptr == bonded_in_product)    // no bond btw I and J either side
         continue;
 
-      bond_type_t btr = NULL == bonded_in_reagent ? INVALID_BOND_TYPE : BOND_TYPE_ONLY(bonded_in_reagent->types_matched());
-      bond_type_t btp = NULL == bonded_in_product ? INVALID_BOND_TYPE : BOND_TYPE_ONLY(bonded_in_product->types_matched());
+      bond_type_t btr = nullptr == bonded_in_reagent ? INVALID_BOND_TYPE : BOND_TYPE_ONLY(bonded_in_reagent->types_matched());
+      bond_type_t btp = nullptr == bonded_in_product ? INVALID_BOND_TYPE : BOND_TYPE_ONLY(bonded_in_product->types_matched());
 
       if (btr == btp)     // same bond type, no need to change anything
         continue;
@@ -682,7 +682,7 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
         continue;
       }
 
-      if (NULL != i_site && NULL != j_site)     // new inter partile bond btw existing reagents
+      if (nullptr != i_site && nullptr != j_site)     // new inter partile bond btw existing reagents
       {
 //      cerr << "Adding inter particle bond btw " << i << " and " << j << endl;
         if (! _from_smirks_add_inter_particle_bond(i, i_site, j, j_site, btp))
@@ -695,7 +695,7 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
 //    cerr << "Bond involves different sites. I " << i_site << " J " << j_site << " type " << btp << endl;
       assert (INVALID_BOND_TYPE != btp);
 
-      if (NULL == i_site)
+      if (nullptr == i_site)
       {
         const Substructure_Atom * q2 = j_site->query_atom_with_atom_map_number(j);
         const atom_number_t x2 = q2->initial_atom_number();
@@ -705,7 +705,7 @@ IWReaction::_identify_changes_from_smirks(const extending_resizable_array<int> &
 
         _sidechains.last_item()->add_inter_particle_bond(r, x2, x1, btp);
       }
-      else if (NULL == j_site)
+      else if (nullptr == j_site)
       {
         const Substructure_Atom * q1 = i_site->query_atom_with_atom_map_number(i);
         const atom_number_t x1 = q1->initial_atom_number();
@@ -738,13 +738,13 @@ IWReaction::_from_smirks_add_inter_particle_bond(int amap1,
                                                  Reaction_Site * a2site,
                                                  bond_type_t bt)
 {
-  assert (NULL != a1site);
-  assert (NULL != a2site);
+  assert (nullptr != a1site);
+  assert (nullptr != a2site);
 
   const Substructure_Atom * a1 = a1site->query_atom_with_atom_map_number(amap1);
   const Substructure_Atom * a2 = a2site->query_atom_with_atom_map_number(amap2);
-  assert (NULL != a1);
-  assert (NULL != a2);
+  assert (nullptr != a1);
+  assert (nullptr != a2);
 
 // If either one of the sites is the scaffold, handle specially
 
@@ -781,7 +781,7 @@ IWReaction::_from_smirks_add_inter_particle_bond_involves_scaffold(int a1, int a
   for (auto i = 0; i < _sidechains.number_elements(); ++i)
   {
     Substructure_Atom * x = _sidechains[i]->query_atom_with_atom_map_number(a2);
-    if (NULL == x)
+    if (nullptr == x)
       continue;
 
     r2 = i;
@@ -916,7 +916,7 @@ Substructure_Atom::first_specified_element() const
       return c->element()[0];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int

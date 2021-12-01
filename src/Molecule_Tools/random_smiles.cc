@@ -437,7 +437,7 @@ For_Convolution::build(Command_Line & cl,
 
   resizable_array_p<Molecule_and_Atom_Type> molecules;
 
-  for (int i = 0; NULL != (m = input.next_molecule()); ++i)
+  for (int i = 0; nullptr != (m = input.next_molecule()); ++i)
   {
     if (! m->assign_atom_types(atom_typing_specification))
     {
@@ -665,7 +665,7 @@ make_random_smiles(data_source_and_type<Molecule> & input,
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 

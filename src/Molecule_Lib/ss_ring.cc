@@ -203,7 +203,7 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target)
   if (_all_hits_in_same_fragment)
     m = target.molecule();
   else
-    m = NULL;
+    m = nullptr;
 
   int nhits = 0;
 

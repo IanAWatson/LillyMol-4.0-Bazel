@@ -40,7 +40,7 @@ static const char b64_tab[256] =
 int
 IWuudecode(const unsigned char * p, int nchars, unsigned char * destination)
 {
-  assert (NULL != destination);
+  assert (nullptr != destination);
 
 /* The following implementation of the base64 decoding might look
    a bit clumsy but I only try to follow the POSIX standard:

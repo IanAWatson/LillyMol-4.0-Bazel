@@ -20,8 +20,8 @@ using std::endl;
 int
 iw_rename(const char * old_name, const char * new_name)
 {
-  assert(NULL != old_name);
-  assert(NULL != new_name);
+  assert(nullptr != old_name);
+  assert(nullptr != new_name);
 
   assert(strlen(old_name));
   assert(strlen(new_name));

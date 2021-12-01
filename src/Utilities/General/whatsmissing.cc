@@ -71,9 +71,9 @@ static int ncols = 0;
 
 static int allow_non_rectangular_files = 1;
 
-static int * items_missing_in_column = NULL;
+static int * items_missing_in_column = nullptr;
 
-static int * items_missing_per_id = NULL;
+static int * items_missing_per_id = nullptr;
 
 /*
   To cut down the amount of stuff coming to the screen, we can limit the number

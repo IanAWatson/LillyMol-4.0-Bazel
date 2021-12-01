@@ -16,7 +16,7 @@ ShellInfo::ShellInfo(const Molecule& m, const int* include_atom, const atom_type
        _atom_type(atom_type)
 {
   _status = new int[_matoms];
-  if (NULL == include_atom) {
+  if (nullptr == include_atom) {
     std::fill_n(_status, _matoms, NOT_PROCESSED);
   } else {
     for (int i = 0; i < _matoms; ++i) {
@@ -76,7 +76,7 @@ template <typename T>
 int
 FromShellVariable(const char * vname, T& value) {
   const char * from_env = getenv(vname);
-  if (from_env == NULL) {
+  if (from_env == nullptr) {
     return 0;
   }
 

@@ -21,7 +21,7 @@ using std::endl;
 
 static IWString missing_value = '.';
 
-static int * missing_dataitem = NULL;
+static int * missing_dataitem = nullptr;
 
 /*
   It can be convenient to give a wildcard and have the programme know

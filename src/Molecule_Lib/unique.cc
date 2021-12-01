@@ -315,7 +315,7 @@ AtomPropertiesForRanking::initialise(Molecule& m,
   if (aromatic) {
     aprop->_arom_chiral_imph |= (1 << 7);
   }
-  if (chiral != NULL) {
+  if (chiral != nullptr) {
     aprop->_arom_chiral_imph |= (1 << 6);
   }
 
@@ -560,14 +560,14 @@ target_atom_comparitor(Target_Atom * const * ppa1, Target_Atom * const * ppa2)
   const Element * e1 = p1->element();
   const Element * e2 = p2->element();
 
-// Lots of different possibilities here because elements may be NULL (excluded
+// Lots of different possibilities here because elements may be nullptr (excluded
 // from the computation) or not from the periodic table (atomic number not valid)
 
   if (e1 == e2)    // covers case of both NULL
     ;
-  else if (NULL == e1)
+  else if (nullptr == e1)
     return -1;
-  else if (NULL == e2)
+  else if (nullptr == e2)
     return 1;
   else if (e1->atomic_number() < e2->atomic_number())
     return -1;
@@ -754,14 +754,14 @@ target_atom_comparitor(Target_Atom * const * ppa1, Target_Atom * const * ppa2)
   }
 
 #ifdef DEBUG_TARGET_ATOM_COMPARITOR
-  cerr << "chirlaity ? " << include_chiral_info_in_smiles() << " " << (NULL != p1->chiral_centre()) << " and " << (NULL != p2->chiral_centre()) << '\n';
+  cerr << "chirlaity ? " << include_chiral_info_in_smiles() << " " << (nullptr != p1->chiral_centre()) << " and " << (nullptr != p2->chiral_centre()) << '\n';
 #endif
 
   if (! include_chiral_info_in_smiles())
     ;
-  else if (NULL == p1->chiral_centre() && NULL == p2->chiral_centre())
+  else if (nullptr == p1->chiral_centre() && nullptr == p2->chiral_centre())
     ;
-  else if (NULL != p1->chiral_centre() && NULL != p2->chiral_centre())
+  else if (nullptr != p1->chiral_centre() && nullptr != p2->chiral_centre())
     ;
   else if (p1->chiral_centre())
     return -1;
@@ -927,10 +927,10 @@ template class resizable_array_base<const Atom_and_Rank *>;
 void
 Atom_and_Rank::_default_values()
 {
-  _ranks_of_neighbours = NULL;
+  _ranks_of_neighbours = nullptr;
   _sum_of_neighbour_ranks = 0;
 
-  _chiral_centre = NULL;
+  _chiral_centre = nullptr;
   _chirality_score = 0;
 
   _resolved_pending_processing = 0;
@@ -961,7 +961,7 @@ Atom_and_Rank::Atom_and_Rank(atom_number_t za, int zr, int nc)
 Atom_and_Rank::~Atom_and_Rank()
 {
   delete [] _ranks_of_neighbours;
-  _ranks_of_neighbours = NULL;
+  _ranks_of_neighbours = nullptr;
 
   return;
 }
@@ -1075,7 +1075,7 @@ Atom_and_Rank::is_connected_to(Atom_and_Rank * n,
 
   if (! include_chiral_info_in_smiles())
     ;
-  else if (NULL != n->chiral_centre())
+  else if (nullptr != n->chiral_centre())
     _chiral_neighbours++;
 
   return _number_elements;
@@ -1107,7 +1107,7 @@ static Int_Comparitor_Larger_fo int_comparitor_larger_fo;
 void
 Atom_and_Rank::establish_neighbours()
 {
-  assert (NULL == _ranks_of_neighbours);
+  assert (nullptr == _ranks_of_neighbours);
 
   if (_number_elements)
     _ranks_of_neighbours = new int[_number_elements];
@@ -1560,7 +1560,7 @@ Atom_and_Rank::_compare_by_chirality_for_timsort(const Atom_and_Rank * r2) const
 int
 Atom_and_Rank::chiral_score(const unsigned int * rank) const
 {
-  assert (NULL != _chiral_centre);
+  assert (nullptr != _chiral_centre);
 
   return _chiral_centre->orientation(rank);
 }
@@ -1671,7 +1671,7 @@ Atom_and_Rank::_identify_two_unresolved_connections(const unsigned int * rank,
 void
 Atom_and_Rank::compute_chirality_score(const unsigned int * rank)
 {
-  if (NULL == _chiral_centre)
+  if (nullptr == _chiral_centre)
     _chirality_score = 0;
   else
     _chirality_score = 2 + _chiral_centre->orientation(rank);
@@ -1691,7 +1691,7 @@ Atom_and_Rank::compute_chirality_score(const unsigned int * rank)
 
     const Chiral_Centre * c = ari->chiral_centre();
 
-    if (NULL == c)
+    if (nullptr == c)
       continue;
 
     int s = c->influence(rank, _a);
@@ -1933,14 +1933,14 @@ Unique_Determination::Unique_Determination(bool legacy_atom_ordering) : _legacy_
   _matoms = 0;
   _nactive = 0;
 
-  _rank = NULL;
+  _rank = nullptr;
 
-  _symmetry = NULL;
-  _canonical_rank = NULL;
+  _symmetry = nullptr;
+  _canonical_rank = nullptr;
 
-  _old_rank = NULL;
+  _old_rank = nullptr;
 
-  _atom_xref = NULL;
+  _atom_xref = nullptr;
 
   _use_chirality = 0;
 
@@ -1994,7 +1994,7 @@ Unique_Determination::~Unique_Determination()
 int
 Unique_Determination::_free_all_arrays()
 {
-  if (NULL != _rank)
+  if (nullptr != _rank)
   {
     delete [] _rank;
 //  delete [] _rank_in_use;
@@ -2011,7 +2011,7 @@ Unique_Determination::_free_all_arrays()
 int
 Unique_Determination::ok() const
 {
-  if (NULL == _m)
+  if (nullptr == _m)
     return 0;
 
   if (! _m->ok())
@@ -3082,7 +3082,7 @@ Unique_Determination::_initialise(Molecule & m,
 
   _cis_trans_bonds = 0;
 
-  if (include_atom != NULL)
+  if (include_atom != nullptr)
       _assign_initial_ranks_legacy(include_atom);
   else if (_legacy_atom_ordering)
       _assign_initial_ranks_legacy();
@@ -3092,7 +3092,7 @@ Unique_Determination::_initialise(Molecule & m,
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
   for (int i = 0; i < _matoms; i++)
   {
-    _atom_xref[i] = NULL;
+    _atom_xref[i] = nullptr;
   }
 #endif
 
@@ -3359,7 +3359,7 @@ Unique_Determination::_expand_around_cis_trans_bond(atom_number_t a1,
 
   int rnw;
 //atom_number_t anw;
-  if (NULL != bnw)
+  if (nullptr != bnw)
   {
     nw = bnw->other(a1);
     rnw = _get_rank(nw);
@@ -3372,7 +3372,7 @@ Unique_Determination::_expand_around_cis_trans_bond(atom_number_t a1,
 
   int rsw;
 //atom_number_t asw;
-  if (NULL != bsw)
+  if (nullptr != bsw)
   {
     se = bsw->other(a1);
     rsw = _get_rank(se);
@@ -3385,7 +3385,7 @@ Unique_Determination::_expand_around_cis_trans_bond(atom_number_t a1,
 
   int rne;
 //atom_number_t ane;
-  if (NULL != bne)
+  if (nullptr != bne)
   {
     ne = bne->other(a1);
     rne = _get_rank(ne);
@@ -3398,7 +3398,7 @@ Unique_Determination::_expand_around_cis_trans_bond(atom_number_t a1,
 
   int rse;
 //atom_number_t ase;
-  if (NULL != bse)
+  if (nullptr != bse)
   {
     se = bse->other(a1);
     rse = _get_rank(se);
@@ -3495,8 +3495,8 @@ Unique_Determination::_identify_directionally_attached_bonds(const Atom_and_Rank
                                                 const Bond * & bnw,
                                                 const Bond * & bsw) const
 {
-  bnw = NULL;
-  bsw = NULL;
+  bnw = nullptr;
+  bsw = nullptr;
 
   atom_number_t zatom = ar->atom_number();
 
@@ -3534,10 +3534,10 @@ Unique_Determination::_identify_directionally_attached_bonds(const Atom_and_Rank
     }
   }
 
-  if (NULL != bnw)
+  if (nullptr != bnw)
     return 1;
 
-  if (NULL != bsw)
+  if (nullptr != bsw)
     return 1;
 
   return 0;
@@ -3590,9 +3590,9 @@ Unique_Determination::_assign_initial_ranks()
     {
 #ifdef SINGLE_ARRAY
       AtomPropertiesForRanking * a = x + i;
-      a->initialise(*_m, i, NULL);
+      a->initialise(*_m, i, nullptr);
 #else
-      AtomPropertiesForRanking * a = new AtomPropertiesForRanking(*_m, i, NULL);
+      AtomPropertiesForRanking * a = new AtomPropertiesForRanking(*_m, i, nullptr);
 #endif
 
       target.add(a);
@@ -3657,9 +3657,9 @@ Unique_Determination::_assign_initial_ranks()
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
   for (int i = 0; i < _matoms; i++)
   {
-    if (NULL == _atom_xref[i])
+    if (nullptr == _atom_xref[i])
     {
-      cerr << "Yipes, the point for atom " << i << " is null\n";
+      cerr << "Yipes, the point for atom " << i << " is nullptr\n";
     }
   }
 #endif
@@ -3724,7 +3724,7 @@ Unique_Determination::_assign_initial_ranks_legacy()
   {
     Target_Atom * a = new Target_Atom();
 
-    a->initialise(_m, i, const_cast<Atom *>(_m->atomi(i)), NULL);
+    a->initialise(_m, i, const_cast<Atom *>(_m->atomi(i)), nullptr);
 
     target.add(a);
   }
@@ -3783,7 +3783,7 @@ Unique_Determination::_assign_initial_ranks_legacy()
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
   for (int i = 0; i < _matoms; i++)
   {
-    if (NULL == _atom_xref[i])
+    if (nullptr == _atom_xref[i])
     {
       cerr << "Yipes, the point for atom " << i << " is null\n";
     }
@@ -3849,11 +3849,11 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
 
     Atom * a = const_cast<Atom *>(_m->atomi(i));   // loss of const OK
 
-    s->initialise(_m, i, a, NULL);
+    s->initialise(_m, i, a, nullptr);
 
     if (! include_atom[i])
     {
-      s->set_element(NULL);
+      s->set_element(nullptr);
       s->set_ncon(0);
     }
     else    // only find neighbours for molecules that are in the subset
@@ -3891,7 +3891,7 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
 
   _rank_in_use.reset();
 
-//set_vector(_atom_xref, _m->natoms(), static_cast<Atom_and_Rank *>(NULL));
+//set_vector(_atom_xref, _m->natoms(), static_cast<Atom_and_Rank *>(nullptr));
 
   int rank_to_assign = 0;
 
@@ -3926,7 +3926,7 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
     else
     {
       const Chiral_Centre * c = _m->chiral_centre_at_atom(a);
-      if (NULL == c)
+      if (nullptr == c)
         ;
       else if (c->all_atoms_in_subset(include_atom, 1))
       {
@@ -3943,7 +3943,7 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
   for (int i = 0; i < _matoms; i++)
   {
-    if (NULL == _atom_xref[i])
+    if (nullptr == _atom_xref[i])
     {
       cerr << "Yipes, the point for atom " << i << " is null\n";
     }
@@ -4202,7 +4202,7 @@ Unique_Determination::canonical_order(Molecule & m,
   cerr << "Begin canonical order computation\n";
 #endif
 
-  assert (NULL != canonical_rank);
+  assert (nullptr != canonical_rank);
   assert (m.ok());
 
   (void) _initialise(m, include_atom);
@@ -4230,7 +4230,7 @@ Unique_Determination::_print_canonical_order(const Molecule & m,
     output << " atom " << i << " (" << std::setw(2) << m.atomic_symbol(i) << ' ' <<
                    m.ncon(i) << " connections, " << m.nbonds(i) << " bonds) " <<
                    _canonical_rank[i] << " symmetry " << _symmetry[i];
-    if (NULL != include_atom)
+    if (nullptr != include_atom)
       cerr << " inc " << include_atom[i];
     cerr << '\n';
   }
@@ -4254,7 +4254,7 @@ Unique_Determination::_print_canonical_order_by_canonical_order(const Molecule &
     output << i << " atom " << a << " (" << std::setw(2) << m.atomic_symbol(a) << ' ' <<
                    m.ncon(a) << " connections, " << m.nbonds(a) << " bonds) " <<
                    _canonical_rank[a] << " symmetry " << _symmetry[a];
-    if (NULL != include_atom)
+    if (nullptr != include_atom)
       cerr << " inc " << include_atom[a];
     cerr << '\n';
   }
@@ -4294,7 +4294,7 @@ Molecule::compute_canonical_ranking(Symmetry_Class_and_Canonical_Rank & sccr,
 int
 Molecule::compute_canonical_ranking()
 {
-  return compute_canonical_ranking(_symmetry_class_and_canonical_rank, NULL);
+  return compute_canonical_ranking(_symmetry_class_and_canonical_rank, nullptr);
 }
 
 int
@@ -4326,7 +4326,7 @@ const int *
 Molecule::canonical_ranks()
 {
   if (0 == _number_elements)
-    return NULL;
+    return nullptr;
 
   if (! _symmetry_class_and_canonical_rank.arrays_allocated())
     compute_canonical_ranking();
@@ -4338,12 +4338,12 @@ const int *
 Molecule::symmetry_classes() 
 {
   if (0 == _number_elements)
-    return NULL;
+    return nullptr;
 
   if (! _symmetry_class_and_canonical_rank.arrays_allocated())
     compute_canonical_ranking();
 
-  assert (NULL != _symmetry_class_and_canonical_rank.symmetry_class());
+  assert (nullptr != _symmetry_class_and_canonical_rank.symmetry_class());
 
   return _symmetry_class_and_canonical_rank.symmetry_class();
 }

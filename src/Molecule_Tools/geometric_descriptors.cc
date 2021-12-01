@@ -179,7 +179,7 @@ GeometricDescriptors(data_source_and_type<Molecule> & input,
                      JobParameters& params,
                      IWString_and_File_Descriptor& output) {
   Molecule * m;
-  while ((m = input.next_molecule()) != NULL) {
+  while ((m = input.next_molecule()) != nullptr) {
     std::unique_ptr<Molecule> free_m(m);
     molecules_read++;
     Preprocess(*m);

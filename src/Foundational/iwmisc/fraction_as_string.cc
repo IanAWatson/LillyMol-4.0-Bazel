@@ -4,7 +4,7 @@
 
 Fraction_as_String::Fraction_as_String()
 {
-  _fraction = NULL;
+  _fraction = nullptr;
 
   _nbuckets = 0;
 
@@ -13,7 +13,7 @@ Fraction_as_String::Fraction_as_String()
 
 Fraction_as_String::~Fraction_as_String()
 {
-  if (NULL != _fraction)
+  if (nullptr != _fraction)
     delete [] _fraction;
 
   return;
@@ -22,7 +22,7 @@ Fraction_as_String::~Fraction_as_String()
 int
 Fraction_as_String::initialise(float minvl, float maxvl, int digits)
 {
-  if (NULL != _fraction)
+  if (nullptr != _fraction)
     delete [] _fraction;
 
   assert(digits > 0);
@@ -37,7 +37,7 @@ Fraction_as_String::initialise(float minvl, float maxvl, int digits)
 
   _fraction = new IWString[_nbuckets + 1];
 
-  if (NULL == _fraction)
+  if (nullptr == _fraction)
   {
     std::cerr << "Fraction_as_String::initialise:cannot allocate " << _nbuckets << " string representations\n";
     return 0;
@@ -54,7 +54,7 @@ Fraction_as_String::initialise(float minvl, float maxvl, int digits)
 int
 Fraction_as_String::_fill_string_data()
 {
-  assert(NULL != _fraction);
+  assert(nullptr != _fraction);
 
 //std::cerr << "Fraction_as_String:_fill_string_data:leading space '" << _leading_space << "'\n";
 
@@ -111,7 +111,7 @@ void
 Fraction_as_String::append_number(IWString & s,
                                   float f) const
 {
-  if (NULL == _fraction)
+  if (nullptr == _fraction)
   {
     _append_number_no_string_rep(s, f);
     return;
@@ -146,7 +146,7 @@ Fraction_as_String::set_include_leading_space(int s)
   else
     _leading_space.resize(0);
 
-  if (NULL == _fraction)
+  if (nullptr == _fraction)
     return 1;
 
   return _fill_string_data();
@@ -161,7 +161,7 @@ Fraction_as_String::set_leading_string(const const_IWSubstring & s)
 
   _leading_space = s;
 
-  if (NULL == _fraction)
+  if (nullptr == _fraction)
     return 1;
 
   for (int i = 0; i < _nbuckets; ++i)
@@ -182,7 +182,7 @@ const IWString &
 Fraction_as_String::string_for_fraction(float f) const
 {
   assert(f >= _minval && f <= _maxval);
-  assert(NULL != _fraction);
+  assert(nullptr != _fraction);
 
   int i = static_cast<int>( (f - _minval) / _dx + 0.49999);
 
@@ -192,7 +192,7 @@ Fraction_as_String::string_for_fraction(float f) const
 int
 Fraction_as_String::append_to_each_stored_string(const const_IWSubstring & s)
 {
-  if (NULL == _fraction)
+  if (nullptr == _fraction)
   {
     std::cerr << "Fraction_as_String::append_to_each_stored_string:no strings\n";
     return 0;

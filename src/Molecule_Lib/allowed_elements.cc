@@ -54,7 +54,7 @@ Allowed_Elements::build_from_command_line(Command_Line & cl,
   while (cl.value(flag, e, i++))
   {
     const Element * o = get_element_from_symbol_no_case_conversion(e);
-    if (NULL == o)
+    if (nullptr == o)
     {
       cerr << "Sorry, non periodic table element '" << e << "', cannot be OK\n";
       return 0;

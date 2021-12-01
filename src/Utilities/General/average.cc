@@ -25,7 +25,7 @@
 using std::cerr;
 using std::endl;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -327,7 +327,7 @@ AColumn::update_global_accumulator (Accumulator<double> & acc) const
   return;
 }
 
-static AColumn * acolumn = NULL;
+static AColumn * acolumn = nullptr;
 
 static int 
 get_next_token (const const_IWSubstring & buffer,
@@ -491,7 +491,7 @@ determine_descriptors_to_process (const const_IWSubstring & buffer)
   
   acolumn = new AColumn[nw];
 
-  if (NULL == acolumn)
+  if (nullptr == acolumn)
   {
     cerr << "Cannot allocate " << col << " column data\n";
     return 0;

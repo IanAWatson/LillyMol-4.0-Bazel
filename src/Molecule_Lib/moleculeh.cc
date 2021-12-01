@@ -387,7 +387,7 @@ Molecule::_place_1_hydrogen (const Make_Implicit_Hydrogens_Explicit & mihe)
 // implicit and one was explicit. Should be shot.
 
   Chiral_Centre * c = chiral_centre_at_atom(anchor);
-  if (NULL != c && 1 != c->implicit_hydrogen_count())
+  if (nullptr != c && 1 != c->implicit_hydrogen_count())
   {
     cerr << "Molecule::_place_1_hydrogen: Hmmm, adding one H to chiral centre at atom " << anchor << endl;
     cerr << "Chiral centre is ";
@@ -400,7 +400,7 @@ Molecule::_place_1_hydrogen (const Make_Implicit_Hydrogens_Explicit & mihe)
 
   add(h);
   add_bond(anchor, _number_elements - 1, SINGLE_BOND);
-  if (NULL != c && c->implicit_hydrogen_count())
+  if (nullptr != c && c->implicit_hydrogen_count())
     c->implicit_hydrogen_is_now_atom_number(_number_elements - 1);
 
   int dimensionality = mihe.dimensionality();

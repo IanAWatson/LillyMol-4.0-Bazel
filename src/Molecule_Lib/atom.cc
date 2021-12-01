@@ -1081,7 +1081,7 @@ Atom::_compute_implicit_hydrogens(int & result)
   if (tmp <= 0)    // all electrons already participating in a bond
     return 1;
 
-  int hybridisation = IW_SP3;
+//int hybridisation = IW_SP3;
   int max_h = 4 - _number_elements;
 
   if (_nbonds == _number_elements)    // fully saturated, hopefully the most common
@@ -1105,7 +1105,7 @@ Atom::_compute_implicit_hydrogens(int & result)
     if (_number_elements > 2)    // no room for any extra H atoms
       return 1;
 
-    hybridisation = IW_SP2;
+//  hybridisation = IW_SP2;
     max_h = 3 - _number_elements;
   }
   else if (_number_elements + 2 == _nbonds)    // either =C= or a triple bond, 2 connections max
@@ -1125,7 +1125,7 @@ Atom::_compute_implicit_hydrogens(int & result)
     if (_number_elements > 1)    // no hydrogens possible
       return 1;
 
-    hybridisation = IW_SP;
+//  hybridisation = IW_SP;
     max_h = 2 - _number_elements;
   }
   else    // what is this?

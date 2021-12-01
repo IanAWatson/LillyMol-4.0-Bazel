@@ -51,7 +51,7 @@ static int max_molecules = 0;
 
 static Chemical_Standardisation chemical_standardisation;
 
-static IWString * usmi = NULL;
+static IWString * usmi = nullptr;
 
 static int write_duplicate_molecules = 0;
 
@@ -248,7 +248,7 @@ common_names_single_pass(data_source_and_type<Molecule> & input,
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -391,7 +391,7 @@ read_dash_p_file(data_source_and_type<Molecule> & input,
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     preprocess(*m);
 
@@ -433,7 +433,7 @@ common_names(data_source_and_type<Molecule> & input,
               Molecule_Output_Object & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -481,11 +481,11 @@ size_problem()
 
 //usmi_hash.resize (max_molecules);     // how to check for failure?
 
-  assert (NULL == usmi);
+  assert (nullptr == usmi);
 
   usmi = new IWString[max_molecules + 1];    // we don't use the 0 element
 
-  if (NULL == usmi)
+  if (nullptr == usmi)
   {
     cerr << "Cannot allocate " << max_molecules << " strings\n";
     return 0;
@@ -524,7 +524,7 @@ establish_names(data_source_and_type<Molecule> & input)
     set_include_cis_trans_in_smiles(0);
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 

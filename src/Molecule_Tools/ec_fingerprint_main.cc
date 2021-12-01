@@ -20,7 +20,7 @@ using std::ostream;
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 namespace ec_fingerprint {
 int verbose = 0;
@@ -117,7 +117,7 @@ EcFingerprint(Molecule & m,
     GatherStatistics(m);
 
   // A single atom molecule would produce zero bits, or two atoms in different fragments...
-  if (! ec_fp_gen.Fingerprint(m, NULL, atype, op)) {
+  if (! ec_fp_gen.Fingerprint(m, nullptr, atype, op)) {
     cerr << "EcFingerprint:fingerprinting failed " << m.smiles() << " ignored\n";
     return 1;
   }
@@ -163,7 +163,7 @@ EcFingerprint(data_source_and_type<Molecule> & input,
                 IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -235,7 +235,7 @@ EcFingerprint(const char * fname, FileType input_type,
                 T& op,
                 IWString_and_File_Descriptor & output)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   if (function_as_tdt_filter) {
     iwstring_data_source input(fname);

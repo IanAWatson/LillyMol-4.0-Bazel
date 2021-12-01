@@ -20,7 +20,7 @@ display_standard_etrans_options(std::ostream & os, char cflag)
 void
 Element_Transformation::_default_values()
 {
-  _to = NULL;
+  _to = nullptr;
 
   _molecules_processed = 0;
   _molecules_changed  = 0;
@@ -41,7 +41,7 @@ Element_Transformation::Element_Transformation()
 int
 Element_Transformation::ok() const
 {
-  if (_from.element() && NULL == _to)
+  if (_from.element() && nullptr == _to)
     return 0;
 
   return 1;
@@ -112,7 +112,7 @@ Element_Transformation::build(const IWString & esource)
 
   _to = get_element_from_symbol_no_case_conversion(ee);
 
-  if (NULL == _to)
+  if (nullptr == _to)
   {
     _to = create_element_with_symbol(ee);
   }
@@ -307,7 +307,7 @@ Element_Transformations::debug_print (std::ostream & os) const
 int
 Element_Transformations::process(Molecule * m)
 {
-  assert(NULL != m);
+  assert(nullptr != m);
 
   return process(*m);
 }

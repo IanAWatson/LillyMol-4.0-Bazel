@@ -35,7 +35,7 @@
 #include "Molecule_Tools/reaction_duplicate.h"
 #include "ring_ext_rep.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -475,7 +475,7 @@ write_ring_system (Molecule & m,
 
     if (acon > 2)
     {
-      const Bond * across_ring = NULL;
+      const Bond * across_ring = nullptr;
 
       for (auto j = 0; j < acon; ++j)
       {
@@ -1090,7 +1090,7 @@ extract_rings (data_source_and_type<Molecule> & input,
                std::ostream & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1108,7 +1108,7 @@ extract_rings (data_source_and_type<Molecule> & input,
 static int
 extract_rings (const char * fname, FileType input_type, std::ostream & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

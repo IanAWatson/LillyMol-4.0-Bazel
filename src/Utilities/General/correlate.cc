@@ -28,7 +28,7 @@ using std::endl;
 #include "Foundational/iwmisc/report_progress.h"
 #include "Foundational/iwmisc/iw_tabular_data.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 namespace correlate {
 

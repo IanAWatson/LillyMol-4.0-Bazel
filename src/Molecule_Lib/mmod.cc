@@ -281,7 +281,7 @@ Molecule::read_molecule_mmod_ds(iwstring_data_source& input)
       return rwmolecule_error("read molecule mmod ds: Unknown atom type", input);
 
     Atom* a = new Atom(zz);
-    assert(NULL != a);
+    assert(nullptr != a);
     a->setxyz(x, y, z);
     add(a);
     //  cerr << "Doing bonds " << c1 << " " << c2 << " " << c3 << " " << c4 << " " << c5 << " " << c6 << "\n";

@@ -18,7 +18,7 @@ String_Data_Source::_default_values()
 
 String_Data_Source::String_Data_Source(const char * s)
 {
-  assert (NULL != s);
+  assert (nullptr != s);
 
   _default_values();
 
@@ -30,7 +30,7 @@ String_Data_Source::String_Data_Source(const char * s)
 String_Data_Source::String_Data_Source(const char * s,
                                        int notused)
 {
-  assert (NULL != s);
+  assert (nullptr != s);
 
   _default_values();
 

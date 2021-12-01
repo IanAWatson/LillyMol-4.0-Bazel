@@ -21,7 +21,7 @@ template <typename T>
 resizable_array_iterator<T>::~resizable_array_iterator ()
 {
   _index = -1;
-  _array = NULL;
+  _array = nullptr;
 }
 
 template <typename T>

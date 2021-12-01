@@ -339,6 +339,14 @@ MinVaranmce(const Torsion& torsion) {
 }
 
 double
+VarianceOrZero(const Accumulator<double>& acc) {
+  if (acc.n() < 2) {
+    return 0;
+  }
+  return acc.variance();
+}
+
+double
 VarianceFromUniform(const Torsion& torsion) {
   if (torsion.acc_angle.n() < 2) {
     return 0.0;
@@ -900,7 +908,8 @@ SmuRotatableBonds(int argc, char ** argv) {
             "ave" << sep <<
             "max" << sep <<
             "range" << sep <<
-            "var" << sep <<
+            "varRange" << sep <<
+            "varPop" << sep <<
             "nbuckets" << sep <<
             "highest_occupancy" << sep <<
             "highest_occupancyf" << sep << '\n';
@@ -910,7 +919,7 @@ SmuRotatableBonds(int argc, char ** argv) {
     if (static_cast<float>(acc.minval()) < 0.0) {
       cerr << "negative result " << acc.minval() << '\n';
     }
-    if (torsion.acc_angle.n() < min_count_for_output) {
+    if (acc.n() < min_count_for_output) {
       continue;
     }
     int buckets_occupied = 0;
@@ -931,6 +940,7 @@ SmuRotatableBonds(int argc, char ** argv) {
               static_cast<float>(acc.average()) << sep <<
               static_cast<float>(acc.maxval()) << sep <<
               static_cast<float>(acc.range()) << sep << 
+              static_cast<float>(acc.variance()) << sep << 
               static_cast<float>(VarianceFromUniform(torsion)) << sep << 
               buckets_occupied << sep << highest_occupancy << sep <<
               static_cast<float>(highest_occupancy) / static_cast<float>(acc.n()) << '\n';

@@ -217,7 +217,7 @@ class Input_File
 
 Input_File::Input_File ()
 {
-  _column_cross_reference = NULL;
+  _column_cross_reference = nullptr;
 
   _columns_in_file = 0;
 
@@ -231,7 +231,7 @@ Input_File::Input_File ()
 
 Input_File::~Input_File ()
 {
-  if (NULL != _column_cross_reference)
+  if (nullptr != _column_cross_reference)
     delete _column_cross_reference;
 
   return;
@@ -427,7 +427,7 @@ Input_File::establish_column_cross_reference (IW_STL_Hash_Map_int & global_cross
 {
   assert (_header.length () > 0);
   assert (_columns_in_file > 0);
-  assert (NULL == _column_cross_reference);
+  assert (nullptr == _column_cross_reference);
 
   _column_cross_reference = new int[_columns_in_file];
 
@@ -574,7 +574,7 @@ Input_File::_echo (const const_IWSubstring & buffer,
   return 1;
 }
 
-static Input_File * input_file = NULL;
+static Input_File * input_file = nullptr;
 static int number_input_files = 0;
 
 /*
@@ -1291,7 +1291,7 @@ rearrange_columns (int argc, char ** argv)
     cerr << "Output will contain " << columns_in_output << " columns\n";
 
   const_IWSubstring * output_tokens = new const_IWSubstring[columns_in_output];
-  assert (NULL != output_tokens);
+  assert (nullptr != output_tokens);
 
   IWString_and_File_Descriptor output(1);
 

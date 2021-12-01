@@ -27,11 +27,11 @@ Substructure_Results::Substructure_Results ()
 {
   _save_matched_atoms = 1;
 
-  _symmetry_class = NULL;
+  _symmetry_class = nullptr;
 
-  _already_matched = NULL;
+  _already_matched = nullptr;
 
-  _just_matched = NULL;
+  _just_matched = nullptr;
 
   _save_query_atoms_matched = 1;
 
@@ -44,10 +44,10 @@ Substructure_Results::Substructure_Results ()
 
 Substructure_Results::~Substructure_Results ()
 {
-  if (NULL != _already_matched)
+  if (nullptr != _already_matched)
     delete [] _already_matched;
 
-  if (NULL != _just_matched)
+  if (nullptr != _just_matched)
     delete [] _just_matched;
 
   return;
@@ -74,11 +74,11 @@ Substructure_Results::return_code() const
 int
 Substructure_Results::copy_embeddings (const Substructure_Results & rhs)
 {
-  _symmetry_class = NULL;
+  _symmetry_class = nullptr;
 
-  _already_matched = NULL;    // should we check to see if it needs to be deleted??
+  _already_matched = nullptr;    // should we check to see if it needs to be deleted??
 
-  _just_matched = NULL;
+  _just_matched = nullptr;
 
   _save_matched_atoms = rhs._save_matched_atoms;
 
@@ -197,18 +197,18 @@ Substructure_Results::reset ()
   if (_save_query_atoms_matched)
     _query_atoms_matched.resize_keep_storage(0);
 
-  _symmetry_class = NULL;
+  _symmetry_class = nullptr;
 
-  if (NULL != _already_matched)
+  if (nullptr != _already_matched)
   {
     delete [] _already_matched;
-    _already_matched = NULL;
+    _already_matched = nullptr;
   }
 
-  if (NULL != _just_matched)
+  if (nullptr != _just_matched)
   {
     delete [] _just_matched;
-    _just_matched = NULL;
+    _just_matched = nullptr;
   }
 
   _hits_per_fragment.resize_keep_storage(0);
@@ -224,7 +224,7 @@ Substructure_Results::reset ()
 int
 Substructure_Results::embedding_is_unique(const Set_of_Atoms & new_embedding)
 {
-  if (NULL == _just_matched)
+  if (nullptr == _just_matched)
     _just_matched = new int[_atoms_in_target_molecule];
 
   std::fill_n(_just_matched, _atoms_in_target_molecule, 0);
@@ -244,7 +244,7 @@ Substructure_Results::embedding_is_unique(const Set_of_Atoms & new_embedding)
 int 
 Substructure_Results::embedding_overlaps_previous_embeddings (const Set_of_Atoms & new_embedding)
 {
-  if (NULL == _already_matched)
+  if (nullptr == _already_matched)
   {
     _already_matched = new_int(_atoms_in_target_molecule);
     new_embedding.set_vector(_already_matched, 1);
@@ -384,7 +384,7 @@ class QamSa
     int                   _sort_value;
   public:
     QamSa (Query_Atoms_Matched * qam, Set_of_Atoms * s) : _qam (qam), _sa (s) {}
-    QamSa () { _qam = NULL; _sa = NULL; _sort_value = 0;}
+    QamSa () { _qam = nullptr; _sa = nullptr; _sort_value = 0;}
 
     void set_sort_value (int s) { _sort_value = s;}
     int  sort_value () const { return _sort_value;}
@@ -1010,7 +1010,7 @@ Substructure_Results::overlaps_with_existing_embedding(const Set_of_Atoms & s)
 {
   cerr << "Substructure_Results::overlaps_with_existing_embedding:checking " << s << ", atoms_in_target_molecule " << _atoms_in_target_molecule << endl;
 
-  if (NULL == _already_matched)
+  if (nullptr == _already_matched)
   {
     _already_matched = new_int(_atoms_in_target_molecule);
     s.set_vector(_already_matched, 1);

@@ -104,7 +104,7 @@ Reaction_Bond_Angle::process(Molecule & m,
 {
 #ifdef DEBUG_PROCESS_BOND_ANGLE
   cerr << "Processing bond angle " << _desired_angle << endl;
-  if (NULL != scaffold_embedding)
+  if (nullptr != scaffold_embedding)
     cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
   cerr << m.smiles() << endl;
 #endif

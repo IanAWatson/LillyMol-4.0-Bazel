@@ -292,7 +292,7 @@ MolecularVariantsAll(data_source_and_type<Molecule>& input,
   mols.resize(10000);
 
   Molecule * m;
-  while ((m = input.next_molecule()) != NULL) {
+  while ((m = input.next_molecule()) != nullptr) {
     Preprocess(*m, job_parameters);
     mols.add(m);
   }
@@ -310,7 +310,7 @@ MolecularVariants(data_source_and_type<Molecule>& input,
                   JobParameters& job_parameters,
                   std::ostream& output) {
   Molecule * m;
-  while ((m = input.next_molecule()) != NULL) {
+  while ((m = input.next_molecule()) != nullptr) {
     std::unique_ptr<Molecule> free_m(m);
     job_parameters.molecules_read++;
     Preprocess(*m, job_parameters);

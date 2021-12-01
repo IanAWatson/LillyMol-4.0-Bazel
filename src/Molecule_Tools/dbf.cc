@@ -308,8 +308,8 @@ Distances<T>::Distances ()
   }
   else
   {
-    _global_histogram = NULL;
-    _current_molecule_histogram = NULL;
+    _global_histogram = nullptr;
+    _current_molecule_histogram = nullptr;
   }
 
   return;
@@ -319,7 +319,7 @@ template <typename T>
 int
 Distances<T>::activate_current_molecule_histogram ()
 {
-  assert (NULL == _current_molecule_histogram);
+  assert (nullptr == _current_molecule_histogram);
   assert (0 != histogram_specification.length());
 
   _current_molecule_histogram = new IWHistogram;
@@ -330,10 +330,10 @@ Distances<T>::activate_current_molecule_histogram ()
 template <typename T>
 Distances<T>::~Distances ()
 {
-  if (NULL != _global_histogram)
+  if (nullptr != _global_histogram)
     delete [] _global_histogram;
 
-  if (NULL != _current_molecule_histogram)
+  if (nullptr != _current_molecule_histogram)
     delete [] _current_molecule_histogram;
 
   return;
@@ -350,9 +350,9 @@ Distances<T>::reset ()
 {
   Accumulator_Base<T, T>::reset();
 
-  if (NULL != _current_molecule_histogram)
+  if (nullptr != _current_molecule_histogram)
   {
-    if (NULL != _global_histogram)
+    if (nullptr != _global_histogram)
       _global_histogram->add(*_current_molecule_histogram);
 
     _current_molecule_histogram->reset();
@@ -369,7 +369,7 @@ Distances<T>::extra (T v)
 {
   Accumulator_Base<T, T>::extra(v);
 
-  if (NULL != _current_molecule_histogram)
+  if (nullptr != _current_molecule_histogram)
     _current_molecule_histogram->extra(static_cast<double>(v));
 
   if (0 == nkeep)
@@ -607,7 +607,7 @@ template <typename T>
 void
 Distances<T>::append_current_molecule_histogram_results (IWString & buffer) const
 {
-  assert (NULL != _current_molecule_histogram);
+  assert (nullptr != _current_molecule_histogram);
 
   const unsigned int * c = _current_molecule_histogram->raw_counts();
   int nbuckets = _current_molecule_histogram->nbuckets();
@@ -625,8 +625,8 @@ Distances<T>::append_current_molecule_histogram_results (IWString & buffer) cons
 template class Distances<int>;
 template class Distances<coord_t>;
 
-static Distances<int> * bond_distances = NULL;
-static Distances<coord_t> * spatial_distances = NULL;
+static Distances<int> * bond_distances = nullptr;
+static Distances<coord_t> * spatial_distances = nullptr;
 
 /*
   We can optionally do the ratio between the spatial and bond distances
@@ -634,7 +634,7 @@ static Distances<coord_t> * spatial_distances = NULL;
 
 static int compute_spatial_topological_ratio = 0;
 
-static Distances<coord_t> * spatial_bond_ratio = NULL;
+static Distances<coord_t> * spatial_bond_ratio = nullptr;
 
 static void
 usage(int rc)
@@ -1384,7 +1384,7 @@ write_all_distances (Molecule & m,
                      Distances<T> * distances,
                      IWString_and_File_Descriptor & output)
 {
-  if (NULL == distances)
+  if (nullptr == distances)
     return 0;
 
   int name_written = 0;
@@ -1524,7 +1524,7 @@ distance_between_features (data_source_and_type<Molecule> & input,
                            IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -2327,7 +2327,7 @@ distance_between_features (int argc, char ** argv)
     }
   }
 
-  if (histogram_specification.length() && NULL != spatial_distances)
+  if (histogram_specification.length() && nullptr != spatial_distances)
   {
     for (int i = 0; i < nfeatures; i++)
     {
@@ -2337,7 +2337,7 @@ distance_between_features (int argc, char ** argv)
 
         const IWHistogram * h = dist.global_histogram();
 
-        assert (NULL != h);
+        assert (nullptr != h);
 
         cerr << "i = " << i << " j = " << j << endl;
         h->debug_print(cerr);

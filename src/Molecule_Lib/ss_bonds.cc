@@ -13,14 +13,14 @@
 
 Substructure_Bond_Specifier_Base::Substructure_Bond_Specifier_Base()
 {
-  _next = NULL;
+  _next = nullptr;
 
   return;
 }
 
 Substructure_Bond_Specifier_Base::~Substructure_Bond_Specifier_Base()
 {
-  if (NULL != _next)
+  if (nullptr != _next)
     delete _next;
 
   return;
@@ -29,7 +29,7 @@ Substructure_Bond_Specifier_Base::~Substructure_Bond_Specifier_Base()
 void
 Substructure_Bond_Specifier_Base::add_to_chain (Substructure_Bond_Specifier_Base * b)
 {
-  if (NULL == _next)
+  if (nullptr == _next)
     _next = b;
   else
     _next->add_to_chain(b);
@@ -105,7 +105,7 @@ Substructure_Bond_Specifier_Type::smarts (std::ostream & os) const
 int
 Substructure_Bond_Specifier_Type::involves_aromatic_bond_specification (int & r) const
 {
-  if (NULL == _next)
+  if (nullptr == _next)
     return 0;
 
   return _next->involves_aromatic_bond_specification(r);
@@ -154,7 +154,7 @@ Substructure_Bond_Specifier_Ring::involves_aromatic_bond_specification (int & r)
 {
   r++;
 
-  if (NULL == _next)
+  if (nullptr == _next)
     return 0;
 
   return _next->involves_aromatic_bond_specification(r);
@@ -205,7 +205,7 @@ int
 Substructure_Bond_Specifier_NRings::involves_aromatic_bond_specification (int & r) const
 {
   r = 1;
-  if (NULL == _next)
+  if (nullptr == _next)
     return 0;
 
   return _next->involves_aromatic_bond_specification(r);
@@ -268,7 +268,7 @@ Substructure_Bond_Specifier_Aromatic::matches (Bond_and_Target_Atom & bata) cons
 void
 Substructure_Bond::_default_values()
 {
-  _a1 = NULL;
+  _a1 = nullptr;
 
   _b = nullptr;
 
@@ -330,7 +330,7 @@ Substructure_Bond::debug_print (std::ostream & os,
 
   Substructure_Bond_Specifier_Base * b = _b;
   os << indentation << "Start bond info " << b << endl;
-  while (NULL != b)
+  while (nullptr != b)
   {
     b->debug_print(os, indentation);
     b = b->next();
@@ -363,7 +363,7 @@ Substructure_Bond::add_type (int bt)
 {
   assert (bt >= 0 && bt <= 4);
 
-  assert (NULL == _b);
+  assert (nullptr == _b);
 
   if (0 == bt)
   {
@@ -376,7 +376,7 @@ Substructure_Bond::add_type (int bt)
 
   if (4 == bt)
   {
-    assert (NULL == _b);
+    assert (nullptr == _b);
     _b = new Substructure_Bond_Specifier_Aromatic(1);
   }
 
@@ -513,7 +513,7 @@ Substructure_Bond::matches (Bond_and_Target_Atom & bata)
 
   Substructure_Bond_Specifier_Base * b = _b;
 
-  while (NULL != b)
+  while (nullptr != b)
   {
     if (! _logexp.result_needed(i))
     {

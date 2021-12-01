@@ -17,7 +17,7 @@
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/path_around_ring.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int molecules_read = 0;
 
@@ -405,7 +405,7 @@ determine_substitution_type(Molecule & m,
     return RSTYPE_SUBSTITUTED;    // of not classified above
   }
 
-  assert (NULL == "Could not classify non-ring bond???");
+  assert (nullptr == "Could not classify non-ring bond???");
 
   return 0;
 }
@@ -567,7 +567,7 @@ ring_substitution (data_source_and_type<Molecule> & input,
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule ()))
+  while (nullptr != (m = input.next_molecule ()))
   {
     std::unique_ptr<Molecule> free_m (m);
 

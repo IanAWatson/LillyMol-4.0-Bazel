@@ -34,7 +34,7 @@ IWString::IWString(const char * s)
 {
   _default_values();
 
-  if (NULL == s)
+  if (nullptr == s)
     return;
 
   IWString::strncpy(s, static_cast<int>(::strlen(s)));
@@ -168,7 +168,7 @@ const_IWSubstring::strip_leading_blanks()
   }
 
   if (0 == _nchars)
-    _data = NULL;
+    _data = nullptr;
 
   return;
 }
@@ -206,7 +206,7 @@ const_IWSubstring::strip_trailing_blanks()
   }
 
   if (0 == _nchars)
-    _data = NULL;
+    _data = nullptr;
 
   return;
 }
@@ -600,7 +600,7 @@ const_IWSubstring::operator=(const char * rhs)
 {
   _data = rhs;
 
-  if (NULL == rhs)
+  if (nullptr == rhs)
     _nchars = 0;
   else
     _nchars = static_cast<int>(::strlen(rhs));
@@ -2064,9 +2064,9 @@ IWString::locate_word_beginnings_single_delimiter(resizable_array<int> & word_be
 */
 
 static int
-internal_nextword (const char * s, int nchars, int & i,
-                   char separator,
-                   int & istart, int & istop)
+internal_nextword(const char * s, int nchars, int & i,
+                  char separator,
+                  int & istart, int & istop)
 {
   if (i >= nchars)
     return 0;
@@ -2100,22 +2100,22 @@ internal_nextword (const char * s, int nchars, int & i,
 }
   
 static int
-internal_nextword (IWString & result, int & i,
-                   char separator,
-                   const char * s, int nchars)
+internal_nextword(IWString & result, int & i,
+                  char separator,
+                  const char * s, int nchars)
 {
-  result.resize_keep_storage (0);
+  result.resize_keep_storage(0);
 
   int istart, istop;
 
-  if (! internal_nextword (s, nchars, i, separator, istart, istop))
+  if (! internal_nextword(s, nchars, i, separator, istart, istop))
     return 0;
 
 //cerr << "After STRING determination, istart = " << istart << " istop = " << istop << endl;
 
-  result.resize (istop - istart + 1);
+  result.resize(istop - istart + 1);
 
-  result.set (s + istart, istop - istart + 1);
+  result.set(s + istart, istop - istart + 1);
 
   return 1;
 }
@@ -2125,20 +2125,20 @@ internal_nextword (IWString & result, int & i,
 static
 #endif
 int
-internal_nextword (const_IWSubstring & result, int & i,
-                   char separator,
-                   const char * s, int nchars)
+internal_nextword(const_IWSubstring & result, int & i,
+                  char separator,
+                  const char * s, int nchars)
 {
-  result.set (NULL, 0);
+  result.set(nullptr, 0);
 
   int istart, istop;
 
-  if (! internal_nextword (s, nchars, i, separator, istart, istop))
+  if (! internal_nextword(s, nchars, i, separator, istart, istop))
     return 0;
 
 //cerr << "After determination, istart = " << istart << " istop = " << istop << endl;
 
-  result.set (&s[istart], istop - istart + 1);
+  result.set(&s[istart], istop - istart + 1);
 
   return 1;
 }
@@ -2150,9 +2150,9 @@ internal_nextword (const_IWSubstring & result, int & i,
 */
 
 static int
-internal_prevword (IWString & result, int & i,
-                   char separator,
-                   const char * s)
+internal_prevword(IWString & result, int & i,
+                  char separator,
+                  const char * s)
 {
   if (i <= 0)
     return 0;
@@ -2310,17 +2310,17 @@ IWString::from_to(int istart, const char * s) const
   assert (istart >= 0 && istart < _number_elements);
 
   if (0 == _number_elements)
-    return const_IWSubstring(NULL, 0);
+    return const_IWSubstring(nullptr, 0);
 
   int lens = static_cast<int>(strlen(s));
 
   if (0 == lens)
-    return const_IWSubstring(NULL, 0);
+    return const_IWSubstring(nullptr, 0);
 
   int i = do_find(_things, _number_elements, s, lens);
 
   if (i < 0)
-    return const_IWSubstring(NULL, 0);
+    return const_IWSubstring(nullptr, 0);
 
   return const_IWSubstring(&_things[istart], i - istart + 1);
 }
@@ -2424,7 +2424,7 @@ IWString::operator=(char c)
 
 const_IWSubstring::const_IWSubstring()
 {
-  _data = NULL;
+  _data = nullptr;
   _nchars = 0;
 
   return;
@@ -2439,7 +2439,7 @@ const_IWSubstring::const_IWSubstring(const char * data, int nchars) :
 const_IWSubstring::const_IWSubstring(const char * data) :
           _data(data)
 {
-  if (NULL != data)
+  if (nullptr != data)
     _nchars = static_cast<int>(::strlen(data));
   else
     _nchars = 0;
@@ -3388,7 +3388,7 @@ expand_environment_variables (const char * old_name, IWString & expanded_name)
 
   const char * env = getenv(buffer);
 
-  if (NULL == env)
+  if (nullptr == env)
   {
     cerr << "expand_environment_variables: no env value for '" << buffer << "'\n";
     return 0;
@@ -4086,7 +4086,7 @@ common_split (const char * s,
               IWString * tokens,
               char separator)
 {
-  assert (NULL != tokens);
+  assert (nullptr != tokens);
 
   int i = 0;
   const_IWSubstring token;
@@ -5316,7 +5316,7 @@ const_IWSubstring::expand_environment_variables(IWString & destination) const
     }
 
     const char * env = getenv(v.null_terminated_chars());
-    if (NULL == env)
+    if (nullptr == env)
     {
       cerr << "const_IWSubstring::expand_environment_variables:no value for '" << env << "'\n";
       return 0;

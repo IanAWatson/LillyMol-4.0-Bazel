@@ -1092,7 +1092,7 @@ Molecule::_smiles_choose_unique_first_atom(const int * zorder,
 {
   const int * canonical_rank = _symmetry_class_and_canonical_rank.canonical_rank();
 
-  assert(NULL != canonical_rank);
+  assert(nullptr != canonical_rank);
 
   int include_chiral_info = include_chiral_info_in_smiles();
 
@@ -1161,7 +1161,7 @@ Molecule::_smiles_choose_unique_first_atom(const int * zorder,
 {
   const int * canonical_rank = _symmetry_class_and_canonical_rank.canonical_rank();
 
-  assert(NULL != canonical_rank);
+  assert(nullptr != canonical_rank);
   assert(include_atom != nullptr);
 
   int include_chiral_info = include_chiral_info_in_smiles();
@@ -1792,11 +1792,11 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
     }
 #endif
 
-    const Chiral_Centre * c = NULL;
+    const Chiral_Centre * c = nullptr;
     if (include_chiral_info_in_smiles())
-      c = chiral_centre_at_atom(zatom);     // will be NULL if atom A is not a chiral centre
+      c = chiral_centre_at_atom(zatom);     // will be nullptr if atom A is not a chiral centre
 
-    if (NULL != c && ring_closures_found.number_elements() > 1)
+    if (nullptr != c && ring_closures_found.number_elements() > 1)
       sort_ring_closures_found(ring_closures_found, zorder);
 
 //  Now that we have determined any ring openings, we can append the smiles symbol.
@@ -1965,7 +1965,7 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
     Smiles_Formation_Info sfi(_number_elements, nr);
 //  cerr << "Doing smarts? " << smi_info.smiles_is_smarts() << endl;
 
-    if (NULL != smi_info.user_specified_atomic_smarts())
+    if (nullptr != smi_info.user_specified_atomic_smarts())
       sfi.set_user_specified_atomic_smarts(smi_info.user_specified_atomic_smarts());
 
     if (smi_info.smiles_is_smarts())
@@ -2209,7 +2209,7 @@ Molecule::_unique_smiles(const Fragment_Information & frag_info,
   if (include_cis_trans_in_smiles())
     _adjust_cis_trans_bonds_to_canonical_form(sccr.canonical_rank());
 
-  assert(NULL != _aromaticity);    // aromaticity computed in compute_canonical_ranking
+  assert(nullptr != _aromaticity);    // aromaticity computed in compute_canonical_ranking
 
   Smiles_First_Atom smfa;
 
@@ -2285,7 +2285,7 @@ Molecule::_unique_smiles(const Fragment_Information & frag_info,
   if (include_cis_trans_in_smiles())
     _adjust_cis_trans_bonds_to_canonical_form(sccr.canonical_rank());
 
-  assert(NULL != _aromaticity);    // aromaticity computed in compute_canonical_ranking
+  assert(nullptr != _aromaticity);    // aromaticity computed in compute_canonical_ranking
 
   Smiles_First_Atom smfa;
 
@@ -2703,7 +2703,7 @@ Molecule::_find_raw_rings_for_fragment(int id, int * already_done)
     assert(NULL == "This is very bad");
   }
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
 // Initialise all these atoms as 0 ring membership
@@ -2909,7 +2909,7 @@ Molecule::_update_ring_membership(const Ring * r)
 
     Bond * b = const_cast<Bond *>(aj->bond_to_atom(prev_atom));   // loss of const OK
     assert(b);
-    if (b == NULL)
+    if (b == nullptr)
     {
     	return 0;
     }

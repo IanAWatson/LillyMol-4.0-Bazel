@@ -28,7 +28,7 @@ using std::endl;
 #include "Molecule_Lib/rmele.h"
 #include "Molecule_Lib/allowed_elements.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -1012,7 +1012,7 @@ group_molecules(data_source_and_type<Molecule> & input,
                 IW_STL_Hash_Set & chirality_removed)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1035,7 +1035,7 @@ group_molecules(const char * fname, FileType input_type,
                 IW_STL_Hash_Map<IWString, Group_of_Molecules *> & structure_group,
                 IW_STL_Hash_Set & chirality_removed)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

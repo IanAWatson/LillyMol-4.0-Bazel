@@ -11,7 +11,7 @@
 
 template <typename T>
 T *
-iw_new_array (int size, T initial_value)
+iw_new_array(int size, T initial_value)
 {
   T * rc = new T[size];
 

@@ -15,7 +15,7 @@ using std::endl;
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/standardise.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -182,7 +182,7 @@ sp3_filter (data_source_and_type<Molecule> & input,
                 IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -203,7 +203,7 @@ static int
 sp3_filter (const char * fname, FileType input_type, 
                 IWString_and_File_Descriptor & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

@@ -742,7 +742,7 @@ ISIS_RXN_FILE_Molecule::transfer_atom_map_data_to_global_array()
   if (0 == matoms)
     return 0;
 
-  if (NULL == _atom_map)
+  if (nullptr == _atom_map)
     _atom_map = new int[matoms];
 
   for (int i = 0; i < matoms; ++i)
@@ -894,7 +894,7 @@ RXN_File::contains_isotopic_product_atoms() const
 int
 RXN_File::at_least_some_mapped_atoms_common_btw_reagents_and_products()
 {
-  if (NULL == _product_locator)
+  if (nullptr == _product_locator)
     _reestablish_reagent_locator_array();
 
   for (int i = 0; i < _nr; ++i)
@@ -1037,11 +1037,11 @@ RXN_File::_identify_atoms_with_different_bonding(const ISIS_RXN_FILE_Molecule & 
     const atom_number_t pa2 = _product[p1].which_is_mapped_atom(amap2);
 
     const Bond * b1 = m.bond_between_atoms_if_present(ra1, ra2);
-    if (NULL == b1)
+    if (nullptr == b1)
       return 0;
 
     const Bond * b2 = _product[p1].bond_between_atoms_if_present(pa1, pa2);
-    if (NULL == b2)
+    if (nullptr == b2)
       return 0;
 
     if (compare(b1->btype(), b2->btype()))
@@ -1477,7 +1477,7 @@ RXN_File::_bond_the_same_in_product(const ISIS_RXN_FILE_Molecule & r, const Bond
 
   const Bond * b2 = _product[p].bond_between_atoms_if_present(pa1, pa2);
 
-  if (NULL == b2)
+  if (nullptr == b2)
     return 0;
 
   return (BOND_TYPE_ONLY(b.btype()) == BOND_TYPE_ONLY(b2->btype()));
@@ -1738,7 +1738,7 @@ _contains_duplicate_atom_map_numbers(const ISIS_RXN_FILE_Molecule & m, int * map
 
   const int * amap = m.atom_map();
 
-  if (NULL == amap)
+  if (nullptr == amap)
     return 0;
 
   int rc = 0;
@@ -1998,7 +1998,7 @@ RXN_File::largest_fragment_is_changed() const
 int
 RXN_File::remove_unchanging_fragments()
 {
-  if (NULL == _product_locator)
+  if (nullptr == _product_locator)
     prepare_for_reaction_construction();
 
   int rc = 0;
@@ -2038,7 +2038,7 @@ RXN_File::remove_unchanging_fragments()
 int
 RXN_File::remove_unchanging_components()
 {
-  if (NULL == _product_locator)
+  if (nullptr == _product_locator)
     prepare_for_reaction_construction();
 
   int rc = 0;

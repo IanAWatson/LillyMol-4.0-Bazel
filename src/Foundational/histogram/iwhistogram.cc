@@ -18,7 +18,7 @@ IWHistogram::IWHistogram ()
 
   _nbuckets = 0;
 
-  _count = NULL;
+  _count = nullptr;
 
   _put_out_of_range_values_in_first_or_last_bucket = 0;
 
@@ -27,7 +27,7 @@ IWHistogram::IWHistogram ()
 
 IWHistogram::~IWHistogram ()
 {
-  if (NULL != _count)
+  if (nullptr != _count)
     delete [] _count;
 
 // set an invalid state
@@ -46,7 +46,7 @@ IWHistogram::_initialise ()
 
   _count = new unsigned int[_nbuckets];
 
-  if (NULL == _count)
+  if (nullptr == _count)
   {
     cerr << "IWHistogram::initialise: cannot allocate array of size " << _nbuckets << endl;
     return 0;
@@ -140,7 +140,7 @@ IWHistogram::initialise (double mn, double mx, double dx)
 int
 IWHistogram::ok () const
 {
-  if (_nsamples > 0 && NULL == _count)
+  if (_nsamples > 0 && nullptr == _count)
     return 0;
 
   if (_min == _max && _max == _dx)     // probably not initialised
@@ -297,7 +297,7 @@ IWHistogram::reset ()
   if (0 == _nsamples)
     return 1;
 
-  if (NULL == _count)
+  if (nullptr == _count)
     return 1;
 
   for (int i = 0; i < _nbuckets; i++)

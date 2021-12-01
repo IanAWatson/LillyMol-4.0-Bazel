@@ -64,7 +64,7 @@ static IWString non_colliding_fingerprint_tag;
 
 static IWString fixed_size_counted_fingerprint_tag;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -155,7 +155,7 @@ int_accumulator::average_number_of_hits() const
   return Accumulator_Int<int>::sum() / static_cast<double>(number_non_zero);
 }
 
-static int_accumulator * accumulators = NULL;
+static int_accumulator * accumulators = nullptr;
 
 static extending_resizable_array<int> keys_hit;
 
@@ -422,7 +422,7 @@ maccskeys (Molecule & m,
   if (0 == rc)   // failure
     return 0;
 
-  if (NULL != accumulators)
+  if (nullptr != accumulators)
   {
     int non_zero_keys = 0;
     for (int i = 0; i < number_maccs_keys; i++)
@@ -618,7 +618,7 @@ maccskeys (data_source_and_type<Molecule> & input,
            IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while ((NULL != (m = input.next_molecule())))
+  while ((nullptr != (m = input.next_molecule())))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -1055,7 +1055,7 @@ maccskeys (int argc, char ** argv)
 
   if (stream_for_statistics.is_open())
   {
-    assert (NULL != accumulators);
+    assert (nullptr != accumulators);
 
     stream_for_statistics << "Key statistics";
     if (0 == verbose)
@@ -1114,7 +1114,7 @@ maccskeys (int argc, char ** argv)
 
   output.flush();
 
-  if (NULL != accumulators)
+  if (nullptr != accumulators)
     delete [] accumulators;
 
   return rc;

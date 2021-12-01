@@ -573,8 +573,8 @@ identify_attached_bonds (const Atom * a,
                          Bond * & b12,
                          Bond * & b13)
 {
-  b12 = NULL;
-  b13 = NULL;     // may not exist
+  b12 = nullptr;
+  b13 = nullptr;     // may not exist
 
   int acon = a->ncon();
 
@@ -585,16 +585,16 @@ identify_attached_bonds (const Atom * a,
     if (b->is_double_bond())
       continue;
 
-    if (NULL == b12)
+    if (nullptr == b12)
       b12 = const_cast<Bond *>(b);
-    else if (NULL == b13)
+    else if (nullptr == b13)
     {
       b13 = const_cast<Bond *>(b);
       return 2;
     }
   }
 
-  return (NULL != b12);
+  return (nullptr != b12);
 }
 
 /*static int
@@ -1088,7 +1088,7 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
 
   atom_number_t a2;
   int a2_direction;
-  if (NULL == b32)
+  if (nullptr == b32)
   {
     a2 = INVALID_ATOM_NUMBER;
     a2_direction = 0;
@@ -1104,7 +1104,7 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
 
   atom_number_t a6;
   int a6_direction;
-  if (NULL == b46)
+  if (nullptr == b46)
   {
     a6 = INVALID_ATOM_NUMBER;
     a6_direction = 0;
@@ -1209,11 +1209,11 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
   if (0 == a1_direction && 0 == a2_direction && 0 == a5_direction && 0 == a6_direction)   // hopefully the most common case
   {
     b31->set_directional_up(a3, a1);
-    if (NULL != b32)
+    if (nullptr != b32)
       b32->set_directional_down(a3, a2);
-    if (NULL != b45)
+    if (nullptr != b45)
       b45->set_directional_up(a4, a5);
-    if (NULL != b46)
+    if (nullptr != b46)
       b46->set_directional_down(a4, a6);
   }
   else     // we assume that just one of the directions is set
@@ -1271,28 +1271,28 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
     if (D12_ONE_ON_TOP == d12)
     {
       b31->set_directional_up(a3, a1);
-      if (NULL != b32)
+      if (nullptr != b32)
         b32->set_directional_down(a3, a2);
     }
     else
     {
       b31->set_directional_down(a3, a1);
-      if (NULL != b32)
+      if (nullptr != b32)
         b32->set_directional_up(a3, a2);
     }
 
     if (D56_FIVE_ON_TOP == d56)
     {
-      if (NULL != b45)
+      if (nullptr != b45)
         b45->set_directional_up(a4, a5);
-      if (NULL != b46)
+      if (nullptr != b46)
         b46->set_directional_down(a4, a6);
     }
     else
     {
-      if (NULL != b45)
+      if (nullptr != b45)
         b45->set_directional_down(a4, a5);
-      if (NULL != b46)
+      if (nullptr != b46)
         b46->set_directional_up(a4, a6);
     }
   }
@@ -1303,7 +1303,7 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
   if (0 == a1_direction && 0 == a2_direction)
   {
     b31->set_directional_up (a3, a1);
-    if (NULL != b32)
+    if (nullptr != b32)
       b32->set_directional_down (a3, a2);
   }
   else if (0 != a2_direction)    
@@ -1313,7 +1313,7 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
     else
       b31->set_directional_down (a3, a1);
   }
-  else if (NULL != b32)
+  else if (nullptr != b32)
   {
     if (a1_direction < 0)
       b32->set_directional_up (a3, a2);
@@ -1323,21 +1323,21 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
 
   if (0 == a5_direction && 0 == a6_direction)
   {
-    if (NULL != b45)
+    if (nullptr != b45)
       b45->set_directional_up (a4, a5);
-    if (NULL != b46)
+    if (nullptr != b46)
       b46->set_directional_down (a4, a6);
   }
   else if (0 != a6_direction)    
   {
-    if (NULL == b45)
+    if (nullptr == b45)
       ;
     else if (a6_direction < 0)
       b45->set_directional_up (a4, a5);
     else
       b45->set_directional_down (a4, a5);
   }
-  else if (NULL != b46)
+  else if (nullptr != b46)
   {
     if (a5_direction < 0)
       b46->set_directional_up (a4, a6);
@@ -1469,7 +1469,7 @@ Molecule::remove_invalid_directional_bonds()
 {
   int rc = 0;    // number of invalid cis-trans bonds we remove
 
-  int * already_done = NULL;
+  int * already_done = nullptr;
 
   int nb = _bond_list.number_elements();
 
@@ -1494,7 +1494,7 @@ Molecule::remove_invalid_directional_bonds()
       ;
     else
     {
-      if (NULL == already_done)
+      if (nullptr == already_done)
         already_done = new_int(_number_elements);
 
       atom_number_t a1, a2;
@@ -1524,7 +1524,7 @@ Molecule::remove_invalid_directional_bonds()
       ps[0].initialise(a5, _things[a5]);
       ps[1].initialise(a6, _things[a6]);
 
-      if (NULL == already_done)
+      if (nullptr == already_done)
         already_done = new_int(_number_elements);
 
       already_done[a5] = already_done[a6] = 1;
@@ -1547,7 +1547,7 @@ Molecule::remove_invalid_directional_bonds()
     rc++;
   }
 
-  if (NULL == already_done)
+  if (nullptr == already_done)
     delete [] already_done;
 
   return rc;

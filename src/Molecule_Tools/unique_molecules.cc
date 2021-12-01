@@ -32,7 +32,7 @@ using std::endl;
 
 static int verbose = 0;
 
-const char* prog_name = NULL;
+const char* prog_name = nullptr;
 
 static Elements_to_Remove elements_to_remove;
 
@@ -306,7 +306,7 @@ static int
 unique_molecule(data_source_and_type<Molecule>& input)
 {
   Molecule* m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -432,7 +432,7 @@ static int
 build_previous_molecules(data_source_and_type<Molecule>& input, int& molecules)
 {
   Molecule* m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 

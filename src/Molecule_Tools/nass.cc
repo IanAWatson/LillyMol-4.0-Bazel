@@ -64,7 +64,7 @@ NA_Substructure_Query::read (iwstring_data_source & input)
 
   const msi_attribute * att;
   int i = 0;
-  while (NULL != (att = msi.attribute(NASS_NAME_OF_NEEDS_ATTRIBUTE, i++)))
+  while (nullptr != (att = msi.attribute(NASS_NAME_OF_NEEDS_ATTRIBUTE, i++)))
   {
     IWString * n = new IWString;
     att->value(*n);
@@ -100,7 +100,7 @@ Set_of_NA_Substructure_Query::Set_of_NA_Substructure_Query()
 {
   _queries_not_needing_anything = NASS_UNDETERMINED;
 
-  _sresults = NULL;
+  _sresults = nullptr;
 
   _break_at_first_match = 0;
 
@@ -657,7 +657,7 @@ int
 Set_of_NA_Substructure_Query::substructure_search (Molecule & m,
                                                    int * result)
 {
-  assert (NULL != result);
+  assert (nullptr != result);
 
   if (NASS_UNDETERMINED == _queries_not_needing_anything)
   {
@@ -666,7 +666,7 @@ Set_of_NA_Substructure_Query::substructure_search (Molecule & m,
       return 0;
   }
 
-  if (NULL == _sresults)
+  if (nullptr == _sresults)
   {
     _sresults = new Substructure_Results[_number_elements];
     for (int i = 0; i < _number_elements; i++)

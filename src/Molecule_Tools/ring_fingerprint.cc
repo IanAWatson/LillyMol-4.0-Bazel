@@ -19,7 +19,7 @@ using std::endl;
 #include "Molecule_Lib/iwstandard.h"
 #include "Molecule_Lib/smiles.h"
 
-static const char * prog_name = NULL;
+static const char * prog_name = nullptr;
 
 static IWString smiles_tag("Molecule_Lib/$SMI<");
 static IWString identifier_tag("Molecule_Lib/PCN<");
@@ -1079,7 +1079,7 @@ Ring_Fingerprint::_process (data_source_and_type<Molecule> & input,
                             IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     _molecules_read++;
 
@@ -1106,7 +1106,7 @@ int
 Ring_Fingerprint::_process (const char * fname, FileType input_type,
                  IWString_and_File_Descriptor & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

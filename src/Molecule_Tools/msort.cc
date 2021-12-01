@@ -30,8 +30,8 @@ static int verbose = 0;
 
 static int nproperties = 0;
 
-static int * comparison_criterion = NULL;
-static int * direction = NULL;
+static int * comparison_criterion = nullptr;
+static int * direction = nullptr;
 
 #define CMP_NATOMS 0
 #define CMP_NRINGS 1
@@ -69,7 +69,7 @@ static extending_resizable_array<int> comparison_column;
 
 static atomic_mass_t amw_hydrogen = static_cast<atomic_mass_t>(1.00794);
 
-static IWString * comparison_tag = NULL;
+static IWString * comparison_tag = nullptr;
 
 static int presumed_atoms_in_counterion_if_no_counterion = 0;
 
@@ -91,7 +91,7 @@ static resizable_array_p<Substructure_Query> queries;
 
 static int treat_queries_as_a_single_group = 0;
 
-static int * property_number_to_query_number = NULL;
+static int * property_number_to_query_number = nullptr;
 
 /*
   When writing molecules in chunks, we can set a minimum molecules
@@ -202,7 +202,7 @@ File_Record::File_Record()
   if (nproperties)
     _property = new float[nproperties];
   else
-    _property = NULL;
+    _property = nullptr;
 
   _nlines = -1;
 
@@ -211,7 +211,7 @@ File_Record::File_Record()
 
 File_Record::~File_Record()
 {
-  if (NULL != _property)
+  if (nullptr != _property)
     delete [] _property;
 
   return;
@@ -786,7 +786,7 @@ File_Record::initialise(Molecule & m,
   _offset = o;
 
   assert (nproperties > 0);
-  if (NULL == _property)
+  if (nullptr == _property)
     _property = new float[nproperties];
 
   for (int i = 0; i < nproperties; i++)
@@ -1653,7 +1653,7 @@ msort (int argc, char ** argv)
     return 4;
   }
 
-  File_Record * records = NULL;
+  File_Record * records = nullptr;
   int items_in_file = 0;
 
   if (cl.option_present('s'))
@@ -1685,7 +1685,7 @@ msort (int argc, char ** argv)
   int molecules = 0;
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 

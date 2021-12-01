@@ -161,7 +161,7 @@ TopologicalTorsion(data_source_and_type<Molecule>& input,
                    JobOptions& job_options,
                    IWString_and_File_Descriptor& output) {
   Molecule * m;
-  while ((m = input.next_molecule()) != NULL ) {
+  while ((m = input.next_molecule()) != nullptr ) {
     std::unique_ptr<Molecule> free_m(m);
     job_options.molecules_read++;
     Preprocess(job_options, *m);

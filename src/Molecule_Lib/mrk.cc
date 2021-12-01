@@ -256,7 +256,7 @@ Molecule::_read_mrk_atom_record(const const_IWSubstring & buffer)
   
   if (buffer.length() < 70)
   {
-    if (NULL != _charges)    // yipes, charges present but nothing for this record
+    if (nullptr != _charges)    // yipes, charges present but nothing for this record
     {
       cerr << "Molecule::_read_mrk_atom_record: missing partial charge\n";
       return 0;
@@ -275,10 +275,10 @@ Molecule::_read_mrk_atom_record(const const_IWSubstring & buffer)
     return 0;
   }
 
-  if (static_cast<charge_t>(0.0) == q && NULL == _charges)    // no non-zero charges encountered yet
+  if (static_cast<charge_t>(0.0) == q && nullptr == _charges)    // no non-zero charges encountered yet
     return 1;
 
-  if (NULL == _charges)
+  if (nullptr == _charges)
     allocate_charges();
 
   _charges->seti(_number_elements - 1, q);
@@ -286,7 +286,7 @@ Molecule::_read_mrk_atom_record(const const_IWSubstring & buffer)
   return 1;
 }
 
-static IWString * digit5 = NULL;
+static IWString * digit5 = nullptr;
 static int max_digit5 = 0;
 
 static IWString digit1[4];
@@ -298,7 +298,7 @@ initialise_digit5(int m)
 
   max_digit5 = m;
 
-  if (NULL != digit5)
+  if (nullptr != digit5)
     delete [] digit5;
 
   digit5 = new IWString[max_digit5];
@@ -355,7 +355,7 @@ write_partial_charge(std::ostream & os,
 int
 Molecule::write_molecule_mrk(std::ostream & output)
 {
-  if (NULL == digit5)
+  if (nullptr == digit5)
     initialise_digit5(200);
   else if (_number_elements >= max_digit5)
     initialise_digit5(_number_elements + 20);
@@ -460,7 +460,7 @@ Molecule::write_molecule_mrk(std::ostream & output)
 
 //  Write the buffer if we will use the C++ library for writing charges
 
-    if (NULL != _charges)
+    if (nullptr != _charges)
     {
       output << buffer;
       write_partial_charge(output, _charges->item(i));

@@ -41,7 +41,7 @@ class IWHistogram
     int initialise (const const_IWSubstring &);
     int initialise (double mn, double mx, double dx);
 
-    int active () const { return NULL != _count;}
+    int active () const { return nullptr != _count;}
 
     int nbuckets () const { return _nbuckets;}
     double minval() const { return _min;}

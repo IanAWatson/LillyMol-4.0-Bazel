@@ -436,7 +436,7 @@ int
 Pharacaphore2d (data_source_and_type<Molecule> & input,
                 const IWString& output_stem) {
   Molecule * m;
-  while ((m = input.next_molecule()) != NULL) {
+  while ((m = input.next_molecule()) != nullptr) {
     molecules_read++;
     std::unique_ptr<Molecule> free_m(m);
     Preprocess(*m);

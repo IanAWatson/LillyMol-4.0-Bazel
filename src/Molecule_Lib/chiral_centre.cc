@@ -467,7 +467,7 @@ Chiral_Centre::convert_to_implicit_hydrogen (atom_number_t h)
   {
     cerr << "Chiral_Centre::convert_to_implicit_hydrogen: does not involve " << h << endl;
     debug_print (cerr);
-    assert(NULL == "This should not happen");
+    assert(nullptr == "This should not happen");
   }
 
   return 1;
@@ -534,7 +534,7 @@ Molecule::_stereo_centre_hydrogens_become_implicit (Chiral_Centre * c)
   else
   {
     c->debug_print(cerr);
-    assert(NULL == "How could this happen?");
+    assert(nullptr == "How could this happen?");
   }
 
   return 1;
@@ -783,7 +783,7 @@ Molecule::_smi_process_new_chiral_centre (Chiral_Centre * c,
   else
   {
     cerr << "Molecule::_smi_process_new_chiral_centre: atom " << a << " ncon = " << acon << endl;
-    assert(NULL == "How could this happen?");
+    assert(nullptr == "How could this happen?");
   }
 
   c->set_chirality_known(1);    // chiral centres derived from smiles are of known chirality
@@ -807,7 +807,7 @@ Molecule::chiral_centre_at_atom (atom_number_t a) const
       return cc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 Chiral_Centre *
@@ -829,7 +829,7 @@ Molecule::remove_no_delete_chiral_centre_at_atom (atom_number_t zatom)
     return c;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 Chiral_Centre *
@@ -855,7 +855,7 @@ Molecule::_smi_atom_bonded_to_chiral_centre (atom_number_t previous_atom,
 // First fetch the chiral centre anchored on PREVIOUS_ATOM
 
   Chiral_Centre * c = chiral_centre_at_atom(previous_atom);
-  if (NULL == c)
+  if (nullptr == c)
   {
     cerr << "Molecule::_smi_last_atom_is_part_of_chiral_centre: no chiral atom found\n";
     cerr << "Atom " << previous_atom << endl;
@@ -1062,7 +1062,7 @@ Molecule::_check_for_incomplete_chiral_specifications (Chiral_Centre * c)
     c->set_right_down(CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN);
   else
   {
-    assert(NULL == "this should not happen");
+    assert(nullptr == "this should not happen");
   }
 
   return 1;
@@ -1288,7 +1288,7 @@ Chiral_Centre::append_smiles_chirality_symbol (IWString & smiles,
     cerr << "Chiral_Centre::append_smiles_chirality_symbol: huh, previous atom is " << previous_atom << endl;
     cerr << "Smiles is '" << smiles << "'\n";
     debug_print(cerr);
-//  assert(NULL == "this should not happen");
+//  assert(nullptr == "this should not happen");
   }
 
   return 1;
@@ -1438,7 +1438,7 @@ Chiral_Centre::orientation (const unsigned int * rank) const
   if (rrd > rtf && rrd > rtb && rrd > rld)
     return do_orientation(rtb, rtf, rld);
 
-  assert(NULL == "Should not come to here");
+  assert(nullptr == "Should not come to here");
 
   return 0;
 }
@@ -1846,7 +1846,7 @@ Chiral_Centre *
 Molecule::create_chiral_centre (atom_number_t zatom,
                                 int zero_connections_ok)
 {
-  assert(NULL == chiral_centre_at_atom(zatom));    // cannot already be one at atom A
+  assert(nullptr == chiral_centre_at_atom(zatom));    // cannot already be one at atom A
 
   Atom * a = _things[zatom];
 
@@ -1866,7 +1866,7 @@ Molecule::create_chiral_centre (atom_number_t zatom,
     cerr << "Molecule::create_chiral_centre: atom " << zatom << " (" << a->atomic_symbol() << ") has " << acon <<
             " connections\n";
     debug_print(cerr);
-    return NULL;
+    return nullptr;
   }
 
   Chiral_Centre * c = new Chiral_Centre(zatom);
@@ -2071,7 +2071,7 @@ Molecule::_complete_chiral_centre_from_mdl_files (Chiral_Centre * c,
   else
   {
     c->debug_print(cerr);
-    assert(NULL == "Unknown chirality_known value");
+    assert(nullptr == "Unknown chirality_known value");
   }
 
   return 1;

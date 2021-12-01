@@ -22,7 +22,7 @@ using std::endl;
 static int verbose= 0;
 static int abort_on_error = 0;
 
-char * prog_name = NULL;
+char * prog_name = nullptr;
 
 static IWString filter_pattern("^#");
 
@@ -153,7 +153,7 @@ test4 (const char * fname)
   size_t * offset = new size_t[nr + 1];
   IWString * line = new IWString[nr + 1];
 
-  assert (NULL != offset && NULL != line);
+  assert (nullptr != offset && nullptr != line);
 
   size_t o = input.tellg ();
   cerr << "Initial offset " << o << endl;

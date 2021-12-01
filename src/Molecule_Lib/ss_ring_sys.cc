@@ -164,7 +164,7 @@ static int
 compute_atoms_with_pi_electrons (const atom_number_t * in_ring, 
                                  Molecule_to_Match & target)
 {
-  assert (NULL != in_ring);
+  assert (nullptr != in_ring);
 
   int rc = 0;
 
@@ -243,7 +243,7 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
   if (_all_hits_in_same_fragment)
     m = target.molecule();
   else
-    m = NULL;
+    m = nullptr;
 
   for (int i = 0; i < nr; i++)
   {
@@ -282,7 +282,7 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
 
     int rings_with_strongly_fused_neighbours = ri->strongly_fused_ring_neighbours();
 
-    if (NULL != atoms_in_system)
+    if (nullptr != atoms_in_system)
     {
       set_vector(atoms_in_system, matoms, 0);
       ri->set_vector(atoms_in_system, 1);
@@ -310,7 +310,7 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
         else
           system_rejected = 1;
   
-        if (NULL != atoms_in_system)
+        if (nullptr != atoms_in_system)
           rj->set_vector(atoms_in_system, 1);
 
         max_fused.extra(rj->fused_ring_neighbours());
@@ -515,11 +515,11 @@ Substructure_Ring_System_Specification::matches (Molecule_to_Match & target)
   if (_need_per_atom_array)
     atmp = new atom_number_t[target.natoms()];
   else 
-    atmp = NULL;
+    atmp = nullptr;
 
   int rc = _matches(target, rtmp, atmp);
 
-  if (NULL != atmp)
+  if (nullptr != atmp)
     delete [] atmp;
 
   return rc;
@@ -529,7 +529,7 @@ int
 Substructure_Ring_System_Specification::_spinach_matches(Molecule_to_Match & target,
                                                          const int * in_system) const
 {
-  assert(NULL != in_system);
+  assert(nullptr != in_system);
 
   const int natoms = target.natoms();
 

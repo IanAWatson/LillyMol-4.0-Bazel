@@ -34,7 +34,7 @@
 #include "Molecule_Lib/target.h"
 #include "Molecule_Lib/toggle_kekule_form.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -140,8 +140,8 @@ class Molecule_Proc : public Molecule
 
 Molecule_Proc::Molecule_Proc()
 {
-  _process_these_atoms = NULL;
-  _hcount = NULL;
+  _process_these_atoms = nullptr;
+  _hcount = nullptr;
 
   return;
 }
@@ -156,17 +156,17 @@ Molecule_Proc::Molecule_Proc (const Molecule_Proc & rhs) : Molecule (rhs)
 
   copy_vector(_process_these_atoms, rhs._process_these_atoms, matoms);
 
-  _hcount = NULL;
+  _hcount = nullptr;
 
   return;
 }
 
 Molecule_Proc::~Molecule_Proc()
 {
-  if (NULL != _process_these_atoms)
+  if (nullptr != _process_these_atoms)
     delete [] _process_these_atoms;
 
-  if (NULL != _hcount)
+  if (nullptr != _hcount)
     delete [] _hcount;
 
   return;
@@ -175,7 +175,7 @@ Molecule_Proc::~Molecule_Proc()
 int
 Molecule_Proc::initialise (Set_of_Queries & queries)
 {
-  assert (NULL == _process_these_atoms);
+  assert (nullptr == _process_these_atoms);
 
   int matoms = Molecule::natoms();
 
@@ -207,7 +207,7 @@ Molecule_Proc::initialise (Set_of_Queries & queries)
 int
 Molecule_Proc::determine_hcount ()
 {
-  assert (NULL == _hcount);
+  assert (nullptr == _hcount);
 
   int matoms = natoms();
 
@@ -237,10 +237,10 @@ Molecule_Proc::all_atoms_to_be_processed (const Set_of_Atoms & s) const
 int
 Molecule_Proc::operator== (Molecule_Proc & rhs) 
 {
-  if (NULL == rhs._hcount)
+  if (nullptr == rhs._hcount)
     rhs.determine_hcount();
 
-  if (NULL == _hcount)
+  if (nullptr == _hcount)
     determine_hcount();
 
   int matoms = natoms();
@@ -336,7 +336,7 @@ identify_fused_aromatic_neighbour(Molecule_Proc & m,
       return n;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 #ifdef NOT_USED_HERE
@@ -507,7 +507,7 @@ walk_pyrrole_around_ring_system (resizable_array_p<Molecule_Proc> & m,
     const Ring * fsdnbr = identify_fused_aromatic_neighbour(*m0, *ri);
 
     ri->set_vector(atom_in_system, 1);
-    if (NULL != fsdnbr)
+    if (nullptr != fsdnbr)
       fsdnbr->set_vector(atom_in_system, 1);
   }
 
@@ -705,7 +705,7 @@ do_pyrazoles (resizable_array_p<Molecule_Proc> & molecules)
     if (! m0->all_atoms_to_be_processed(*ri))
       continue;
 
-    if (NULL != identify_fused_aromatic_neighbour(*m0, *ri))
+    if (nullptr != identify_fused_aromatic_neighbour(*m0, *ri))
       continue;
 
     int n1_ndx, n2_ndx;
@@ -2896,7 +2896,7 @@ tautomer_generation (data_source_and_type<Molecule_Proc> & input,
                      Molecule_Output_Object & output)
 {
   Molecule_Proc * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -2916,7 +2916,7 @@ static int
 tautomer_generation (const char * fname, FileType input_type, 
                      Molecule_Output_Object & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

@@ -7,23 +7,23 @@
 Reaction_3D_Replace::Reaction_3D_Replace()
 {
   _n = 0;
-  _weight = NULL;
+  _weight = nullptr;
 
-  _a1 = NULL;
-  _a2 = NULL;
+  _a1 = nullptr;
+  _a2 = nullptr;
 
   return;
 }
 
 Reaction_3D_Replace::~Reaction_3D_Replace()
 {
-  if (NULL != _weight)
+  if (nullptr != _weight)
     delete [] _weight;
 
-  if (NULL != _a1)
+  if (nullptr != _a1)
     delete [] _a1;
 
-  if (NULL != _a2)
+  if (nullptr != _a2)
     delete [] _a2;
 
   return;
@@ -189,7 +189,7 @@ Reaction_3D_Replace::process(Molecule & m,
 //#define DEBUG_PROCESS_3D_REPLACE
 #ifdef DEBUG_PROCESS_3D_REPLACE
   write_msi(cerr, " ", "process");
-  if (NULL != scaffold_embedding)
+  if (nullptr != scaffold_embedding)
     cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
   cerr << m.smiles() << endl;
   atom_number_t first_fixed_atom;
@@ -273,7 +273,7 @@ Reaction_3D_Replace::process(Molecule & m,
   int matoms = m.natoms();
 
   int * moving = new_int(matoms); std::unique_ptr<int[]> free_moving(moving);
-  if (NULL == moving)
+  if (nullptr == moving)
   {
     cerr << "Reaction_Rotate_Fragment::process:memory failure for " << matoms << " atoms\n";
     return 0;

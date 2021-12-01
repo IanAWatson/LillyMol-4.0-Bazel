@@ -25,7 +25,7 @@
 #include "Molecule_Lib/smiles.h"
 #include "Molecule_Lib/target.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -81,7 +81,7 @@ static std::unique_ptr<RE2> only_react;
 */
 
 int number_secondary_reactions = 0;
-static IWReaction * secondary_reactions = NULL;
+static IWReaction * secondary_reactions = nullptr;
 
 /*
   The reaction object holds details of element transformations which are
@@ -355,7 +355,7 @@ do_write (Molecule_and_Embedding * sidechain,
   if (suppress_duplicate_molecules && molecule_is_duplicate(product))
     return 1;
 
-  if (write_sidechains_to_output_stream && NULL != sidechain)
+  if (write_sidechains_to_output_stream && nullptr != sidechain)
     output.write(*sidechain);
 
   if (elements_to_remove.active())
@@ -474,7 +474,7 @@ do_all_scaffold_possibilities_enumeration(Molecule & scaffold,
         return 0;
       }
 
-      do_write(NULL, result, nhits, output);
+      do_write(nullptr, result, nhits, output);
     }
   } while (std::next_permutation(e, e+nhits, soac));
 
@@ -523,7 +523,7 @@ process_no_reagents_enumerate_scaffold_hits_combinatorial(const int depth,
     if (! reaction.perform_reaction(&m, sresults.embedding(i), result))
       return 0;
 
-    do_write(NULL, result, 1, output);
+    do_write(nullptr, result, 1, output);
 
     if (i != nhits - 1 && depth > 0)
       process_no_reagents_enumerate_scaffold_hits_combinatorial(depth - 1, result, name_stem, ndx, reaction, sresults, i + 1, output);
@@ -559,7 +559,7 @@ process_no_reagents_enumerate_scaffold_hits_combinatorial(const int depth, Molec
       return 0;
     }
 
-    do_write(NULL, result, 1, output);
+    do_write(nullptr, result, 1, output);
 
     if (i != nhits - 1 && depth > 0)
       process_no_reagents_enumerate_scaffold_hits_combinatorial(depth - 1, result, mname, ndx, reaction, sresults, i + 1, output);
@@ -603,7 +603,7 @@ process_no_reagents_enumerate_scaffold_hits_individually(Molecule & m,
       return 0;
     }
 
-    do_write(NULL, result, 1, output);
+    do_write(nullptr, result, 1, output);
   }
 
   return output.good();
@@ -659,7 +659,7 @@ process_no_reagents(Molecule & m,
   if (write_scaffolds_to_output_stream)
     output.write(m);
 
-  return do_write(NULL, result, nhits, output);
+  return do_write(nullptr, result, nhits, output);
 }
 
 static int
@@ -848,7 +848,7 @@ trxn(Molecule & m,
           return 0;
         }
 
-        do_write(NULL, result, nhits, output);
+        do_write(nullptr, result, nhits, output);
       }
       else
       {
@@ -895,7 +895,7 @@ trxn(Molecule & m,
           return 0;
         }
 
-        do_write(NULL, result, nhits, output);
+        do_write(nullptr, result, nhits, output);
         if (i != nhits - 1 && smc.combinatorial_expansion_of_scaffold_hits() > 0)
           process_no_reagents_enumerate_scaffold_hits_combinatorial(smc.combinatorial_expansion_of_scaffold_hits(), result, mname, ndx, reaction, sresults, i + 1, output);
       }
@@ -1171,7 +1171,7 @@ trxn (data_source_and_type<Molecule> & input,
 
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_processed++;
 
@@ -2142,7 +2142,7 @@ trxn (int argc, char ** argv)
       cerr << duplicate_molecules_suppressed << " duplicate products suppressed\n";
   }
 
-  if (NULL != secondary_reactions)
+  if (nullptr != secondary_reactions)
     delete [] secondary_reactions;
 
   if (rc)

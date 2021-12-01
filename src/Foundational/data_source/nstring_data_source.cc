@@ -18,9 +18,9 @@ String_Data_Source::_default_values (int lrecl)
   _compress_spaces  = 0;
   _skip_blank_lines = 0;
   _ignore_pattern_string = "";
-  _ignore_pattern_regexp = NULL;
+  _ignore_pattern_regexp = nullptr;
   _filter_pattern_string = "";
-  _filter_pattern_regexp = NULL;
+  _filter_pattern_regexp = nullptr;
   _filter_match_position = -1;
   _convert_to_lowercase = 0;
   _convert_to_uppercase = 0;
@@ -34,7 +34,7 @@ String_Data_Source::_default_values (int lrecl)
 
 String_Data_Source::String_Data_Source ()
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   _default_values ();
 
@@ -50,7 +50,7 @@ String_Data_Source::String_Data_Source (const char * fname, int lrecl)
   return;
 }
 
-#define DELETE_IF_NOT_NULL(p) { if (NULL != (p)) delete (p); }
+#define DELETE_IF_NOT_NULL(p) { if (nullptr != (p)) delete (p); }
 
 String_Data_Source::~String_Data_Source ()
 {
@@ -62,7 +62,7 @@ String_Data_Source::~String_Data_Source ()
 int
 String_Data_Source::ok () const
 {
-  if (NULL == _input_buffer)
+  if (nullptr == _input_buffer)
     return 0;
 
   if (eof ())    // the data source is still valid, although at EOF
@@ -94,12 +94,12 @@ String_Data_Source::debug_print (ostream & os) const
   if (_convert_to_uppercase)
     os << "Records converted to uppercase\n";
 
-  if (NULL != _filter_pattern_regexp)
+  if (nullptr != _filter_pattern_regexp)
     os << "Will filter lines '" << _filter_pattern_string << "\n";
   else
     os << "No filter pattern\n";
 
-  if (NULL != _ignore_pattern_regexp)
+  if (nullptr != _ignore_pattern_regexp)
     os << "Will ignore lines '" << _ignore_pattern_string << "\n";
   else
     os << "No ignore pattern\n";
@@ -133,8 +133,8 @@ compile_regular_expression (const char * pattern)
     return rc;
 
   cerr << "compile_regular_expression:: regcmp failed '" << pattern << "'\n";
-  assert (NULL == "Bad luck");
-  return NULL;
+  assert (nullptr == "Bad luck");
+  return nullptr;
 }
 
 /*
@@ -197,18 +197,18 @@ String_Data_Source::_apply_all_filters ()
 
   if (_ignore_pattern_regexp)
   {
-    if (NULL != regex (_ignore_pattern_regexp, _buffer.data ()))
+    if (nullptr != regex (_ignore_pattern_regexp, _buffer.data ()))
       return 0;
   }
 
 // If we don't match the filter, reject this record.
 
-  if (NULL != _filter_pattern_regexp)
+  if (nullptr != _filter_pattern_regexp)
   {
     if (0 == _buffer.length ())
       return 0;
 
-    if (NULL == regex (_filter_pattern_regexp, _buffer.data ()))
+    if (nullptr == regex (_filter_pattern_regexp, _buffer.data ()))
       return 0;
   }
 
@@ -244,7 +244,7 @@ String_Data_Source::next_record_matches (const char * pattern)
   assert (compiled_regular_expression);
 
   int rc = 0;
-  if (NULL == regex (compiled_regular_expression, _buffer.data ()))
+  if (nullptr == regex (compiled_regular_expression, _buffer.data ()))
     rc = 0;
   else
     rc = 1;
@@ -367,7 +367,7 @@ String_Data_Source::next_record (string & buffer)
     }
   }
 
-  assert (NULL == "should never come here");
+  assert (nullptr == "should never come here");
 }
 
 /*

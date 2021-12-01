@@ -33,7 +33,7 @@ MDL_Atom_Data::_default_values()
 
   _aromatic = -1;
 
-  _atom = NULL;
+  _atom = nullptr;
 
   _nbonds = -1;
 

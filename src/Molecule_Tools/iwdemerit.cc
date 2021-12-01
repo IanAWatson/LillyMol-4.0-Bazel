@@ -34,7 +34,7 @@ static int keep_going_after_rejection = 0;
 
 static int molecules_read = 0;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int molecules_receiving_demerits = 0;
 static int molecules_rejected = 0;
@@ -419,7 +419,7 @@ iwdemerit(data_source_and_type<Molecule> & input,
   assert (input.good());
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     if (verbose > 1)
       cerr << input.molecules_read() <<  " processing '" << m->name() << "'\n";

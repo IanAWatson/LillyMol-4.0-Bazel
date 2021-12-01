@@ -9,14 +9,14 @@ Molecular_Abstraction_Directives_Node::Molecular_Abstraction_Directives_Node()
 {
   _type = 0;
 
-  _next = NULL;
+  _next = nullptr;
 
   return;
 }
 
 Molecular_Abstraction_Directives_Node::~Molecular_Abstraction_Directives_Node()
 {
-  if (NULL != _next)
+  if (nullptr != _next)
     delete _next;
 
   return;
@@ -237,7 +237,7 @@ int
 Molecular_Abstraction_Directives_Node::debug_print(std::ostream & os) const
 {
   os << "Directive '" << _directive << "', args '" << _args << "'\n";
-  if (NULL != _next)
+  if (nullptr != _next)
   {
     os << " next\n";
     return _next->debug_print(os);
@@ -249,7 +249,7 @@ Molecular_Abstraction_Directives_Node::debug_print(std::ostream & os) const
 int
 Molecular_Abstraction_Directives_Node::number_abstractions() const
 {
-  if (NULL == _next)
+  if (nullptr == _next)
     return 1;
 
   return 1 + _next->number_abstractions();
@@ -315,7 +315,7 @@ Molecular_Abstraction_Directives_Node::directive_recognised()
     return 0;
   }
 
-  if (NULL != _next)
+  if (nullptr != _next)
     return _next->directive_recognised();
 
   return 1;

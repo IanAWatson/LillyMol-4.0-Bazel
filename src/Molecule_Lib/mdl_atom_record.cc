@@ -254,8 +254,8 @@ MDL_Atom_Record::create_atom() const
 
   Atom * a = mdlfos->create_mdl_atom(_atomic_symbol, _msdiff, formal_charge, is_radical);
 
-  if (NULL == a)
-    return NULL;
+  if (nullptr == a)
+    return nullptr;
 
   a->setxyz(_x, _y, _z);
 

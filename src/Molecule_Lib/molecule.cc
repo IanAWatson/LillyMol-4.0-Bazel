@@ -134,26 +134,26 @@ Molecule::_default_values(int atoms_in_new_molecule)
   _magic   = MOLECULE_MAGIC_NUMBER;
 
   _charges = nullptr;
-  _atom_type = NULL;
+  _atom_type = nullptr;
 
-  _distance_matrix = NULL;
+  _distance_matrix = nullptr;
 
   _partially_built = 0;
 
   _nrings = IW_NRINGS_NOT_COMPUTED;
   _number_sssr_rings = IW_NRINGS_NOT_COMPUTED;
-  _ring_membership = NULL;
+  _ring_membership = nullptr;
 
   _ring_bond_count = nullptr;
 
-  _aromaticity = NULL;
+  _aromaticity = nullptr;
 
   _fragment_information.invalidate();
 
   if (atoms_in_new_molecule > 0)
     resize(atoms_in_new_molecule);
 
-  _user_specified_void_ptr = NULL;
+  _user_specified_void_ptr = nullptr;
   
   doNotComputeAromaticity = false; 
 
@@ -206,16 +206,16 @@ Molecule::_free_all_dynamically_allocated_things()
     _distance_matrix = nullptr;
   }
 
-  if (NULL != _aromaticity)
+  if (nullptr != _aromaticity)
   {
     delete [] _aromaticity;
-    _aromaticity = NULL;
+    _aromaticity = nullptr;
   }
 
-  if (NULL != _ring_membership)
+  if (nullptr != _ring_membership)
   {
     delete [] _ring_membership;
-    _ring_membership = NULL;
+    _ring_membership = nullptr;
   }
 
   if (_ring_bond_count != nullptr) {
@@ -355,13 +355,13 @@ Molecule::debug_print(std::ostream & os) const
 
   _smiles_information.debug_print(os);
 
-  if (NULL != _symmetry_class_and_canonical_rank.symmetry_class())
+  if (nullptr != _symmetry_class_and_canonical_rank.symmetry_class())
     os << "Symmetry class array allocated\n";
 
-  if (NULL != _symmetry_class_and_canonical_rank.canonical_rank())
+  if (nullptr != _symmetry_class_and_canonical_rank.canonical_rank())
     os << "Canonical order function allocated\n";
 
-  if (NULL != _aromaticity)
+  if (nullptr != _aromaticity)
     os << "Aromaticity data is available\n";
 
   if (_charges)
@@ -407,10 +407,10 @@ Molecule::debug_print(std::ostream & os) const
     if (a->number_elements())
       os << " (ncon " << a->number_elements() << ')';
 
-    if (NULL != canonical_rank)
+    if (nullptr != canonical_rank)
       os << " canon = " << canonical_rank[i];
 
-    if (NULL != symmetry_class && IW_SYMMETRY_CLASS_UNDEFINED != symmetry_class[i])
+    if (nullptr != symmetry_class && IW_SYMMETRY_CLASS_UNDEFINED != symmetry_class[i])
       os << " sym = " << symmetry_class[i];
 
     if (_fragment_information.contains_valid_data())
@@ -441,7 +441,7 @@ Molecule::debug_print(std::ostream & os) const
     else
       os << " unconnected";
 
-    if (NULL == _aromaticity)
+    if (nullptr == _aromaticity)
       ;
     else if (is_aromatic_atom(_aromaticity[i]))
       os << " aromatic";
@@ -967,7 +967,7 @@ Molecule::resize(int new_size)
     if (nullptr != _charges)
       _charges->resize(new_size);
 
-    if (NULL != _atom_type)
+    if (nullptr != _atom_type)
       _atom_type->resize(new_size);
 
     return 1;
@@ -980,7 +980,7 @@ Molecule::resize(int new_size)
   if (nullptr != _charges)
     _charges->resize(new_size);
 
-  if (NULL != _atom_type)
+  if (nullptr != _atom_type)
     _atom_type->resize(new_size);
 
   for (int i = 0; i < _number_elements; i++)
@@ -1025,7 +1025,7 @@ Molecule::_resize(int new_size)
   if (nullptr != _charges)
     _charges->resize(new_size);
 
-  if (NULL != _atom_type)
+  if (nullptr != _atom_type)
     _atom_type->resize(new_size);
 
   if (0 == new_size)
@@ -1077,7 +1077,7 @@ Molecule::ok() const
     return 0;
   }
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     ;
   else if (_atom_type->number_elements() > 0 &&
            _number_elements != _atom_type->number_elements())
@@ -1150,7 +1150,7 @@ void
 Molecule::allocate_atom_types()
 {
   assert(ok());
-  assert(NULL == _atom_type);
+  assert(nullptr == _atom_type);
 
   _atom_type = new Atom_Types;
   _atom_type->extend(_number_elements, static_cast<atom_type_t>(INVALID_ATOM_TYPE));
@@ -1163,7 +1163,7 @@ Molecule::has_atom_types() const
 {
   assert(ok());
 
-  return (NULL != _atom_type);
+  return (nullptr != _atom_type);
 }
 
 int
@@ -1181,7 +1181,7 @@ Molecule::copy_atom_types(const Molecule & m2)
 
   if (! m2.has_atom_types())
   {
-    if (NULL != _atom_type)
+    if (nullptr != _atom_type)
       invalidate_atom_types();
 
     return 1;
@@ -1198,10 +1198,10 @@ Molecule::copy_atom_types(const Molecule & m2)
 void
 Molecule::invalidate_atom_types()
 {
-  if (NULL != _atom_type)
+  if (nullptr != _atom_type)
   {
     delete _atom_type;
-    _atom_type = NULL;
+    _atom_type = nullptr;
   }
 
   return;
@@ -1223,7 +1223,7 @@ Molecule::atom_types()
 {
   assert(ok());
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     allocate_atom_types();
 
   return * _atom_type;
@@ -1375,7 +1375,7 @@ Molecule::set_atomic_number(atom_number_t a, atomic_number_t z)
   assert(ok_atom_number(a));
 
   const Element * e = get_element_from_atomic_number(z);
-  assert(NULL != e);
+  assert(nullptr != e);
 
   _things[a]->set_element(e);
 
@@ -1404,7 +1404,7 @@ void
 Molecule::atomic_numbers(atomic_number_t * z) const
 {
   assert(ok());
-  assert(NULL != z);
+  assert(nullptr != z);
 
   for (int i = 0; i < _number_elements; i++)
   {
@@ -1489,7 +1489,7 @@ Molecule::nbonds(atom_number_t i) const
 int
 Molecule::nbonds(int * bonds) const
 {
-  assert(NULL != bonds);
+  assert(nullptr != bonds);
 
   for (int i = 0; i < _number_elements; i++)
   {
@@ -1527,7 +1527,7 @@ Molecule::_set_modified(atom_number_t a)
   molecule computed properties.
   Note that this does NOT call set_modified for each atom!
 
-  Jun 97: At one stage I had a return if _ring_membership was NULL,
+  Jun 97: At one stage I had a return if _ring_membership was nullptr,
   but then iwfrag died. Even if _ring_membership is NULL, we still
   have to check the _aromaticity array, because the _aromaticity
   array can exist even if the molecule has no rings
@@ -1582,7 +1582,7 @@ Molecule::_set_modified_no_ok()
 
   _symmetry_class_and_canonical_rank.invalidate();
 
-  if (NULL != _ring_membership)
+  if (nullptr != _ring_membership)
     _invalidate_ring_info();
 
   DELETE_IF_NOT_NULL_ARRAY(_ring_bond_count);
@@ -1614,7 +1614,7 @@ Molecule::invalidate_smiles()
 // For now, I'll leave it...
 
 /* Dec 2009. the non aromatic setting is now done in _invalidate_ring_info
-  if (NULL != _aromaticity && locate_item_in_array (AROMATIC, _number_elements, _aromaticity) >= 0)
+  if (nullptr != _aromaticity && locate_item_in_array (AROMATIC, _number_elements, _aromaticity) >= 0)
   {
     int nb = _bond_list.number_elements();
     for (int i = 0; i < nb; i++)
@@ -1623,7 +1623,7 @@ Molecule::invalidate_smiles()
     }
   }*/
 
-  if (NULL != _ring_membership || IW_NRINGS_NOT_COMPUTED != _nrings || _number_sssr_rings > 0 ||
+  if (nullptr != _ring_membership || IW_NRINGS_NOT_COMPUTED != _nrings || _number_sssr_rings > 0 ||
       _ring_bond_count != nullptr)
     _invalidate_ring_info();
 
@@ -1702,10 +1702,10 @@ Molecule::_invalidate_ring_info()
 {
   _nrings = IW_NRINGS_NOT_COMPUTED;
   _number_sssr_rings = IW_NRINGS_NOT_COMPUTED;
-  if (NULL != _ring_membership)
+  if (nullptr != _ring_membership)
   {
     delete [] _ring_membership;
-    _ring_membership = NULL;
+    _ring_membership = nullptr;
   }
   if (_ring_bond_count != nullptr) {
     delete [] _ring_bond_count;
@@ -1722,10 +1722,10 @@ Molecule::_invalidate_ring_info()
   if (invalidate_bond_list_ring_info_during_invalidate_ring_info)
     _bond_list.invalidate_ring_info();
 
-  if (NULL != _aromaticity)
+  if (nullptr != _aromaticity)
   {
     delete [] _aromaticity;
-    _aromaticity = NULL;
+    _aromaticity = nullptr;
   }
 
   return 1;
@@ -1813,11 +1813,11 @@ int
 Molecule::natoms(const char *s) const
 {
   assert(ok());
-  assert(NULL != s);
+  assert(nullptr != s);
 
   const Element *e;
 
-  if (NULL == (e = get_element_from_symbol_no_case_conversion(s)))
+  if (nullptr == (e = get_element_from_symbol_no_case_conversion(s)))
   {
     cerr << "molecule::natoms: unrecognised element '" << s << "\n";
     return -1;
@@ -1845,7 +1845,7 @@ Molecule::copy_charges(const Molecule & m2)
 
   if (! m2.has_charges())
   {
-    if (NULL != _charges)
+    if (nullptr != _charges)
       invalidate_charges();
 
     return 1;
@@ -1908,7 +1908,7 @@ Molecule::set_name(const char *new_name)
 {
   assert(ok());
 
-  if (NULL == new_name)
+  if (nullptr == new_name)
   {
     _molecule_name = "";
     return;
@@ -2207,7 +2207,7 @@ Molecule::molecular_formula(IWString & f) const
     if (j)
     {
       const Element * e = get_element_from_atomic_number(i);
-      assert(NULL != e);
+      assert(nullptr != e);
 
       append_formula_symbol(f, e->symbol(), j);
 
@@ -2413,7 +2413,7 @@ Molecule::isis_like_molecular_formula(IWString & f)
     if (element_count[j])
     {
       const Element * e = get_element_from_atomic_number(j);
-      assert(NULL != e);
+      assert(nullptr != e);
 
       append_formula_symbol(f, e->symbol(), element_count[j]);
 
@@ -2790,8 +2790,8 @@ Molecule::add_bond(atom_number_t a1, atom_number_t a2, bond_type_t bt,
 static int
 int_comparitor_shorter(const int * p1, const int * p2)
 {
-  assert(NULL != p1);
-  assert(NULL != p2);
+  assert(nullptr != p1);
+  assert(nullptr != p2);
 
   if (*p1 < *p2)
     return 1;
@@ -2979,7 +2979,7 @@ Molecule::remove_many_atoms(const int * to_remove)
 
   _bond_list.remove_bonds_involving_these_atoms(to_remove, 1);
 
-  if (NULL != _atom_type)
+  if (nullptr != _atom_type)
     _atom_type->remove_items(to_remove);
 
   if (nullptr != _charges)
@@ -3089,7 +3089,7 @@ template <typename T>
 int
 Molecule::set_isotopes(const T * iso)
 {
-  assert(NULL != iso);
+  assert(nullptr != iso);
 
   int rc = 0;
   for (int i = 0; i < _number_elements; i++)
@@ -3154,7 +3154,7 @@ Molecule::set_isotope(const Set_of_Atoms & s,
 void
 Molecule::get_isotopes(int * iso) const
 {
-  assert(NULL != iso);
+  assert(nullptr != iso);
 
   for (int i = 0; i < _number_elements; i++)
   {
@@ -3357,14 +3357,14 @@ Molecule::molecular_weight_ignore_isotopes() const
   return rc;
 }
 
-static const Element * hydrogen = NULL;
+static const Element * hydrogen = nullptr;
 
 molecular_weight_t
 Molecule::molecular_weight_count_isotopes() const
 {
   assert(ok());
 
-  if (NULL == hydrogen)
+  if (nullptr == hydrogen)
     hydrogen = get_element_from_atomic_number(1);
 
   molecular_weight_t rc = static_cast<molecular_weight_t>(0.0);
@@ -4164,7 +4164,7 @@ Molecule::remove_all(atomic_number_t to_remove)
 
   const Element * e = get_element_from_atomic_number(to_remove);
 
-  if (NULL == e)
+  if (nullptr == e)
   {
     cerr << "Molecule::remove_all: what element is this " << to_remove << endl;
     abort();
@@ -4299,7 +4299,7 @@ Molecule::remove_explicit_hydrogens()
 
     Chiral_Centre * c = chiral_centre_at_atom(j);
 
-    if (NULL == c)
+    if (nullptr == c)
       continue;
 
     c->atom_is_now_implicit_hydrogen(i);
@@ -4432,7 +4432,7 @@ Molecule::swap_atoms(int i1, int i2,
   if (nullptr != _charges)
     _charges->swap_elements(i1, i2);
 
-  if (NULL != _atom_type)
+  if (nullptr != _atom_type)
     _atom_type->swap_elements(i1, i2);
 
   for (int i = 0; i < _chiral_centres.number_elements(); i++)
@@ -4764,7 +4764,7 @@ Molecule::stereo_preserving_substitute(atom_number_t c,
 
   Atom * ac = _things[c];
 
-  Bond * bca1 = NULL;
+  Bond * bca1 = nullptr;
 
   for (auto b : *ac)
   {
@@ -4779,7 +4779,7 @@ Molecule::stereo_preserving_substitute(atom_number_t c,
     }
   }
 
-  if (NULL == bca1)
+  if (nullptr == bca1)
   {
     cerr << "Molecule::stereo_preserving_substitute:atoms " << c << " and " << a1 << " not bonded\n";
     return 0;
@@ -4811,7 +4811,7 @@ Molecule::stereo_preserving_substitute(atom_number_t c,
 
   Chiral_Centre * cc = chiral_centre_at_atom(c);
 
-  if (NULL != cc)
+  if (nullptr != cc)
   {
     if (! cc->change_atom_number(a1, a2))
     {
@@ -5020,7 +5020,7 @@ Molecule::_convert_set_of_atoms_to_bond_numbers(const Set_of_Atoms & s,
 
       const Bond * b = aj->bond_to_atom(j2);
 
-      if (NULL == b)
+      if (nullptr == b)
         continue;
 
       int bn = b->bond_number();
@@ -5071,7 +5071,7 @@ Molecule::clear_all_user_specified_atom_pointers()
 {
   for (int i = 0; i < _number_elements; i++)
   {
-    _things[i]->set_user_specified_void_ptr(NULL);
+    _things[i]->set_user_specified_void_ptr(nullptr);
   }
 
   return;
@@ -5086,7 +5086,7 @@ Molecule::atom_with_user_specified_void_ptr(const void * v) const
       return _things[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void

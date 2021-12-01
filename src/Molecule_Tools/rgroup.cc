@@ -28,7 +28,7 @@
 
 using std::numeric_limits;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 static int molecules_read = 0;
@@ -36,7 +36,7 @@ static int molecules_written = 0;
 static int molecules_created = 0;
 static int molecules_with_no_hits = 0;
 
-static const Element * dummy_atom_element = NULL;
+static const Element * dummy_atom_element = nullptr;
 
 static Chemical_Standardisation chemical_standardisation;
 
@@ -75,8 +75,8 @@ static int ignore_molecules_which_dont_match_query = 0;
 
 static int ignore_molecules_with_multiple_hits = 0;
 
-static extending_resizable_array<int> * query_stats = NULL;
-static IW_STL_Hash_Map_int ** rgroups_found = NULL;
+static extending_resizable_array<int> * query_stats = nullptr;
+static IW_STL_Hash_Map_int ** rgroups_found = nullptr;
 
 static void
 usage (int rc = 0)
@@ -162,7 +162,7 @@ RGroup_Construction_Current_State::RGroup_Construction_Current_State (int matoms
 
 RGroup_Construction_Current_State::~RGroup_Construction_Current_State ()
 {
-  if (NULL != _atom_already_done)
+  if (nullptr != _atom_already_done)
     delete [] _atom_already_done;
 
   return;
@@ -222,7 +222,7 @@ RGroup_Construction_Current_State::add_dummy_element_and_do_output (Molecule & r
                                    int ndx,
                                    IWString_and_File_Descriptor & output) const
 {
-  if (NULL != dummy_atom_element)
+  if (nullptr != dummy_atom_element)
   {
     Atom * aa = new Atom (dummy_atom_element);
     r.add (aa);
@@ -375,7 +375,7 @@ rgroup_including_substituents (Molecule & m,
 //cerr << "Processing embedding " << embedding << " from atom " << a << endl;
   Molecule r;
 
-  if (NULL != dummy_atom_element)
+  if (nullptr != dummy_atom_element)
   {
     Atom * aa = new Atom (dummy_atom_element);
     r.add (aa);
@@ -957,7 +957,7 @@ rgroups (data_source_and_type<Molecule> & input,
          IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1146,7 +1146,7 @@ rgroups (int argc, char **argv)
     set_auto_create_new_elements(1);
 
     dummy_atom_element = get_element_from_symbol_no_case_conversion(d);
-    if (NULL == dummy_atom_element)
+    if (nullptr == dummy_atom_element)
       dummy_atom_element = create_element_with_symbol(d);
 
     set_auto_create_new_elements(isave);

@@ -274,7 +274,7 @@ Substructure_Environment::matches(int * previously_matched_atoms,
   {
     Substructure_Atom * p = _possible_parents[i];
     Target_Atom * a = p->current_hold_atom();
-    if (NULL == a)
+    if (nullptr == a)
       continue;
 
 #ifdef DEBUG_SS_ENV_MATCHES

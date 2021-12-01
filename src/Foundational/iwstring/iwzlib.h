@@ -67,7 +67,7 @@ class IW_ZLib_Wrapper
     int open_file (const char *);
     int close_file ();
 
-    int active () const { return NULL != _gzfile;}
+    int active () const { return nullptr != _gzfile;}
 
     int eof () const;
 

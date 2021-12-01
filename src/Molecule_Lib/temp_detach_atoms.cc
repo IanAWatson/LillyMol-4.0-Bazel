@@ -17,7 +17,7 @@ Temp_Detach_Atoms::Temp_Detach_Atoms()
 
   _matoms = 0;
 
-  _connection = NULL;
+  _connection = nullptr;
 
   _bt = SINGLE_BOND;
 
@@ -26,7 +26,7 @@ Temp_Detach_Atoms::Temp_Detach_Atoms()
 
 Temp_Detach_Atoms::~Temp_Detach_Atoms()
 {
-  if (NULL != _connection)
+  if (nullptr != _connection)
     delete [] _connection;
 
   return;
@@ -54,7 +54,7 @@ void
 Temp_Detach_Atoms::do_not_reattach_to_atom(atom_number_t a)
 {
   assert (a >= 0 && a < _matoms);
-  assert (NULL != _connection );
+  assert (nullptr != _connection );
 
   _connection[a] = -1;
 
@@ -78,7 +78,7 @@ Temp_Detach_Atoms::detach_atoms(Molecule & m, atomic_number_t z)
 
   if (matoms > _matoms)
   {
-    if (NULL != _connection)
+    if (nullptr != _connection)
       delete [] _connection;
 
     _connection = new int[matoms + matoms];     // just a little easier if we have two arrays
@@ -101,7 +101,7 @@ Temp_Detach_Atoms::detach_atoms(Molecule & m, atomic_number_t z)
 //    m.remove_bond_between_atoms(i, o);
 
       const Chiral_Centre * c = m.chiral_centre_at_atom(o);
-      if (NULL == c)
+      if (nullptr == c)
         continue;
 
       _chiral_centre.add(m.remove_no_delete_chiral_centre_at_atom(o));

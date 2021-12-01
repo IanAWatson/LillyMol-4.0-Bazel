@@ -779,24 +779,24 @@ class Matched_Atoms_From_Which_to_Grow : public resizable_array<int>
   look for substituents
 */
 
-static Matched_Atoms_From_Which_to_Grow * matched_atoms_from_which_to_grow = NULL;
+static Matched_Atoms_From_Which_to_Grow * matched_atoms_from_which_to_grow = nullptr;
 
 Matched_Atoms_From_Which_to_Grow::Matched_Atoms_From_Which_to_Grow()
 {
   _n = 0;
 
-  _a1 = NULL;
-  _a2 = NULL;
+  _a1 = nullptr;
+  _a2 = nullptr;
 
   return;
 }
 
 Matched_Atoms_From_Which_to_Grow::~Matched_Atoms_From_Which_to_Grow()
 {
-  if (NULL != _a1)
+  if (nullptr != _a1)
     delete [] _a1;
 
-  if (NULL != _a2)
+  if (nullptr != _a2)
     delete [] _a2;
 
   return;
@@ -805,7 +805,7 @@ Matched_Atoms_From_Which_to_Grow::~Matched_Atoms_From_Which_to_Grow()
 int
 Matched_Atoms_From_Which_to_Grow::is_single_attachment_point(int i) const
 {
-  if (NULL == _a2)
+  if (nullptr == _a2)
     return 1;
 
   return _a2[i] < 0;
@@ -814,7 +814,7 @@ Matched_Atoms_From_Which_to_Grow::is_single_attachment_point(int i) const
 int 
 Matched_Atoms_From_Which_to_Grow::build (const const_IWSubstring & s)
 {
-  assert(NULL == _a1);
+  assert(nullptr == _a1);
 
   if (0 == s.length())    // huh
     return 0;
@@ -880,13 +880,13 @@ Matched_Atoms_From_Which_to_Grow::add (const Set_of_Atoms & s)
 int
 Matched_Atoms_From_Which_to_Grow::set_single_attachment_point(int s)
 {
-  assert(NULL == _a1);
+  assert(nullptr == _a1);
 
   _n = 1;
   _a1 = new int[1];
   _a2 = new int[1];
 
-  assert(NULL != _a1 && NULL != _a2);
+  assert(nullptr != _a1 && nullptr != _a2);
 
   _a1[0] = s;
   _a2[0] = -1;
@@ -897,13 +897,13 @@ Matched_Atoms_From_Which_to_Grow::set_single_attachment_point(int s)
 int
 Matched_Atoms_From_Which_to_Grow::set_double_attachment_point(int s1, int s2)
 {
-  assert(NULL == _a1);
+  assert(nullptr == _a1);
 
   _n = 1;
   _a1 = new int[1];
   _a2 = new int[1];
 
-  assert(NULL != _a1 && NULL != _a2);
+  assert(nullptr != _a1 && nullptr != _a2);
 
   _a1[0] = s1;
   _a2[0] = s2;
@@ -2374,7 +2374,7 @@ substitutions(data_source_and_type<Molecule> & input,
          std::ostream & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -2559,7 +2559,7 @@ read_isotopically_labelled_query_molecules (data_source_and_type<MDL_Molecule> &
                       resizable_array_p<Substructure_Hit_Statistics> & queries)
 {
   MDL_Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<MDL_Molecule> free_m(m);
 
@@ -2922,7 +2922,7 @@ substitutions (int argc, char ** argv)
   // If we are reading isotopically labelled molecules, the
   // matched_atoms_from_which_to_grow array will already have been set up
 
-  if (NULL == matched_atoms_from_which_to_grow)
+  if (nullptr == matched_atoms_from_which_to_grow)
     matched_atoms_from_which_to_grow = new Matched_Atoms_From_Which_to_Grow[nq];
 
   // We can optionally keep track of the substituents found

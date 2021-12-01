@@ -17,7 +17,7 @@
 #include "Molecule_Lib/iwreaction.h"
 #include "Molecule_Lib/output.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 /*
   A set of reagents is just a set of molecules that can be retrieved by name
@@ -78,7 +78,7 @@ Set_of_Reagents::read_reagents(data_source_and_type<Molecule_and_Embedding> & in
 {
   Molecule_and_Embedding * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
 //  _preprocess(*m);
     const IWString & mname = m->name();
@@ -270,9 +270,9 @@ Make_These_Molecules::Make_These_Molecules ()
 
 Make_These_Molecules::~Make_These_Molecules()
 {
-  if (NULL != _reaction) delete [] _reaction;
-  if (NULL != _reagent) delete [] _reagent;
-  if (NULL != _reaction_backup) delete [] _reaction_backup;
+  if (nullptr != _reaction) delete [] _reaction;
+  if (nullptr != _reagent) delete [] _reagent;
+  if (nullptr != _reaction_backup) delete [] _reaction_backup;
 
   return;
 }
@@ -292,7 +292,7 @@ Make_These_Molecules::_default_values()
   _reaction_backup = nullptr;
   _component_separator = " + ";
 
-  _reaction = NULL;
+  _reaction = nullptr;
 
   _nr = 0;
   _reagent = nullptr;
@@ -475,7 +475,7 @@ Make_These_Molecules::_make_these_molecules (const const_IWSubstring & buffer,
   // Check all reagent id
   _current_sidechain_id = 0;
   Sidechain_Reaction_Site * site_ptr = _get_current_sidechain();
-  while(NULL != site_ptr)
+  while (nullptr != site_ptr)
   {
     buffer.nextword(token, i);
     // Use backup sidechain data as footprint

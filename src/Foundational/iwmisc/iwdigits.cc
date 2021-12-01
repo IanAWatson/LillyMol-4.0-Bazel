@@ -213,7 +213,7 @@ IWDigits::set_leading_string(const const_IWSubstring & s)
 
   _leading_space = s;
 
-  if (NULL != _things)
+  if (nullptr != _things)
     _fill_in_the_digits();
     
   return 1;

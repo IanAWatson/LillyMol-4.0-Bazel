@@ -17,7 +17,7 @@ using std::setw;
 
 #include "Molecule_Lib/smiles.h"
 
-char * prog_name = NULL;
+char * prog_name = nullptr;
 int verbose = 0;
 
 static int fingerprints_read = 0;
@@ -29,13 +29,13 @@ static int fingerprints_read = 0;
 #define DEFAULT_FINGERPRINT_LENGTH 2048
 static int max_fingerprint_length = DEFAULT_FINGERPRINT_LENGTH;
 
-static int * population = NULL;
+static int * population = nullptr;
 
 /*
   We also keep track of the lengths of the fingerprints.
 */
 
-static int * fingerprint_length_count = NULL;
+static int * fingerprint_length_count = nullptr;
 static int longest_fingerprint_read = 0;
 static unsigned int total_bits_read = 0;
 
@@ -150,12 +150,12 @@ new_int(int size, int initial_value = 0)
   return rc;
 }
 
-#define DELETE_AND_SET_NULL(p) { assert(NULL != (p)); delete(p); p = NULL;}
+#define DELETE_AND_SET_NULL(p) { assert(nullptr != (p)); delete(p); p = nullptr;}
 
 static int
 fppop(const char * fname)
 {
-  if (NULL == strstr(fname, ".tdt"))
+  if (nullptr == strstr(fname, ".tdt"))
     cerr << "fppop: warning, name of tdt file does not look like tdt '" << fname << "'\n";
 
   iwstring_data_source input(fname);
@@ -165,7 +165,7 @@ fppop(const char * fname)
     return 1;
   }
 
-  assert(NULL == population);
+  assert(nullptr == population);
 
   population = new_int(max_fingerprint_length);
   fingerprint_length_count = new_int(iw_log2(max_fingerprint_length) + 1);

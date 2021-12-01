@@ -50,7 +50,7 @@ form_possible_lost_or_changed_bond_fingerprint(T reagent_atom_type_1, const Bond
                                       int product_atom_type_1, const Bond * b2, int product_atom_type_2,
                                       Sparse_Fingerprint_Creator & sfc)
 {
-  if (NULL == b1 && NULL == b2)    // not bonded in either reagent or in product
+  if (nullptr == b1 && nullptr == b2)    // not bonded in either reagent or in product
     return;
 
   if (reagent_atom_type_1 < reagent_atom_type_2)
@@ -59,7 +59,7 @@ form_possible_lost_or_changed_bond_fingerprint(T reagent_atom_type_1, const Bond
   if (product_atom_type_1 < product_atom_type_2)
     std::swap(product_atom_type_1, product_atom_type_2);
 
-  if (NULL == b2)   // bond destroyed, atoms not connected in product
+  if (nullptr == b2)   // bond destroyed, atoms not connected in product
   {
     sfc.hit_bit(64 * reagent_atom_type_1 - 6 * reagent_atom_type_2 + bond_constant(*b1));
     sfc.hit_bit(64 * reagent_atom_type_1 - 9 * reagent_atom_type_2 + bond_constant(*b1) + 7 * product_atom_type_1 - 3 * product_atom_type_2);
@@ -67,7 +67,7 @@ form_possible_lost_or_changed_bond_fingerprint(T reagent_atom_type_1, const Bond
     return;
   }
 
-  if (NULL == b1)    // new bond formed
+  if (nullptr == b1)    // new bond formed
   {
     sfc.hit_bit(83 * product_atom_type_1 - 19 * product_atom_type_2 + bond_constant(*b2));
     sfc.hit_bit(83 * product_atom_type_1 - 19 * product_atom_type_2 + bond_constant(*b2) + 11 * reagent_atom_type_1 - 2 * reagent_atom_type_2);

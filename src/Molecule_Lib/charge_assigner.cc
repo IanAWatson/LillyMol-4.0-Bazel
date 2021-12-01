@@ -30,9 +30,9 @@ Charge_Assigner::Charge_Assigner ()
 
   _min_distance_between_charges = 3;
 
-  _positive_element = NULL;
+  _positive_element = nullptr;
   _positive_isotope = 0;
-  _negative_element = NULL;
+  _negative_element = nullptr;
   _negative_isotope = 0;
 
   _remove_chiral_centres_from_changed_atoms = 0;
@@ -50,8 +50,8 @@ Charge_Assigner::Charge_Assigner ()
 
 // For those queries with just one charged atom (probably all) these can speed things up
 
-  _which_atom = NULL;
-  _charge_to_assign = NULL;
+  _which_atom = nullptr;
+  _charge_to_assign = nullptr;
 
   _apply_charges_to_molecule = 1;
 
@@ -152,7 +152,7 @@ Charge_Assigner::construct_from_command_line (Command_Line & cl,
     else if (opt.starts_with("P:"))
     {
       opt.remove_leading_chars(2);
-      if (NULL == (_positive_element = get_element_from_symbol(opt, _positive_isotope)))
+      if (nullptr == (_positive_element = get_element_from_symbol(opt, _positive_isotope)))
       {
         cerr << "Cannot discern positive element '" << opt << "'\n";
         return 0;
@@ -163,7 +163,7 @@ Charge_Assigner::construct_from_command_line (Command_Line & cl,
     else if (opt.starts_with("N:"))
     {
       opt.remove_leading_chars(2);
-      if (NULL == (_negative_element = get_element_from_symbol(opt, _negative_isotope)))
+      if (nullptr == (_negative_element = get_element_from_symbol(opt, _negative_isotope)))
       {
         cerr << "Cannot discern negative element '" << opt << "'\n";
         return 0;
@@ -244,7 +244,7 @@ Charge_Assigner::construct_from_command_line (Command_Line & cl,
     return 0;
   }
 
-  if (NULL == _negative_element && NULL == _positive_element && _apply_isotopic_labels)
+  if (nullptr == _negative_element && nullptr == _positive_element && _apply_isotopic_labels)
   {
     cerr << "You have asked to apply isotopic labels, but have not specified atoms to change\n";
     cerr << "Use 'P:<symbol>' and/or 'N:<symbol>' together with 'isotope'\n";
@@ -576,7 +576,7 @@ Charge_Assigner::_remove_positive_charge_hits_on_chiral_atoms (Molecule & m,
   {
     atom_number_t ai = positive_charges_assigned[i];
 
-    if (NULL == m.chiral_centre_at_atom(ai))
+    if (nullptr == m.chiral_centre_at_atom(ai))
       continue;
 
     if (0 == m.hcount(ai))
@@ -1022,7 +1022,7 @@ Charge_Assigner::_process (Molecule & m,
 
     if (charges_assigned[i] > 0)
     {
-      if (NULL == _positive_element)      // just apply a charge
+      if (nullptr == _positive_element)      // just apply a charge
       {
         if (_apply_charges_to_molecule)
           m.set_formal_charge(i, charges_assigned[i]);
@@ -1041,7 +1041,7 @@ Charge_Assigner::_process (Molecule & m,
     }
     else if (charges_assigned[i] < 0)
     {
-      if (NULL == _negative_element)      // just apply a charge
+      if (nullptr == _negative_element)      // just apply a charge
       {
         if (_apply_charges_to_molecule)
           m.set_formal_charge(i, charges_assigned[i]);
@@ -1063,7 +1063,7 @@ Charge_Assigner::_process (Molecule & m,
       m.set_implicit_hydrogens(i, ih, 1);    // set the "sticky" bit
 
     if (_remove_chiral_centres_from_changed_atoms && (_positive_element || _negative_element) &&
-        NULL != m.chiral_centre_at_atom(i))
+        nullptr != m.chiral_centre_at_atom(i))
       m.remove_chiral_centre_at_atom(i);
 
     if (_verbose > 1)
@@ -1103,7 +1103,7 @@ Charge_Assigner::process (Molecule & m,
 
 // Should we zero the array if it has been passed to us???
 
-  if (NULL == charges_assigned)
+  if (nullptr == charges_assigned)
   {
     charges_assigned = new_int(matoms);
     i_need_to_delete_charges_assigned = 1;

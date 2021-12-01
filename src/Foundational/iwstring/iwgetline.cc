@@ -100,7 +100,7 @@ _bytes_to_char(int fd, char zchar)
   {
     char * c = static_cast<char *>(memchr(rdbuf, zchar, chars_read));
 
-    if (NULL != c)
+    if (nullptr != c)
       return static_cast<int>(rc + (c - rdbuf + 1));   // we include ZCHAR itself
 
      rc += chars_read;

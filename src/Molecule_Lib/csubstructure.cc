@@ -455,11 +455,11 @@ Substructure_Query::query_atom_with_initial_atom_number (int a) const
   for (int i = 0; i < _number_elements; i++)
   {
     Substructure_Atom * rc = _things[i]->query_atom_with_initial_atom_number(a);
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 Substructure_Atom *
 Substructure_Query::query_atom_with_atom_map_number (int a) const
@@ -467,11 +467,11 @@ Substructure_Query::query_atom_with_atom_map_number (int a) const
   for (int i = 0; i < _number_elements; i++)
   {
     Substructure_Atom * rc = _things[i]->query_atom_with_atom_map_number(a);
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -640,11 +640,11 @@ Substructure_Query::bond_between_atoms (int a1, int a2) const
   {
     rc = _things[i]->bond_between_atoms(a1, a2);
 
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 const Substructure_Bond *
@@ -656,11 +656,11 @@ Substructure_Query::bond_between_atom_map_numbers (int a1, int a2) const
   {
     rc = _things[i]->bond_between_atom_map_numbers(a1, a2);
 
-    if (NULL != rc)
+    if (nullptr != rc)
       return rc;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void

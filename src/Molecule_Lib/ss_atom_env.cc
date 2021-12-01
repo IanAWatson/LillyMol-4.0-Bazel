@@ -131,7 +131,7 @@ Substructure_Atom_Environment::matches(Target_Atom & target_atom,
   vector for all searches
 
   if (_all_components_single_atoms)
-    tmp = NULL;
+    tmp = nullptr;
   else */
 
   tmp = new int[atoms_in_target]; std::unique_ptr<int[]> free_tmp(tmp);

@@ -50,7 +50,7 @@ static Molecule_Output_Object stream_for_parent_joinged_to_fragment;
 
 #endif
 
-static const char * prog_name = NULL;
+static const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -196,9 +196,9 @@ static int change_element_for_heteroatoms_with_hydrogens = 0;
 
 static int eliminate_fragment_subset_relations = 0;
 
-static const Element * holmium = NULL;
-static const Element * neptunium = NULL;
-static const Element * strontium = NULL;
+static const Element * holmium = nullptr;
+static const Element * neptunium = nullptr;
+static const Element * strontium = nullptr;
 
 static int break_fused_rings = 0;
 
@@ -278,9 +278,9 @@ reset_variables()
      perceive_terminal_groups_only_in_original_molecule = 0;
      change_element_for_heteroatoms_with_hydrogens = 0;
      eliminate_fragment_subset_relations = 0;
-     holmium = NULL;
-     neptunium = NULL;
-     strontium = NULL;
+     holmium = nullptr;
+     neptunium = nullptr;
+     strontium = nullptr;
      break_fused_rings = 0;
      break_ring_bonds = 0;
      break_spiro_rings = 0;
@@ -473,7 +473,7 @@ Fragments_At_Recursion_Depth::Fragments_At_Recursion_Depth()
   _max_recursion = 0;
   _max_bonds = 0;
 
-  _fragments = NULL;
+  _fragments = nullptr;
 }
 
 /*
@@ -550,7 +550,7 @@ Fragments_At_Recursion_Depth::debug_print (std::ostream & os) const
 
 Fragments_At_Recursion_Depth::~Fragments_At_Recursion_Depth()
 {
-  if (NULL != _fragments)
+  if (nullptr != _fragments)
     delete [] _fragments;
 
   return;
@@ -815,45 +815,45 @@ class Dicer_Arguments
 
 Dicer_Arguments::Dicer_Arguments(int mrd)
 {
-  _current_molecule = NULL;
+  _current_molecule = nullptr;
 
-  _aromatic_in_parent = NULL;
+  _aromatic_in_parent = nullptr;
 
   _recursion_depth = 0;
 
   _max_recursion_depth_this_molecule = mrd;
 
-  _atom_number_in_initial_molecule = NULL;
+  _atom_number_in_initial_molecule = nullptr;
 
-  _xref = NULL;
+  _xref = nullptr;
 
-  _local_xref = NULL;
-  _local_xref2 = NULL;
+  _local_xref = nullptr;
+  _local_xref2 = nullptr;
 
   _ring_splitting_attempted = 0;
 
-  _atom_type = NULL;
+  _atom_type = nullptr;
 
   return;
 }
 
 Dicer_Arguments::~Dicer_Arguments()
 {
-  if (NULL != _aromatic_in_parent)
+  if (nullptr != _aromatic_in_parent)
     delete [] _aromatic_in_parent;
 
-  if (NULL != _xref)
+  if (nullptr != _xref)
     delete [] _xref;
 
-  if (NULL != _local_xref)
+  if (nullptr != _local_xref)
     delete [] _local_xref;
 
   delete []_local_xref2;
 
-  if (NULL != _atom_number_in_initial_molecule)
+  if (nullptr != _atom_number_in_initial_molecule)
     delete [] _atom_number_in_initial_molecule;
 
-  if (NULL != _atom_type)
+  if (nullptr != _atom_type)
     delete [] _atom_type;
 
   return;
@@ -898,7 +898,7 @@ Dicer_Arguments::set_array_size(int s)
   _local_xref = new int[_atoms_in_molecule];
   _local_xref2 = new int[_atoms_in_molecule];
 
-  return (NULL != _xref && NULL != _local_xref);
+  return (nullptr != _xref && nullptr != _local_xref);
 }
 
 int
@@ -1748,7 +1748,7 @@ const Dicer_Transformation *
 Breakages_Iterator::current_transformation (const Breakages & b)
 {
   if (_state >= _n)
-    return NULL;
+    return nullptr;
 
   const Dicer_Transformation * rc = b.transformation(_state);
 
@@ -1780,7 +1780,7 @@ initialise_atom_pointers(Molecule & m,
 {
   const int matoms = m.natoms();
 
-  if (NULL != atype)
+  if (nullptr != atype)
   {
     for (int i = 0; i < matoms; ++i)
     {
@@ -1808,7 +1808,7 @@ initialise_atom_pointers(Molecule & m,
    If just one bond, there are two fragments that can be formed.
  */
 
-static int * fragments_expected = NULL;
+static int * fragments_expected = nullptr;
 
 static int
 initialise_fragments_per_number_of_bonds_array()
@@ -2092,7 +2092,7 @@ Dicer_Arguments::is_unique (Molecule & m)
   for (int i = 0; i < matoms; i++)
   {
     const void * v = m.atomi(i)->user_specified_void_ptr();
-    if (NULL == v)
+    if (nullptr == v)
       continue;
 
     atom_number_t x = *(reinterpret_cast<const atom_number_t *>(v));
@@ -2228,7 +2228,7 @@ int
 Dicer_Arguments::store_atom_types (Molecule & m,
                                    Atom_Typing_Specification & ats)
 {
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
   {
     const int matoms = m.natoms();
 
@@ -2450,7 +2450,7 @@ create_fused_ring_breakage(Molecule& m,
   }
   else
   {
-    return NULL;
+    return nullptr;
   }
 
 
@@ -2664,23 +2664,23 @@ static Ring_Bond_Breakage*
 create_ring_bond_breakage (Molecule & m, const Ring* r)
 {
   if (r->strongly_fused_ring_neighbours())         // too complex
-    return NULL;
+    return nullptr;
 
   if (1 != r->fused_ring_neighbours())         // not a terminal fing
-    return NULL;
+    return nullptr;
 
   if (r->fused_ring_neighbours() > 1)          // too complex, but, potentially limiting
-    return NULL;
+    return nullptr;
 
   if (r->is_aromatic() && !r->is_fused())          // don't handle these
-    return NULL;
+    return nullptr;
 
   //  At this stage, we have a "terminal" fused ring. Identify the atoms that are NOT
   //  part or adjacent to the ring
 
   Set_of_Atoms not_part_of_adjacent_ring;
   if (!identify_ring_edge (m, *r, not_part_of_adjacent_ring))
-    return NULL;
+    return nullptr;
 
   not_part_of_adjacent_ring.add(not_part_of_adjacent_ring[0]);        // close the ring, we will be processing bonds
 
@@ -2875,7 +2875,7 @@ usage (int rc)
    being very careful about which molecules can actually be compared
  */
 
-static int * atomic_number_to_array_position = NULL;
+static int * atomic_number_to_array_position = nullptr;
 
 static int
 initialise_atomic_number_to_array_position()
@@ -3110,7 +3110,7 @@ do_eliminate_fragment_subset_relations()
 
   Fragment_Info * frag_info = new Fragment_Info[n];
 
-  if (NULL == frag_info)
+  if (nullptr == frag_info)
   {
     cerr << "Cannot allocate " << n << " fragment info objects\n";
     return 0;
@@ -3221,13 +3221,13 @@ do_eliminate_fragment_subset_relations()
 #define ENV_IS_UNSATURATED_HETEROATOM 6
 #define ENV_IS_AMIDE 7
 
-static const Element * element_te = NULL;
-static const Element * element_ar = NULL;
-static const Element * element_cs = NULL;
-static const Element * element_cu = NULL;
-static const Element * element_hs = NULL;
-static const Element * element_hu = NULL;
-static const Element * element_am = NULL;
+static const Element * element_te = nullptr;
+static const Element * element_ar = nullptr;
+static const Element * element_cs = nullptr;
+static const Element * element_cu = nullptr;
+static const Element * element_hs = nullptr;
+static const Element * element_hu = nullptr;
+static const Element * element_am = nullptr;
 
 static int
 do_apply_atomic_number_isotopic_labels(Molecule & m,
@@ -3285,7 +3285,7 @@ identify_environment (Molecule & m,
       return ENV_IS_UNSATURATED_HETEROATOM;
   }
 
-  assert (NULL == "Could not assign type");
+  assert (nullptr == "Could not assign type");
 
   return 0;
 }
@@ -3467,9 +3467,9 @@ Breakages::identify_symmetry_exclusions(Molecule & m)
 
     Chain_Bond_Breakage * b = dynamic_cast<Chain_Bond_Breakage *>(ti);
 
-    if (NULL == b)
+    if (nullptr == b)
     {
-      cerr << "Skipping NULL chain bond breakage ptr\n";
+      cerr << "Skipping nullptr chain bond breakage ptr\n";
       continue;
     }
 
@@ -3487,9 +3487,9 @@ Breakages::identify_symmetry_exclusions(Molecule & m)
         continue;
 
       Chain_Bond_Breakage * bj = dynamic_cast<Chain_Bond_Breakage *>(tj);
-      if (NULL == bj)
+      if (nullptr == bj)
       {
-        cerr << "Skipping NULL ptr chain bond breakage\n";
+        cerr << "Skipping nullptr ptr chain bond breakage\n";
         continue;
       }
 
@@ -3674,7 +3674,7 @@ dump_atom_type (Molecule& frag, const Molecule& comp,
       count++;
 
       int breakage = iso % 10;
-      if (breakage == 0 || v[breakage] == "" || v[breakage].c_str() == NULL) 
+      if (breakage == 0 || v[breakage] == "" || v[breakage].c_str() == nullptr) 
         output << breakage << ":" << "INVALID";
       else 
         output << breakage << ":" << v[breakage];
@@ -3719,7 +3719,7 @@ Dicer_Arguments::_write_fragment_and_hydrogen(Molecule & m,
     if (append_atom_count)
       output << " 1 " << 1.0f / static_cast<float>(m.natoms());
 
-    if (NULL == _atom_type)
+    if (nullptr == _atom_type)
       ;
     else if (apply_isotopes_to_complementary_fragments < 0) 
       dump_atom_type(s1, s1, matoms, _local_xref, _atom_type, output);
@@ -3727,7 +3727,7 @@ Dicer_Arguments::_write_fragment_and_hydrogen(Molecule & m,
     output << ' ';
     output << s1.unique_smiles() << " COMP " << m.name();
 
-    if (NULL == _atom_type)
+    if (nullptr == _atom_type)
       ;
     else if (apply_isotopes_to_complementary_fragments < 0)
       output << " AT=[1:H]";
@@ -3801,14 +3801,14 @@ Dicer_Arguments::_write_fragment_and_complement (Molecule & m,
   if (append_atom_count)
     output << ' ' << s1.natoms() << ' ' << (static_cast<float>(s1.natoms())/static_cast<float>(matoms));
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     ;
   else if (apply_isotopes_to_complementary_fragments == -1) 
     dump_atom_type(s1, s2, matoms, _local_xref2, _atom_type, output);
 
   output << ' ' << s2.unique_smiles() << " COMP " << m.name();
 
-  if (NULL == _atom_type)
+  if (nullptr == _atom_type)
     ;
   else if (apply_isotopes_to_complementary_fragments < 0)
     dump_atom_type(s2, s1, matoms, _local_xref, _atom_type, output);
@@ -4428,7 +4428,7 @@ convert_to_atom_numbers_in_current_molecule (const Molecule & m,
     const Atom * a = m.atomi(i);
 
     const void * v = a->user_specified_void_ptr();
-    if (NULL == v)
+    if (nullptr == v)
       continue;
 
     atom_number_t x = *(reinterpret_cast<const atom_number_t *>(v));
@@ -5226,7 +5226,7 @@ dicer (Molecule & m, Dicer_Arguments & dicer_args,
 #endif
 
   const Dicer_Transformation * dt = bi.current_transformation(breakages);
-  while (NULL != dt)
+  while (nullptr != dt)
   {
 #ifdef DEBUG_DICER
     std::cerr << "####" << dicer_args.recursion_depth() << "  --  " << bi.state() << std::endl;
@@ -6300,11 +6300,11 @@ dicer(Molecule & m,
 }
 
 static int
-dicer (data_source_and_type<Molecule> & input,
-       IWString_and_File_Descriptor & output)
+dicer(data_source_and_type<Molecule> & input,
+      IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -6455,7 +6455,7 @@ static int
 dicer(const char * fname, FileType input_type,
       IWString_and_File_Descriptor & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

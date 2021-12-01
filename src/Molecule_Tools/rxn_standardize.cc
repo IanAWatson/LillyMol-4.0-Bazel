@@ -17,7 +17,7 @@ using std::endl;
 #include "Molecule_Lib/mdl_molecule.h"
 #include "Molecule_Lib/rxn_file.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -937,7 +937,7 @@ static int
 rxn_standardize (const char * fname,
                 IWString_and_File_Descriptor & output)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   const_IWSubstring tmp(fname);
   if (tmp.starts_with("F:"))

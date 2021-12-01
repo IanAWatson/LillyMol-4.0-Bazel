@@ -15,7 +15,7 @@ Command_Line::value<std::string>(const char c, std::string& zvalue, int occurren
     {
       if (nfound == occurrence)
       {
-        if (NULL == oo->value())
+        if (nullptr == oo->value())
           zvalue = "";
         else
           zvalue = oo->value();
@@ -40,7 +40,7 @@ Command_Line::value_as_std_string (const char c, std::string & zvalue, int occur
     {
       if (nfound == occurrence)
       {
-        if (NULL == oo->value())
+        if (nullptr == oo->value())
           zvalue = "";
         else
           zvalue = oo->value();
@@ -66,7 +66,7 @@ Command_Line::std_string_value(const char c, int occurrence) const
       if (nfound == occurrence)
       {
         const char * v = oo->value ();
-        if (NULL == v)
+        if (nullptr == v)
           return "";
         else
           return oo->value ();

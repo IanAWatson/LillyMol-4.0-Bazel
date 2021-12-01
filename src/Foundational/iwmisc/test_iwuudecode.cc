@@ -10,7 +10,7 @@
 
 #include "misc.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 

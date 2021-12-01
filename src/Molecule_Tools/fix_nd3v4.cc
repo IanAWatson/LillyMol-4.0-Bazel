@@ -1070,7 +1070,7 @@ fix_nd3v4 (data_source_and_type<Molecule> & input,
                                Molecule_Output_Object & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule ()))
+  while (nullptr != (m = input.next_molecule ()))
   {
     molecules_read++;
 

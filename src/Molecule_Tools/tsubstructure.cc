@@ -346,7 +346,7 @@ static int report_timing = 0;
   a new atom type
 */
 
-static const Element * matched_atoms_element = NULL;
+static const Element * matched_atoms_element = nullptr;
 
 /*
   By default, the atoms of each hit are labelled with different isotopes.
@@ -489,11 +489,11 @@ write_matched_atoms_as_mdl_v30_lists (Molecule & m,
   if (write_matched_atoms_as_mdl_v30_bond_lists)
     btmp = new int[m.nedges()];
   else
-    btmp = NULL;
+    btmp = nullptr;
 
   int rc = write_matched_atoms_as_mdl_v30_lists(m, queries, sresults, btmp, output);
 
-  if (NULL != btmp)
+  if (nullptr != btmp)
     delete [] btmp;
 
   return rc;
@@ -847,7 +847,7 @@ apply_isotopic_labels_embedding (const Molecule & m,
   if (label_by_query_atom_number)
     qam = sresults.query_atoms_matching(embedding_number);
   else
-    qam = NULL;
+    qam = nullptr;
 
   int matoms = m.natoms();
 
@@ -1189,7 +1189,7 @@ do_all_queries (Molecule & m,
     int matoms = m.natoms();
     for (int i = 0; i < matoms; i++)
     {
-      if (NULL != element_labels[i])
+      if (nullptr != element_labels[i])
         m.set_element(i, element_labels[i]);
     }
   }
@@ -1235,23 +1235,23 @@ tsubstructure (Molecule & m,
       m.get_isotopes(atom_isotopic_label);
   }
   else
-    atom_isotopic_label = NULL;
+    atom_isotopic_label = nullptr;
     
  
-  const Element ** new_elements = NULL;
+  const Element ** new_elements = nullptr;
 
   if (matched_atoms_element)
   {
     new_elements = new const Element *[matoms];
     for (int i = 0; i < matoms; i++)
     {
-      new_elements[i] = NULL;
+      new_elements[i] = nullptr;
     }
   }
 
   int nmatched = do_all_queries(m, queries, sresults, tmp, new_elements, atom_isotopic_label);
 
-  if (NULL != atom_isotopic_label)
+  if (nullptr != atom_isotopic_label)
     delete [] atom_isotopic_label;
 
   if (new_elements)
@@ -1327,7 +1327,7 @@ tsubstructure (data_source_and_type<Molecule> & input,
   assert (input.good());
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -1445,7 +1445,7 @@ tsubstructure (const char * input_fname,
                Substructure_Results * sresults,
                int * queries_matched)
 {
-  assert (NULL != input_fname);
+  assert (nullptr != input_fname);
 
   if (work_as_filter)
     return tsubstructure_filter(input_fname, queries, sresults, queries_matched, std::cout);
@@ -2528,7 +2528,7 @@ tsubstructure(int argc, char ** argv)
       else
       {
         matched_atoms_element = get_element_from_symbol_no_case_conversion(j);
-        if (NULL == matched_atoms_element)
+        if (nullptr == matched_atoms_element)
         {
           cerr << "Cannot retrieve element '" << j << "', -j option - should be a whole number\n";
           return 9;
@@ -2549,7 +2549,7 @@ tsubstructure(int argc, char ** argv)
       ;
     else if (increment_isotopic_labels_to_indicate_queries_matching)
       ;
-    else if (0 == label_matched_atoms && NULL == matched_atoms_element)
+    else if (0 == label_matched_atoms && nullptr == matched_atoms_element)
     {
       cerr << "Must specify '-j <number>' or '-j <element>' as a -j option\n";
       usage(13);

@@ -30,7 +30,7 @@ class Option_and_Value
     int _discern_numeric_values ();
 
   public:
-    Option_and_Value (int, const char * = NULL);
+    Option_and_Value (int, const char * = nullptr);
     ~Option_and_Value ();
 
     int ok () const;
@@ -100,7 +100,7 @@ template <typename T>
 int
 Option_and_Value::value (T & rc) const
 {
-  if (NULL == _value)
+  if (nullptr == _value)
     return 0;
 
   const_IWSubstring tmp(_value);

@@ -55,14 +55,14 @@ iwstring_data_source::_default_values (int lrecl)
         _eof = 0;
         _dos = 0;
         _translate_tabs = 0;
-        _echo_returned_records_stream = NULL;
+        _echo_returned_records_stream = nullptr;
 
         _buffer.resize(lrecl + 1);
 
         //cerr << "Allocate _read_buffer with " << lrecl << " bytes\n";
         _read_buffer = new char[lrecl];
 
-        if (NULL == _read_buffer)
+        if (nullptr == _read_buffer)
         {
                 cerr << "iwstring_data_source::_default_values:cannot allocate " << lrecl << " read buffer\n";
                 _good = 0;
@@ -138,7 +138,7 @@ iwstring_data_source::_setup_stream (const char * fname)
 iwstring_data_source::iwstring_data_source (const char * fname, int lrecl) 
 {
         assert (lrecl > 1);
-        assert (NULL != fname);
+        assert (nullptr != fname);
 
         _default_values(lrecl);
 
@@ -211,7 +211,7 @@ iwstring_data_source::~iwstring_data_source()
 
     _open = 0;
 
-    if (NULL != _read_buffer)
+    if (nullptr != _read_buffer)
       delete [] _read_buffer;
 
     return;
@@ -487,9 +487,9 @@ iwstring_data_source::_copy_next_record_from_read_buffer_to_buffer()
 
   const char * c = reinterpret_cast<const char *>(memchr(s, _record_delimiter, _chars_in_read_buffer - _next_char_in_read_buffer_to_transfer_to_buffer));
 
-  //cerr << "Did we find a delimiter '" << (NULL != c) << "'\n";
+  //cerr << "Did we find a delimiter '" << (nullptr != c) << "'\n";
 
-  if (NULL != c)   // there is a record delimiter character in _read_buffer
+  if (nullptr != c)   // there is a record delimiter character in _read_buffer
   {
     int chars_to_copy = c - s;
 
@@ -755,7 +755,7 @@ iwstring_data_source::next_record (T & buffer)
       }
     }
 
-    assert (NULL == "should never come here");
+    assert (nullptr == "should never come here");
   }
   else
   {
@@ -1066,6 +1066,7 @@ iwstring_data_source::file_size()
         const off_t rc = IW_FD_LSEEK(_fd, 0, SEEK_END);
 
         const off_t back_again = IW_FD_LSEEK(_fd, current_position, SEEK_SET);
+        (void) back_again;  // keep the compiler quiet.
 
         assert (back_again == current_position);
 

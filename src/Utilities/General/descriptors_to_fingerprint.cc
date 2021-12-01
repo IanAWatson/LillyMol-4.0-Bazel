@@ -16,7 +16,7 @@
 
 using std::numeric_limits;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -143,7 +143,7 @@ Descriptor::Descriptor()
   _max = -numeric_limits<float>::max();
   _dx = 0.0f;
 
-  _bucket_count = NULL;
+  _bucket_count = nullptr;
 
   _range_specified = 0;
 
@@ -152,7 +152,7 @@ Descriptor::Descriptor()
 
 Descriptor::~Descriptor()
 {
-  if (NULL != _bucket_count)
+  if (nullptr != _bucket_count)
     delete [] _bucket_count;
 
   return;
@@ -176,7 +176,7 @@ int
 Descriptor::report(std::ostream & os) const
 {
   os << "Descriptor '" << _name << "' range " << _min << ',' << _max << ',' << _dx << endl;
-  if (NULL == _bucket_count)
+  if (nullptr == _bucket_count)
   {
     cerr << "constant\n";
     return 1;
@@ -199,7 +199,7 @@ Descriptor::report(std::ostream & os) const
 int
 Descriptor::allocate_bucket_counter()
 {
-  assert (NULL == _bucket_count);
+  assert (nullptr == _bucket_count);
 
   if (_min == _max)
     return 0;
@@ -424,7 +424,7 @@ Descriptor::set_bits(float v,
     b = static_cast<int>((v - _min) / _dx + 0.4999F);
   }
 
-  if (NULL != _bucket_count)
+  if (nullptr != _bucket_count)
     _bucket_count[b]++;
 
   if (range_sets_bit_count)
@@ -534,14 +534,14 @@ class Set_of_Descriptors
 Set_of_Descriptors::Set_of_Descriptors()
 {
   _nd = 0;
-  _d = NULL;
+  _d = nullptr;
 
   return;
 }
 
 Set_of_Descriptors::~Set_of_Descriptors()
 {
-  if (NULL != _d)
+  if (nullptr != _d)
     delete [] _d;
 
   return;

@@ -9,14 +9,14 @@
 #include "iwstring.h"
 
 static int
-common_write (int fd, const char * s, int nchars)
+common_write(int fd, const char * s, int nchars)
 {
   assert (fd >= 0);
 
   if (0 == nchars)
     return 1;
 
-  int rc = IW_FD_WRITE (fd, s, nchars);
+  int rc = IW_FD_WRITE(fd, s, nchars);
 
   if (rc == nchars)
     return 1;
@@ -27,13 +27,13 @@ common_write (int fd, const char * s, int nchars)
 }
 
 int
-const_IWSubstring::write (int fd) const
+const_IWSubstring::write(int fd) const
 {
-  return common_write (fd, _data, _nchars);
+  return common_write(fd, _data, _nchars);
 }
 
 int
-IWString::write (int fd) const
+IWString::write(int fd) const
 {
-  return common_write (fd, _things, _number_elements);
+  return common_write(fd, _things, _number_elements);
 }

@@ -19,7 +19,7 @@
 #include "Molecule_Lib/rxn_file.h"
 
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -435,7 +435,7 @@ leftSideSignature(RXN_File & rxn,std::vector<SignatureListItem> &signatures, int
     if (!outputAllParts && reagentIndex > 0)
       break;
 
-    ISIS_RXN_FILE_Molecule *thisMol(NULL);
+    ISIS_RXN_FILE_Molecule *thisMol(nullptr);
    
     thisMol = &rxn.reagent(reagentIndex);
       
@@ -524,7 +524,7 @@ rightSideSignature(RXN_File & rxn,std::vector<SignatureListItem>  &signatures, i
     if (!outputAllParts && productIndex > 0)
       break;
     
-    ISIS_RXN_FILE_Molecule *thisMol(NULL);
+    ISIS_RXN_FILE_Molecule *thisMol(nullptr);
  
     thisMol = &rxn.product(productIndex);
 
@@ -991,7 +991,7 @@ static int rxn_signature (int argc, char ** argv)
   for (int i = 0; i < cl.number_elements(); i++)
   {
     const char *fname = cl[i];
-    assert(NULL != fname);
+    assert(nullptr != fname);
 
     const_IWSubstring tmp(fname);
     if (tmp.starts_with("F:"))

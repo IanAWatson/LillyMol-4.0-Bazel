@@ -547,12 +547,12 @@ _passes_all_filters (Column_Data * cd, int ncol)
   NOT part of a column condition
 */
 
-int * check_column_for_zero = NULL;
+int * check_column_for_zero = nullptr;
 
 static int
 initialise_check_column_for_zero (int ncol)
 {
-  assert (NULL == check_column_for_zero);
+  assert (nullptr == check_column_for_zero);
 
 //cerr << "check_column_for_zero contains " << ncol << " items\n";
 
@@ -578,7 +578,7 @@ passes_all_filters (Column_Data * cd, int ncol)
   if (! _passes_all_filters(cd, ncol))
     return 0;
 
-  if (NULL == check_column_for_zero)
+  if (nullptr == check_column_for_zero)
     return 1;
 
   int istop = ncol;
@@ -830,14 +830,14 @@ class Operator
 
 Condition::Condition ()
 {
-  _op = NULL;
+  _op = nullptr;
 
   return;
 }
 
 Condition::~Condition ()
 {
-  if (NULL != _op)
+  if (nullptr != _op)
     delete _op;
 
   return;
@@ -848,7 +848,7 @@ Condition::debug_print (std::ostream & os) const
 {
   os << "Condition '" << _text << "'\n";
 
-  if (NULL == _op)
+  if (nullptr == _op)
     return os.good();
 
   return _op->debug_print(os);
@@ -878,7 +878,7 @@ Condition::build (const const_IWSubstring & e)
 int
 Condition::build (const IWString & expr, int istart)
 {
-  assert (NULL == _op);
+  assert (nullptr == _op);
 
   int iptr = istart;
 
@@ -921,7 +921,7 @@ Condition::build (const IWString & expr, int istart)
 int
 Condition::operator_count () const
 {
-  if (NULL == _op)
+  if (nullptr == _op)
     return 0;
 
   return _op->operator_count();
@@ -930,8 +930,8 @@ Condition::operator_count () const
 Condition *
 Condition::next_condition () const
 {
-  if (NULL == _op)
-    return NULL;
+  if (nullptr == _op)
+    return nullptr;
 
   return _op->next_condition();
 }
@@ -1063,7 +1063,7 @@ build_column_conditions (Condition * c)
     }
 
     c = c->next_condition();
-    if (NULL == c)
+    if (nullptr == c)
       return 1;
   }
 

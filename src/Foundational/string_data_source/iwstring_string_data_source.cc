@@ -2,6 +2,8 @@
 
 #include "iwstring_string_data_source.h"
 
+using std::cerr;
+
 void
 String_Data_Source::_default_values()
 {
@@ -17,7 +19,7 @@ String_Data_Source::_default_values()
 
 String_Data_Source::String_Data_Source(const char * s)
 {
-  assert (NULL != s);
+  assert (nullptr != s);
 
   _default_values();
 
@@ -29,7 +31,7 @@ String_Data_Source::String_Data_Source(const char * s)
 String_Data_Source::String_Data_Source(const char * s,
                                        int notused)
 {
-  assert (NULL != s);
+  assert (nullptr != s);
 
   _default_values();
 
@@ -107,7 +109,7 @@ String_Data_Source::seekg(off_t o)
 {
   const size_t s = strlen(_src);
 
-  if (o > s)
+  if (o > static_cast<off_t>(s))
   {
     cerr << "String_Data_Source::seekg:cannot seek to " << o << ", len " << strlen(_src) << '\n';
     return 0;

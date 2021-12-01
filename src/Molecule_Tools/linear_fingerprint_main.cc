@@ -18,7 +18,7 @@ using std::endl;
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 int verbose = 0;
 
@@ -136,7 +136,7 @@ LinearFingerprint(Molecule & m,
   Sparse_Fingerprint_Creator sfc;
 
   // A single atom molecule would produce zero bits, or two atoms in different fragments...
-  if (! linear_fp_gen.Fingerprint(m, NULL, atype, sfc)) {
+  if (! linear_fp_gen.Fingerprint(m, nullptr, atype, sfc)) {
     cerr << "LinearFingerprintGenerator:fingerprinting failed " << m.smiles() << " ignored\n";
   }
 
@@ -188,7 +188,7 @@ LinearFingerprint(data_source_and_type<Molecule> & input,
                 IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -254,7 +254,7 @@ LinearFingerprint(const char * fname, FileType input_type,
                 LinearFingerprintGenerator& linear_fp_gen,
                 IWString_and_File_Descriptor & output)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   if (function_as_tdt_filter) {
     iwstring_data_source input(fname);

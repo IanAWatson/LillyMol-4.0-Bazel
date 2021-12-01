@@ -423,9 +423,9 @@ MDL_Molecule::read_molecule_ds(iwstring_data_source & input,
   encountered...
 */
 
-static const Element * element_a = NULL;
-static const Element * element_q = NULL;
-static const Element * element_l = NULL;
+static const Element * element_a = nullptr;
+static const Element * element_q = nullptr;
+static const Element * element_l = nullptr;
 
 void
 do_create_special_elements_for_mdl_stuff()
@@ -436,15 +436,15 @@ do_create_special_elements_for_mdl_stuff()
     set_auto_create_new_elements(1);
 
   element_a = get_element_from_symbol_no_case_conversion("A");
-  if (NULL == element_a)
+  if (nullptr == element_a)
     element_a = create_element_with_symbol("A");
 
   element_q = get_element_from_symbol_no_case_conversion("Q");
-  if (NULL == element_q)
+  if (nullptr == element_q)
     element_q = create_element_with_symbol("Q");
 
   element_l = get_element_from_symbol_no_case_conversion("L");
-  if (NULL == element_l)
+  if (nullptr == element_l)
     element_l = create_element_with_symbol("L");
 
   set_auto_create_new_elements(isave);
@@ -462,7 +462,7 @@ int
 MDL_Molecule::read_molecule_mdl_ds (iwstring_data_source & input,
                                     int return_on_m_end)
 {
-  if (NULL == element_a)
+  if (nullptr == element_a)
     do_create_special_elements_for_mdl_stuff();
 
   const_IWSubstring buffer;
@@ -539,7 +539,7 @@ MDL_Molecule::read_molecule_mdl_ds (iwstring_data_source & input,
 
     Atom * a = mdlar.create_atom();
 
-    if (NULL == a)
+    if (nullptr == a)
     {
       cerr << "MDL_Molecule::read_molecule_ds:cannot create atom, line " << input.lines_read() << endl;
       return 0;
@@ -724,7 +724,7 @@ MDL_Molecule::atom_list_for_atom (atom_number_t a) const
   const ISIS_Atom_List & rc = _mdl_atom[a]->atom_list();
 
   if (! rc.active())
-    return NULL;
+    return nullptr;
 
   return &rc;
 }
@@ -795,7 +795,7 @@ MDL_Molecule::_set_ring_bond_specifications (const Aprop * atom_properties,
 /*int
 MDL_Molecule::initialise_mqs (Molecule_to_Query_Specifications & mqs) const
 {
-  if (NULL == _hcount)    // we've never been initialised
+  if (nullptr == _hcount)    // we've never been initialised
     return 1;
 
   int matoms = natoms();
@@ -812,7 +812,7 @@ MDL_Molecule::initialise_mqs (Molecule_to_Query_Specifications & mqs) const
   if (_link_atom.number_elements())
     mqs.set_link_atoms(_link_atom);
 
-  if (NULL != _bond_topology)
+  if (nullptr != _bond_topology)
     mqs.set_bond_topology (_bond_topology, nedges());
 
   return 1;
@@ -1292,7 +1292,7 @@ MDL_Molecule::mdl_bond_between_atoms (atom_number_t a1,
   if (j < 0)
   {
     cerr << "MDL_Molecule::mdl_bond_between_atoms:no bond between " << a1 << " and " << a2 << endl;
-    return NULL;
+    return nullptr;
   }
 
   return _mdl_bond[j];
@@ -1616,7 +1616,7 @@ MDL_Molecule::_convert_symbol_to_element (int ndx,
   if (s.length() <= 2)
   {
     const Element * e = get_element_from_symbol_no_case_conversion(s);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "MDL_Molecule::_convert_symbol_to_element:cannot get element for '" << s << "'\n";
       return 0;
@@ -1767,7 +1767,7 @@ reset_mdl_molecule_file_scope_variables()
 {
 	convert_a_and_q_atoms_to_atom_lists=0;
 	convert_not_atom_lists_to_organic_lists=0;
-	 element_a = NULL;
-	element_q = NULL;
-	element_l = NULL;
+	 element_a = nullptr;
+	element_q = nullptr;
+	element_l = nullptr;
 }

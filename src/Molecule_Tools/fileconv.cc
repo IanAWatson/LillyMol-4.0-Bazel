@@ -1477,7 +1477,7 @@ do_find_all_chiral_centres(Molecule & m)
   int rc = 1;
   for (int i = 0; i < matoms; i++)
   {
-    if (NULL != m.chiral_centre_at_atom(i))
+    if (nullptr != m.chiral_centre_at_atom(i))
       continue;
 
     if (find_all_ring_chiral_centres && m.is_non_ring_atom(i))
@@ -1517,7 +1517,7 @@ do_find_all_chiral_centres(Molecule & m)
       cerr << "Placing chiral centre at atom " << i << " (" << a->atomic_symbol() << ") " <<
               a->ncon() << " connections\n";
 
-    if (NULL == m.create_chiral_centre(i))
+    if (nullptr == m.create_chiral_centre(i))
     {
       cerr << "Yipes, could not place chiral center atom atom " << i << endl;
       rc = 0;
@@ -1689,7 +1689,7 @@ identify_matched_atoms_with_chiral_centres (const Molecule & m,
   {
     atom_number_t j = e[i];
 
-    if (NULL == m.chiral_centre_at_atom(j))    // atom J does not have a chiral centre
+    if (nullptr == m.chiral_centre_at_atom(j))    // atom J does not have a chiral centre
       continue;
       
     if (atoms_with_chiral_centres_to_be_removed.contains(j))
@@ -2262,8 +2262,8 @@ _do_remove_nonorganic_fragments (Molecule & m,
     bool delete_fragment = false;
     for (int j = 0; j < aif; j++) {
       const Element * e = tmp.elementi(j);
-      if (e == NULL) {
-        cerr << "NULL pointer found for element " << j << " in molecule " << m.name() << endl;
+      if (e == nullptr) {
+        cerr << "Null pointer found for element " << j << " in molecule " << m.name() << endl;
         cerr << "This should not happen, please contact c3tk" << endl;
         return;
       }
@@ -3822,7 +3822,7 @@ fileconv(data_source_and_type<Molecule> & input,
          Molecule_Output_Object & output_object)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -3852,7 +3852,7 @@ static int
 fileconv(const char *fname, FileType input_type,
          Molecule_Output_Object & output)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {
@@ -3973,16 +3973,16 @@ recognise_as_element(const const_IWSubstring & o)
 {
   const Element * rc = get_element_from_symbol_no_case_conversion(o);
 
-  if (NULL == rc)
-    return NULL;
+  if (nullptr == rc)
+    return nullptr;
 
   atomic_number_t z = rc->atomic_number();
 
   if (z <= 0)
-    return NULL;
+    return nullptr;
 
   if (z > HIGHEST_ATOMIC_NUMBER)   // not sure how this could happen
-    return NULL;
+    return nullptr;
 
   return rc;
 }
@@ -3995,10 +3995,10 @@ recognise_as_element_or_atomic_number(const const_IWSubstring & o)
     return recognise_as_element(o);
 
   if (z <= 0)
-    return NULL;
+    return nullptr;
 
   if (z > HIGHEST_ATOMIC_NUMBER)
-    return NULL;
+    return nullptr;
 
   return get_element_from_atomic_number(z);
 }
@@ -4021,7 +4021,7 @@ handle_dash_O_stuff(Command_Line & cl,
 
       const Element * e = recognise_as_element_or_atomic_number(o);
 
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "Unrecognised element allow:'" << o << "'\n";
         return 0;
@@ -4067,7 +4067,7 @@ handle_dash_O_stuff(Command_Line & cl,
       ok_non_organics.add(e);
 
       const Element * ele = e->element();
-      if (NULL != ele)
+      if (nullptr != ele)
         allowed_elements.set_allow(ele->atomic_number(), 1);
 
       if (verbose)

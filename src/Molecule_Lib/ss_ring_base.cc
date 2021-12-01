@@ -27,7 +27,7 @@ Substructure_Ring_Base::Substructure_Ring_Base ()
 
 Substructure_Ring_Base::~Substructure_Ring_Base ()
 {
-  if (NULL != _is_heteroatom)
+  if (nullptr != _is_heteroatom)
     delete [] _is_heteroatom;
 
   return;

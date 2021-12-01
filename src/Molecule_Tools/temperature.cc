@@ -10,7 +10,7 @@ using std::endl;
   Works from a tdt.
 */
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -36,7 +36,7 @@ static IWString identifier_tag("PCN<");
 
 static Accumulator_Int<int> atom_statistics;
 
-static Accumulator_Int<int> * accumulators = NULL;
+static Accumulator_Int<int> * accumulators = nullptr;
 
 static int allow_multi_fragment_molecules = 0;
 
@@ -277,7 +277,7 @@ temperature (Molecule & m,
     set_vector(properties, NPROPERTIES, static_cast<unsigned char>(0));
   }
 
-  if (NULL != accumulators)
+  if (nullptr != accumulators)
   {
     for (int i = 0; i < NPROPERTIES; i++)
     {
@@ -342,7 +342,7 @@ temperature (data_source_and_type<Molecule> & input,
              IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 
@@ -652,7 +652,7 @@ temperature (int argc, char ** argv)
     cerr << endl;
   }
 
-  if (NULL != accumulators)
+  if (nullptr != accumulators)
   {
     for (int i = 0; i < NPROPERTIES; i++)
     {

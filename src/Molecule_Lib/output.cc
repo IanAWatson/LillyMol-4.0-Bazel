@@ -741,7 +741,7 @@ Molecule_Output_Object::add_output_type(FileType ot)
   }
 
   const char* suffix = suffix_for_file_type(ot);
-  if (NULL == suffix)
+  if (nullptr == suffix)
   {
     cerr << "Molecule_Output_Object::add_output_type: unrecognised type " << ot << endl;
     return 0;

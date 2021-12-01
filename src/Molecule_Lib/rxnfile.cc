@@ -60,24 +60,24 @@ Changing_Atom_Conditions::Changing_Atom_Conditions()
 RXN_File::RXN_File()
 {
   _nr = 0;
-  _reagent = NULL;
+  _reagent = nullptr;
 
   _np = 0;
-  _product = NULL;
+  _product = nullptr;
 
   _na = 0;
-  _agent = NULL;
+  _agent = nullptr;
 
   _remove_product_fragments = 0;
 
-  _reagent_locator = NULL;
-  _product_locator = NULL;
+  _reagent_locator = nullptr;
+  _product_locator = nullptr;
 
-  _atom_map_to_reagent_atom_number = NULL;
-  _atom_map_to_product_atom_number = NULL;
+  _atom_map_to_reagent_atom_number = nullptr;
+  _atom_map_to_product_atom_number = nullptr;
 
-  _initial_bond_type = NULL;
-  _final_bond_type = NULL;
+  _initial_bond_type = nullptr;
+  _final_bond_type = nullptr;
 
   _remove_unmapped_atoms_that_disappear = 0;
 
@@ -91,7 +91,7 @@ RXN_File::RXN_File()
 
   _remove_explicit_hydrogens = 0;
 
-  _involved_in_square_bond = NULL;
+  _involved_in_square_bond = nullptr;
 
   _unconnect_unmapped_atoms_that_exceed_product_valence = 0;
 
@@ -111,40 +111,40 @@ RXN_File::RXN_File()
 
   _mark_atoms_changed_when_kekule_form_of_bond_changes = 1;  // by default, consider these atoms changed
 
-  _queryOutStream = NULL;
+  _queryOutStream = nullptr;
   
   return;
 }
 
 RXN_File::~RXN_File()
 {
-  if (NULL != _reagent)
+  if (nullptr != _reagent)
     delete [] _reagent;
 
-  if (NULL != _product)
+  if (nullptr != _product)
     delete [] _product;
 
-  if (NULL != _agent)
+  if (nullptr != _agent)
     delete [] _agent;
 
-  if (NULL != _reagent_locator)
+  if (nullptr != _reagent_locator)
     delete [] _reagent_locator;
 
-  if (NULL != _product_locator)
+  if (nullptr != _product_locator)
     delete [] _product_locator;
 
-  if (NULL != _atom_map_to_reagent_atom_number)
+  if (nullptr != _atom_map_to_reagent_atom_number)
     delete [] _atom_map_to_reagent_atom_number;
-  if (NULL != _atom_map_to_product_atom_number)
+  if (nullptr != _atom_map_to_product_atom_number)
     delete [] _atom_map_to_product_atom_number;
 
-  if (NULL != _initial_bond_type)
+  if (nullptr != _initial_bond_type)
     delete [] _initial_bond_type;
 
-  if (NULL != _final_bond_type)
+  if (nullptr != _final_bond_type)
     delete [] _final_bond_type;
 
-  if (NULL != _involved_in_square_bond)
+  if (nullptr != _involved_in_square_bond)
     delete [] _involved_in_square_bond;
  
 
@@ -196,7 +196,7 @@ RXN_File::debug_print(std::ostream & os) const
       const int mapj = r.atom_map()[j];
 
       os << " reagent " << i << " atom " << j << " " << r.smarts_equivalent_for_atom(j) << " map " << mapj;
-      if (mapj > 0 && NULL != _product_locator)
+      if (mapj > 0 && nullptr != _product_locator)
         os << " in product " << _product_locator[mapj];
       os << "\n";
     }
@@ -258,7 +258,7 @@ write_atom_mapped_smiles(const ISIS_RXN_FILE_Molecule & m,
 
   const int * amap = m.atom_map();
 
-  if (NULL == amap)
+  if (nullptr == amap)
   {
     os << mcopy.smiles();
     return 1;
@@ -369,18 +369,18 @@ RXN_File::_number_product_atoms() const
 
 ISIS_RXN_FILE_Molecule::ISIS_RXN_FILE_Molecule()
 {
-  _atom_map = NULL;
+  _atom_map = nullptr;
 
-  _computed_implicit_hydrogen_count = NULL;
-  _explicit_hydrogen_count = NULL;
+  _computed_implicit_hydrogen_count = nullptr;
+  _explicit_hydrogen_count = nullptr;
 
-  _btype = NULL;
+  _btype = nullptr;
 
   _not_atom_lists_present = 0;
 
-  _explicit_hydrogen_atom_removed = NULL;
+  _explicit_hydrogen_atom_removed = nullptr;
 
-  _connections_lost = NULL;
+  _connections_lost = nullptr;
 
   _convert_A_to_C_for_aromaticity = 0;
 
@@ -388,9 +388,9 @@ ISIS_RXN_FILE_Molecule::ISIS_RXN_FILE_Molecule()
 
   _preserve_kekule_forms = 0;
 
-  _nbonds = NULL;
+  _nbonds = nullptr;
 
-  _use_as_representative = NULL;
+  _use_as_representative = nullptr;
 
   _swap_atoms_to_put_rare_atoms_first = 0;
 
@@ -470,7 +470,7 @@ resize_array(T * & v,
              const int nextra,
              const T filler)
 {
-  if (NULL == v)
+  if (nullptr == v)
     return 0;
 
   T * newv = new T[initial_size + nextra];
@@ -494,32 +494,32 @@ ISIS_RXN_FILE_Molecule::add(Element const* e)
 
   const int matoms = natoms();
 
-  if (NULL == _atom_map)
+  if (nullptr == _atom_map)
     _atom_map = new_int(matoms, -1);
   else
     resize_array(_atom_map, initial_matoms, 1, -1);
 
-  if (NULL == _explicit_hydrogen_count)
+  if (nullptr == _explicit_hydrogen_count)
     _explicit_hydrogen_count = new_int(matoms, 0);
   else
     resize_array(_explicit_hydrogen_count, initial_matoms, 1, 0);
 
-  if (NULL == _computed_implicit_hydrogen_count)
+  if (nullptr == _computed_implicit_hydrogen_count)
     _computed_implicit_hydrogen_count = new_int(matoms, -1);
   else
     resize_array(_computed_implicit_hydrogen_count, initial_matoms, 1, 0);
 
-  if (NULL == _explicit_hydrogen_atom_removed)
+  if (nullptr == _explicit_hydrogen_atom_removed)
     _explicit_hydrogen_atom_removed = new_int(matoms, -1);
   else
     resize_array(_explicit_hydrogen_atom_removed, initial_matoms, 1, 0);
 
-  if (NULL == _connections_lost)
+  if (nullptr == _connections_lost)
     _connections_lost = new_int(matoms, -1);
   else
     resize_array(_connections_lost, initial_matoms, 1, 0);
 
-  if (NULL == _btype)
+  if (nullptr == _btype)
   {
     _btype = new bond_type_t[matoms];
     std::fill_n(_btype, matoms, static_cast<bond_type_t>(INVALID_BOND_TYPE));
@@ -535,7 +535,7 @@ ISIS_RXN_FILE_Molecule::add(Element const* e)
 int
 ISIS_RXN_FILE_Molecule::remove_atoms(const int * to_remove)
 {
-  if (NULL != _atom_map)   // push current atom map back to the atoms in order to save it
+  if (nullptr != _atom_map)   // push current atom map back to the atoms in order to save it
   {
     const int matoms = natoms();
 
@@ -556,7 +556,7 @@ ISIS_RXN_FILE_Molecule::remove_atoms(const int * to_remove)
 
   const int rc = MDL_Molecule::remove_atoms(to_remove);
 
-  if (NULL == _atom_map)
+  if (nullptr == _atom_map)
     return rc;
 
   const int matoms = natoms();
@@ -671,7 +671,7 @@ ISIS_RXN_FILE_Molecule::fill_bonds_between_mapped_atoms_array(bond_type_t * barr
 atom_number_t
 ISIS_RXN_FILE_Molecule::which_is_mapped_atom(int m) const
 {
-  assert (NULL != _atom_map);
+  assert (nullptr != _atom_map);
 
   int matoms = Molecule::natoms();
 //cerr << "Searching " << matoms << " atoms for map " << m << endl;
@@ -907,7 +907,7 @@ ISIS_RXN_FILE_Molecule::do_read(iwstring_data_source & input)
 
   const Element * notused = get_element_from_symbol_no_case_conversion("A");
 
-  if (NULL != notused)    // Element A has been created, there may be some in our molecule
+  if (nullptr != notused)    // Element A has been created, there may be some in our molecule
   {
     for (int i = 0; i < matoms; i++)
     {
@@ -1034,7 +1034,7 @@ ISIS_RXN_FILE_Molecule::do_read(iwstring_data_source & input)
   if (_aromatic_bonds_lose_kekule_identity)
     _change_explicit_kekule_forms_to_aromatic();
 
-  if (NULL != _atom_map)
+  if (nullptr != _atom_map)
     delete [] _atom_map;
 
   _atom_map = new int[matoms];
@@ -1355,7 +1355,7 @@ ISIS_RXN_FILE_Molecule::mapped_atoms_are_bonded(int m1, int m2) const
 
   const Bond * b = Molecule::bond_between_atoms(a1, a2);
 
-  assert (NULL != b);
+  assert (nullptr != b);
 
   if (b->is_single_bond())
     return SINGLE_BOND;
@@ -1428,7 +1428,7 @@ ISIS_RXN_FILE_Molecule::identify_symmetry_classes()
   if (0 == matoms)
     return 0;
 
-  if (NULL == _use_as_representative)
+  if (nullptr == _use_as_representative)
     _use_as_representative = new_int(matoms, 1);
   else
     std::fill_n(_use_as_representative, matoms, 1);
@@ -2169,17 +2169,17 @@ class Neighbours_and_Connections
 Neighbours_and_Connections::Neighbours_and_Connections ()
 {
   _natoms = 0;
-  _multiplier = NULL;
+  _multiplier = nullptr;
 
   return;
 }
 
 Neighbours_and_Connections::~Neighbours_and_Connections ()
 {
-  if (NULL != _multiplier)
+  if (nullptr != _multiplier)
     delete [] _multiplier;
 
-  if (NULL != _values_found)
+  if (nullptr != _values_found)
     delete [] _values_found;
 
   return;
@@ -2193,7 +2193,7 @@ Neighbours_and_Connections::set_natoms (int n)
 
   _multiplier = new int[n];
 
-  _values_found = NULL;
+  _values_found = nullptr;
 
   _multiplier[0] = 1;
 
@@ -2210,7 +2210,7 @@ Neighbours_and_Connections::set_natoms (int n)
 int
 Neighbours_and_Connections::set_max_connectivity(const int s)
 {
-  assert (NULL == _values_found);
+  assert (nullptr == _values_found);
 
   _values_found = new int[s];
 
@@ -2224,7 +2224,7 @@ int
 Neighbours_and_Connections::operator () (const ISIS_RXN_FILE_Molecule & m,
                                          atom_number_t zatom)
 {
-  assert (NULL != _values_found);
+  assert (nullptr != _values_found);
 
 //cerr << "Neighbours_and_Connections::operator: atom " << zatom << " hash contains " << _value_to_unique_id.size() << endl;
 
@@ -3355,7 +3355,7 @@ RXN_File::_map_any_atom_lists_on_either_side (int & highest_atom_map_number)
         continue;
 
       const ISIS_Atom_List * li = ri.atom_list_for_atom(j);
-      if (NULL == li)
+      if (nullptr == li)
         continue;
 
 //    cerr << "Got list on atom " << j << " of reagent " << i << endl;
@@ -3393,7 +3393,7 @@ RXN_File::_map_corresponding_atom_list (int highest_atom_map_number,
         continue;
 
       const ISIS_Atom_List * lj = pi.atom_list_for_atom (j);
-      if (NULL == lj)
+      if (nullptr == lj)
         continue;
 
       if (*lj != als)    // atom lists are different
@@ -3436,7 +3436,7 @@ RXN_File::_identify_corresponding_list_in_products(const ISIS_Atom_List & als,
         continue;
 
       const ISIS_Atom_List * lj = pi.atom_list_for_atom(j);
-      if (NULL == lj)
+      if (nullptr == lj)
         continue;
 
       if (*lj != als)    // atom lists are different
@@ -3729,7 +3729,7 @@ RXN_File::create_reaction(IWReaction & rxn,
                           Molecule_to_Query_Specifications & mqs,
                           const int * include_these_atom_map_numbers)
 {
-//if (NULL == _reagent_locator || NULL == _product_locator)
+//if (nullptr == _reagent_locator || nullptr == _product_locator)
   {
     if (! prepare_for_reaction_construction())
       return 0;
@@ -3875,7 +3875,7 @@ ISIS_RXN_FILE_Molecule::create_query (Reaction_Site & r,
   
   
   
-  if (queryOutStream != NULL && queryOutStream->is_open())
+  if (queryOutStream != nullptr && queryOutStream->is_open())
   	r.write_msi (*queryOutStream);
   	
 //  std::ofstream queryOut ("queryout.msi", std::ofstream::out);
@@ -3986,7 +3986,7 @@ RXN_File::_create_reaction(IWReaction & rxn,
   }
 
 //int is_subset = 0;
-//if (NULL == include_these_atom_map_numbers)
+//if (nullptr == include_these_atom_map_numbers)
 //  ;
 //else if (std::count_if(include_these_atom_map_numbers, include_these_atom_map_numbers + highest_atom_map + 1, [] (const int i) { return i > 0;}))
 //  is_subset = 1;
@@ -4790,7 +4790,7 @@ RXN_File::_add_atom_removal (Reaction_Site & r,
 {
   Substructure_Atom * q = r.query_atom_with_initial_atom_number(a);
 
-  if (NULL == q)
+  if (nullptr == q)
   {
     cerr << "RXN_File::_add_atom_removal:yipes, no query atom corresponds to atom number " << a << endl;
     return 0;
@@ -5243,7 +5243,7 @@ RXN_File::_identify_bonds_to_be_broken (int highest_atom_map,
 {
   for (int i = 1; i <= highest_atom_map; i++)
   {
-    if (NULL == include_these_atom_map_numbers)
+    if (nullptr == include_these_atom_map_numbers)
       ;
     else if (0 == include_these_atom_map_numbers[i])
       continue;
@@ -5258,7 +5258,7 @@ RXN_File::_identify_bonds_to_be_broken (int highest_atom_map,
 
     for (int j = i + 1; j <= highest_atom_map; j++)
     {
-      if (NULL == include_these_atom_map_numbers)
+      if (nullptr == include_these_atom_map_numbers)
         ;
       else if (0 == include_these_atom_map_numbers[j])
         continue;
@@ -5317,7 +5317,7 @@ RXN_File::_identify_bonds_to_be_made (int highest_atom_map,
 
   for (int i = 1; i <= highest_atom_map; i++)
   {
-    if (NULL == include_these_atom_map_numbers)
+    if (nullptr == include_these_atom_map_numbers)
       ;
     else if (! include_these_atom_map_numbers[i])
       continue;
@@ -5623,7 +5623,7 @@ ISIS_RXN_FILE_Molecule::discern_initial_conditions (int m,
 
   int initial_nbonds = nbonds(a);
 
-  if (NULL != _connections_lost)
+  if (nullptr != _connections_lost)
   {
 //  cerr << "Atom " << a << " lost " << _connections_lost[a] << " connections\n";
     initial_nbonds += _connections_lost[a];   // assumes single bonds
@@ -6232,7 +6232,7 @@ ISIS_RXN_FILE_Molecule::do_write (std::ostream & output) const
   const int matoms = Molecule::natoms();
 
   int write_madi_atom_map = 1;
-  if (NULL != _atom_map)
+  if (nullptr != _atom_map)
     write_madi_atom_map = ! std::find_if(_atom_map, _atom_map + matoms, [] (int s) { return s > 0;});
 
   IWString buffer;
@@ -6398,7 +6398,7 @@ RXN_File::_reagent_ring_contains_adjacent_mapped_atoms(const ISIS_RXN_FILE_Molec
     if (amap2 < 1)
       continue;
 
-    if (NULL == include_these_atom_map_numbers)
+    if (nullptr == include_these_atom_map_numbers)
       ;
     else if (! include_these_atom_map_numbers[amap1] || ! include_these_atom_map_numbers[amap2])
       continue;
@@ -6616,10 +6616,10 @@ ISIS_RXN_FILE_Molecule::_compute_implicit_hydrogens ()
 
 //cerr << "Computing implicit Hydrogens for " << matoms << " atoms\n";
 
-  if (NULL == _computed_implicit_hydrogen_count)
+  if (nullptr == _computed_implicit_hydrogen_count)
     _computed_implicit_hydrogen_count = new int[matoms];
 
-  if (NULL == _explicit_hydrogen_count) 
+  if (nullptr == _explicit_hydrogen_count) 
     _explicit_hydrogen_count = new int[matoms];
 
   for (int i = 0; i < matoms; i++)
@@ -6850,19 +6850,19 @@ ISIS_RXN_FILE_Molecule::_do_swap_atoms_to_put_rare_atoms_first ()
 
   swap_array_elements(_atom_map, 0, first_heteroatom);
 
-  if (NULL != _computed_implicit_hydrogen_count)
+  if (nullptr != _computed_implicit_hydrogen_count)
     swap_array_elements(_computed_implicit_hydrogen_count, 0, first_heteroatom);
 
-  if (NULL != _explicit_hydrogen_count)
+  if (nullptr != _explicit_hydrogen_count)
     swap_array_elements(_explicit_hydrogen_count, 0, first_heteroatom);
 
-  if (NULL != _explicit_hydrogen_atom_removed)
+  if (nullptr != _explicit_hydrogen_atom_removed)
     swap_array_elements(_explicit_hydrogen_atom_removed, 0, first_heteroatom);
 
-  if (NULL != _connections_lost)
+  if (nullptr != _connections_lost)
     swap_array_elements(_connections_lost, 0, first_heteroatom);
 
-  if (NULL != _nbonds)
+  if (nullptr != _nbonds)
     swap_array_elements(_nbonds, 0, first_heteroatom);
 
   for (int i = 0; i < _link_atom.number_elements(); i++)
@@ -6926,7 +6926,7 @@ ISIS_RXN_FILE_Molecule::discard_atom_map()
 {
   MDL_Molecule::discard_atom_map();
 
-  if (NULL == _atom_map)
+  if (nullptr == _atom_map)
     return;
 
   std::fill_n(_atom_map, natoms(), 0);
@@ -6982,7 +6982,7 @@ RXN_File::check_for_widows_and_orphans()
   cerr << "RXN_File::_check_for_widows_and_orphans:checking " << _np << " product molecules\n";
 #endif
 
-  if (NULL == _reagent_locator || NULL == _product_locator)
+  if (nullptr == _reagent_locator || nullptr == _product_locator)
     _setup_reagent_product_locator_arrays();
 
   for (int i = 0; i < _np; ++i)
@@ -7255,13 +7255,13 @@ RXN_File::identify_atoms_changing_reagent(const int rgnt,
 
   const int * amap = r.atom_map();
 
-  if (NULL == amap)
+  if (nullptr == amap)
   {
     cerr << "RXN_File::identify_atoms_changing:no atom map data available\n";
     return 0;
   }
 
-  if (NULL == _reagent_locator || NULL == _product_locator)
+  if (nullptr == _reagent_locator || nullptr == _product_locator)
   {
     cerr << "RXN_File::identify_atoms_changing:reagent/product locator arrays not set\n";
     return 0;
@@ -7347,13 +7347,13 @@ RXN_File::identify_atoms_changing_product (const int prdct,
 
   const int * amap = p.atom_map();
 
-  if (NULL == amap)
+  if (nullptr == amap)
   {
     cerr << "RXN_File::identify_atoms_changing_product:no atom map data available\n";
     return 0;
   }
 
-  if (NULL == _reagent_locator || NULL == _product_locator)
+  if (nullptr == _reagent_locator || nullptr == _product_locator)
   {
     cerr << "RXN_File::identify_atoms_changing_product:reagent/product locator arrays not set\n";
     return 0;
@@ -7483,7 +7483,7 @@ RXN_File::_identify_just_changed_kekule_form(ISIS_RXN_FILE_Molecule & r,
     const atom_number_t a2 = _product[p2].which_is_mapped_atom(amapj);
 
     const Bond * b2 = _product[p2].bond_between_atoms_if_present(a1, a2);
-    if (NULL == b2)
+    if (nullptr == b2)
     {
       cerr << "RXN_File::_identify_just_changed_kekule_form:NO BOND btw " << a1 << " and " << a2 << " should not happen\n";
       continue;
@@ -7574,7 +7574,7 @@ RXN_File::_identify_atoms_changing_by_bond_reagent(ISIS_RXN_FILE_Molecule & r,
     const atom_number_t pa2 = _product[p2].which_is_mapped_atom(amap2);
 
     const Bond * b2 = _product[p1].bond_between_atoms_if_present(pa1, pa2);
-    if (NULL == b2)    // same product, but different fragment, definitely changed
+    if (nullptr == b2)    // same product, but different fragment, definitely changed
     {
       if (0 == changed[a1])
       {
@@ -7638,13 +7638,13 @@ RXN_File::identify_atoms_changing_reagent (const int rgnt,
 
   const int * amap = r.atom_map();
 
-  if (NULL == amap)
+  if (nullptr == amap)
   {
     cerr << "RXN_File::identify_atoms_changing_reagent:no atom map data available\n";
     return 0;
   }
 
-  if (NULL == _reagent_locator || NULL == _product_locator)
+  if (nullptr == _reagent_locator || nullptr == _product_locator)
   {
     cerr << "RXN_File::identify_atoms_changing_reagent:reagent/product locator arrays not set\n";
     return 0;
@@ -7884,11 +7884,11 @@ RXN_File::_all_bonds_unchanged(const ISIS_RXN_FILE_Molecule & m,
     const atom_number_t pa2 = _product[p1].which_is_mapped_atom(amap2);
 
     const Bond * b1 = m.bond_between_atoms_if_present(ra1, ra2);
-    if (NULL == b1)    // aromatic bond being destroyed
+    if (nullptr == b1)    // aromatic bond being destroyed
       continue;
 
     const Bond * b2 = _product[p1].bond_between_atoms_if_present(pa1, pa2);
-    if (NULL == b2)
+    if (nullptr == b2)
       continue;
 
     if (b1->btype() != b2->btype())
@@ -8067,7 +8067,7 @@ ISIS_RXN_FILE_Molecule::number_mapped_atoms() const
 {
   const int matoms = Molecule::natoms();
 
-  if (NULL == _atom_map)
+  if (nullptr == _atom_map)
   {
     cerr << "ISIS_RXN_FILE_Molecule::number_mapped_atoms:no atom map\n";
     return 0;
@@ -8088,11 +8088,11 @@ template <typename T>
 void
 transfer_array(T * & lhs, T * & rhs)
 {
-  if (NULL != lhs)
+  if (nullptr != lhs)
     delete [] lhs;
 
   lhs = rhs;
-  rhs = NULL;
+  rhs = nullptr;
 
   return;
 }
@@ -8231,13 +8231,13 @@ RXN_File::identify_atoms_changing_product (const int prdct,
 
   const int * amap = p.atom_map();
 
-  if (NULL == amap)
+  if (nullptr == amap)
   {
     cerr << "RXN_File::identify_atoms_changing_product:no atom map data available\n";
     return 0;
   }
 
-  if (NULL == _reagent_locator || NULL == _product_locator)
+  if (nullptr == _reagent_locator || nullptr == _product_locator)
   {
     cerr << "RXN_File::identify_atoms_changing_product:reagent/product locator arrays not set\n";
     return 0;
@@ -8340,7 +8340,7 @@ RXN_File::_all_atom_maps_only_here (const ISIS_RXN_FILE_Molecule & m,
 int
 RXN_File::convert_unchanging_fragments_to_agents ()
 {
-  if (NULL == _atom_map)
+  if (nullptr == _atom_map)
   {
     cerr << "RXN_File::convert_unchanging_fragments_to_agents:no atom map present\n";
     return 0;
@@ -8418,7 +8418,7 @@ Reaction_Subset::build(const ISIS_RXN_FILE_Molecule * reagent,
   cerr << "Reaction_Subset::build:building for reaction with " << _nr << " reagents\n";
 #endif
 
-  if (NULL == include_these_atom_map_numbers)    // nothing to do...
+  if (nullptr == include_these_atom_map_numbers)    // nothing to do...
     return 1;
 
   _reagent_offset[0] = 0;
@@ -8431,7 +8431,7 @@ Reaction_Subset::build(const ISIS_RXN_FILE_Molecule * reagent,
 
     _total_atoms += reagent[i].natoms();
 
-    if (NULL == reagent[i].atom_map())
+    if (nullptr == reagent[i].atom_map())
       cerr << "Reaction_Subset::build:reagent " << i << " has no atom map\n";
   }
 
@@ -8587,7 +8587,7 @@ RXN_File::remove_fragments_not_participating()
   cerr << "RXN_File::remove_fragments_not_participating, _nr " << _nr << endl;
 #endif
 
-  if (NULL == _reagent_locator)
+  if (nullptr == _reagent_locator)
     prepare_for_reaction_construction();
 
   int max_atoms_in_any_reagent = _reagent[0].natoms();
@@ -8713,7 +8713,7 @@ RXN_File::remove_fragments_not_participating()
 
   _nr = ndx;
 
-  if (NULL != _reagent_locator)
+  if (nullptr != _reagent_locator)
     _fill_reagent_and_product_locator_arrays();
 
   return rc;
@@ -8732,7 +8732,7 @@ RXN_File::eliminate_reagents_not_participating()
   if (1 == _nr)   // nothing to do
     return 0;
 
-  if (NULL == _reagent_locator)
+  if (nullptr == _reagent_locator)
     prepare_for_reaction_construction();
 
   int * remove_reagent = new_int(_nr); std::unique_ptr<int[]> free_remove_reagent(remove_reagent);
@@ -8814,7 +8814,7 @@ RXN_File::eliminate_reagents_not_participating()
 int
 RXN_File::remove_non_participating_fragments()
 {
-  if (NULL == _reagent_locator)
+  if (nullptr == _reagent_locator)
     prepare_for_reaction_construction();
 
   int rc = 0;
@@ -8895,7 +8895,7 @@ RXN_File::_remove_non_participating_fragments(ISIS_RXN_FILE_Molecule & p)   // o
 int
 RXN_File::_reestablish_reagent_locator_array()
 {
-        if (NULL == _reagent_locator)
+        if (nullptr == _reagent_locator)
     prepare_for_reaction_construction();
 
 #ifdef DEBUG_REESTABLISH_REAGENT_LOCATOR_ARRAY
@@ -8936,7 +8936,7 @@ int
 RXN_File::_reestablish_locator_array(ISIS_RXN_FILE_Molecule * x, const int n,
                                      int * locator)
 {
-  assert (NULL != locator);
+  assert (nullptr != locator);
 
   for (int i = 0; i < n; ++i)
   {
@@ -9020,7 +9020,7 @@ RXN_File::all_reagents_the_same ()
 
   _nr = 1;
 
-  if (NULL == _reagent_locator)
+  if (nullptr == _reagent_locator)
     return 1;
 
   return _reestablish_reagent_locator_array();
@@ -9073,7 +9073,9 @@ RXN_File::reduce_to_largest_reactant()
 int
 RXN_File::reduce_to_largest_component(ISIS_RXN_FILE_Molecule *component, int &n)
 {        
-  int largestFragmentComponentIndex, largestFragmentFragmentindex, largestFragmentSize = 0;
+  int largestFragmentComponentIndex = 0;
+//int largestFragmentFragmentindex = 0;
+  int largestFragmentSize = 0;
   
   for (int i = 0; i < n; ++i)
   {
@@ -9088,7 +9090,7 @@ RXN_File::reduce_to_largest_component(ISIS_RXN_FILE_Molecule *component, int &n)
         {
                 largestFragmentSize = fragAtoms;
                 largestFragmentComponentIndex = i;
-                largestFragmentFragmentindex = j;
+//              largestFragmentFragmentindex = j;
         }
     }
   }

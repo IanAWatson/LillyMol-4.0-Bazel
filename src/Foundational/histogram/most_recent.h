@@ -63,7 +63,7 @@ template <typename T>
 void
 IWMost_Recent<T>::_default_values ()
 {
-  _things = NULL;
+  _things = nullptr;
 
   _elements_allocated = 0;
 
@@ -155,10 +155,10 @@ IWMost_Recent<T>::operator = (const IWMost_Recent<T> & rhs)
 
   clear ();
 
-  if (_elements_allocated != rhs._elements_allocated && NULL != _things)    // we will need to resize ourselves
+  if (_elements_allocated != rhs._elements_allocated && nullptr != _things)    // we will need to resize ourselves
   {
     delete _things;
-    _things = NULL;
+    _things = nullptr;
     _elements_allocated = 0;
   }
 
@@ -187,7 +187,7 @@ template <typename T>
 int
 IWMost_Recent<T>::ok () const
 {
-  if (0 == _elements_allocated && NULL == _things)    // probably empty
+  if (0 == _elements_allocated && nullptr == _things)    // probably empty
   {
     return (0 == _items_added && 0 == _next_ptr);
   }
@@ -195,7 +195,7 @@ IWMost_Recent<T>::ok () const
   if (_next_ptr >= _elements_allocated)
     return 0;
 
-  if (0 == _elements_allocated || NULL == _things)
+  if (0 == _elements_allocated || nullptr == _things)
     return 0;
 
   return 1;

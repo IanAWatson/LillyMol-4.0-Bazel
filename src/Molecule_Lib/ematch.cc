@@ -13,7 +13,7 @@ using std::endl;
 void
 Element_Matcher::_default_values ()
 {
-  _e = NULL;
+  _e = nullptr;
   _isotope = -1;
 
   _match_organic_only = 0;
@@ -204,7 +204,7 @@ Element_Matcher::construct_from_string (const const_IWSubstring & directive)
 
   const Element * e = get_element_from_symbol(s, _isotope);
 
-  if (NULL == e)
+  if (nullptr == e)
     e = create_element_with_symbol(s);
 
   set_element(e);
@@ -251,7 +251,7 @@ Element_Matcher::Element_Matcher (atomic_number_t z)
 int
 Element_Matcher::ok() const
 {
-  if (NULL == _e)
+  if (nullptr == _e)
     ;
   else if (! _e->ok())
     return 0;
@@ -267,7 +267,7 @@ Element_Matcher::debug_print (std::ostream & os) const
   os << "Element matcher ";
   if (_isotope >= 0)
     os << "isotope " << _isotope << ' ';
-  if (NULL != _e)
+  if (nullptr != _e)
     os << "element '" << _e->symbol() << "'";
 
   os << endl;
@@ -288,7 +288,7 @@ Element_Matcher::debug_print (std::ostream & os) const
 void
 Element_Matcher::set_element (const Element * e)
 {
-  assert (NULL != e);
+  assert (nullptr != e);
 
   assert (e->ok());
 
@@ -315,7 +315,7 @@ Element_Matcher::matches (const Element * e, int iso)
     ;
   else if (iso != _isotope)
     return 0;
-  else if (NULL == _e)    // need to check other attributes
+  else if (nullptr == _e)    // need to check other attributes
     return isotope_matched = 1;
 
 #ifdef DEBUG_ELEMENT_MATCHER_MATCHES
@@ -323,7 +323,7 @@ Element_Matcher::matches (const Element * e, int iso)
     cerr << "Element matcher returning 1 on exact match\n";
 #endif
 
-  if (NULL == _e)    // do not check
+  if (nullptr == _e)    // do not check
     ;
   else if (_e == e)
     return 1;

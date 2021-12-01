@@ -25,7 +25,7 @@ Molecule::_fill_empty_molecule_with_null_atoms(int na)
 
   for (int i = 0; i < na; i++)
   {
-    resizable_array_p<Atom>::add(NULL);
+    resizable_array_p<Atom>::add(nullptr);
   }
 
   return na;
@@ -199,7 +199,7 @@ Molecule::_read_mdl_atom_connection_table_v30(T & input,
 
   for (int i = 0; i < _number_elements; i++)
   {
-    if (NULL == _things[i])
+    if (nullptr == _things[i])
     {
       cerr << "Molecule::_read_mdl_atom_connection_table_v30: atom " << i << " not assigned!!!\n";
       return 0;
@@ -339,7 +339,7 @@ Molecule::_parse_v30_atom_record(const IWString & buffer,
     return 0;
   }
 
-  if (NULL != _things[ndx])
+  if (nullptr != _things[ndx])
   {
     cerr << "Molecule::_parse_v30_atom_record: atom " << ndx << " multiply defined\n";
     return 0;
@@ -348,7 +348,7 @@ Molecule::_parse_v30_atom_record(const IWString & buffer,
   if (convert_symbol_to_element)
   {
     _things[ndx] = mdlfos.create_mdl_atom(zsymbol, mass, chg, rad);
-    if (NULL == _things[ndx])
+    if (nullptr == _things[ndx])
     {
       cerr << "Molecule::_parse_v30_atom_record: cannot create atom\n";
       return 0;
@@ -755,7 +755,7 @@ Molecule::_convert_sgroup_to_elements(const IWString & sgroup)
     return 1;
 
   const Element * e = get_element_from_symbol_no_case_conversion(label);
-  if (NULL == e)
+  if (nullptr == e)
   {
     if (! auto_create_new_elements())
     {
@@ -764,7 +764,7 @@ Molecule::_convert_sgroup_to_elements(const IWString & sgroup)
     }
 
     e = create_element_with_symbol(label);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "Molecule::_convert_sgroup_to_elements:cannot create element '" << label << "'\n";
       return 0;

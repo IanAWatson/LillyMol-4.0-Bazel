@@ -116,7 +116,7 @@ Reaction_Dihedral_Angle::process(Molecule & m,
 {
 #ifdef DEBUG_PROCESS_DIHEDRAL_ANGLE
   cerr << "Processing dihedral angle " << _desired_angle << endl;
-  if (NULL != scaffold_embedding)
+  if (nullptr != scaffold_embedding)
     cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
 #endif
 
@@ -135,7 +135,7 @@ Reaction_Dihedral_Angle::process(Molecule & m,
   if (! m.are_bonded(a[0], a[1]) || ! m.are_bonded(a[1], a[2]) || ! m.are_bonded(a[2], a[3]))
   {
     cerr << "Reaction_Dihedral_Angle::process: atom do not form a valid dihedral set in product\n";
-    if (NULL != scaffold_embedding)
+    if (nullptr != scaffold_embedding)
       cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
 
     cerr << "Atoms " << a[0] << ' ' << a[1] << ' ' << a[2] << ' ' << a[3] << endl;

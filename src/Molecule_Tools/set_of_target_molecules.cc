@@ -130,7 +130,7 @@ Set_of_Target_Molecules<F>::build(data_source_and_type<Molecule> & input)
 {
   Molecule * m;
 
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     _m.add(m);
   }

@@ -52,7 +52,7 @@ static Accumulator_Int<int> nbits_acc;
 
 static int each_shell_gets_own_fingerprint = 0;
 
-static Sparse_Fingerprint_Creator * global_sparse_fingerprint = NULL;
+static Sparse_Fingerprint_Creator * global_sparse_fingerprint = nullptr;
 
 static int all_bonds_same_type = 0;
 
@@ -507,7 +507,7 @@ do_output (Molecule &m,
 
 //sfc->debug_print(cerr);
 
-  if (NULL != global_sparse_fingerprint)
+  if (nullptr != global_sparse_fingerprint)
     update_global_sparse_fingerprint(sfc);
 
   return output.good();
@@ -840,13 +840,13 @@ iwecfp (Molecule &m,
   a2.build("UST:z");
   a2.swap_atomic_number_atom_type_to_atomic_number_prime();
 
-  a1.assign_atom_types(m, atom_constant, NULL);
+  a1.assign_atom_types(m, atom_constant, nullptr);
   iw_write_array(atom_constant, matoms, "C", cerr);
-  a2.assign_atom_types(m, atom_constant, NULL);
+  a2.assign_atom_types(m, atom_constant, nullptr);
   iw_write_array(atom_constant, matoms, "HPAC", cerr);
 #endif
 
-  if (! atom_type.assign_atom_types(m, atom_constant, NULL))
+  if (! atom_type.assign_atom_types(m, atom_constant, nullptr))
   {
     cerr << "Cannot assign atom types '" << m.name() << "'\n";
     return 0;
@@ -940,7 +940,7 @@ iwecfp(data_source_and_type<Molecule> & input,
        IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1256,8 +1256,8 @@ iwecfp(int argc, char ** argv)
 
   if (cl.option_present('G'))
   {
-    const char * fname = NULL;
-    const char * dbname = NULL;
+    const char * fname = nullptr;
+    const char * dbname = nullptr;
 
     int i = 0;
     IWString g;
@@ -1283,7 +1283,7 @@ iwecfp(int argc, char ** argv)
       }
     }
 
-    if (NULL == fname)
+    if (nullptr == fname)
     {
       cerr << "No output specified for -G\n";
       return 4;
@@ -1294,7 +1294,7 @@ iwecfp(int argc, char ** argv)
     else
       global_sparse_fingerprint = new Sparse_Fingerprint_Creator[1];
 
-    if (NULL != fname)
+    if (nullptr != fname)
     {
       if (! stream_for_global_fingerprint.open(fname))
       {
@@ -1305,7 +1305,7 @@ iwecfp(int argc, char ** argv)
       if (verbose)
         cerr << "Global fingerprint written to '" << fname << "'\n";
     }
-    else if (NULL != dbname)
+    else if (nullptr != dbname)
     {
     }
   }
@@ -1437,7 +1437,7 @@ iwecfp(int argc, char ** argv)
     }
   }
 
-  if (NULL != global_sparse_fingerprint)
+  if (nullptr != global_sparse_fingerprint)
   {
     int istop;
     if (each_shell_gets_own_fingerprint)

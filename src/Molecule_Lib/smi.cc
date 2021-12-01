@@ -484,7 +484,7 @@ static const Element *
 fetch_or_create_R_element(const IWString & r)
 {
   const Element * e = get_element_from_symbol_no_case_conversion(r);
-  if (NULL != e)
+  if (nullptr != e)
     return e;
 
   return create_element_with_symbol(r);
@@ -495,7 +495,7 @@ fetch_or_create_R_element(const IWString & r)
   we invent this dummy class to enable us to initialise the element pointers
 */
 
-static const Element * smi_element_star = NULL;   // initialised for check in parse_smiles_token
+static const Element * smi_element_star = nullptr;   // initialised for check in parse_smiles_token
 static const Element * smi_element_b;
 static const Element * smi_element_c;
 static const Element * smi_element_n;
@@ -507,7 +507,7 @@ static const Element * smi_element_cl;
 static const Element * smi_element_br;
 static const Element * smi_element_i;
 static const Element * smi_element_hydrogen;
-static const Element * smi_element_a = NULL;
+static const Element * smi_element_a = nullptr;
 
 static void
 initialise_organic_subset()
@@ -662,12 +662,12 @@ parse_smiles_token(const char * smiles,
 
   if ('a' == c)
   {
-    if (NULL == smi_element_a)
+    if (nullptr == smi_element_a)
     {
       smi_element_a = get_element_from_symbol_no_case_conversion("a");
 //    cerr << "smi_element_a now " << smi_element_a << endl;
 
-      if (NULL != smi_element_a)
+      if (nullptr != smi_element_a)
         ;
       else if (! auto_create_new_elements())
       {
@@ -692,10 +692,10 @@ parse_smiles_token(const char * smiles,
   {
     e = get_element_from_symbol_no_case_conversion(smiles, 1);
 
-    if (NULL == e && auto_create_new_elements())
+    if (nullptr == e && auto_create_new_elements())
       e = create_element_with_symbol(smiles[0]);
       
-    if (NULL == e)
+    if (nullptr == e)
     {
       if (file_scope_display_smiles_interpretation_error_messages)
         cerr << "parse_smiles_token:invalid element specification '" << c << "'\n";
@@ -819,7 +819,7 @@ parse_smiles_token (const char * smiles,
     tmp = fetch_numeric(smiles + 1, z);
 //  cerr << "Got numeric atomic number, tmp = " << tmp << " z = " << z << endl;
     e = get_element_from_atomic_number(z);
-    if (NULL == e)
+    if (nullptr == e)
     {
       if (file_scope_display_smiles_interpretation_error_messages)
         cerr << "Unrecognised atomic number " << z << endl;
@@ -940,7 +940,7 @@ parse_smiles_token (const char * smiles,
       IWString tmp;
       tmp << "R" << r;
       e = fetch_or_create_R_element(tmp);
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "Cannot build R# from smiles '" << tmp << "'\n";
         return 0;
@@ -951,7 +951,7 @@ parse_smiles_token (const char * smiles,
       int z;
       int tmp = fetch_numeric(smiles + 1, z);
       e = get_element_from_atomic_number(z);
-      if (NULL == e)
+      if (nullptr == e)
       {
         if (file_scope_display_smiles_interpretation_error_messages)
           cerr << "Unrecognised atomic number " << z << endl;
@@ -1386,7 +1386,7 @@ fetch_ring_number (const char * s,
 
 #define CTDIM 7
 
-static int * compatability_table = NULL;     // never freed
+static int * compatability_table = nullptr;     // never freed
 
 static int
 initialise_compatability_table()
@@ -1482,7 +1482,7 @@ Molecule::_build_from_smiles (const char * smiles,
                               Smiles_Ring_Status & ring_status,
                               int * aromatic_atoms)
 {
-  if (NULL == smi_element_star)     // initialise elements first time through
+  if (nullptr == smi_element_star)     // initialise elements first time through
     initialise_organic_subset();
 
   int characters_processed = 0;
@@ -2077,7 +2077,7 @@ Molecule::_build_from_smiles (const char * smiles, int nchars)
   if (input_aromatic_structures())
     tmp = new_int(nchars);
   else 
-    tmp = NULL;
+    tmp = nullptr;
 
   int rc = _build_from_smiles(smiles, nchars, tmp);
 
@@ -2296,10 +2296,10 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
   int characters_to_process = qsmarts.nchars();
   const char * smarts = qsmarts.rawchars();
 
-  if (NULL == smi_element_star)     // initialise elements first time through
+  if (nullptr == smi_element_star)     // initialise elements first time through
     initialise_organic_subset();
 
-  if (NULL == compatability_table)
+  if (nullptr == compatability_table)
     initialise_compatability_table();
 
   int characters_processed = 0;
@@ -2315,8 +2315,8 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
   int previous_token_was = PREVIOUS_TOKEN_WAS_NOT_SPECIFIED;
 
   std::unique_ptr<Substructure_Bond> previous_bond;
-//Substructure_Bond * previous_bond = NULL;
-  Substructure_Atom * previous_atom = NULL;
+//Substructure_Bond * previous_bond = nullptr;
+  Substructure_Atom * previous_atom = nullptr;
   int previous_atom_chiral_count = 0;
 
   int atoms_this_fragment = 0;
@@ -2364,7 +2364,7 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
       atom_number_t other_end;    // will be set when a ring closure
       if (ring_status.encounter(ring_number, previous_atom->unique_id(), other_end, bt))   // ring closing.
       {
-        assert(NULL != completed[other_end]);
+        assert(nullptr != completed[other_end]);
 
 #ifdef DEBUG_BUILD_FROM_SMARTS
         cerr << "Ring closure, atom at other end is " << other_end << " prev " << previous_atom->unique_id() << endl;
@@ -2585,7 +2585,7 @@ Substructure_Atom::_parse_smarts_specifier(const const_IWSubstring & qsmarts,
 
       atoms_this_fragment++;
 
-      if (NULL != previous_atom)
+      if (nullptr != previous_atom)
       {
         Substructure_Bond * b;
 
@@ -2687,13 +2687,13 @@ reset_smi_file_scope_variables()
   dataitems_to_append.resize(0);
   append_dataitem_content = 1;
   file_scope_display_smiles_interpretation_error_messages = 1;
-  smi_element_star = NULL;   // initialised for check in parse_smiles_token
+  smi_element_star = nullptr;   // initialised for check in parse_smiles_token
   ignore_tdts_with_no_smiles = 0;
   smiles_tag = "$SMI<";
-  if (NULL != compatability_table)
+  if (nullptr != compatability_table)
   {
     delete [] compatability_table;
-    compatability_table = NULL;
+    compatability_table = nullptr;
   }
   datatype_name_for_structure_in_tdt_files = "$SMI<";
 

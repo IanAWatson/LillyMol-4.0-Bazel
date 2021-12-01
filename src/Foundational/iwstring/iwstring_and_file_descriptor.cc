@@ -19,14 +19,14 @@ IWString_and_File_Descriptor::IWString_and_File_Descriptor()
 {
   _fd = -9;
 
-  _gzfile = NULL;
+  _gzfile = nullptr;
 
   return;
 }
 
 IWString_and_File_Descriptor::IWString_and_File_Descriptor(int f) : _fd (f)
 {
-  _gzfile = NULL;
+  _gzfile = nullptr;
 
   return;
 }
@@ -37,7 +37,7 @@ IWString_and_File_Descriptor::~IWString_and_File_Descriptor()
   {
     _compress_and_write();
     gzclose(_gzfile);
-    _gzfile = NULL;
+    _gzfile = nullptr;
   }
   else if (_fd < 0)
     ;
@@ -121,7 +121,7 @@ IWString_and_File_Descriptor::_open_gzipd_stream(const char * fname)
   _gzfile = gzopen(fname, "wb");
 #endif
 
-  if (NULL != _gzfile)
+  if (nullptr != _gzfile)
     return 1;
 
   cerr << "IWString_and_File_Descriptor::_open_gzipd_stream:cannot open '" << fname << "'\n";
@@ -193,7 +193,7 @@ IWString_and_File_Descriptor::close()
   {
     _compress_and_write();
     gzclose (_gzfile);
-    _gzfile = NULL;
+    _gzfile = nullptr;
     _do_resize(0);
     return 1;
   }

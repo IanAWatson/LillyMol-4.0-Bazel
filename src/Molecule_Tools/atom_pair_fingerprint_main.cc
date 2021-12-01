@@ -20,7 +20,7 @@ using std::endl;
 
 namespace atom_pair_fingerprint {
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 int verbose = 0;
 
@@ -112,7 +112,7 @@ DoAtomPairFingerprint(Molecule & m,
   Sparse_Fingerprint_Creator sfc;
 
   // A single atom molecule would produce zero bits, or two atoms in different fragments...
-  if (! atom_pair_fp_gen.Fingerprint(m, NULL, atype, sfc)) {
+  if (! atom_pair_fp_gen.Fingerprint(m, nullptr, atype, sfc)) {
     cerr << "AtomPairFingerprint:fingerprinting failed " << m.smiles() << " ignored\n";
   }
 
@@ -161,7 +161,7 @@ DoAtomPairFingerprint(data_source_and_type<Molecule> & input,
                       IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -227,7 +227,7 @@ DoAtomPairFingerprint(const char * fname, FileType input_type,
                       AtomPairFingerprint& atom_pair_fp_gen,
                       IWString_and_File_Descriptor & output)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   if (function_as_tdt_filter) {
     iwstring_data_source input(fname);

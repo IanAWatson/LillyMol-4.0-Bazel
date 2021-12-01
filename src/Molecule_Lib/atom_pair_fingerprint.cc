@@ -225,7 +225,7 @@ AtomPairFingerprint::_BondConstant(const Bond & b) const
 void
 AtomPairFingerprint::_FingerprintBond(APairOfAtoms& a_pair) {
   const Bond * b = a_pair.BondBetweenAtoms();
-  assert(NULL != b);
+  assert(nullptr != b);
 
   const uint64_t btype = _BondConstant(*b);
 

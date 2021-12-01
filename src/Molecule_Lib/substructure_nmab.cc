@@ -222,7 +222,7 @@ Link_Atom::Link_Atom()
 
   _bond_topology = -1;
 
-  _mdl_atom_data = NULL;
+  _mdl_atom_data = nullptr;
 
   return;
 }
@@ -237,9 +237,9 @@ Link_Atom::Link_Atom(const Link_Atom & rhs)
 
   _symbol = rhs._symbol;
 
-  _e = NULL;
+  _e = nullptr;
 
-  if (NULL != _mdl_atom_data)
+  if (nullptr != _mdl_atom_data)
     delete _mdl_atom_data;
 
   _mdl_atom_data = rhs._mdl_atom_data;
@@ -484,7 +484,7 @@ Single_Substructure_Query::add_no_matched_atoms_between_initial_atom_numbers(int
   Substructure_Atom * a1 = query_atom_with_initial_atom_number(n1);
   Substructure_Atom * a2 = query_atom_with_initial_atom_number(n2);
 
-  if (NULL == a1 || NULL == a2)
+  if (nullptr == a1 || nullptr == a2)
   {
     cerr << "Single_Substructure_Query::add_no_matched_atoms_between_initial_atom_numbers:no query atoms found\n";
     cerr << "a1 = " << a1 << " or a2 = " << a2 << endl;
@@ -511,7 +511,7 @@ Link_Atom::create_next_variant(MDL_Molecule & m, Link_Atom_Current_State & lacs)
 
 // If this is a clean element, just use it, otherwise transfer query specifications
 
-  if (NULL != _e)              // atom was C, O, etc...
+  if (nullptr != _e)              // atom was C, O, etc...
     m.add(_e);            
   else if (_symbol.length())              // atom was *, A, Q, [SD2], etc...
     m.add_atom_based_on_symbol(_symbol);
@@ -545,7 +545,7 @@ Link_Atom::create_next_variant(MDL_Molecule & m, Link_Atom_Current_State & lacs)
   if (! m.arrays_allocated())
     m.build(m);
 
-  if (NULL != _mdl_atom_data)
+  if (nullptr != _mdl_atom_data)
     m.set_mdl_atom_data(natoms, _mdl_atom_data);
 
   return 1;
@@ -559,7 +559,7 @@ Link_Atom::create_next_variant(MDL_Molecule & m, Link_Atom_Current_State & lacs)
 int
 Link_Atom::set_mdl_atom_data(const MDL_Atom_Data * a)
 {
-  if (NULL == _mdl_atom_data)
+  if (nullptr == _mdl_atom_data)
     _mdl_atom_data = new MDL_Atom_Data(*a);
   else
     (*_mdl_atom_data) = *a;

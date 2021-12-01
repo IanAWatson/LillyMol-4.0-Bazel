@@ -278,7 +278,7 @@ Molecule_to_Query_Specifications::_parse_onlysub_directive(const const_IWSubstri
 
 Element_to_Smarts::Element_to_Smarts()
 {
-  _e = NULL;
+  _e = nullptr;
 
   return;
 }
@@ -301,7 +301,7 @@ Element_to_Smarts::build(const const_IWSubstring & buffer)
   }
 
   _e = get_element_from_symbol_no_case_conversion(e);
-  if (NULL == _e)
+  if (nullptr == _e)
   {
     set_auto_create_new_elements(1);
     set_atomic_symbols_can_have_arbitrary_length(1);

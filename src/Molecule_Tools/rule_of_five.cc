@@ -23,7 +23,7 @@
 
 static Chemical_Standardisation chemical_standardisation;
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -446,7 +446,7 @@ rule_of_five (data_source_and_type<Molecule> & input,
               IWString_and_File_Descriptor & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     std::unique_ptr<Molecule> free_m(m);
 

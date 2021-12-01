@@ -92,7 +92,7 @@ int InDatabase(data_source_and_type<Molecule>& input,
                const leveldb::ReadOptions& read_options,
                leveldb::DB* database) {
   Molecule * m;
-  while (NULL != (m = input.next_molecule())) {
+  while (nullptr != (m = input.next_molecule())) {
     std::unique_ptr<Molecule> free_m(m);
     molecules_read++;
     report_progress.report("", "\n", std::cerr);

@@ -23,7 +23,7 @@ using std::endl;
 #include "molecular_abstraction_specifications.h"
 #include "molecular_abstraction_functions.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -43,7 +43,7 @@ static int unfix_implicit_hydrogens = 0;
 
 static int number_abstraction_sets = 0;
 
-static Set_of_Molecular_Abstractions * mabs = NULL;
+static Set_of_Molecular_Abstractions * mabs = nullptr;
 
 static IWString smiles_tag("$SMI<");
 static IWString identifier_tag("PCN<");
@@ -160,7 +160,7 @@ mav2 (data_source_and_type<Molecule_With_Info_About_Parent> & input,
                 IWString_and_File_Descriptor & output)
 {
   Molecule_With_Info_About_Parent * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -231,7 +231,7 @@ static int
 mav2 (const char * fname, FileType input_type, 
                 IWString_and_File_Descriptor & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

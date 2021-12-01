@@ -109,7 +109,7 @@ ISIS_Atom_List::create_from_ALS_record(const IWString & buffer)
 
     const Element * e = get_element_from_symbol_no_case_conversion(token);
 
-    if (NULL == e)   // should not happen
+    if (nullptr == e)   // should not happen
     {
       cerr << "ISIS_RXN_FILE_Molecule::create_from_ALS_record: invalid element '" << token << "'\n";
       return 0;
@@ -158,7 +158,7 @@ ISIS_Atom_List::write_M_ALS(atom_number_t zatom,
   {
     const Element * e = _element[i];
 
-    assert (NULL != e);
+    assert (nullptr != e);
 
     output << e->symbol();
     for (int j = e->symbol().length(); j < 4; j++)
@@ -322,7 +322,7 @@ ISIS_Atom_List::initialise_atom_list_from_symbol(const const_IWSubstring & s)
   while (mys.nextword(token, i, ','))
   {
     const Element * e = get_element_from_symbol_no_case_conversion(token);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "ISIS_Atom_List::initialise_atom_list_from_symbol:unrecognised element '" << token << "'\n";
       return 0;

@@ -27,7 +27,7 @@ using std::endl;
 #include "Molecule_Lib/molecule_to_query.h"
 #include "Molecule_Lib/standardise.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -81,7 +81,7 @@ static int preserve_ring_membership_of_attachment_points = 0;
 
 static int replace_lost_atom_with_dummy = 0;
 
-static const Element * star_element = NULL;
+static const Element * star_element = nullptr;
 
 /*
   Kludge. Only allow certain non-organic elements
@@ -156,7 +156,7 @@ Element_and_Isotope::build (const const_IWSubstring & buffer)
   return 1;
 }
 
-static Element_and_Isotope * element_and_isotope = NULL;
+static Element_and_Isotope * element_and_isotope = nullptr;
 static int nelei = 0;
 
 static void
@@ -210,7 +210,7 @@ create_query (MDL_Molecule & m,
 
       mad->set_substitution(m.ncon(i));
 
-      if (NULL == star_element)
+      if (nullptr == star_element)
         ;
       else if (star_element == m.elementi(i))
         mad->set_substitution(0);
@@ -248,7 +248,7 @@ create_query (MDL_Molecule & m,
       mad->set_hcount(m.hcount(i) + 1);    // ISIS convention for how hydrogens are specified
       mad->set_substitution(0);
 
-      if (NULL != star_element && star_element == m.elementi(i))
+      if (nullptr != star_element && star_element == m.elementi(i))
         mad->set_substitution(0);
     }
 
@@ -264,7 +264,7 @@ create_query (MDL_Molecule & m,
 
 // And at any * atoms
 
-  if (NULL != star_element)
+  if (nullptr != star_element)
   {
     for (int i = 0; i < matoms; i++)
     {
@@ -315,10 +315,10 @@ add_r_group(Molecule & m,
 
   const Element * e = get_element_from_symbol_no_case_conversion(s);
 
-  if (NULL == e)
+  if (nullptr == e)
     e = create_element_with_symbol(s);
 
-  if (NULL == e)
+  if (nullptr == e)
   {
     cerr << "Yipes, cannot fetch element for '" << s << "'\n";
     return 0;
@@ -583,7 +583,7 @@ remove_and_label (data_source_and_type<MDL_Molecule> & input,
                   Molecule_Output_Object & output)
 {
   MDL_Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -603,7 +603,7 @@ static int
 remove_and_label (const char * fname, FileType input_type, 
                   Molecule_Output_Object & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (0 == input_type)
   {

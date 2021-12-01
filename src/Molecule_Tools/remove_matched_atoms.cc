@@ -21,7 +21,7 @@ using std::endl;
 #include "Molecule_Lib/target.h"
 #include "spatially_common_matched_atoms.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -290,7 +290,7 @@ do_discern_embedding_via_spatial_location(data_source_and_type<Molecule> & input
   molecules.resize(n);
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules.add(m);
   }
@@ -408,7 +408,7 @@ remove_matched_atoms(data_source_and_type<Molecule> & input,
                      Molecule_Output_Object & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -427,7 +427,7 @@ static int
 remove_matched_atoms(const char * fname, FileType input_type, 
                      Molecule_Output_Object & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

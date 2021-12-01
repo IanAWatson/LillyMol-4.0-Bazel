@@ -12,12 +12,12 @@ Atomic_Smarts_Component::Atomic_Smarts_Component ()
   _unary_operator = 1;         // the default
   _op = IW_LOGEXP_UNDEFINED;   
 
-  _next = NULL;
+  _next = nullptr;
 }
 
 Atomic_Smarts_Component::~Atomic_Smarts_Component ()
 {
-  if (NULL != _next)
+  if (nullptr != _next)
     delete _next;
 
   return;
@@ -26,13 +26,13 @@ Atomic_Smarts_Component::~Atomic_Smarts_Component ()
 int
 Atomic_Smarts_Component::ok () const
 {
-  if (NULL != _next && IW_LOGEXP_UNDEFINED == _op)
+  if (nullptr != _next && IW_LOGEXP_UNDEFINED == _op)
   {
     if (! _next->starts_with("$("))       // remember, we squeeze out any operator between the last atom and the first environment
       return 0;
   }
 
-  if (IW_LOGEXP_UNDEFINED != _op && NULL == _next)
+  if (IW_LOGEXP_UNDEFINED != _op && nullptr == _next)
     return 0;
 
   return 1;
@@ -78,7 +78,7 @@ Atomic_Smarts_Component::debug_print (std::ostream & os) const
 
   write_operator(os, _op);
 
-  if (NULL == _next)
+  if (nullptr == _next)
   {
     os << endl;
     return 1;
@@ -95,7 +95,7 @@ operator << (std::ostream & os, const Atomic_Smarts_Component & rhs)
 
   os.write (rhs.rawchars(), rhs.nchars());
 
-  if (NULL == rhs.next())
+  if (nullptr == rhs.next())
     return os;
 
   write_operator(os, rhs.op());
@@ -476,7 +476,7 @@ Atomic_Smarts_Component::_parse (const_IWSubstring & smarts)
   cerr << "Smarts now '" << smarts << "'\n";
 #endif
 
-  assert (NULL == _next);
+  assert (nullptr == _next);
 
   _next = new Atomic_Smarts_Component;
 

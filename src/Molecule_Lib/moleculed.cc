@@ -1004,12 +1004,12 @@ Molecule::_recompute_distance_matrix (int (Molecule::*identify_first_atom) (cons
                int (Molecule::*identify_next_atom) (const int *, atom_number_t, atom_number_t &))
 {
   cerr << "Entering _recompute_distance_matrix\n";
-  if (NULL == _smiles_order)
+  if (nullptr == _smiles_order)
     _smiles_order = new_int (_number_elements, -1);
   else
     set_vector (_smiles_order, _number_elements, -1);
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _ring_membership = new_int (_number_elements);
   else
     set_vector (_ring_membership, _number_elements, 0);

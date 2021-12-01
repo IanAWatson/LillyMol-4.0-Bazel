@@ -29,7 +29,7 @@ using std::endl;
 #include "Molecule_Tools/reaction_duplicate.h"
 #include "Molecule_Tools/ring_ext_rep.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -916,7 +916,7 @@ ring_replacement (data_source_and_type<Molecule> & input,
                      std::ostream & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -934,7 +934,7 @@ ring_replacement (data_source_and_type<Molecule> & input,
 static int
 ring_replacement (const char * fname, FileType input_type, std::ostream & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

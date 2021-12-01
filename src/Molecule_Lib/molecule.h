@@ -1276,13 +1276,15 @@ class Molecule : private resizable_array_p<Atom>
 
     void rotate_to_longest_distance_along_x(atom_number_t & left, atom_number_t & right);
 
-//  Found that I lost accurace with the coord_t version, so make available 
+//  Found that I lost accuracy with the coord_t version, so make available 
 //  versions of rotate_atoms with either Space_Vector<coord_t> or Space_Vector<double>
 
     template <typename T>
     int rotate_atoms(const Space_Vector<T> &, T, const Set_of_Atoms &);
 
     int number_fragments();
+    // Each fragment is assigned an arbitrary number - that starts at 0. Usually
+    // atom 0 will be in fragment 0, but not guaranteed.
     int fragment_membership(atom_number_t);
     // Fragment membership of each atom. User provided array, or returned.
     int fragment_membership(int *);

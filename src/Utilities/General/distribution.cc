@@ -16,7 +16,7 @@
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 

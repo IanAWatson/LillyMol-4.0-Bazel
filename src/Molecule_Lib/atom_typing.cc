@@ -1550,7 +1550,7 @@ Atom_Typing_Specification::_assign_atom_types_pharmacaphore (Molecule & m,
 //cerr << "Atom_Typing_Specification::_assign_atom_types_pharmacaphore, ust " << _user_specified_type << endl;
 
   if (0 != _user_specified_type)
-    (void) _assign_user_specified_type(m, atype, NULL);
+    (void) _assign_user_specified_type(m, atype, nullptr);
 
 //cerr << "Assigned " << std::count_if(atype, atype + matoms, [] (int t) { return 0 != t;}) << endl;
 
@@ -1665,7 +1665,7 @@ _assign_atom_types (Molecule & m,
 
   if (IWATTYPE_COMPLEX == typing_to_use)
   {
-    if (NULL == ncon)
+    if (nullptr == ncon)
     {
       if (differentiate_rings)
         return assign_atom_types_complex_ring(m, atype);
@@ -1686,7 +1686,7 @@ _assign_atom_types (Molecule & m,
 
   if (IWATTYPE_TT == typing_to_use)
   {
-    if (NULL == ncon)
+    if (nullptr == ncon)
     {
       if (differentiate_rings)
         return assign_atom_types_tt_ring(m, atype);
@@ -1705,7 +1705,7 @@ _assign_atom_types (Molecule & m,
 #ifdef IWHB
   if (IWATTYPE_HB == typing_to_use)
   {
-    if (NULL == ncon)
+    if (nullptr == ncon)
       return assign_atom_types_hb(m, atype);
     else
       return assign_atom_types_hb(m, ncon, atype);
@@ -1719,7 +1719,7 @@ _assign_atom_types (Molecule & m,
   {
     assert (! differentiate_rings);    // not implemented
 
-    if (NULL == ncon)
+    if (nullptr == ncon)
       return assign_atom_types_basic(m, atype);
     else
       return assign_atom_types_basic(m, ncon, atype);
@@ -2959,7 +2959,7 @@ Atom_Typing_Specification::_build_pharmacaphore_specification(const const_IWSubs
   if ("PP" == myfname || 0 == myfname.length())
   {
     const char * from_env = getenv("IW_PHARMACAPHORE");
-    if (NULL != from_env)
+    if (nullptr != from_env)
     {
       myfname = from_env;
     }
@@ -3037,7 +3037,7 @@ string_interpolation(const const_IWSubstring & starting_string,
 
   const char * e = getenv(interior.null_terminated_chars());
 
-  if (NULL != e)
+  if (nullptr != e)
   {
     expanded << before_dollar << e << after_dollar;
     IWString tmp;
@@ -3056,9 +3056,9 @@ string_interpolation(const const_IWSubstring & starting_string,
   {
     e = getenv(token.null_terminated_chars());
 #ifdef DEBUG_STRING_INTERPOLATION
-    cerr << "Checking shell variable '" << token << "' ? " << (NULL != e) << endl;
+    cerr << "Checking shell variable '" << token << "' ? " << (nullptr != e) << endl;
 #endif
-    if (NULL != e)
+    if (nullptr != e)
     {
       expanded << before_dollar << e << after_dollar;
       return 1;

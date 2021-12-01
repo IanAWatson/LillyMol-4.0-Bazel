@@ -727,7 +727,7 @@ Chemical_Standardisation::_do_remove_hydrogens(Molecule & m)
       const atom_number_t j = a->other(i, 0);
 //    cerr << "Bonded to " << j << " type " << m.smarts_equivalent_for_atom(j) << endl;
 
-      if (NULL == m.chiral_centre_at_atom(j))   // nothing to worry about, can remove it
+      if (nullptr == m.chiral_centre_at_atom(j))   // nothing to worry about, can remove it
         ;
       else if (0 == _remove_hydrogens_attached_to_chiral_centres)  // leave these alone
         continue;
@@ -1905,7 +1905,7 @@ Chemical_Standardisation::_do_transform_splus_cminus (Molecule & m,
       m.set_bond_type_between_atoms(i, c, DOUBLE_BOND);
       rc++;
 
-      if (NULL != m.chiral_centre_at_atom(c))
+      if (nullptr != m.chiral_centre_at_atom(c))
         m.remove_chiral_centre_at_atom(c);
 
       current_molecule_data.change_npos(-1);
@@ -4301,7 +4301,7 @@ place_123_triazole_bonds (Molecule & m,
   m.set_bond_type_between_atoms(a4, a5, DOUBLE_BOND);
   m.set_bond_type_between_atoms(a5, a1, SINGLE_BOND);
 
-  if (NULL == is_fused)
+  if (nullptr == is_fused)
     return 1;
 
 #ifdef DEBUG_PLACE_123_TRIAZOLE_BONDS
@@ -4625,21 +4625,21 @@ fused_to_kekule_variable_ring(Molecule & m,
       continue;
 
     if (fused_ring >= 0)    // we have more than one extra ring in the fused system
-      return NULL;
+      return nullptr;
 
     fused_ring = i;
   }
 
   if (fused_ring < 0)   // should not happen
-    return NULL;
+    return nullptr;
 
   const Set_of_Atoms * r2 = current_molecule_data.ringi(fused_ring);
 
   if (6 != r2->number_elements())
-    return NULL;
+    return nullptr;
 
   if (! current_molecule_data.ring_is_aromatic()[fused_ring])
-    return NULL;
+    return nullptr;
 
 // Six membered aromatic ring R2 is fused to R1. Is it strictly alternating single and double bonds
 
@@ -4687,7 +4687,7 @@ Chemical_Standardisation::_do_triazole (Molecule & m,
   cerr << " startring molecule\n";
 #endif
 
-  const Set_of_Atoms * fused_triazole = NULL;
+  const Set_of_Atoms * fused_triazole = nullptr;
 
   for (int i = 0; i < nr; i++)
   {
@@ -4704,7 +4704,7 @@ Chemical_Standardisation::_do_triazole (Molecule & m,
 
     if (! ring_is_fused[i])
       ;
-    else if (NULL != (fused_triazole = fused_to_kekule_variable_ring(m, i, current_molecule_data)))
+    else if (nullptr != (fused_triazole = fused_to_kekule_variable_ring(m, i, current_molecule_data)))
       ;
     else
       continue;
@@ -5130,7 +5130,7 @@ Chemical_Standardisation::_do_imidazole(Molecule & m,
 #endif
 
   const Bond * b = atoms[c1]->bond_to_atom(c1,nh0);
-  if (b == NULL || ! b->is_double_bond())
+  if (b == nullptr || ! b->is_double_bond())
     return 0;
 
 // At this stage we have an imidazole. See if we can resolve it by
@@ -7426,15 +7426,15 @@ Chemical_Standardisation::_do_p_minus (Molecule & m,
 
 IWStandard_Current_Molecule::IWStandard_Current_Molecule()
 {
-  _atomic_number = NULL;
-  _ncon = NULL;
-  _ring_membership  = NULL;
-  _ring_size        = NULL;
-  _ring_is_fused    = NULL;
-  _atom_is_aromatic = NULL;
-  _atom = NULL;
-  _ring_nitrogen_count = NULL;
-  _fsid = NULL;
+  _atomic_number = nullptr;
+  _ncon = nullptr;
+  _ring_membership  = nullptr;
+  _ring_size        = nullptr;
+  _ring_is_fused    = nullptr;
+  _atom_is_aromatic = nullptr;
+  _atom = nullptr;
+  _ring_nitrogen_count = nullptr;
+  _fsid = nullptr;
 
   _npos = 0;
   _nneg = 0;
@@ -7461,34 +7461,34 @@ IWStandard_Current_Molecule::IWStandard_Current_Molecule()
 
 IWStandard_Current_Molecule::~IWStandard_Current_Molecule ()
 {
-  if (NULL != _atomic_number)
+  if (nullptr != _atomic_number)
     delete [] _atomic_number;
 
-  if (NULL != _ncon)
+  if (nullptr != _ncon)
     delete [] _ncon;
 
-  if (NULL != _ring_membership)
+  if (nullptr != _ring_membership)
     delete [] _ring_membership;
 
-  if (NULL != _ring_size)
+  if (nullptr != _ring_size)
     delete [] _ring_size;
 
-  if (NULL != _ring_is_fused)
+  if (nullptr != _ring_is_fused)
     delete [] _ring_is_fused;
 
-  if (NULL != _atom_is_aromatic)
+  if (nullptr != _atom_is_aromatic)
     delete [] _atom_is_aromatic;
 
-  if (NULL != _atom)
+  if (nullptr != _atom)
     delete [] _atom;
 
-  if (NULL != _ring_nitrogen_count)
+  if (nullptr != _ring_nitrogen_count)
     delete [] _ring_nitrogen_count;
 
-  if (NULL != _ring_is_aromatic)
+  if (nullptr != _ring_is_aromatic)
     delete [] _ring_is_aromatic;
 
-  if (NULL != _fsid)
+  if (nullptr != _fsid)
     delete [] _fsid;
 
   return;
@@ -7790,7 +7790,7 @@ IWStandard_Current_Molecule::initialise(Molecule & m)
   else
   {
     _ring_membership = new_int(_matoms);
-    _ring_is_aromatic = NULL;
+    _ring_is_aromatic = nullptr;
   }
 
   atom_number_t first_singly_connected_oxygen = INVALID_ATOM_NUMBER;
@@ -7965,8 +7965,8 @@ IWStandard_Current_Molecule::initialise(Molecule & m)
     if (2 == attached_nitrogens && boc->is_double_bond() && looks_like_urea(m, c, bonds_to_nitrogen))
       continue;
 
-    const Bond * bn1 = NULL;
-    const Bond * bn2 = NULL;
+    const Bond * bn1 = nullptr;
+    const Bond * bn2 = nullptr;
 
     for (int j = 0; j < attached_nitrogens; ++j)
     {
@@ -7983,21 +7983,21 @@ IWStandard_Current_Molecule::initialise(Molecule & m)
       if (single_bond_to_oxygen(m, n))
         continue;
 
-      if (NULL == bn1)
+      if (nullptr == bn1)
         bn1 = bcn;
       else
         bn2 = bcn;
     }
 
-    if (NULL == bn1)
+    if (nullptr == bn1)
       continue;
 
-    if (NULL != bn2 && bn1->is_single_bond())     // make sure bn1 is the double bond (if present)
+    if (nullptr != bn2 && bn1->is_single_bond())     // make sure bn1 is the double bond (if present)
       std::swap(bn1, bn2);
 
     const atom_number_t n1 = bn1->other(c);
 
-    Possible_Lactim_Lactam * p = NULL;
+    Possible_Lactim_Lactam * p = nullptr;
 
     if (boc->is_double_bond())    // already correct - actually, will not happen
     {
@@ -8009,7 +8009,7 @@ IWStandard_Current_Molecule::initialise(Molecule & m)
       p = new Possible_Lactim_Lactam(i, c, n1);
     }
 
-    if (NULL != bn2)
+    if (nullptr != bn2)
       p->set_second_nitrogen(bn2->other(c));
 
     p->set_total_nitrogen_attachments(attached_nitrogens);
@@ -8138,7 +8138,7 @@ IWStandard_Current_Molecule::ring_containing_atom (const atom_number_t a) const
       return _rings[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 const Set_of_Atoms *

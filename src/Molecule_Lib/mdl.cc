@@ -65,10 +65,10 @@ MDL_File_Supporting_Material::_default_values()
   _replace_first_sdf_tag.resize(0);
   _allow_deuterium = 0;
   _allow_tritium = 0;
-  if (NULL != _input_bond_type_translation_table)
+  if (nullptr != _input_bond_type_translation_table)
   {
     delete[] _input_bond_type_translation_table;
-    _input_bond_type_translation_table = NULL;
+    _input_bond_type_translation_table = nullptr;
   }
   _write_fixed_width_m_iso_fields = 0;
   _mdl_g_records_hold_atom_symbols = 0;
@@ -81,20 +81,20 @@ MDL_File_Supporting_Material::_default_values()
 
 MDL_File_Supporting_Material::MDL_File_Supporting_Material()
 {
-  _input_bond_type_translation_table = NULL;
+  _input_bond_type_translation_table = nullptr;
 
-  _digits2 = NULL;
-  _digits3 = NULL;
+  _digits2 = nullptr;
+  _digits3 = nullptr;
 
   _default_values();
 }
 
 MDL_File_Supporting_Material::~MDL_File_Supporting_Material()
 {
-  if (NULL != _input_bond_type_translation_table)
+  if (nullptr != _input_bond_type_translation_table)
     delete[] _input_bond_type_translation_table;
 
-  if (NULL != _digits2)
+  if (nullptr != _digits2)
   {
     delete[] _digits2;
     delete[] _digits3;
@@ -106,7 +106,7 @@ MDL_File_Supporting_Material::~MDL_File_Supporting_Material()
 int
 MDL_File_Supporting_Material::set_mdl_input_bond_type_translation(int zfrom, int zto)
 {
-  if (NULL == _input_bond_type_translation_table)
+  if (nullptr == _input_bond_type_translation_table)
   {
     _input_bond_type_translation_table = new int[20];
     for (int i = 0; i < 20; i++)
@@ -475,7 +475,7 @@ Molecule::_has_delocalised_neighbours(atom_number_t zatom, const int * aromatic_
   if (s.empty())
     return 0;
 
-  if (NULL == aromatic_bonds)
+  if (nullptr == aromatic_bonds)
     return (s.number_elements() > 1);
 
     //  Implement this sometime, maybe not needed
@@ -501,7 +501,7 @@ Molecule::_has_delocalised_neighbours(atom_number_t zatom, const int * aromatic_
 int
 Molecule::_unset_aromatic_bond_entry(atom_number_t a1, atom_number_t a2, int * aromatic_bonds) const
 {
-  if (NULL == aromatic_bonds)
+  if (nullptr == aromatic_bonds)
     return 1;
 
   int b = which_bond(a1, a2);
@@ -595,11 +595,11 @@ Molecule::_count_elements(const atomic_number_t z, const Set_of_Atoms & e) const
 int
 Molecule::process_delocalised_carbonyl_bonds(int * aromatic_atoms, int * aromatic_bonds)
 {
-  if (NULL == aromatic_bonds)    // cannot do anything
+  if (nullptr == aromatic_bonds)    // cannot do anything
     return 1;
 
 #ifdef DEBUG_PROCESS_DELOCALISED_CARBONYL_BONDS
-  if (NULL != aromatic_bonds)
+  if (nullptr != aromatic_bonds)
   {
     cerr << "On entry to _process_delocalised_carbonyl_bonds\n";
     iw_write_array(aromatic_bonds, nedges(), "aromatic bonds", cerr);
@@ -679,7 +679,7 @@ Molecule::process_delocalised_carbonyl_bonds(int * aromatic_atoms, int * aromati
         set_bond_type_between_atoms(i, a0, DOUBLE_BOND);
         a->set_modified();
         _things[a0]->set_modified();
-        if (NULL != aromatic_bonds)
+        if (nullptr != aromatic_bonds)
         {
           int b = which_bond(i, a0);
           aromatic_bonds[b] = 0;
@@ -861,13 +861,13 @@ MDL_File_Supporting_Material::create_mdl_atom(const const_IWSubstring & ss, int 
     else if (atomic_symbols_can_have_arbitrary_length())
       ;
     else    // no way of processing it
-      return NULL;
+      return nullptr;
   }
 
   int iso = 0;    // never used with mdl files
 
   const Element * e = get_element_from_symbol(zsymbol, iso);
-  if (NULL == e)
+  if (nullptr == e)
   {
     if (_allow_deuterium && 'D' == zsymbol)
     {
@@ -882,21 +882,21 @@ MDL_File_Supporting_Material::create_mdl_atom(const const_IWSubstring & ss, int 
     else if (! auto_create_new_elements())
     {
       cerr << "create_mdl_atom: unrecognised element '" << zsymbol << "'\n";
-      return NULL;
+      return nullptr;
     }
     else
       e = create_element_with_symbol(zsymbol);
 
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "MDL_File_Optional_Settings::create_mdl_atom:cannot create element from '" << zsymbol
            << "'\n";
-      return NULL;
+      return nullptr;
     }
   }
 
   Atom * rc = new Atom(e);
-  assert(NULL != rc);
+  assert(nullptr != rc);
 
   if (0 == msdif)
     ;
@@ -913,7 +913,7 @@ MDL_File_Supporting_Material::create_mdl_atom(const const_IWSubstring & ss, int 
     if (! reasonable_formal_charge_value(chg))
     {
       cerr << "create mdl atom: bad charge value " << chg << endl;
-      return NULL;
+      return nullptr;
     }
     rc->set_formal_charge(chg);
   }
@@ -1026,7 +1026,7 @@ Molecule::_mdl_atom_is_chiral_centre(atom_number_t zatom, int cfg,
   if (1 == cfg || 2 == cfg)
   {
     Chiral_Centre * c = create_chiral_centre(zatom, 1);
-    if (NULL == c)
+    if (nullptr == c)
     {
       cerr << "Cannot create chiral center at atom " << zatom << endl;
       return 0;
@@ -1745,7 +1745,7 @@ int
 Molecule::write_molecule_mdl(const char * fname, const char * comments) const
 {
   assert(ok());
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   std::ofstream output(fname);
   if (! output.good())
@@ -1786,7 +1786,7 @@ Molecule::_mdl_atom_stereo_value(atom_number_t zatom,
 {
   Chiral_Centre * c = chiral_centre_at_atom(zatom);
 
-  if (NULL == c)
+  if (nullptr == c)
     return 0;
 
   if (! c->chirality_known())
@@ -1821,7 +1821,7 @@ Molecule::_mdl_atom_stereo_value(atom_number_t zatom,
 const IWString &
 MDL_File_Supporting_Material::digits2(int n)
 {
-  if (NULL == _digits2)
+  if (nullptr == _digits2)
     _initialise_digits();
 
   return _digits2[n];
@@ -1830,7 +1830,7 @@ MDL_File_Supporting_Material::digits2(int n)
 const IWString &
 MDL_File_Supporting_Material::digits3(int n)
 {
-  if (NULL == _digits2)
+  if (nullptr == _digits2)
     _initialise_digits();
 
   return _digits3[n];
@@ -1842,7 +1842,7 @@ MDL_File_Supporting_Material::_initialise_digits()
   _digits2 = new IWString[100];
   _digits3 = new IWString[1000];
 
-  assert(NULL != _digits3);
+  assert(nullptr != _digits3);
 
   for (int i = 0; i <= 999; i++)
   {
@@ -1921,7 +1921,7 @@ Molecule::_write_mdl_atom_record_element_charge_and_chirality(
     else
       output_buffer = "R# ";
   }
-  else if (mdlfos.mdl_write_aromatic_atoms() && NULL != _aromaticity &&
+  else if (mdlfos.mdl_write_aromatic_atoms() && nullptr != _aromaticity &&
            is_aromatic_atom(_aromaticity[i]))
   {
     if (0 == e->aromatic_symbol().length())
@@ -2304,7 +2304,7 @@ M  END
   {
     cerr << "Molecule::_discern_chirality_from_wedge_bond_4: unusual geometry z01 = " << z01
          << " z12 = " << z12 << " z20 = " << z20 << endl;
-    assert(NULL == "this should not happen");
+    assert(nullptr == "this should not happen");
     return 0;
   }
 
@@ -2419,8 +2419,8 @@ Molecule::_discern_chirality_from_multiple_wedge_bonds(atom_number_t zatom)
 
   int acon = a->ncon();
 
-  const Bond * wb1 = NULL;
-  const Bond * wb2 = NULL;
+  const Bond * wb1 = nullptr;
+  const Bond * wb2 = nullptr;
 
   for (int i = 0; i < acon; i++)
   {
@@ -2429,9 +2429,9 @@ Molecule::_discern_chirality_from_multiple_wedge_bonds(atom_number_t zatom)
     if (! b->is_wedge_definitive())
       continue;
 
-    if (NULL == wb1)
+    if (nullptr == wb1)
       wb1 = b;
-    else if (NULL == wb2)
+    else if (nullptr == wb2)
       wb2 = b;
     else
     {
@@ -2444,7 +2444,7 @@ Molecule::_discern_chirality_from_multiple_wedge_bonds(atom_number_t zatom)
     }
   }
 
-  assert(NULL != wb2);
+  assert(nullptr != wb2);
 
   // Once upon a time I had a check here trying to figure out if the directionalities are
   // consistent, but I'm not sure there are any inconsistencies possible with just two
@@ -2461,7 +2461,7 @@ Molecule::_assign_strange_atomic_symbol_to_atom(atom_number_t zatom, const_IWSub
 {
   const Element * e = get_element_from_symbol_no_case_conversion(s);
 
-  if (NULL != e)
+  if (nullptr != e)
     ;
   else if (! auto_create_new_elements())
   {
@@ -2472,7 +2472,7 @@ Molecule::_assign_strange_atomic_symbol_to_atom(atom_number_t zatom, const_IWSub
   else
     e = create_element_with_symbol(s);
 
-  if (NULL == e)
+  if (nullptr == e)
   {
     cerr << "Molecule::_assign_strange_atomic_symbol_to_atom:cannot create element '" << s << "'\n";
     return 0;
@@ -2557,10 +2557,10 @@ Molecule::_set_elements_based_on_atom_aliases(const resizable_array_p<Atom_Alias
 
     const Element * e = get_element_from_symbol_no_case_conversion(alias);
 
-    if (NULL == e)
+    if (nullptr == e)
       e = create_element_with_symbol(alias);
 
-    assert(NULL != e);
+    assert(nullptr != e);
 
     _things[j]->set_element(e);
   }
@@ -2698,7 +2698,7 @@ MDL_File_Supporting_Material::set_mdl_change_long_symbols_to(const const_IWSubst
 
   const Element * e = get_element_from_symbol_no_case_conversion(s);
 
-  if (NULL == e)
+  if (nullptr == e)
     e = create_element_with_symbol(s);
 
   return;
@@ -2753,7 +2753,7 @@ int3d(const const_IWSubstring & buffer, int & i1, int & i2, int * i3)
   if (-1 == tmp)
     return 1;
 
-  if (NULL == i3)
+  if (nullptr == i3)
     return 2;
 
   tmp = -1;
@@ -2790,7 +2790,7 @@ MDL_File_Supporting_Material::reset_for_next_molecule()
   _g_records_found = 0;
   _aliases.resize(0);
 
-  if (NULL == _digits2)
+  if (nullptr == _digits2)
     _initialise_digits();
 
   return;
@@ -2827,7 +2827,7 @@ template <typename T>
 int
 MDL_File_Supporting_Material::write_atoms_and_bonds(int na, int nb, T & os)
 {
-  if (NULL == _digits2)
+  if (nullptr == _digits2)
     _initialise_digits();
 
   os << _digits3[na];
@@ -2860,7 +2860,7 @@ MDL_File_Supporting_Material::unspecified_chiral_atom_if_interested(int a)
 int
 MDL_File_Supporting_Material::translate_input_bond_type(int bt) const
 {
-  if (NULL == _input_bond_type_translation_table)
+  if (nullptr == _input_bond_type_translation_table)
     return bt;
   else
     return _input_bond_type_translation_table[bt];

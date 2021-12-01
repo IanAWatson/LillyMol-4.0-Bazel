@@ -30,7 +30,7 @@ using std::endl;
 
 #include "random_reactions.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -435,7 +435,7 @@ fill_smiles_array (data_source_and_type<Molecule> & input,
   IW_STL_Hash_Set already_seen;
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -475,7 +475,7 @@ static int
 fill_smiles_array (const char * fname, FileType input_type,
                    resizable_array_p<IWString> & smiles)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

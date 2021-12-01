@@ -45,7 +45,7 @@ struct Error : std::exception
     char const* what() const throw() { return text; }
 };
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -127,8 +127,8 @@ static int atoms_conserve_ring_membership = 0;
 static int preserve_saturation = 0;
 static int preserve_ring_size = 0;
 
-std::ofstream *queryEchoStreamPtr = NULL;
-//std::ofstream *msiEchoStreamPtr = NULL;
+std::ofstream *queryEchoStreamPtr = nullptr;
+//std::ofstream *msiEchoStreamPtr = nullptr;
 static IWString rxn_name_header("");
 
 
@@ -1487,7 +1487,7 @@ retrosynthesis(data_source_and_type<Molecule> & input,
                IWString_and_File_Descriptor& output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1500,11 +1500,11 @@ retrosynthesis(data_source_and_type<Molecule> & input,
 
     output.write_if_buffer_holds_more_than(4096);
         
-    if (queryEchoStreamPtr != NULL && queryEchoStreamPtr->is_open())
+    if (queryEchoStreamPtr != nullptr && queryEchoStreamPtr->is_open())
     {
       queryEchoStreamPtr->close();
       delete queryEchoStreamPtr;
-      queryEchoStreamPtr = NULL;
+      queryEchoStreamPtr = nullptr;
     }
 
     if (report_progress())
@@ -1768,7 +1768,7 @@ run_self_react_test(data_source_and_type<Molecule> & input,
   int rc = 1;
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1797,7 +1797,7 @@ run_self_react_test(const char * fname, FileType input_type,
                     int & nfailures,
                     const IW_STL_Hash_Map<IWString, Molecule*> & test_results)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {
@@ -1824,7 +1824,7 @@ retrosynthesis(const char * fname, FileType input_type,
                 const int max_radius,
                 IWString_and_File_Descriptor & output)
 {
-  assert(NULL != fname);
+  assert(nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {
@@ -2278,7 +2278,7 @@ retrosynthesis(int argc, char ** argv)
     usage(1);
   }
 
-  const auto t0 = time(NULL);
+  const auto t0 = time(nullptr);
 
   set_iwreaction_display_no_atoms_in_query_message(0);
 
@@ -2369,7 +2369,7 @@ retrosynthesis(int argc, char ** argv)
 
   if (verbose)
   {
-    const auto t1 = time(NULL);
+    const auto t1 = time(nullptr);
     cerr << "Reading reactions took " << (t1 - t0) << " seconds\n";
   }
 
@@ -2496,7 +2496,7 @@ retrosynthesis(int argc, char ** argv)
     }
   }
 
-  if (queryEchoStreamPtr != NULL && queryEchoStreamPtr->is_open())
+  if (queryEchoStreamPtr != nullptr && queryEchoStreamPtr->is_open())
         queryEchoStreamPtr->flush();
   if (reactantsStream.is_open())
         reactantsStream.flush();
@@ -2549,7 +2549,7 @@ retrosynthesis(int argc, char ** argv)
       stream_for_molecules_with_multiple_scaffold_embeddings.flush();
     if (stream_for_non_reacting_molecules.is_open())
       stream_for_non_reacting_molecules.flush();
-    if (queryEchoStreamPtr != NULL && queryEchoStreamPtr->is_open())
+    if (queryEchoStreamPtr != nullptr && queryEchoStreamPtr->is_open())
         queryEchoStreamPtr->flush();
     
     if (reactantsStream.is_open())

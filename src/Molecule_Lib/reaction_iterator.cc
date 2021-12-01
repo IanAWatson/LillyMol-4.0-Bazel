@@ -8,19 +8,19 @@ Reaction_Iterator::Reaction_Iterator ()
 {
   _number_sidechains = 0;
 
-  _reagents_in_sidechain = NULL;
+  _reagents_in_sidechain = nullptr;
 
-  _reagent = NULL;
+  _reagent = nullptr;
 
   return;
 }
 
 Reaction_Iterator::~Reaction_Iterator ()
 {
-  if (NULL != _reagents_in_sidechain)
+  if (nullptr != _reagents_in_sidechain)
     delete [] _reagents_in_sidechain;
 
-  if (NULL != _reagent)
+  if (nullptr != _reagent)
     delete [] _reagent;
 
   return;

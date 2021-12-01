@@ -234,10 +234,10 @@ fetch_elements(const SubstructureSearch::SubstructureAtomSpecifier & proto,
     {
       const_IWSubstring atomic_symbol(s);
       const Element * e = get_element_from_symbol_no_case_conversion(atomic_symbol);
-      if (NULL == e && auto_create_new_elements())
+      if (nullptr == e && auto_create_new_elements())
         e = create_element_with_symbol(atomic_symbol);
 
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "fetch_elements:no element for symbol '" << atomic_symbol << "'\n";
         return 0;
@@ -252,7 +252,7 @@ fetch_elements(const SubstructureSearch::SubstructureAtomSpecifier & proto,
     for (const auto z : proto.atomic_number())
     {
       const Element * e = get_element_from_atomic_number(z);
-      if (NULL == e)
+      if (nullptr == e)
       {
         cerr << "fetch_elements:no element for atomic number " << z << endl;
         return 0;
@@ -687,7 +687,7 @@ Substructure_Atom::_process_substructure_bond(const SubstructureSearch::Substruc
   }
 
   const atom_number_t other_end = bond.other_end();
-  if (NULL == completed[other_end])
+  if (nullptr == completed[other_end])
   {
     cerr << "Substructure_Atom::_process_substructure_bond:other end atom " << other_end << " not defined\n";
     return 0;
@@ -729,7 +729,7 @@ Substructure_Atom::_process_smarts_bond(const IWString& input,
 
   for (const atom_number_t o : other_end)
   {
-    if (NULL == completed[o])
+    if (nullptr == completed[o])
     {
       cerr << "Substructure_Atom::_process_attribute_smarts_bond: atom " << o << " has not been defined\n";
       return 0;
@@ -785,7 +785,7 @@ Substructure_Environment::_process_attachment_via_substructure_bond(const Substr
   }
 
   for (const auto zatom : attachments) {
-    if (NULL == completed[zatom]) {
+    if (nullptr == completed[zatom]) {
       cerr << "Substructure_Environment::_process_attachment_via_substructure_bond:invalid atom " << zatom <<"\n";
       return 0;
     }
@@ -847,7 +847,7 @@ Substructure_Environment::_process_attachment_bonds(const SubstructureSearch::En
   for (const auto a : proto.attachment_point())
   {
     if (attachments.add_if_not_already_present(a)) {
-      if (NULL == completed[a]) {
+      if (nullptr == completed[a]) {
         cerr << "Substructure_Environment::_process_attachment_bonds:unrecognized atom number " << a << "\n";
         return 0;
       }
@@ -947,7 +947,7 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
   if (proto.has_match_as_match())
     _match_as_match_or_rejection = proto.match_as_match();
 
-  if (NULL != completed[_unique_id])
+  if (nullptr != completed[_unique_id])
   {
     cerr << "Substructure_Atom::construct_from_msi_object: Yipes, atom " << _unique_id << " already allocated\n";
     cerr << proto.ShortDebugString() << endl;
@@ -1217,7 +1217,7 @@ Substructure_Atom::_add_bonds(const google::protobuf::RepeatedField<uint32_t>& a
 {
   for (const auto a : atoms)
   {
-    if (NULL == completed[a])
+    if (nullptr == completed[a])
     {
       cerr << "Substructure_Atom::_add_bonds:non existent atom " << a << endl;
       return 0;
@@ -1241,7 +1241,7 @@ Substructure_Atom::_add_bonds(const google::protobuf::RepeatedField<uint32_t>& a
 int
 Single_Substructure_Query::WriteProto(const char * fname)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   std::ofstream os(fname, std::ios::out);
   if (! os.good())
@@ -1298,7 +1298,7 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   }
 
   for (const Substructure_Atom * atom : atoms) {
-    if (atom != NULL) {
+    if (atom != nullptr) {
       atom->BuildProto(*proto.add_query_atom());
     }
   }
@@ -2415,7 +2415,7 @@ Single_Substructure_Query::_atom_numbers_in_geometric_constraints_ok(const geome
   const resizable_array<int> atom_numbers_present = constraints->AtomNumbersPresent();
   for (int a : atom_numbers_present) {
     const Substructure_Atom* q = query_atom_with_initial_atom_number(a);
-    if (q == NULL) {
+    if (q == nullptr) {
       cerr << "Single_Substructure_Query::_atom_numbers_in_geometric_constraints_ok:no query atom " << a << '\n';
       return 0;
     }
@@ -2841,7 +2841,7 @@ Elements_Needed::ConstructFromProto(const SubstructureSearch::ElementsNeeded& pr
     const IWString s = proto.atomic_symbol();
     int notused;
     const Element * e = get_element_from_symbol(s, notused);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "Elements_Needed::construct_from_proto:invalid atomic symbol " << proto.ShortDebugString() << "\n";
       return 0;
@@ -2915,7 +2915,7 @@ Single_Substructure_Query::_build_chirality_component(const SubstructureSearch::
   {
     const int uid = atom_or.atom_number();
     const Substructure_Atom * a = query_atom_with_initial_atom_number(uid);
-    if (NULL == a)
+    if (nullptr == a)
     {
       cerr << "Single_Substructure_Query::_build_chirality_specification_from_proto:no top front atom '" << proto.ShortDebugString() << "'\n";
       return 0;
@@ -2976,7 +2976,7 @@ Single_Substructure_Query::_build_chirality_specification_from_proto(const Subst
   const int uid = proto.center();
 
   const Substructure_Atom * a = query_atom_with_initial_atom_number(uid);
-  if (NULL == a)
+  if (nullptr == a)
   {
     cerr << "Single_Substructure_Query::_build_chirality_specification_from_proto:no centre atom id " <<
             uid << " in '" << proto.ShortDebugString() << "'\n";

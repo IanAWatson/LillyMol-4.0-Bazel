@@ -369,7 +369,7 @@ MFingerprint::MFingerprint (Molecule & m,
     m.get_isotopes(_isotope);
   }
   else
-    _isotope = NULL;
+    _isotope = nullptr;
 
   _nrings = new int[_matoms];
   m.ring_membership(_nrings);
@@ -397,7 +397,7 @@ MFingerprint::MFingerprint (Molecule & m,
   _first_path = new resizable_array<int> * [bits_per_iwmfingerprint];
   for (int i = 0; i < bits_per_iwmfingerprint; i++)
   {
-    _first_path[i] = NULL;
+    _first_path[i] = nullptr;
   }
 #endif
 
@@ -421,10 +421,10 @@ MFingerprint::~MFingerprint()
   delete [] _path;
   delete [] _bond;
   delete [] _in_path;
-  if (NULL != _arom)
+  if (nullptr != _arom)
     delete [] _arom;
   delete [] _ncon;
-  if (NULL != _atomic_number)
+  if (nullptr != _atomic_number)
     delete [] _atomic_number;
 
   delete [] _unsaturation;
@@ -434,10 +434,10 @@ MFingerprint::~MFingerprint()
   delete [] _path_hash_value;
   delete [] _ch2;
 
-  if (NULL != _hcount)
+  if (nullptr != _hcount)
     delete [] _hcount;
 
-  if (NULL != _isotope)
+  if (nullptr != _isotope)
     delete [] _isotope;
 
   _path_length = -4;
@@ -445,7 +445,7 @@ MFingerprint::~MFingerprint()
 #ifdef CHECK_COLLISIONS
   for (int i = 0; i < bits_per_iwmfingerprint; i++)
   {
-    if (NULL != _first_path[i])
+    if (nullptr != _first_path[i])
       delete [] _first_path[i];
   }
   
@@ -817,7 +817,7 @@ template <typename T>
 void
 MFingerprint::_do_isotope_bits (T & bits) const
 {
-  assert (NULL != _isotope);
+  assert (nullptr != _isotope);
 
   atom_number_t astart = _path[0];
 

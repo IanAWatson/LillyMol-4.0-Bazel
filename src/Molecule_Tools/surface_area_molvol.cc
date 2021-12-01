@@ -254,14 +254,14 @@ Surface_Area_Molvol::surface_area (Molecule & m,
     m.get_coords (coords);
   }
   else
-    coords = NULL;
+    coords = nullptr;
 
   if (_wobble_first)
     _wobble_structure (m);    // found things work better if we do a first wobble
 
   int rc = _molvol (m, area, total_area, volume);
 
-  if (NULL != coords)
+  if (nullptr != coords)
   {
     m.setxyz (coords);
     delete [] coords;

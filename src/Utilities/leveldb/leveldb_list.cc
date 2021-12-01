@@ -9,6 +9,8 @@
 
 namespace leveldb_list {
 
+using std::cerr;
+
 const char * prog_name;
 
 int verbose = 0;

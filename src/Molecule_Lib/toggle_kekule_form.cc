@@ -77,7 +77,7 @@ Toggle_Kekule_Form::contains_bond (atom_number_t a1, atom_number_t a2) const
       return _bond[i];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*
@@ -194,7 +194,7 @@ Toggle_Kekule_Form::_bond_is_correct (const Molecule & m,
   atom_number_t a2 = embedding[b->a2()];
 
   const Bond * existing_bond = m.bond_between_atoms(a1, a2);
-  assert (NULL != existing_bond);
+  assert (nullptr != existing_bond);
 
 #ifdef DEBUG_BOND_IS_CORRECT
   cerr << "Matched atoms " << b->a1() << " and " << b->a2() << ", atoms " << a1 << " and " << a2 << endl;
@@ -1665,7 +1665,7 @@ Toggle_Kekule_Form::process(Molecule & m,
 
   const Bond * b = m.bond_between_atoms(a1, a2);
 
-  assert (NULL != b);
+  assert (nullptr != b);
 
   changed = 0;
 

@@ -1097,7 +1097,7 @@ hydrophobic_sections (data_source_and_type<Molecule> & input,
   IWString output_buffer;
 
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -1118,21 +1118,21 @@ hydrophobic_sections (data_source_and_type<Molecule> & input,
     if (create_hydrophillic_descriptors)
       hyphil = new_int(matoms);
     else 
-      hyphil = NULL;
+      hyphil = nullptr;
 
     int * isotope;
 
     if (hydrophobic_isotope || hydrophillic_isotope)
       isotope = new_int(matoms);
     else
-      isotope = NULL;
+      isotope = nullptr;
 
     int rc = hydrophobic_sections(*m, hyphil, isotope, output);
 
-    if (NULL != hyphil)
+    if (nullptr != hyphil)
       delete [] hyphil;
 
-    if (NULL != isotope)
+    if (nullptr != isotope)
     {
       do_write_labelled_smiles(*m, isotope, stream_for_labelled_molecules);
       delete [] isotope;

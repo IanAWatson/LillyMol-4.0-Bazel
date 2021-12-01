@@ -29,7 +29,7 @@ class Rings_Found;
 void
 Molecule::_initialise_ring_membership()
 {
-  assert (NULL == _ring_membership);
+  assert (nullptr == _ring_membership);
 
   if (0 == _number_elements)
     return;
@@ -44,7 +44,7 @@ Molecule::_determine_ring_or_non_ring(atom_number_t a)
 
   assert (frag_id >= 0);
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
   assert (IW_RING_MEMBERSHIP_NOT_COMPUTED == _ring_membership[a]);
@@ -68,7 +68,7 @@ Molecule::is_non_ring_atom (atom_number_t a)
   if (0 == nrings())     // molecule has no rings, all are non ring atoms
     return 1;
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
   if (IW_RING_MEMBERSHIP_NOT_COMPUTED == _ring_membership[a])
@@ -94,7 +94,7 @@ Molecule::is_ring_atom(atom_number_t a)
   if (0 == nrings())    // molecule has no rings, no atom is a ring atom
     return 0;
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
   if (IW_RING_MEMBERSHIP_NOT_COMPUTED == _ring_membership[a])
@@ -130,7 +130,7 @@ Molecule::nrings(atom_number_t a)
 {
   assert (ok_atom_number(a));
 
-  if (NULL != _ring_membership && _ring_membership[a] >= 0)
+  if (nullptr != _ring_membership && _ring_membership[a] >= 0)
     return _ring_membership[a];
 
   if (_things[a]->ncon() <= 1) {
@@ -145,7 +145,7 @@ Molecule::nrings(atom_number_t a)
 //if (0 == nrings())     // no atoms in molecule, atom A not in any
 //  return 0;
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
   int frag_id = _fragment_information.fragment_membership(a);
@@ -356,7 +356,7 @@ Molecule::print_ring_info(std::ostream & os) const
     }
   }
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     os << "Ring membership is NULL\n";
   else
   {
@@ -405,7 +405,7 @@ Molecule::experimental_print_ring_info (std::ostream & os) const
     }
   }
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     os << "Ring membership is NULL\n";
   else
   {
@@ -581,7 +581,7 @@ Molecule::ring_membership()
   if (_sssr_rings.number_elements() >= nrings())   // > to allow for non sssr determinations
     return _ring_membership;
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
     _initialise_ring_membership();
 
   if (0 == nrings())
@@ -776,7 +776,7 @@ Molecule::ringi_no_compute (int i) const
   assert (ok());
 
   if ( nrings_no_compute() <= 0 )
-    return NULL;
+    return nullptr;
 
   assert (i >= 0);
 
@@ -789,7 +789,7 @@ Molecule::ringi (int i)
   assert (ok());
 
   if (0 == nrings())
-    return NULL;
+    return nullptr;
 
   assert (i >= 0);
 
@@ -810,7 +810,7 @@ Molecule::ringi (int which_ring, int ring_size)
   assert (ok());
 
   if (0 == nrings())
-    return NULL;
+    return nullptr;
 
   assert (which_ring >= 0 && which_ring < nrings());
 
@@ -832,14 +832,14 @@ Molecule::ringi (int which_ring, int ring_size)
   }
 
   cerr << "Only " << found << " rings of size " << ring_size << endl;
-  return NULL;
+  return nullptr;
 }
 
 const Ring *
 Molecule::ring_containing_atom (atom_number_t a)
 {
   if (is_non_ring_atom(a))
-    return NULL;
+    return nullptr;
 
   (void) ring_membership();   // ensure ring membership available
 
@@ -852,7 +852,7 @@ Molecule::ring_containing_atom (atom_number_t a)
   }
 
   assert (NULL == "Ring atom in no rings!!!!!");
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -1195,7 +1195,7 @@ Molecule::qnrings (atom_number_t a)
 {
   assert (ok_atom_number (a));
 
-  if (NULL != _ring_membership && _ring_membership[a] >= 0)
+  if (nullptr != _ring_membership && _ring_membership[a] >= 0)
     return _ring_membership[a];
 
   int nr = nrings();
@@ -1254,7 +1254,7 @@ Molecule::_force_complete_sssr_determination()
   if (0 == nr)
     return 1;
 
-  if (NULL == _ring_membership)
+  if (nullptr == _ring_membership)
   {
     _initialise_ring_membership();
     _find_raw_rings();     // gets all of them
@@ -1634,8 +1634,8 @@ Molecule::_easy_case_two_rings(int fused_sys_id,
   cerr << nraw << " raw rings, looking for fsed " << fused_sys_id << endl;
 #endif
 
-  Ring * r1 = NULL;
-  Ring * r2 = NULL;
+  Ring * r1 = nullptr;
+  Ring * r2 = nullptr;
   for (int i = nraw - 1; i >= 0; i--)
   {
     Ring * r = _raw_rings[i];
@@ -1646,12 +1646,12 @@ Molecule::_easy_case_two_rings(int fused_sys_id,
     r->increment_vector(tmp, 1);
     r->set_fused_system_identifier(fid);
     r->set_is_fused(1);
-    if (NULL == r1)
+    if (nullptr == r1)
     {
       r1 = r;
       _raw_rings.remove_no_delete(i);
     }
-    else if (NULL == r2)
+    else if (nullptr == r2)
     {
       r2 = r;
       _raw_rings.remove_no_delete(i);
@@ -1659,7 +1659,7 @@ Molecule::_easy_case_two_rings(int fused_sys_id,
     }
   }
 
-  assert (NULL != r2);
+  assert (nullptr != r2);
 
 // If there are only two atoms in two rings, we have found the SSSR
 
@@ -2165,7 +2165,7 @@ Molecule::fused_system_identifier (atom_number_t a)
 
   const Ring * r = ring_containing_atom(a);
 
-  if (NULL == r)    // should not happen
+  if (nullptr == r)    // should not happen
     return -1;
 
   return r->fused_system_identifier();

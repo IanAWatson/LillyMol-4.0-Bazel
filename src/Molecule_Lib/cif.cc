@@ -339,7 +339,7 @@ Molecule::read_molecule_cif_ds (iwstring_data_source & input)
     }
 
     const Element * e = get_element_from_symbol_no_case_conversion(type_symbol);
-    if (NULL == e)
+    if (nullptr == e)
     {
       cerr << "Molecule::read_molecule_cif_ds:invalid element specification '" << s << "'\n";
       return 0;

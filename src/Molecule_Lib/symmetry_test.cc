@@ -16,7 +16,7 @@ class TestSymmetry : public testing::Test {
 };
 
 TEST_F(TestSymmetry, TestEmptyMolecule) {
-  const int * my_null = NULL;
+  const int * my_null = nullptr;
   EXPECT_EQ(_m.symmetry_classes(), my_null);
 }
 

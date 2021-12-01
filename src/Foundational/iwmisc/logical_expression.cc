@@ -52,14 +52,14 @@ IW_Logical_Expression::_default_state()
 
   _unary_operator.add(1);
 
-  _first_low_priority_and_grouping = NULL;
+  _first_low_priority_and_grouping = nullptr;
 
   return;
 }
 
 IW_Logical_Expression::~IW_Logical_Expression()
 {
-  if (NULL != _first_low_priority_and_grouping)
+  if (nullptr != _first_low_priority_and_grouping)
     delete _first_low_priority_and_grouping;
 
   assert(ok());
@@ -149,7 +149,7 @@ IW_Logical_Expression::debug_print(std::ostream & os) const
 
   os << '\n';
 
-  if (NULL != _first_low_priority_and_grouping)
+  if (nullptr != _first_low_priority_and_grouping)
     _first_low_priority_and_grouping->debug_print(os);
 
   return os.good();
@@ -191,7 +191,7 @@ IW_Logical_Expression::reset()
     _things[i] = IW_LOGEXP_UNKNOWN_RESULT;
   }
 
-  if (NULL != _first_low_priority_and_grouping)
+  if (nullptr != _first_low_priority_and_grouping)
     _first_low_priority_and_grouping->reset();
 
   return;
@@ -429,7 +429,7 @@ IW_Logical_Expression::evaluate(int & zresult)
   if (2 == _number_elements)
     return _evaluate_single_operator(zresult);
 
-  if (NULL == _first_low_priority_and_grouping)
+  if (nullptr == _first_low_priority_and_grouping)
   {
     if (! _initialise())
     {
@@ -452,7 +452,7 @@ IW_Logical_Expression::evaluate(int & zresult)
 
     current = current->next();
 
-  } while (NULL != current);
+  } while (nullptr != current);
 
 // Each low priority and grouping was true
 
@@ -464,7 +464,7 @@ IW_Logical_Expression::evaluate(int & zresult)
 int
 IW_Logical_Expression::_initialise()
 {
-  assert (NULL == _first_low_priority_and_grouping);
+  assert (nullptr == _first_low_priority_and_grouping);
 
 // Maybe we should be more generous with XOR - perhaps enforce this in the low priority and grouping...
 
@@ -553,14 +553,14 @@ IW_Logexp_AND_Grouping::IW_Logexp_AND_Grouping()
   _n = -1;
   _istart = -1;
 
-  _next = NULL;
+  _next = nullptr;
 
   return;
 }
 
 IW_Logexp_AND_Grouping::~IW_Logexp_AND_Grouping ()
 {
-  if (NULL != _next)
+  if (nullptr != _next)
     delete _next;
 
   return;
@@ -577,7 +577,7 @@ IW_Logexp_AND_Grouping::debug_print(std::ostream & os) const
   else
     os << "unknown\n";
 
-  if (NULL == _next)
+  if (nullptr == _next)
     return os.good();
 
   return _next->debug_print(os);
@@ -718,19 +718,19 @@ IW_Logexp_Low_Priority_and_Grouping::IW_Logexp_Low_Priority_and_Grouping()
 
   _istart = -1;
 
-  _first_and_chunk = NULL;
+  _first_and_chunk = nullptr;
 
-  _next = NULL;
+  _next = nullptr;
 
   return;
 }
 
 IW_Logexp_Low_Priority_and_Grouping::~IW_Logexp_Low_Priority_and_Grouping()
 {
-  if (NULL != _first_and_chunk)
+  if (nullptr != _first_and_chunk)
     delete _first_and_chunk;
 
-  if (NULL != _next)
+  if (nullptr != _next)
     delete _next;
 
   return;
@@ -750,7 +750,7 @@ IW_Logexp_Low_Priority_and_Grouping::debug_print(std::ostream & os) const
   if (_first_and_chunk)
     _first_and_chunk->debug_print(os);
 
-  if (NULL == _next)
+  if (nullptr == _next)
     return os.good();
 
   return _next->debug_print(os);
@@ -786,8 +786,8 @@ IW_Logexp_Low_Priority_and_Grouping::initialise(const resizable_array<int> & the
                                         int & istart)
 {
   assert (0 == _n);
-  assert (NULL == _first_and_chunk);
-  assert (NULL == _next);
+  assert (nullptr == _first_and_chunk);
+  assert (nullptr == _next);
 
 #if defined(DEBUG_LOW_PRIORITY_AND_G_INITIALISE)
   cerr << "Initialising low priority and grouping with " << the_operators.number_elements() << " operators, istart = " << istart << '\n';
@@ -858,12 +858,12 @@ IW_Logexp_Low_Priority_and_Grouping::evaluate(int * the_results,
     return 1;
 
   IW_Logexp_AND_Grouping * current = _first_and_chunk;
-  assert (NULL != current);
+  assert (nullptr != current);
 
 // Since we just have OR operators, we just look for the first grouping
 // that is true
 
-  while (NULL != current)
+  while (nullptr != current)
   {
     int tmpresult;
 

@@ -9,7 +9,7 @@ write_index_and_id (int i,
 {
   output << i;
 
-  if (NULL == _id)
+  if (nullptr == _id)
     return;
 
   output << " '" << *(_id + i) << "'";

@@ -17,7 +17,7 @@
 #include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/target.h"
 
-const char * prog_name = NULL;
+const char * prog_name = nullptr;
 
 static int verbose = 0;
 
@@ -91,7 +91,7 @@ identify_fragments_with_matched_atoms (Molecule & m,
                                        const Set_of_Atoms & embedding,
                                        int * hits_in_fragment)
 {
-  if (NULL == hits_in_fragment)
+  if (nullptr == hits_in_fragment)
     return 1;
 
   int n = embedding.number_elements();
@@ -152,7 +152,7 @@ static int
 identify_bonds_to_include (Molecule & m,
                            const Set_of_Atoms & e,
                            int * include_bond,
-                           int * fragment_used = NULL)
+                           int * fragment_used = nullptr)
 {
   int n = e.number_elements();
 
@@ -171,7 +171,7 @@ identify_bonds_to_include (Molecule & m,
       //const Bond * b = atom_ai->bond_to_atom (aj);
       const Bond * b = atom_ai->bond_to_atom (ai,aj);
 
-      if (NULL == b)
+      if (nullptr == b)
         continue;
 
       int bn = b->bond_number();
@@ -183,7 +183,7 @@ identify_bonds_to_include (Molecule & m,
 
       include_bond[bn] = 1;
 
-      if (NULL != fragment_used)
+      if (nullptr != fragment_used)
         fragment_used[m.fragment_membership (aj)] = 1;
 
       rc++;
@@ -357,7 +357,7 @@ do_output (Molecule & m,
            const int * hits_in_fragment,
            Molecule_Output_Object & output)
 {
-  assert (NULL != remove_atom);
+  assert (nullptr != remove_atom);
 
 #ifdef DEBUG_REMOVE_ATOMS
   for (int i = 0; i < m.natoms(); i++)
@@ -367,7 +367,7 @@ do_output (Molecule & m,
   }
 #endif
 
-  if (NULL != hits_in_fragment)
+  if (nullptr != hits_in_fragment)
     add_back_atoms_in_small_fragments (m, remove_atom, hits_in_fragment);
 
   int number_atoms_removed = count_non_zero_occurrences_in_array (remove_atom, m.natoms());
@@ -585,7 +585,7 @@ molecule_subset (data_source_and_type<Molecule> & input,
                  Molecule_Output_Object & output)
 {
   Molecule * m;
-  while (NULL != (m = input.next_molecule()))
+  while (nullptr != (m = input.next_molecule()))
   {
     molecules_read++;
 
@@ -594,9 +594,9 @@ molecule_subset (data_source_and_type<Molecule> & input,
     int * tmp;
 
     if (! also_write_small_fragments)
-      tmp = NULL;
+      tmp = nullptr;
     else if (1 == m->number_fragments())
-      tmp = NULL;
+      tmp = nullptr;
     else
       tmp = new_int (m->number_fragments());
 
@@ -619,7 +619,7 @@ molecule_subset (const char * fname,
                  FileType input_type,
                  Molecule_Output_Object & output)
 {
-  assert (NULL != fname);
+  assert (nullptr != fname);
 
   if (FILE_TYPE_INVALID == input_type)
   {

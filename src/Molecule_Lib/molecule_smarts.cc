@@ -149,7 +149,7 @@ Molecule::_append_smarts_equivalent_for_atom(atom_number_t zatom,
 
   if (1 == a->atomic_number())
     s << "#1";
-  else if (NULL != _aromaticity && is_aromatic_atom(_aromaticity[zatom]))
+  else if (nullptr != _aromaticity && is_aromatic_atom(_aromaticity[zatom]))
     s << a->element()->aromatic_symbol();
   else if (a->element()->symbol().length() > 2)
   {
@@ -180,7 +180,7 @@ Molecule::_append_smarts_equivalent_for_atom(atom_number_t zatom,
     ;
   else if (a->ncon() == a->nbonds())
     ;
-  else if (NULL != _aromaticity && is_aromatic_atom(_aromaticity[zatom]))
+  else if (nullptr != _aromaticity && is_aromatic_atom(_aromaticity[zatom]))
     ;
   else
     s << "G>0";
@@ -351,7 +351,7 @@ Molecule::append_smarts_equivalent_for_atom(atom_number_t zatom,
 
   int ncon, eh;
 
-  if (NULL == include_atom)
+  if (nullptr == include_atom)
   {
     ncon = a->ncon();
     eh = explicit_hydrogens(zatom);
@@ -374,7 +374,7 @@ Molecule::append_smarts_equivalent_for_atom(atom_number_t zatom,
 const IWString &
 Molecule::smarts()
 {
-  return smarts(_smiles_information, NULL);
+  return smarts(_smiles_information, nullptr);
 }
 
 const IWString &

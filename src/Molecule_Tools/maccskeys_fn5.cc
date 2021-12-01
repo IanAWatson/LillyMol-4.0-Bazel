@@ -383,13 +383,13 @@ MK_Molecular_Properties::MK_Molecular_Properties(Molecule & m)
   else
   {
     set_vector(_aromatic, _natoms, 0);
-    _ring_already_done = NULL;
+    _ring_already_done = nullptr;
   }
 
   if (_nr > 0)
     _initialise_ring_arrays(m);
   else
-    _in_same_ring = NULL;
+    _in_same_ring = nullptr;
 
   _attached_heteroatom_count = new int[_natoms];
 
@@ -510,9 +510,9 @@ MK_Molecular_Properties::~MK_Molecular_Properties()
   delete [] _atom;
   delete [] _ring_membership;
   delete [] _aromatic;
-  if (NULL != _in_same_ring)
+  if (nullptr != _in_same_ring)
     delete [] _in_same_ring;
-  if (NULL != _ring_already_done)
+  if (nullptr != _ring_already_done)
     delete [] _ring_already_done;
   delete [] _implicit_hydrogens;
   delete [] _attached_heteroatom_count;
@@ -527,7 +527,7 @@ MK_Molecular_Properties::_initialise_ring_arrays (Molecule & m)
 {
 
   _in_same_ring = new_int(_natoms * _natoms);
-  assert (NULL != _in_same_ring);
+  assert (nullptr != _in_same_ring);
 
   for (int i = 0; i < _nr; i++)
   {
@@ -8356,7 +8356,7 @@ MACCSKeys::_key158 (const Molecule & m,
 
       atom_number_t k = b->other(i);
 
-      if (NULL == aromatic)
+      if (nullptr == aromatic)
         ;
       else if (aromatic[k])
         continue;
