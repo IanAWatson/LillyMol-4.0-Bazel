@@ -20,4 +20,28 @@ set(srcs
 )
 
 add_library(iwstring ${srcs})
-target_include_directories (iwstring PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(iwstring PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(tsclass_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/tsclass.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/should_match.cc
+)
+set(tsclass_libs
+  iwstring
+  cmdline
+)
+
+add_executable(tsclass ${tsclass_srcs})
+target_link_libraries(tsclass LINK_PUBLIC ${tsclass_libs})
+
+
+set(iwstring_test_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/iwstring_test.cc
+)
+set(iwstring_test_libs
+  iwstring
+  cmdline
+)
+
+add_executable(iwstring_test ${tsclass_srcs})
+target_link_libraries(iwstring_test LINK_PUBLIC ${iwstring_test_libs})

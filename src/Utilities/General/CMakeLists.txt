@@ -1,5 +1,6 @@
 project(utilities)
 find_package(Protobuf REQUIRED)
+include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
 
 set(tcount_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/tcount.cc
@@ -15,6 +16,7 @@ set(tcount_libs
 
 add_executable(tcount ${tcount_srcs})
 target_link_libraries(tcount LINK_PUBLIC ${tcount_libs})
+
 
 set(average_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/average.cc
@@ -32,6 +34,7 @@ set(average_libs
 
 add_executable(average ${average_srcs})
 target_link_libraries(average LINK_PUBLIC ${average_libs})
+
 
 set(concat_files_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/concat_files.cc
@@ -135,8 +138,9 @@ set(iwsplit_srcs
 )
 set(iwsplit_libs
   accumulator
-  cmdline
+  cmdline_v2
   iwstring_data_source
+  iwmisc
   iwstring
   iwre2
   ${IW_EXTRA_LIBS}
@@ -199,9 +203,10 @@ set(unique_rows_srcs
 )
 set(unique_rows_libs
   accumulator
-  cmdline
+  cmdline_v2
   iwstring_data_source
   iwstring
+  iwmisc
   iwre2
   ${IW_EXTRA_LIBS}
 )
@@ -210,6 +215,7 @@ target_link_libraries(unique_rows LINK_PUBLIC ${unique_rows_libs})
 
 set(proto_src
   ${CMAKE_CURRENT_SOURCE_DIR}/class_label_translation.proto
+  ${CMAKE_CURRENT_SOURCE_DIR}/feature_scaling.proto
 )
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${proto_src})
 
@@ -221,11 +227,13 @@ set(class_label_translation_srcs
 )
 set(class_label_translation_libs
   accumulator
-  cmdline
+  cmdline_v2
   iwstring_data_source
   iwstring
+  iwmisc
   iwre2
   ${IW_EXTRA_LIBS}
 )
 add_executable(class_label_translation ${class_label_translation_srcs})
 target_link_libraries(class_label_translation LINK_PUBLIC ${class_label_translation_libs} ${Protobuf_LIBRARIES})
+

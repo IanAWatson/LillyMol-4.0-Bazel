@@ -1,4 +1,19 @@
 project(iwmolecule)
+find_package(Protobuf REQUIRED)
+include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
+
+set(geometric_constraints_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_constraints.proto
+)
+protobuf_generate_cpp(GC_PROTO_SRCS GC_PROTO_HDRS ${geometric_constraints_srcs})
+
+#set(proto_src
+#  ${CMAKE_CURRENT_SOURCE_DIR}/toggle_kekule_form.proto
+#  ${CMAKE_CURRENT_SOURCE_DIR}/substructure.proto
+#  ${GC_PROTO_SRCS}
+#  ${GC_PROTO_HDRS}
+#)
+#protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${proto_src})
 
 set(srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/allowed_elements.cc
@@ -85,6 +100,8 @@ set(srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/u3b.c
   ${CMAKE_CURRENT_SOURCE_DIR}/_substructure.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/_qry_wstats.cc
+  ${PROTO_SRCS}
+  ${PROTO_HDRS}
 )
 
 add_library(iwmolecule ${srcs})

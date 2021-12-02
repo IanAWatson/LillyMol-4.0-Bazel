@@ -2,6 +2,7 @@ project(data_source)
 
 set(iwstring_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iwstring_data_source.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/iwmmap.cc
 )
 add_library(iwstring_data_source ${iwstring_srcs})
 
