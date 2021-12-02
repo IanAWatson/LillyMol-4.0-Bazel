@@ -1732,3 +1732,13 @@ Atom::remove_connections_to_any_of_these_atoms(const int * r)
 
   return rc;
 }
+
+std::vector<BondAndAtom>
+Atom::BondsAndConnections(atom_number_t zatom) const {
+  std::vector<BondAndAtom> result(_number_elements);
+  for (int i = 0; i < _number_elements; ++i) {
+    result[i].bond = _things[i];
+    result[i].atom = _things[i]->other(zatom);
+  }
+  return result;
+}

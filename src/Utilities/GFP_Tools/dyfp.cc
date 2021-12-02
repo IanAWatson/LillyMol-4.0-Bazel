@@ -344,7 +344,7 @@ IWDYFP::_tanimoto_multiplier(IWDYFP & rhs)
 similarity_type_t
 IWDYFP::_tanimoto(IWDYFP & rhs)
 {
-  assert (_whole_bytes == rhs._whole_bytes);
+//assert (_whole_bytes == rhs._whole_bytes);
 
   const int nc = _bits_in_common(rhs);
 

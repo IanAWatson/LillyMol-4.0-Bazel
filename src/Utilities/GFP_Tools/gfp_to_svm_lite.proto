@@ -16,7 +16,7 @@ message BitSubset {
   // The name of the fingerprint that generated this mapping.
   // Not really needed since it is the key and we are the value in the
   // outer hash.
-  optional string fp_name = 1;
+  string fp_name = 1;
 
   // We just keep track of the bits to keep.
   repeated uint32 bits = 2 [packed = true];
@@ -27,7 +27,7 @@ message BitXref {
   // The name of the fingerprint that generated this mapping.
   // Not really needed since it is the key and we are the value in the
   // outer hash.
-  optional string fp_name = 1;
+  string fp_name = 1;
 
   // Mapping from bit number to feature number.
   map<uint32, uint32> bit_to_feature = 2;
@@ -36,14 +36,14 @@ message BitXref {
 // Parameters recorded about the creation of the subset.
 message Params {
   // The support level that was used in generating the data.
-  optional uint32 support = 1;
+  uint32 support = 1;
 
   // When the model is built, sparse counted fingerprints
   // can have their count values set to 1.
-  optional bool flatten_sparse_fingerprints = 2;
+  bool flatten_sparse_fingerprints = 2;
 
   // BitXref manipulations may need the highest feature number.
-  optional uint32 highest_feature_number = 3;
+  uint32 highest_feature_number = 3;
 };
 
 message GfpBitSubset {

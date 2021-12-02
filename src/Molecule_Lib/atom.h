@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "iwmtypes.h"
 #include "element.h"
@@ -17,6 +18,11 @@
 
 #include "bond.h"
 #include "set_of_atoms.h"
+
+struct BondAndAtom {
+  const Bond * bond;
+  atom_number_t atom;
+};
 
 class Atom : public resizable_array <Bond *>, public Coordinates
 {
@@ -158,6 +164,22 @@ class Atom : public resizable_array <Bond *>, public Coordinates
     int connections(atom_number_t, atom_number_t *, bond_type_t * = NULL) const;
     int connections(atom_number_t, Set_of_Atoms &) const;
     Set_of_Atoms connections(atom_number_t zatom) const;
+
+    // Enable structured bindings for the Bonds and atoms connected.
+    //   const Atom& atom = ...
+    //   for (const auto [bond, atom] : atom.BondsAndConnections(zatom)) {
+    //      if (bond->is_single_bond())...
+    //      if (atom == previous_atom)....
+    //   }
+    // Convenient to use, but slower than accessing Bonds sequentially.
+    std::vector<BondAndAtom> BondsAndConnections(atom_number_t zatom) const;
+
+    // Not implemented yet, easy to do, not sure needed...
+    // A more efficient, but less convenient version
+    //   BondAndAtom bond_and_atom;
+    //   for (int i = 0; atom.BondAndConnection(zatom, i, bond_and_atom); ) {
+    //   }
+    int BondAndConnection(atom_number_t zatom, int& iter, BondAndAtom& result) const;
 
     int connections_and_types(atom_number_t, Set_of_Atoms &,
                                resizable_array<bond_type_t> &) const;

@@ -67,4 +67,16 @@ TEST(TestAtom, TestDihedralneg180) {
   EXPECT_FLOAT_EQ(m.dihedral_angle(0, 1, 2, 3), M_PI);
 }
 
+TEST(TestAtom, TestBondsAndAtoms) {
+  Molecule m;
+  ASSERT_TRUE(m.build_from_smiles("C(F)(N)(O)C"));
+  const Atom& a = m.atom(0);
+  int atoms_found = 0;
+  for (const auto [bond, atom] : a.BondsAndConnections(0)) {
+    EXPECT_NE(atom, 0);
+    ++atoms_found;
+  }
+  EXPECT_EQ(atoms_found, m.ncon(0));
+}
+
 }  //  namespace

@@ -128,7 +128,7 @@ Atomic_Numbers_Encounterd::extra(const Bond * b, atomic_number_t z)
 }*/
 
 int
-Atomic_Numbers_Encounterd::extra (const Element * e)
+Atomic_Numbers_Encounterd::extra(const Element * e)
 {
   const atomic_number_t z = atomic_number_from_element(e);
 
@@ -142,9 +142,9 @@ Atomic_Numbers_Encounterd::extra (const Element * e)
 */
 
 int
-Atomic_Numbers_Encounterd::extra (const Bond * b,
-                                  const Element * e,
-                                  int ncon)
+Atomic_Numbers_Encounterd::extra(const Bond * b,
+                                 const Element * e,
+                                 int ncon)
 {
   assert (ncon > 0);
 

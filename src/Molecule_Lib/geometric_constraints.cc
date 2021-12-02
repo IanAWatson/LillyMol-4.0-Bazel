@@ -31,11 +31,6 @@ AllowedRange::BuildFromProto(const GeometricConstraints::Range& proto) {
     return 0;
   }
 
-  if (proto.one_time_scaling_factor() != 0.0) {
-    _min_value *= proto.one_time_scaling_factor();
-    _max_value *= proto.one_time_scaling_factor();
-  }
-
   return 1;
 }
 

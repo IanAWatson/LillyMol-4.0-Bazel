@@ -3065,7 +3065,7 @@ IWString::append_number(float f, int fprecision)
 {
   char buffer[32];
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-result"
   gcvt(static_cast<double>(f), fprecision, buffer);
 #pragma GCC diagnostic pop
   resizable_array<char>::add(buffer, static_cast<int>(::strlen(buffer)));
