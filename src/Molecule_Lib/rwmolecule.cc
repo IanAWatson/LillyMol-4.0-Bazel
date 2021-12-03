@@ -996,20 +996,6 @@ Molecule::_do_unconnect_covalently_bonded_non_organics()
   return rc;
 }
 
-// Multiply all atomic coordinates in `m` by `multiply`.
-int
-Molecule::ScaleCoordinates(float multiply) {
-  for (int i = 0; i < _number_elements; ++i) {
-    Atom* a = _things[i];
-    float x = a->x() * multiply;
-    float y = a->y() * multiply;
-    float z = a->z() * multiply;
-    a->setxyz(x, y, z);
-  }
-
-  return 1;
-}
-
 int
 Molecule::read_molecule_ds(iwstring_data_source & input, FileType input_type)
 {

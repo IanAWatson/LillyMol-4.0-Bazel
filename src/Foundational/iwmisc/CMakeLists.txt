@@ -62,6 +62,8 @@ set(iwre2_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iwre2.cc
 )
 add_library(iwre2 ${iwre2_srcs})
+target_include_directories(iwre2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 set(tabular_data_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iw_tabular_data.cc

@@ -37,5 +37,6 @@ add_subdirectory(Foundational/xmlParser)
 add_subdirectory(Utilities/General)
 add_subdirectory(Utilities/GFP_Tools)
 add_subdirectory(Molecule_Lib)
+add_subdirectory(Molecule_Tools)
 
 #configure_file(Foundational/iwaray/iwaray.h iwaray.h)

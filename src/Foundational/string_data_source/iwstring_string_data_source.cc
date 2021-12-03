@@ -119,3 +119,12 @@ String_Data_Source::seekg(off_t o)
 
   return 1;
 }
+
+int
+String_Data_Source::good() const {
+  return 1;
+}
+
+int
+String_Data_Source::most_recent_record(IWString& record) const {
+}

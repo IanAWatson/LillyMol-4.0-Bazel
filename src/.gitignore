@@ -9,3 +9,5 @@ cmake_install.cmake
 *.a
 *pb.h
 *pb.cc
+Makefile
+CTestTestfile.cmake

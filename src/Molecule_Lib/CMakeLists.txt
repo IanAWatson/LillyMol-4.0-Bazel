@@ -11,17 +11,18 @@ set(Protobuf_IMPORT_DIRS
 #   ${CMAKE_CURRENT_SOURCE_DIR}/substructure.proto
 #   ${CMAKE_CURRENT_SOURCE_DIR}/toggle_kekule_form.proto
 #   ${CMAKE_CURRENT_SOURCE_DIR}/mol2graph.proto
-#   ${PROTO_SRCS}
-#   ${PROTO_HDRS}
 #)
 #protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${proto_src})
+
+set(molecule_lib Molecule_Lib)
 
 file(GLOB proto_files ${CMAKE_CURRENT_SOURCE_DIR}/*.proto)
 foreach(fname ${proto_files})
   get_filename_component(dir ${fname} DIRECTORY)
   get_filename_component(stem ${fname} NAME_WE)
   set(PROTO_HDRS "${PROTO_HDRS};${dir}/${stem}.pb.h")
-  set(PROTO_SRCS "${PROTO_HDRS};${dir}/${stem}.pb.cc")
+  set(PROTO_SRCS "${PROTO_SRCS};${dir}/${stem}.pb.cc")
+  set(PROTO_INPUTS "${PROTO_INPUTS};${molecule_lib}/${stem}.proto")
 endforeach()
 
 #set(proto_files
@@ -34,10 +35,10 @@ endforeach()
 add_custom_command(
   OUTPUT ${PROTO_HDRS} ${PROTO_SRCS}
   COMMAND ${Protobuf_PROTOC_EXECUTABLE}
-  ARGS   -I ${CMAKE_CURRENT_SOURCE_DIR}
-         --cpp_out ${CMAKE_CURRENT_SOURCE_DIR}
-         ${proto_files}
-  COMMENT "Running protoc on ${proto_files}"
+  ARGS   --cpp_out . -I .
+         ${PROTO_INPUTS}
+  COMMENT "Running protoc on ${PROTO_INPUTS}"
+# COMMENT "Running ${CMAKE_CURRENT_SOURCE_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
@@ -128,7 +129,24 @@ set(srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/_qry_wstats.cc
   ${PROTO_SRCS}
 )
-
 add_library(iwmolecule ${srcs})
 
+set(moleculeio_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/charmm.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/cif.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/csv.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/inchi_dummy.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/marvin.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/mdl.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/mdl_v30.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/mmod.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/mrk.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/msi.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdb.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/rwmolecule.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/smi.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/tripos.cc
+)
+add_library(moleculeio ${moleculeio_srcs})
+  
 enable_testing()
