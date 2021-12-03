@@ -1,7 +1,8 @@
 // Tester for the string classes
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+//#include "googlemock/include/gmock/gmock.h"
+//#include "googletest/include/gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "iwstring.h"
 

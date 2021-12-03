@@ -12,3 +12,25 @@ set(srcs
 )
 
 add_library(iwbits ${srcs})
+
+
+enable_testing()
+
+set(fixed_bit_vector_test_srcs
+  fixed_bit_vector_test.cc
+)
+set(fixed_bit_vector_test_libs
+  iwstring
+  iwbits
+  gtest_main
+)
+add_executable(fixed_bit_vector_test ${fixed_bit_vector_test_srcs})
+target_link_libraries(fixed_bit_vector_test LINK_PUBLIC ${fixed_bit_vector_test_libs})
+
+add_test(
+  NAME fixed_bit_vector_test
+  COMMAND fixed_bit_vector_test
+)
+
+include(GoogleTest)
+gtest_discover_tests(fixed_bit_vector_test)

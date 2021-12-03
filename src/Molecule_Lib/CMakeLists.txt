@@ -2,18 +2,44 @@ project(iwmolecule)
 find_package(Protobuf REQUIRED)
 include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
 
-set(geometric_constraints_srcs
-  ${CMAKE_CURRENT_SOURCE_DIR}/geometric_constraints.proto
+set(Protobuf_IMPORT_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
-protobuf_generate_cpp(GC_PROTO_SRCS GC_PROTO_HDRS ${geometric_constraints_srcs})
 
 #set(proto_src
-#  ${CMAKE_CURRENT_SOURCE_DIR}/toggle_kekule_form.proto
-#  ${CMAKE_CURRENT_SOURCE_DIR}/substructure.proto
-#  ${GC_PROTO_SRCS}
-#  ${GC_PROTO_HDRS}
+#   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_constraints.proto
+#   ${CMAKE_CURRENT_SOURCE_DIR}/substructure.proto
+#   ${CMAKE_CURRENT_SOURCE_DIR}/toggle_kekule_form.proto
+#   ${CMAKE_CURRENT_SOURCE_DIR}/mol2graph.proto
+#   ${PROTO_SRCS}
+#   ${PROTO_HDRS}
 #)
 #protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${proto_src})
+
+file(GLOB proto_files ${CMAKE_CURRENT_SOURCE_DIR}/*.proto)
+foreach(fname ${proto_files})
+  get_filename_component(dir ${fname} DIRECTORY)
+  get_filename_component(stem ${fname} NAME_WE)
+  set(PROTO_HDRS "${PROTO_HDRS};${dir}/${stem}.pb.h")
+  set(PROTO_SRCS "${PROTO_HDRS};${dir}/${stem}.pb.cc")
+endforeach()
+
+#set(proto_files
+#   ${CMAKE_CURRENT_SOURCE_DIR}/geometric_constraints.proto
+#   ${CMAKE_CURRENT_SOURCE_DIR}/substructure.proto
+#   ${CMAKE_CURRENT_SOURCE_DIR}/toggle_kekule_form.proto
+#   ${CMAKE_CURRENT_SOURCE_DIR}/mol2graph.proto
+#)
+
+add_custom_command(
+  OUTPUT ${PROTO_HDRS} ${PROTO_SRCS}
+  COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+  ARGS   -I ${CMAKE_CURRENT_SOURCE_DIR}
+         --cpp_out ${CMAKE_CURRENT_SOURCE_DIR}
+         ${proto_files}
+  COMMENT "Running protoc on ${proto_files}"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
 
 set(srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/allowed_elements.cc
@@ -101,7 +127,8 @@ set(srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/_substructure.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/_qry_wstats.cc
   ${PROTO_SRCS}
-  ${PROTO_HDRS}
 )
 
 add_library(iwmolecule ${srcs})
+
+enable_testing()

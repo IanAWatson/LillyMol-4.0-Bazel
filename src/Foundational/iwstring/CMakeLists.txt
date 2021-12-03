@@ -34,6 +34,7 @@ set(tsclass_libs
 add_executable(tsclass ${tsclass_srcs})
 target_link_libraries(tsclass LINK_PUBLIC ${tsclass_libs})
 
+enable_testing()
 
 set(iwstring_test_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iwstring_test.cc
@@ -41,7 +42,17 @@ set(iwstring_test_srcs
 set(iwstring_test_libs
   iwstring
   cmdline
+  gtest_main
 )
 
-add_executable(iwstring_test ${tsclass_srcs})
+# Google Test not working yet... I can test with bazel.
+add_executable(iwstring_test ${iwstring_test_srcs})
 target_link_libraries(iwstring_test LINK_PUBLIC ${iwstring_test_libs})
+
+add_test(
+    NAME iwstring_test
+    COMMAND iwstring_test
+)
+
+include(GoogleTest)
+gtest_discover_tests(iwstring_test)
