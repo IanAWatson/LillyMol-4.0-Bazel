@@ -296,23 +296,22 @@ set(gfp_svmfp_evaluate_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/gfp_svmfp_evaluate.cc
 )
 set(gfp_svmfp_evaluate_libs
-  class_label_translation
+  general_proto_lib  # for class_label_translation
+  gfp
   sparse_fp_creator
   accumulator
   cmdline
   cmdline_v2
   iwstring_data_source
   iwre2
-  gfp
   iwbits
   iw_tdt
   iwstring
   iwmisc
   -lprotobuf -lre2 -lz
 )
-# Need to work out how to link protos in another directory
-#add_executable(gfp_svmfp_evaluate ${gfp_svmfp_evaluate_srcs})
-#target_link_libraries(gfp_svmfp_evaluate LINK_PUBLIC ${gfp_svmfp_evaluate_libs})
+add_executable(gfp_svmfp_evaluate ${gfp_svmfp_evaluate_srcs})
+target_link_libraries(gfp_svmfp_evaluate LINK_PUBLIC ${gfp_svmfp_evaluate_libs})
 
 # tdt_sort
 set(tdt_sort_srcs

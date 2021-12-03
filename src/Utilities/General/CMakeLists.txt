@@ -2,6 +2,7 @@ project(utilities)
 find_package(Protobuf REQUIRED)
 include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
 
+# tcount
 set(tcount_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/tcount.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/tokens_in_quoted_string.cc
@@ -13,11 +14,11 @@ set(tcount_libs
   iwstring
   ${IW_EXTRA_LIBS}
 )
-
 add_executable(tcount ${tcount_srcs})
 target_link_libraries(tcount LINK_PUBLIC ${tcount_libs})
 
 
+# average
 set(average_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/average.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/iwtokeniser.cc
@@ -31,11 +32,11 @@ set(average_libs
   iwre2
   ${IW_EXTRA_LIBS}
 )
-
 add_executable(average ${average_srcs})
 target_link_libraries(average LINK_PUBLIC ${average_libs})
 
 
+# concat_files
 set(concat_files_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/concat_files.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/iwtokeniser.cc
@@ -53,6 +54,7 @@ add_executable(concat_files ${concat_files_srcs})
 target_link_libraries(concat_files LINK_PUBLIC ${concat_files_libs})
 
 
+# correlate
 set(correlate_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/correlate.cc
 )
@@ -71,6 +73,7 @@ add_executable(correlate ${correlate_srcs})
 target_link_libraries(correlate LINK_PUBLIC ${correlate_libs})
 
 
+# dfilefilter
 set(dfilefilter_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/dfilefilter.cc
 )
@@ -87,6 +90,7 @@ add_executable(dfilefilter ${dfilefilter_srcs})
 target_link_libraries(dfilefilter LINK_PUBLIC ${dfilefilter_libs})
 
 
+# fetch_sdf_quick
 set(fetch_sdf_quick_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/fetch_sdf_quick.cc
 )
@@ -102,7 +106,7 @@ set(fetch_sdf_quick_libs
 add_executable(fetch_sdf_quick ${fetch_sdf_quick_srcs})
 target_link_libraries(fetch_sdf_quick LINK_PUBLIC ${fetch_sdf_quick_libs})
 
-
+# fetch_smiles
 set(fetch_smiles_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/fetch_smiles.cc
 )
@@ -118,6 +122,7 @@ add_executable(fetch_smiles ${fetch_smiles_srcs})
 target_link_libraries(fetch_smiles LINK_PUBLIC ${fetch_smiles_libs})
 
 
+# fetch_smiles_quick
 set(fetch_smiles_quick_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/fetch_smiles_quick.cc
 )
@@ -132,7 +137,7 @@ set(fetch_smiles_quick_libs
 add_executable(fetch_smiles_quick ${fetch_smiles_quick_srcs})
 target_link_libraries(fetch_smiles_quick LINK_PUBLIC ${fetch_smiles_quick_libs})
 
-
+# iwsplit
 set(iwsplit_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iwsplit.cc
 )
@@ -148,7 +153,7 @@ set(iwsplit_libs
 add_executable(iwsplit ${iwsplit_srcs})
 target_link_libraries(iwsplit LINK_PUBLIC ${iwsplit_libs})
 
-
+# iwcut
 set(iwcut_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iwcut.cc
 )
@@ -164,7 +169,7 @@ set(iwcut_libs
 add_executable(iwcut ${iwcut_srcs})
 target_link_libraries(iwcut LINK_PUBLIC ${iwcut_libs})
 
-
+# normalise
 set(normalise_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/normalise.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/iwtokeniser.cc
@@ -180,7 +185,7 @@ set(normalise_libs
 add_executable(normalise ${normalise_srcs})
 target_link_libraries(normalise LINK_PUBLIC ${normalise_libs})
 
-
+# random_records
 set(random_records_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/random_records.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/iwtokeniser.cc
@@ -196,7 +201,7 @@ set(random_records_libs
 add_executable(random_records ${random_records_srcs})
 target_link_libraries(random_records LINK_PUBLIC ${random_records_libs})
 
-
+# unique_rows
 set(unique_rows_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/unique_rows.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/iwtokeniser.cc
@@ -219,11 +224,14 @@ set(proto_src
 )
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${proto_src})
 
+add_library(general_proto_lib ${PROTO_SRCS})
+target_include_directories(general_proto_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+
+# class_label_translation
 set(class_label_translation_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/class_label_translation.cc
   ${PROTO_SRCS}
-  ${PROTO_HDRS}
 )
 set(class_label_translation_libs
   accumulator
