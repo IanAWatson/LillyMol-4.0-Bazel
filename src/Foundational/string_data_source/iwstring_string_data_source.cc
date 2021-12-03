@@ -127,4 +127,6 @@ String_Data_Source::good() const {
 
 int
 String_Data_Source::most_recent_record(IWString& record) const {
+  record = "String_Data_Source::most_recent_record:not implemented";
+  return 0;
 }

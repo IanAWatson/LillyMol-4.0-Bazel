@@ -148,5 +148,48 @@ set(moleculeio_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/tripos.cc
 )
 add_library(moleculeio ${moleculeio_srcs})
+
+set(atom_pair_fingerprint_srcs
+  atom_pair_fingerprint.cc
+)
+add_library(atom_pair_fingerprint_lib ${atom_pair_fingerprint_srcs})
+target_include_directories(atom_pair_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(ec_fingerprint_srcs
+  ec_fingerprint.cc
+)
+add_library(ec_fingerprint_lib ${ec_fingerprint_srcs})
+target_include_directories(ec_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+set(linear_fingerprint_srcs
+  linear_fingerprint.cc
+)
+add_library(linear_fingerprint_lib ${linear_fingerprint_srcs})
+target_include_directories(linear_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+set(iwmfingerprint_srcs
+  iwmfingerprint.cc
+)
+add_library(iwmfingerprint_lib ${iwmfingerprint_srcs})
+target_include_directories(iwmfingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(iwreaction_srcs
+  iwreaction.cc
+  iwreaction2.cc
+  reaction_iterator.cc
+  reaction_from_smirks.cc
+  reaction_match_conditions.cc
+  reaction_proto.cc
+  rxnfile.cc
+  rxnfile2.cc
+  rxnfile3.cc
+  rxn_3d_replace.cc
+  rxn_bond_angle.cc
+  rxn_bond_length.cc
+  rxn_dihedral_angle.cc
+  rxn_matched_sors.cc
+)
+add_library(iwreaction ${iwreaction_srcs})
+target_include_directories(iwreaction PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
   
 enable_testing()

@@ -297,6 +297,7 @@ SvmModel::~SvmModel() {
 int
 SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
                      const IWString& dir) {
+#ifdef PROTO3_HAS_HAS
   if (! model_proto.has_bit_subset()) {
     cerr << "SvmModel::Initialise:missing bit_subset\n";
     return 0;
@@ -311,6 +312,7 @@ SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
     cerr << "SvmModel::Initialise:missing support vectors";
     return 0;
   }
+#endif
 
   // Establish gfp state.
   if (! ReadSingleGfp(model_proto.train_gfp())) {
@@ -318,10 +320,12 @@ SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
     return 0;
   }
 
+#ifdef PROTO3_HAS_HAS
   if (! model_proto.has_threshold_b()) {
     cerr << "SvmModel::Initialise:no threshold_b\n";
     return 0;
   }
+#endif
 
   _threshold_b = model_proto.threshold_b();
 
@@ -350,7 +354,11 @@ SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
 
   _flatten_counts = model_proto.metadata().flatten_sparse_fingerprints();
 
+#ifdef PROTO3_HAS_HAS
   if (model_proto.metadata().has_class_label_translation()) {
+#else
+  if (model_proto.metadata().class_label_translation().size() > 0) {
+#endif
     const std::string fname = model_proto.metadata().class_label_translation();
     if (!ReadClassLabelTranslation(dir, fname)) {
       cerr << "SvmModel:cannot read class_label_translation " << fname << '\n';
@@ -359,7 +367,11 @@ SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
     _is_regression = false;
   }
 
+#ifdef PROTO3_HAS_HAS
   if (model_proto.metadata().has_response_scaling()) {
+#else
+  if (model_proto.metadata().response_scaling().size() > 0) {
+#endif
     if (! _is_regression) {
       cerr << "SvmModel::Initialise:classification model cannot also have response scaling\n";
       return 0;

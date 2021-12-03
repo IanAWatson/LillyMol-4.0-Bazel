@@ -32,7 +32,7 @@ set(tsclass_libs
 )
 
 add_executable(tsclass ${tsclass_srcs})
-target_link_libraries(tsclass LINK_PUBLIC ${tsclass_libs})
+target_link_libraries(tsclass PUBLIC ${tsclass_libs})
 
 enable_testing()
 

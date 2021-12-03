@@ -4,6 +4,7 @@ include_directories(SYSTEM ${Protobuf_INCLUDE_DIRS})
 
 set(proto_src
   ${CMAKE_CURRENT_SOURCE_DIR}/gfp_to_svm_lite.proto
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_model.proto
 )
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${proto_src})
 
@@ -32,6 +33,12 @@ set(smiles_id_dist_srcs
 )
 add_library(smiles_id_dist ${smiles_id_dist_srcs})
 target_include_directories(smiles_id_dist PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(build_pool_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/build_pool.cc
+)
+add_library(build_pool ${build_pool_srcs})
+target_include_directories(build_pool PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(spread_v2_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/spread_v2.cc
@@ -79,6 +86,31 @@ set(common_libs
   ${IW_EXTRA_LIBS}
 )
 
+# descriptor_file_to_01_fingerprints
+set(descriptor_file_to_01_fingerprints_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/descriptor_file_to_01_fingerprints.cc
+)
+set(descriptor_file_to_01_fingerprints_libs
+  ${common_libs}
+  iwrandom
+)
+add_executable(descriptor_file_to_01_fingerprints ${descriptor_file_to_01_fingerprints_srcs})
+target_link_libraries(descriptor_file_to_01_fingerprints LINK_PUBLIC ${descriptor_file_to_01_fingerprints_libs})
+
+# gfp_catboost_score
+set(gfp_catboost_score_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_catboost_score.cc
+  ${PROTO_SRCS}
+)
+set(gfp_catboost_score_libs
+  ${common_libs}
+  iwrandom
+  -lprotobuf
+)
+#add_executable(gfp_catboost_score ${gfp_catboost_score_srcs})
+#target_link_libraries(gfp_catboost_score LINK_PUBLIC ${gfp_catboost_score_libs})
+
+# gfp_spread
 set(gfp_spread_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/gfp_spread_v2.cc
 )
@@ -150,18 +182,34 @@ add_executable(gfp_nearneighbours_single_file ${gfp_nearneighbours_single_file_s
 target_link_libraries(gfp_nearneighbours_single_file LINK_PUBLIC ${gfp_nearneighbours_single_file_libs} -fopenmp)
 
 
+# gfp_lnearneighbours
 set(gfp_lnearneighbours_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/gfp_lnearneighbours.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/fp_and_smiles.cc
 )
 set(gfp_lnearneighbours_libs
-  smiles_id_dist
   neighbour_list
   smiles_id_dist
   ${common_libs}
 )
 add_executable(gfp_lnearneighbours ${gfp_lnearneighbours_srcs})
 target_link_libraries(gfp_lnearneighbours LINK_PUBLIC ${gfp_lnearneighbours_libs})
+
+# gfp_lnearneighbours_standard
+set(gfp_lnearneighbours_standard_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_lnearneighbours_standard.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/fp_and_smiles.cc
+)
+set(gfp_lnearneighbours_standard_libs
+  accumulator
+  neighbour_list
+  smiles_id_dist
+  gfp_standard
+  ${common_libs}
+)
+add_executable(gfp_lnearneighbours_standard ${gfp_lnearneighbours_standard_srcs})
+target_link_libraries(gfp_lnearneighbours_standard LINK_PUBLIC ${gfp_lnearneighbours_standard_libs})
+
 
 
 set(iwstats_srcs
@@ -176,3 +224,108 @@ set(iwstats_libs
 )
 add_executable(iwstats ${iwstats_srcs})
 target_link_libraries(iwstats LINK_PUBLIC ${iwstats_libs})
+
+# gfp_profile_activity_by_bits
+set(gfp_profile_activity_by_bits_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_profile_activity_by_bits.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/fp_and_smiles.cc
+)
+set(gfp_profile_activity_by_bits_libs
+  neighbour_list
+  smiles_id_dist
+  ${common_libs}
+)
+add_executable(gfp_profile_activity_by_bits ${gfp_profile_activity_by_bits_srcs})
+target_link_libraries(gfp_profile_activity_by_bits LINK_PUBLIC ${gfp_profile_activity_by_bits_libs})
+
+# gfp_to_descriptors
+set(gfp_to_descriptors_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_to_descriptors.cc
+)
+set(gfp_to_descriptors_libs
+  ${common_libs}
+)
+add_executable(gfp_to_descriptors ${gfp_to_descriptors_srcs})
+target_link_libraries(gfp_to_descriptors LINK_PUBLIC ${gfp_to_descriptors_libs})
+
+# gfp_to_svm_lite
+set(gfp_to_svm_lite_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_to_svm_lite.cc
+)
+set(gfp_to_svm_lite_libs
+  ${common_libs}
+  -lprotobuf
+)
+add_executable(gfp_to_svm_lite ${gfp_to_svm_lite_srcs})
+target_link_libraries(gfp_to_svm_lite LINK_PUBLIC ${gfp_to_svm_lite_libs})
+
+# nplotnn
+set(nplotnn_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/nplotnn.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/distance_scaling.cc
+)
+set(nplotnn_libs
+  smiles_id_dist
+  moleculeio
+  iwmolecule
+  binary_data_file
+  iwhistogram
+  string_data_source
+  xmlParser
+  iwrandom
+  -lprotobuf -lsnappy
+  ${common_libs}
+)
+add_executable(nplotnn ${nplotnn_srcs})
+target_link_libraries(nplotnn LINK_PUBLIC ${nplotnn_libs})
+
+# gfp_distance_matrix
+set(gfp_distance_matrix_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_distance_matrix.cc
+)
+set(gfp_distance_matrix_libs
+  build_pool
+  iwhistogram
+  ${common_libs}
+)
+add_executable(gfp_distance_matrix ${gfp_distance_matrix_srcs})
+target_link_libraries(gfp_distance_matrix LINK_PUBLIC ${gfp_distance_matrix_libs})
+
+# gfp_svmfp_evaluate
+set(gfp_svmfp_evaluate_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/gfp_svmfp_evaluate.cc
+)
+set(gfp_svmfp_evaluate_libs
+  class_label_translation
+  sparse_fp_creator
+  accumulator
+  cmdline
+  cmdline_v2
+  iwstring_data_source
+  iwre2
+  gfp
+  iwbits
+  iw_tdt
+  iwstring
+  iwmisc
+  -lprotobuf -lre2 -lz
+)
+# Need to work out how to link protos in another directory
+#add_executable(gfp_svmfp_evaluate ${gfp_svmfp_evaluate_srcs})
+#target_link_libraries(gfp_svmfp_evaluate LINK_PUBLIC ${gfp_svmfp_evaluate_libs})
+
+# tdt_sort
+set(tdt_sort_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/tdt_sort.cc
+)
+set(tdt_sort_libs
+  cmdline_v2
+  iwstring_data_source
+  iwre2
+  iw_tdt
+  iwstring
+  iwmisc
+  -lre2 -lz
+)
+add_executable(tdt_sort ${tdt_sort_srcs})
+target_link_libraries(tdt_sort LINK_PUBLIC ${tdt_sort_libs})
