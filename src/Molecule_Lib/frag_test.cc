@@ -1,8 +1,10 @@
 // Tester for fragment related things.
 #include "molecule.h"
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+//#include "googlemock/include/gmock/gmock.h"
+//#include "googletest/googlemock/include/gmock/"
+#include "googlemock/include/gmock/"
+#include "gtest/gtest.h"
 #include "google/protobuf/text_format.h"
 
 namespace {

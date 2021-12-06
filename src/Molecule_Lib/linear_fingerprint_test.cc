@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "googletest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "linear_fingerprint.h"
 

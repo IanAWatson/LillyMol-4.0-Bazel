@@ -7,6 +7,8 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build)
 set(IW_EXTRA_LIBS -lz -lre2)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+enable_testing()
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -14,6 +16,15 @@ FetchContent_Declare(
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+#find_package(GTest REQUIRED CONFIG)
+
+
+#FetchContent_Declare(
+#  clif
+#  GIT_REPOSITORY https://github.com/google/clif
+#  GIT_TAG 25a438fad1534f70c758c3d3c30ec361aeca63e2
+#)
+#FetchContent_MakeAvailable(clif)
 
 add_compile_options(-march=native)
 add_link_options(-lz -lre2)

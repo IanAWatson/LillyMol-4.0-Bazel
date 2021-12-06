@@ -193,3 +193,66 @@ add_library(iwreaction ${iwreaction_srcs})
 target_include_directories(iwreaction PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
   
 enable_testing()
+
+# tests
+
+set(libs_for_tests
+  moleculeio
+  iwmolecule
+  cmdline
+  gtest_main
+  iwstring_data_source
+  string_data_source
+  binary_data_file
+  xmlParser
+  iwrandom
+  iwmisc
+  iwbits
+  iwre2
+  iwstring
+  -lprotobuf -lz -lre2 -lsnappy
+)
+
+# aromatic_test
+set(aromatic_test_srcs
+  aromatic_test.cc
+)
+set(aromatic_test_libs
+  ${libs_for_tests}
+)
+add_executable(aromatic_test ${aromatic_test_srcs})
+target_link_libraries(aromatic_test LINK_PUBLIC ${aromatic_test_libs})
+
+# atom_test
+set(atom_test_srcs
+  atom_test.cc
+)
+set(atom_test_libs
+  ${libs_for_tests}
+)
+add_executable(atom_test ${atom_test_srcs})
+target_link_libraries(atom_test LINK_PUBLIC ${atom_test_libs})
+
+# linear_fingerprint_test
+set(linear_fingerprint_test_srcs
+  linear_fingerprint_test.cc
+)
+set(linear_fingerprint_test_libs
+  linear_fingerprint_lib
+  sparse_fp_creator
+  ${libs_for_tests}
+)
+add_executable(linear_fingerprint_test ${linear_fingerprint_test_srcs})
+target_link_libraries(linear_fingerprint_test LINK_PUBLIC ${linear_fingerprint_test_libs})
+
+# ec_fingerprint_test
+set(ec_fingerprint_test_srcs
+  ec_fingerprint_test.cc
+)
+set(ec_fingerprint_test_libs
+  ec_fingerprint_lib
+  sparse_fp_creator
+  ${libs_for_tests}
+)
+add_executable(ec_fingerprint_test ${ec_fingerprint_test_srcs})
+target_link_libraries(ec_fingerprint_test LINK_PUBLIC ${ec_fingerprint_test_libs})
