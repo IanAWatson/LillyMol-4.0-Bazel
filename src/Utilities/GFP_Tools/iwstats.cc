@@ -14,12 +14,12 @@ using std::endl;
 //#include "iwmalloc.h"
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
+#include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwqsort/iwqsort.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
-#include "Foundational/data_source/iwstring_data_source.h"
-#include "Foundational/accumulator/accumulator.h"
-#include "Foundational/iwmisc/misc.h"
 
 #include "bsquared.h"
 

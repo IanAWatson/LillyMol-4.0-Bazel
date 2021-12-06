@@ -277,7 +277,6 @@ cc_library(
         "//Foundational/iwqsort:iwqsort",
         "//Foundational/iwstring:iwstring",
         "//Foundational/iw_tdt:iw_tdt",
-        "//Foundational/mtrand:iwrandom",
         "//Foundational/xmlParser:xmlparser",
     ],
 )

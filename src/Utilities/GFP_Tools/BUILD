@@ -356,8 +356,8 @@ cc_binary(
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwqsort:iwqsort",
-        "//Foundational/mtrand:iwrandom"
     ],
     linkopts = [
         "-lz",
@@ -375,7 +375,6 @@ cc_binary(
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwmisc:iwre2",
         "//Foundational/iwqsort:iwqsort",
-        "//Foundational/mtrand:iwrandom",
         "//Foundational/iw_tdt:iw_tdt",
     ],
     linkopts = [
