@@ -32,18 +32,6 @@ using std::endl;
 
 #include "set_of_target_molecules.h"
 
-// Return true if a random number is less than `p`.
-#ifdef ASADASDSDA
-static int
-check_probability(double p)
-{
-  if (1.0 == p)
-    return 1;
-
-  return p > iwrandom();
-}
-#endif
-
 static int verbose = 0;
 
 static int molecules_read = 0;

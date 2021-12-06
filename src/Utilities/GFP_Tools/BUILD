@@ -134,6 +134,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_spread_buckets_v2",
+    srcs = [
+        "gfp_spread_buckets_v2.cc",
+    ],
+    deps = [
+        ":gfp",
+        ":spread_v2",
+        ":smiles_id_dist",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/iwmisc:iwmisc",
+    ],
+)
+
+cc_binary(
     name = "gfp_spread_standard",
     srcs = [
         "gfp_spread_standard.cc",
@@ -196,6 +210,20 @@ cc_binary(
         ":gfp",
         ":gfp_standard",
         ":neighbour_list",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
+    name = "gfp_pairwise_distances",
+    srcs = [
+        "gfp_pairwise_distances.cc",
+    ],
+    deps = [
+        "//Foundational/histogram:iwhistogram",
+        ":gfp",
     ],
     linkopts = [
         "-lz",

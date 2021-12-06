@@ -269,6 +269,22 @@ cc_binary(
 )
 
 cc_binary(
+    name = "notenoughvariance",
+    srcs = [
+        "notenoughvariance.cc",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwstring:iwstring",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
+
+cc_binary(
     name = "random_records",
     srcs = [
         "random_records.cc",

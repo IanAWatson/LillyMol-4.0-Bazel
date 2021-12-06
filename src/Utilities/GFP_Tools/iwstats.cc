@@ -2,11 +2,12 @@
   Tester for Bsquared
 */
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <iostream>
 #include <limits>
-#include <algorithm>
+#include <random>
 using std::cerr;
 using std::endl;
 
@@ -15,7 +16,6 @@ using std::endl;
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwqsort/iwqsort.h"
-#include "Foundational/mtrand/iwrandom.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/accumulator/accumulator.h"
@@ -85,7 +85,6 @@ static double bedroc_alpha = 20.0;
 static double enrichment_factor_fraction = 0.5;
 
 static double discard_measured_values_below = -std::numeric_limits<double>::max();
-static double keep_most_active_fraction = 0.0;
 
 static int proper_median = 1;
 
@@ -129,8 +128,7 @@ usage (int rc)
   cerr << " -j             treat as a descriptor file\n";
   cerr << " -M <string>    missing value string\n";
   cerr << " -q             quietly ignore missing values\n";
-  cerr << " -R <seed>      randomise the sort when duplicate predicted values present\n";
-  cerr << " -R .           to use a random seed\n";
+  cerr << " -R .           randomise the sort when duplicate predicted values present\n";
   cerr << " -c <number>    number of valid pairs needed for producing correlations (default " << values_needed_for_reporting_correlations << ")\n";
   cerr << " -w             when duplicate values present, suppress computation of best\n";
   cerr << "                and worst BSquared values\n";
@@ -329,7 +327,9 @@ class Predicted_Values
     int valid(int i) const { return _valid[i];}
 
     experimental_value_t random_value() const { return _random;}
-    void assign_random_value();
+    void assign_random_value(experimental_value_t r) {
+      _random = r;
+    }
 
     const IWString marker() const { return _marker;}
 
@@ -493,12 +493,6 @@ Predicted_Values::debug_print (std::ostream & os) const
   return os.good();
 }
 
-void
-Predicted_Values::assign_random_value()
-{
-  _random = iwrandom();
-}
-
 template class resizable_array_p<Predicted_Values>;
 template class resizable_array_base<Predicted_Values *>;
 
@@ -536,6 +530,7 @@ static int
 determine_numbers_to_check_by_activity(const resizable_array_p<Predicted_Values> & zdata,
                                        resizable_array<int> & numbers_to_check)
 {
+#ifdef NOT_IMPLEMENTED
   int n = zdata.number_elements();
 
   for (int i = 0; i < activities_to_check.number_elements(); i++)
@@ -548,6 +543,7 @@ determine_numbers_to_check_by_activity(const resizable_array_p<Predicted_Values>
     {
     }
   }
+#endif
 
   return 1;
 }
@@ -1107,16 +1103,17 @@ echo_the_data (const resizable_array_p<Predicted_Values> & zdata,
 }
 
 static void
-do_sort_by_predicted_value (resizable_array_p<Predicted_Values> & zdata,
-                            int which_predicted_set,
-                            int predicted_column)
+do_sort_by_predicted_value(resizable_array_p<Predicted_Values> & zdata,
+                           int which_predicted_set,
+                           int predicted_column)
 {
   if (randomise_ties)
   {
-    int n = zdata.number_elements();
-    for (int j = 0; j < n; j++)
-    {
-      zdata[j]->assign_random_value();
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    std::uniform_real_distribution<double> u(0.0, 1.0);
+    for (auto * item : zdata) {
+      item->assign_random_value(u(generator));
     }
   }
 
@@ -2628,23 +2625,9 @@ iwstats (int argc, char ** argv)
   {
     const_IWSubstring r = cl.string_value('R');
 
-    if ('.' == r)
-    {
-      iw_random_seed();
-    }
-    else
-    {
-      int tmp;
-      if (! r.numeric_value(tmp))
-      {
-        cerr << "Invalid random number seed '" << r << "'\n";
-        usage(14);
-      }
-
-      iw_set_rnum_seed(static_cast<random_number_seed_t>(tmp));
-
-      if (verbose)
-        cerr << "Using seed " << tmp << "\n";
+    if ('.' == r) {
+    } else {
+      cerr << "Setting random seed no longer supported, ignored\n";
     }
 
     randomise_ties = 1;

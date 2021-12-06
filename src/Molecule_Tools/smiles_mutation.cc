@@ -929,7 +929,7 @@ valid_smiles(IWString & s,
 static int
 do_intra_molecular_change(IWString & s)
 {
-  random_number_t r = random_number_between_01();
+  auto r = random_number_between_01();
 
   if (r < 0.33)
     excise_characters(s);
@@ -956,10 +956,10 @@ do_inter_molecular_change(IWString & s1,
 }
 
 static int
-do_refresh (resizable_array_p<IWString> & smiles,
-            const IWString * r,
-            int * times_since_last_valid_smiles,
-            random_number_t p)
+do_refresh(resizable_array_p<IWString> & smiles,
+           const IWString * r,
+           int * times_since_last_valid_smiles,
+           float threshold)
 {
   int n = smiles.number_elements();
 
@@ -970,7 +970,7 @@ do_refresh (resizable_array_p<IWString> & smiles,
     if (0 == times_since_last_valid_smiles[i])
       continue;
 
-    if (random_number_between_01() > p)
+    if (random_number_between_01() > threshold)
     {
       *(smiles[i]) = r[i];
       times_since_last_valid_smiles[i] = 0;
@@ -1616,8 +1616,6 @@ smiles_mutation (int argc, char ** argv)
     cerr << "Insufficient arguments\n";
     usage(2);
   }
-
-  iw_random_seed();
 
   set_include_aromaticity_in_smiles(1);   // turned off below. Use to populate the pool
   set_input_aromatic_structures(1);

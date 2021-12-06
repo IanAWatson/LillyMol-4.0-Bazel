@@ -1045,10 +1045,10 @@ write_group(const resizable_array<File_Record *> & molecules,
 
 static int
 identify_next_equi_atom_group(const resizable_array<File_Record *> & records,
-                               int & istart,
-                               int & istop,
-                               int atoms_per_chunk,
-                               unsigned int & atoms)
+                              int & istart,
+                              int & istop,
+                              int atoms_per_chunk,
+                              unsigned int & atoms)
 {
 //cerr << "identify_next_group:on entry istart " << istart << " istop " << istop << ", min_size_hint " << min_size_hint << endl;
 
@@ -1060,8 +1060,6 @@ identify_next_equi_atom_group(const resizable_array<File_Record *> & records,
   istart = istop;
 
   const File_Record * reff = records[istart];
-
-  int last_break = -1;
 
   istop = istart + 1;
 
@@ -1085,7 +1083,6 @@ identify_next_equi_atom_group(const resizable_array<File_Record *> & records,
     }
 
     reff = records[istop];
-    last_break = istop;
     istop++;
   }
 

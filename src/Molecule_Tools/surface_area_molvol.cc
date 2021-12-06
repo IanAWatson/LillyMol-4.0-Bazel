@@ -4,12 +4,10 @@
 
 #include <stdlib.h>
 
-#include "Foundational/mtrand/iwrandom.h"
-
 #include "Molecule_Lib/molecule.h"
 
 #include "surface_area_molvol.h"
-#include "jwrandom_preset_array.h"
+//#include "jwrandom_preset_array.h"
 
 extern "C" void volume_ (int &);
 
@@ -94,8 +92,6 @@ Surface_Area_Molvol::report (std::ostream & os) const
 static coord_t
 delta (coord_t amplitude, int counter)
 {
-  //  random_number r = iwrandom ();
-
   random_number_t r = random_number_preset_array [counter];
   //  cout<<r<<" ";
 
@@ -225,10 +221,10 @@ Surface_Area_Molvol::_molvol (Molecule & m,
 }
 
 int
-Surface_Area_Molvol::surface_area (Molecule & m,
-                                   area_t * area,
-                                   area_t & total_area,
-                                   volume_t & volume)
+Surface_Area_Molvol::surface_area(Molecule & m,
+                                  area_t * area,
+                                  area_t & total_area,
+                                  volume_t & volume)
 {
   int matoms = m.natoms ();
 

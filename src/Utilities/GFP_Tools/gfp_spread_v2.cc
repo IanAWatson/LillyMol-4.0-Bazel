@@ -2,13 +2,13 @@
   Spread implementation
 */
 
-#include <stdlib.h>
+#include <iostream>
+#include <random>
 
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/accumulator/accumulator.h"
-#include "Foundational/mtrand/iwrandom.h"
 #include "Foundational/iwmisc/numeric_data_from_file.h"
 
 #include "spread_v2.h"
@@ -442,7 +442,7 @@ do_object_has_been_selected_tversky (int isel)
 }
 
 static void
-do_object_has_been_selected_no_blurring (int isel)
+do_object_has_been_selected_no_blurring(int isel)
 {
   Spread_Object & fpsel = pool[isel];
 
@@ -458,7 +458,7 @@ do_object_has_been_selected_no_blurring (int isel)
 }
 
 static void
-do_object_has_been_selected_with_blurring (int isel)
+do_object_has_been_selected_with_blurring(int isel)
 {
   Spread_Object & fpsel = pool[isel];
 
@@ -474,7 +474,7 @@ do_object_has_been_selected_with_blurring (int isel)
 }
 
 static void
-do_object_has_been_selected_with_distance_cutoff (int isel)
+do_object_has_been_selected_with_distance_cutoff(int isel)
 {
   Spread_Object & fpsel = pool[isel];
   for (int i = 0; i < pool_size; i++)
@@ -489,7 +489,7 @@ do_object_has_been_selected_with_distance_cutoff (int isel)
 }
 
 static void
-do_object_has_been_selected (int isel)
+do_object_has_been_selected(int isel)
 {
   if (tversky.active())
     do_object_has_been_selected_tversky(isel);
@@ -504,7 +504,7 @@ do_object_has_been_selected (int isel)
 }
 
 static similarity_type_t
-compute_the_distance (Spread_Object & fp1, Spread_Object & fp2)
+compute_the_distance(Spread_Object & fp1, Spread_Object & fp2)
 {
   if (tversky.active())
     return static_cast<similarity_type_t>(1.0) - fp1.IW_General_Fingerprint::tversky(fp2, tversky);
@@ -546,7 +546,7 @@ choose_largest_previously_computed_distance()
 */
 
 static int
-item_with_highest_scale_factor ()
+item_with_highest_scale_factor()
 {
   float highest_scale = pool[0].scale();
   int rc = 0;
@@ -568,7 +568,7 @@ item_with_highest_scale_factor ()
 */
 
 static int
-do_start_with_object_furthest_from_everything (int & istart)
+do_start_with_object_furthest_from_everything(int & istart)
 {
   int id_of_further_distance_encountered = -1;
   similarity_type_t furthest_distance_encountered = 0.0;
@@ -597,7 +597,7 @@ do_start_with_object_furthest_from_everything (int & istart)
 }
 
 static int
-do_start_with_object_furthest_from_first (int & istart)
+do_start_with_object_furthest_from_first(int & istart)
 {
   resizable_array<int> already_done;
   already_done.resize(start_with_object_furthest_from_first);
@@ -670,12 +670,16 @@ furthest_from_already_selected()
 }
 
 static int
-fpobj_spread (IWString_and_File_Descriptor & output)
+fpobj_spread(IWString_and_File_Descriptor & output)
 {
   int first_selected;
 
-  if (choose_first_item_randomly)
-    first_selected = intbtwij(0, pool_size - 1);
+  if (choose_first_item_randomly) {
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    std::uniform_int_distribution<int> u(0, pool_size - 1);
+    first_selected = u(generator);
+  }
   else if (already_selected_molecules_present)
     first_selected = furthest_from_already_selected();
   else if (previously_computed_nn_distance_tag.length())
@@ -865,7 +869,7 @@ usage(int rc)
 }
 
 static void
-display_miscellaneous_options (std::ostream & os)
+display_miscellaneous_options(std::ostream & os)
 {
   os << " -M recomp       recompute distance if no nbrs found\n";
   os << " -M nscale       include scale factor of nbr with scale\n";
@@ -876,7 +880,7 @@ display_miscellaneous_options (std::ostream & os)
 }
 
 static void
-display_first_item_selection_options (std::ostream & os)
+display_first_item_selection_options(std::ostream & os)
 {
   os << " -S rand         randomly choose first item\n";
   os << " -S hsf          start with item with highest scale factor\n";
@@ -887,7 +891,7 @@ display_first_item_selection_options (std::ostream & os)
 }
 
 static int
-fpobj_spread (int argc, char ** argv)
+fpobj_spread(int argc, char ** argv)
 {
   Command_Line cl(argc, argv, "vs:n:I:i:A:r:p:t:F:P:W:Q:O:N:V:b:S:M:");
 
@@ -1315,14 +1319,16 @@ fpobj_spread (int argc, char ** argv)
       usage(4);
     }
 
-    iw_random_seed();
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    std::uniform_real_distribution<similarity_type_t> u(0.0f, 1.0f);
 
     if (verbose)
     {
       cerr << "Distance blurring factor set to " << blurr_distances << '\n';
       for (int i = 0; i < 5; i++)
       {
-        similarity_type_t r = iwrandom();
+        similarity_type_t r = u(generator);
         cerr << "distance " << r << " becomes " << do_blurring(r, blurr_distances) << '\n';
       }
 
@@ -1383,7 +1389,7 @@ fpobj_spread (int argc, char ** argv)
 }
 
 int
-main (int argc, char ** argv)
+main(int argc, char ** argv)
 {
   int rc = fpobj_spread(argc, argv);
 

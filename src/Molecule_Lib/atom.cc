@@ -5,6 +5,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <random>
 #include <sstream>
 
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
@@ -18,7 +19,6 @@ using std::endl;
 #include <math.h>
 #include <stdlib.h>
 
-#include "Foundational/mtrand/iwrandom.h"
 #include "atom.h"
 #include "iwmtypes.h"
 #include "misc2.h"
@@ -1536,7 +1536,10 @@ Atom::next_atom_for_unique_smiles(atom_number_t my_atom_number, int * already_do
 }
 
 #ifdef RANDOM_SMILES_NOW_IN_SMILES_SOURCE_FILE
-static Random_Number_Working_Storage smiles_random_number_stream;
+// Yes, these are non trivial constructors.
+std::random_device rd;
+std::default_random_engine generator(rd());
+std::uniform_int_distribution<int> zero_or_one(0, 1);
 
 int
 Atom::next_atom_for_random_smiles(atom_number_t my_atom_number, int * already_done,
@@ -1559,12 +1562,12 @@ Atom::next_atom_for_random_smiles(atom_number_t my_atom_number, int * already_do
     {
       if (INVALID_ATOM_NUMBER == multiple_bond)
         multiple_bond = j;
-      else if (smiles_random_number_stream.random_one_or_zero())
+      else if (zero_or_one(generator))
         multiple_bond = j;
     }
     else if (INVALID_ATOM_NUMBER == zdefault)
       zdefault = j;
-    else if (smiles_random_number_stream.random_one_or_zero())
+    else if (zero_or_one(generator))
       zdefault = j;
   }
 

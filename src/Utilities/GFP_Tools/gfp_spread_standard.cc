@@ -2,8 +2,8 @@
   Spread implementation with fixed fingerprints
 */
 
-#include <stdlib.h>
 #include <algorithm>
+#include <random>
 
 #define USE_OMP
 #ifdef USE_OMP
@@ -18,7 +18,6 @@
 #include "Foundational/iwmisc/report_progress.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
-#include "Foundational/mtrand/iwrandom.h"
 
 #include "gfp_standard.h"
 #include "smiles_id_dist.h"
@@ -254,17 +253,26 @@ mark_all_remaining_items_selected (F * pool,
   return rc;
 }
 
+int
+RandomPoolMember(int pool_size) {
+  std::random_device rd;
+  std::default_random_engine generator(rd());
+  std::uniform_int_distribution<int> u(0, pool_size - 1);
+  return u(generator);
+}
+
 template <typename F>
 int
-spread_with_weights (F * fingerprints,
-                     const int pool_size,
-                     const float * weight,
-                     Selected_Item * selected_item)
+spread_with_weights(F * fingerprints,
+                    const int pool_size,
+                    const float * weight,
+                    Selected_Item * selected_item)
 {
   int s;
 
-  if (choose_first_point_randomly)
-    s = intbtwij(0, pool_size - 1);
+  if (choose_first_point_randomly) {
+    s = RandomPoolMember(pool_size);
+  }
   else if (previously_selected_file_specified)
   {
     s = 1;
@@ -405,7 +413,7 @@ spread2 (F * pool,
 //iw_write_array(distances, pool_size, "distances", cerr);
 
   if (choose_first_point_randomly)
-    s = intbtwij(0, pool_size - 1);
+    s = RandomPoolMember(pool_size);
   else if (previously_selected_file_specified)
     s = index_of_largest(pool_size, distances);
   else
@@ -513,7 +521,7 @@ spread ()
   int s;
 
   if (choose_first_point_randomly)
-    s = intbtwij(0, pool_size - 1);
+    s = RandomPoolMember(pool_size);
   else if (previously_selected_file_specified)
     s = index_of_largest(pool_size, distances);
   else

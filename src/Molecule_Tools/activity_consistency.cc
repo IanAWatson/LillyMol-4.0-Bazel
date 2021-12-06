@@ -122,7 +122,7 @@ static std::random_device rd;
 static IWString_and_File_Descriptor stream_for_multi_valued_data;
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
   cerr << "Groups identical molecules and compares activities\n";
@@ -178,9 +178,9 @@ class Smiles_ID_Activity
     const IWString & id() const { return _id;}
 
     float activity() const { return _activity;}
-    void  set_activity (float s) { _activity = s;}
+    void  set_activity(float s) { _activity = s;}
 
-    int do_write (IWString_and_File_Descriptor & output) const;
+    int do_write(IWString_and_File_Descriptor & output) const;
 };
 
 int
@@ -234,56 +234,56 @@ class Group_of_Molecules : public IWString
 
 //  private functions
 
-    int _identify_item_with_max_activity () const;
-    int _identify_item_with_activity_closest_to_average () const;
-    int _identify_most_common_item (int & tied) const;
+    int _identify_item_with_max_activity() const;
+    int _identify_item_with_activity_closest_to_average() const;
+    int _identify_most_common_item(int & tied) const;
 
-    int _write_max_activity (const Smiles_ID_Activity * sida, 
-                             IWString_and_File_Descriptor & stream_for_smiles,
-                             IWString_and_File_Descriptor & stream_for_activity) const;
+    int _write_max_activity(const Smiles_ID_Activity * sida, 
+                            IWString_and_File_Descriptor & stream_for_smiles,
+                            IWString_and_File_Descriptor & stream_for_activity) const;
 
   public:
-    Group_of_Molecules (const IWString & s) : IWString(s), _rng(rd()) {};
+    Group_of_Molecules(const IWString & s) : IWString(s), _rng(rd()) {};
 
     int n() const { return _activity.n();}
 
-    int extra (const IWString & smi, const IWString & id, activity_type_t act);
+    int extra(const IWString & smi, const IWString & id, activity_type_t act);
 
     float max_difference() const;
 
-    int is_within_tolerance (float t) const;
-    int min_and_max_within_ratio (float t) const;
+    int is_within_tolerance(float t) const;
+    int min_and_max_within_ratio(float t) const;
 
-    int write_structure_group (IWString_and_File_Descriptor & output) const;
+    int write_structure_group(IWString_and_File_Descriptor & output) const;
 
-    int write_first_member (IWString_and_File_Descriptor & output) const;
+    int write_first_member(IWString_and_File_Descriptor & output) const;
 
-    int write_merged_data (IWString_and_File_Descriptor & output) const;
+    int write_merged_data(IWString_and_File_Descriptor & output) const;
 
-    int write_max_activity (IWString_and_File_Descriptor &, IWString_and_File_Descriptor &) const;
-    int write_random_item (IWString_and_File_Descriptor &, IWString_and_File_Descriptor &);
-    int write_median_item (IWString_and_File_Descriptor & stream_for_smiles, IWString_and_File_Descriptor & stream_for_activity);
-    int write_item_closest_to_average (IWString_and_File_Descriptor & stream_for_smiles,
+    int write_max_activity(IWString_and_File_Descriptor &, IWString_and_File_Descriptor &) const;
+    int write_random_item(IWString_and_File_Descriptor &, IWString_and_File_Descriptor &);
+    int write_median_item(IWString_and_File_Descriptor & stream_for_smiles, IWString_and_File_Descriptor & stream_for_activity);
+    int write_item_closest_to_average(IWString_and_File_Descriptor & stream_for_smiles,
                                        IWString_and_File_Descriptor & stream_for_activity) const;
-    int write_most_common_item (IWString_and_File_Descriptor & stream_for_smiles,
-                                IWString_and_File_Descriptor & stream_for_activity) const;
-    int write_if_classes_consistent (IWString_and_File_Descriptor & stream_for_smiles,
-                                     IWString_and_File_Descriptor & stream_for_activity) const;
-    int write_first_member (IWString_and_File_Descriptor & stream_for_smiles,
-                            IWString_and_File_Descriptor & stream_for_activity) const;
+    int write_most_common_item(IWString_and_File_Descriptor & stream_for_smiles,
+                               IWString_and_File_Descriptor & stream_for_activity) const;
+    int write_if_classes_consistent(IWString_and_File_Descriptor & stream_for_smiles,
+                                    IWString_and_File_Descriptor & stream_for_activity) const;
+    int write_first_member(IWString_and_File_Descriptor & stream_for_smiles,
+                           IWString_and_File_Descriptor & stream_for_activity) const;
 
-    int write_random_value_from_range_of_each_group (IWString_and_File_Descriptor & stream_for_smiles, IWString_and_File_Descriptor & stream_for_activity);
+    int write_random_value_from_range_of_each_group(IWString_and_File_Descriptor & stream_for_smiles, IWString_and_File_Descriptor & stream_for_activity);
 
-    int write_tabular_output (IWString_and_File_Descriptor &) const;
+    int write_tabular_output(IWString_and_File_Descriptor &) const;
 };
 
 template class resizable_array_p<Smiles_ID_Activity>;
 template class resizable_array_base<Smiles_ID_Activity *>;
 
 int
-Group_of_Molecules::extra (const IWString & smi,
-                           const IWString & id,
-                           activity_type_t act)
+Group_of_Molecules::extra(const IWString & smi,
+                          const IWString & id,
+                          activity_type_t act)
 {
   _activity.extra(act);
 
@@ -304,13 +304,13 @@ Group_of_Molecules::max_difference() const
 }
 
 int
-Group_of_Molecules::is_within_tolerance (float t) const
+Group_of_Molecules::is_within_tolerance(float t) const
 {
   return max_difference() <= t;
 }
 
 int
-Group_of_Molecules::min_and_max_within_ratio (float t) const
+Group_of_Molecules::min_and_max_within_ratio(float t) const
 {
   float mi = _activity.minval();
   float ma = _activity.maxval();
@@ -327,7 +327,7 @@ Group_of_Molecules::min_and_max_within_ratio (float t) const
 }
 
 int
-Group_of_Molecules::write_structure_group (IWString_and_File_Descriptor & output) const
+Group_of_Molecules::write_structure_group(IWString_and_File_Descriptor & output) const
 {
   output << (*this) << ' ';
 
@@ -405,9 +405,9 @@ Group_of_Molecules::write_merged_data (IWString_and_File_Descriptor & output) co
 }
 
 int
-Group_of_Molecules::_write_max_activity (const Smiles_ID_Activity * sida, 
-                                         IWString_and_File_Descriptor & stream_for_smiles,
-                                         IWString_and_File_Descriptor & stream_for_activity) const
+Group_of_Molecules::_write_max_activity(const Smiles_ID_Activity * sida, 
+                                        IWString_and_File_Descriptor & stream_for_smiles,
+                                        IWString_and_File_Descriptor & stream_for_activity) const
 {
   sida->do_write(stream_for_smiles);
 
@@ -448,7 +448,7 @@ Group_of_Molecules::_identify_item_with_max_activity() const
 }
 
 int
-Group_of_Molecules::_identify_most_common_item (int & tied) const   // vote
+Group_of_Molecules::_identify_most_common_item(int & tied) const   // vote
 {
   tied = 0;
 
@@ -564,8 +564,8 @@ Group_of_Molecules::_identify_item_with_activity_closest_to_average() const
 
 
 int
-Group_of_Molecules::write_max_activity (IWString_and_File_Descriptor & stream_for_smiles,
-                                        IWString_and_File_Descriptor & stream_for_activity) const
+Group_of_Molecules::write_max_activity(IWString_and_File_Descriptor & stream_for_smiles,
+                                       IWString_and_File_Descriptor & stream_for_activity) const
 {
   int n = _sida.number_elements();
 
@@ -578,8 +578,8 @@ Group_of_Molecules::write_max_activity (IWString_and_File_Descriptor & stream_fo
 }
 
 int
-Group_of_Molecules::write_item_closest_to_average (IWString_and_File_Descriptor & stream_for_smiles,
-                                                   IWString_and_File_Descriptor & stream_for_activity) const
+Group_of_Molecules::write_item_closest_to_average(IWString_and_File_Descriptor & stream_for_smiles,
+                                                  IWString_and_File_Descriptor & stream_for_activity) const
 {
   if (1 == _sida.number_elements())
     return _write_max_activity(_sida[0], stream_for_smiles, stream_for_activity);
@@ -598,8 +598,8 @@ Group_of_Molecules::write_item_closest_to_average (IWString_and_File_Descriptor 
 }
 
 int
-Group_of_Molecules::write_median_item (IWString_and_File_Descriptor & stream_for_smiles,
-                                       IWString_and_File_Descriptor & stream_for_activity)
+Group_of_Molecules::write_median_item(IWString_and_File_Descriptor & stream_for_smiles,
+                                      IWString_and_File_Descriptor & stream_for_activity)
 {
   int n = _sida.number_elements();
 
@@ -631,8 +631,8 @@ Group_of_Molecules::write_median_item (IWString_and_File_Descriptor & stream_for
 }
 
 int
-Group_of_Molecules::write_random_item (IWString_and_File_Descriptor & stream_for_smiles,
-                                       IWString_and_File_Descriptor & stream_for_activity)
+Group_of_Molecules::write_random_item(IWString_and_File_Descriptor & stream_for_smiles,
+                                      IWString_and_File_Descriptor & stream_for_activity)
 {
   int n = _sida.number_elements();
 
@@ -647,8 +647,8 @@ Group_of_Molecules::write_random_item (IWString_and_File_Descriptor & stream_for
 }
 
 int
-Group_of_Molecules::write_most_common_item (IWString_and_File_Descriptor & stream_for_smiles,
-                                            IWString_and_File_Descriptor & stream_for_activity) const
+Group_of_Molecules::write_most_common_item(IWString_and_File_Descriptor & stream_for_smiles,
+                                           IWString_and_File_Descriptor & stream_for_activity) const
 {
   int tied;
 
@@ -658,15 +658,15 @@ Group_of_Molecules::write_most_common_item (IWString_and_File_Descriptor & strea
 }
 
 int
-Group_of_Molecules::write_first_member (IWString_and_File_Descriptor & stream_for_smiles,
-                                        IWString_and_File_Descriptor & stream_for_activity) const
+Group_of_Molecules::write_first_member(IWString_and_File_Descriptor & stream_for_smiles,
+                                       IWString_and_File_Descriptor & stream_for_activity) const
 {
   return _write_max_activity(_sida[0], stream_for_smiles, stream_for_activity);
 }
 
 int
-Group_of_Molecules::write_if_classes_consistent (IWString_and_File_Descriptor & stream_for_smiles,
-                                                 IWString_and_File_Descriptor & stream_for_activity) const
+Group_of_Molecules::write_if_classes_consistent(IWString_and_File_Descriptor & stream_for_smiles,
+                                                IWString_and_File_Descriptor & stream_for_activity) const
 {
   int n = _sida.number_elements();
 
@@ -691,7 +691,7 @@ Group_of_Molecules::write_if_classes_consistent (IWString_and_File_Descriptor & 
 }
 
 int
-Group_of_Molecules::write_random_value_from_range_of_each_group (IWString_and_File_Descriptor & stream_for_smiles,
+Group_of_Molecules::write_random_value_from_range_of_each_group(IWString_and_File_Descriptor & stream_for_smiles,
                                                 IWString_and_File_Descriptor & stream_for_activity)
 {
   if (1 == _sida.number_elements())
@@ -723,7 +723,7 @@ Group_of_Molecules::write_random_value_from_range_of_each_group (IWString_and_Fi
 }
 
 int
-Group_of_Molecules::write_tabular_output (IWString_and_File_Descriptor & output) const
+Group_of_Molecules::write_tabular_output(IWString_and_File_Descriptor & output) const
 {
   int n = _sida.number_elements();
 
@@ -757,7 +757,7 @@ Group_of_Molecules_Comparator::operator() (const Group_of_Molecules * g1,
 }
 
 static void
-preprocess (Molecule & m)
+preprocess(Molecule & m)
 {
   if (chemical_standardisation.active())
     chemical_standardisation.process(m);
@@ -792,9 +792,9 @@ fetch_activity_from_token_of_name(IWString & id,
 }
 
 static int
-fetch_activity (const ID_to_Activity & id_to_activity,
-                IWString & id,
-                resizable_array<float> & activity)
+fetch_activity(const ID_to_Activity & id_to_activity,
+               IWString & id,
+               resizable_array<float> & activity)
 {
   if (0 == id_to_activity.size())
     return fetch_activity_from_token_of_name(id, id_to_activity, activity);

@@ -9,7 +9,6 @@
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwstring/iw_stl_hash_set.h"
-#include "Foundational/mtrand/iwrandom.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/atom_typing.h"
@@ -716,7 +715,7 @@ do_convolution(Command_Line & cl,
 static int
 make_random_smiles(int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "vA:E:g:i:n:I:eas:K:P:C:");
+  Command_Line cl(argc, argv, "vA:E:g:i:n:I:eaK:P:C:");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -793,23 +792,6 @@ make_random_smiles(int argc, char ** argv)
     if (verbose)
       cerr << "Will echo initial smiles\n";
   }
-
-  if (cl.option_present('s'))
-  {
-    unsigned int s;
-    if (! cl.value('s', s))
-    {
-      cerr << "Invalid random number seed (-s)\n";
-      usage(3);
-    }
-
-    iw_set_rnum_seed(s);
-
-    if (verbose)
-      cerr << "Random number seed set to " << s << '\n';
-  }
-  else
-    iw_random_seed();
 
   if (cl.option_present('P'))
   {

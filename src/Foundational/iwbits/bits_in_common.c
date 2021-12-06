@@ -137,9 +137,9 @@ bits_in_common (const unsigned int * b1, const unsigned int * b2,
 
 #elif defined (BIC_METHOD1L)
 
-static int
-bits_in_common_32bit (const unsigned int * b1, const unsigned int * b2,
-                      const int nwords)
+int
+bits_in_common_32bit(const unsigned int * b1, const unsigned int * b2,
+                     const int nwords)
 {
   int i;
   int rc = 0;

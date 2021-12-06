@@ -1,6 +1,7 @@
 #include <iostream>
 #include <math.h>
 #include <memory>
+#include <random>
 using std::cerr;
 using std::endl;
 
@@ -12,7 +13,6 @@ using std::endl;
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwstring/iwstring.h"
 #include "Foundational/iwmisc/set_or_unset.h"
-#include "Foundational/mtrand/iwrandom.h"
 
 /*
   As the buffers get larger, it may be advantageous to sort the stored values
@@ -1352,9 +1352,12 @@ notenoughvariance(iwstring_data_source & input,
 
   int records_examined = 0;    // different from records read with probability
 
+  std::random_device rd;
+  std::default_random_engine generator(rd());
+  std::uniform_real_distribution<float> u(0.0f, 1.0f);
   while (get_next_record(input, all_data, ndx, buffer))
   {
-    if (probability < 1.0  && iwrandom() > probability)
+    if (probability < 1.0 && u(generator) > probability)
       continue;
 
     records_examined++;
@@ -2035,8 +2038,6 @@ notenoughvariance(int argc, char ** argv)
       cerr << "The probability value must be between 0.0 and 1.0\n";
       usage(14);
     }
-
-    (void) iw_random_seed();
 
     if (verbose)
       cerr << "Will examine records with a probability of " << probability << endl;

@@ -915,6 +915,21 @@ cc_binary(
     ],
 )
 
+#cc_library(
+#    name = "surface_area_molvol",
+#    srcs = [
+#        "surface_area_molvol.cc",
+#    ],
+#    hdrs = [
+#        "surface_area_molvol.h"
+#    ],
+#    deps = [
+#        "//Molecule_Lib:iwmolecule",
+#        "//Molecule_Lib:moleculeio",
+#        "//Molecule_Lib:iw_vdw",
+#    ],
+#)
+
 cc_binary(
     name = "tautomer_generation",
     srcs = [

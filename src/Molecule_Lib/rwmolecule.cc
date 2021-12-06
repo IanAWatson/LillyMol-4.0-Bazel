@@ -10,7 +10,6 @@ using std::endl;
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/data_source/string_data_source.h"
-#include "Foundational/mtrand/iwrandom.h"
 
 #include "mdl.h"
 #include "misc2.h"
@@ -1614,9 +1613,6 @@ process_input_type(const Command_Line & cl, FileType & input_type)
       return 0;
     }
   }
-
-  if (FILE_TYPE_RSMI == input_type)
-    iw_random_seed();
 
   if (0 != input_type)
     ;

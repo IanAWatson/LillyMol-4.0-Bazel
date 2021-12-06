@@ -796,20 +796,6 @@ maccskeys (int argc, char ** argv)
         if (verbose)
           cerr << "Will perform " << ntest << " random permutation tests on each molecule\n";
       }
-      else if (t.starts_with("seed="))
-      {
-        t.remove_leading_chars(5);
-        unsigned int s;
-        if (! t.numeric_value(s))
-        {
-          cerr << "invalid seed '" << t << "'\n";
-          return 5;
-        }
-
-        iw_set_rnum_seed(s);
-        if (verbose)
-          cerr << "using random number seed " << s << endl;
-      }
       else
       {
         cerr << "Unrecognised -t qualifier '" << t << "'\n";

@@ -106,20 +106,20 @@ class RO5_Attributes
 
 //  private functions
 
-    int _initialise (Molecule &, int *);
-    int _identify_violations ();
+    int _initialise(Molecule &, int *);
+    int _identify_violations();
 
   public:
     RO5_Attributes();
 
-    int initialise (Molecule &);
+    int initialise(Molecule &);
 
-    void set_clogp (float c);
+    void set_clogp(float c);
 
-    int write_descriptors (const IWString &, IWString_and_File_Descriptor &);
+    int write_descriptors(const IWString &, IWString_and_File_Descriptor &);
 
-    int number_violations () const { return _number_violations;}
-    const IWString & violations_in_string_form () const { return _string_form;}
+    int number_violations() const { return _number_violations;}
+    const IWString & violations_in_string_form() const { return _string_form;}
 };
 
 RO5_Attributes::RO5_Attributes()
@@ -134,8 +134,8 @@ RO5_Attributes::RO5_Attributes()
 }
 
 int
-RO5_Attributes::write_descriptors (const IWString & mname,
-                                   IWString_and_File_Descriptor & output)
+RO5_Attributes::write_descriptors(const IWString & mname,
+                                  IWString_and_File_Descriptor & output)
 {
   if (0 == mname.length())
     output << "RO5UNK" << molecules_read;
@@ -165,7 +165,7 @@ RO5_Attributes::write_descriptors (const IWString & mname,
 }
 
 int
-RO5_Attributes::_identify_violations ()
+RO5_Attributes::_identify_violations()
 {
   assert (_natoms > 0);
 
@@ -214,7 +214,7 @@ RO5_Attributes::_identify_violations ()
 }
 
 static int
-assign_acceptors_simplistic (Molecule & m, int * isotope)
+assign_acceptors_simplistic(Molecule & m, int * isotope)
 {
   int matoms = m.natoms();
 
@@ -238,7 +238,7 @@ assign_acceptors_simplistic (Molecule & m, int * isotope)
 */
 
 static int
-assign_donors_simplistic (Molecule & m, int * isotope)
+assign_donors_simplistic(Molecule & m, int * isotope)
 {
   const int matoms = m.natoms();
 
@@ -262,19 +262,19 @@ assign_donors_simplistic (Molecule & m, int * isotope)
 }
 
 static int
-assign_donors (Molecule & m, int * isotope)
+assign_donors(Molecule & m, int * isotope)
 {
   return assign_donors_simplistic(m, isotope);
 }
 
 static int
-assign_acceptors (Molecule & m, int * isotope)
+assign_acceptors(Molecule & m, int * isotope)
 {
   return assign_acceptors_simplistic(m, isotope);
 }
 
 int
-RO5_Attributes::initialise (Molecule & m)
+RO5_Attributes::initialise(Molecule & m)
 {
   _natoms = m.natoms();
 
@@ -303,8 +303,8 @@ RO5_Attributes::set_clogp (float c)
 }
 
 int
-RO5_Attributes::_initialise (Molecule & m,
-                             int * isotope)
+RO5_Attributes::_initialise(Molecule & m,
+                            int * isotope)
 {
   _acount = assign_acceptors(m, isotope);
 
@@ -332,9 +332,9 @@ RO5_Attributes::_initialise (Molecule & m,
 }
 
 static int
-do_append_violations_to_name (Molecule & m,
-                              int number_violations,
-                              const RO5_Attributes & ro5)
+do_append_violations_to_name(Molecule & m,
+                             int number_violations,
+                             const RO5_Attributes & ro5)
 {
   IWString tmp = m.molecule_name();
   tmp << " PR5:" << number_violations << ro5.violations_in_string_form();
@@ -348,9 +348,10 @@ do_append_violations_to_name (Molecule & m,
   Return 1 for a pass, and 0 for a failure
 */
 
+#ifdef SEEMINGLY_NOT_USED
 static int
-check_pass_fail (Molecule & m,
-                 int number_violations)
+check_pass_fail(Molecule & m,
+                int number_violations)
 {
   int rc;
   if (number_violations >= violation_cutoff)
@@ -372,11 +373,12 @@ check_pass_fail (Molecule & m,
 
   return rc;
 }
+#endif
 
 static int
-rule_of_five (Molecule & m,
-              RO5_Attributes & ro5,
-              IWString_and_File_Descriptor & output)
+rule_of_five(Molecule & m,
+             RO5_Attributes & ro5,
+             IWString_and_File_Descriptor & output)
 {
   int number_violations = ro5.number_violations();
 
@@ -411,7 +413,7 @@ rule_of_five (Molecule & m,
 }
 
 static void
-preprocess (Molecule & m)
+preprocess(Molecule & m)
 {
   if (reduce_to_largest_fragment && m.number_fragments() > 1)
     m.reduce_to_largest_fragment();
@@ -423,8 +425,8 @@ preprocess (Molecule & m)
 }
 
 static int
-compute_rule_of_five_attributes (Molecule & m, 
-                                 RO5_Attributes & ro5)
+compute_rule_of_five_attributes(Molecule & m, 
+                                RO5_Attributes & ro5)
 {
   molecules_read++;
 
@@ -442,8 +444,8 @@ compute_rule_of_five_attributes (Molecule & m,
 }
 
 static int
-rule_of_five (data_source_and_type<Molecule> & input,
-              IWString_and_File_Descriptor & output)
+rule_of_five(data_source_and_type<Molecule> & input,
+             IWString_and_File_Descriptor & output)
 {
   Molecule * m;
   while (nullptr != (m = input.next_molecule()))
@@ -467,8 +469,8 @@ rule_of_five (data_source_and_type<Molecule> & input,
 */
 
 static int
-rule_of_five_record (const const_IWSubstring & buffer,
-                     IWString_and_File_Descriptor & output)
+rule_of_five_record(const const_IWSubstring & buffer,
+                    IWString_and_File_Descriptor & output)
 {
   const_IWSubstring token;
   int i = 0;
@@ -536,8 +538,8 @@ rule_of_five_record (const const_IWSubstring & buffer,
 }
 
 static int
-rule_of_five (iwstring_data_source & input,
-              IWString_and_File_Descriptor & output)
+rule_of_five(iwstring_data_source & input,
+             IWString_and_File_Descriptor & output)
 {
   const_IWSubstring buffer;
   while (input.next_record(buffer))
@@ -557,8 +559,8 @@ rule_of_five (iwstring_data_source & input,
 }
 
 static int
-rule_of_five (const char * fname,
-              IWString_and_File_Descriptor & output)
+rule_of_five(const char * fname,
+             IWString_and_File_Descriptor & output)
 {
   iwstring_data_source input(fname);
 
@@ -572,9 +574,9 @@ rule_of_five (const char * fname,
 }
 
 static int
-rule_of_five (const char * fname,
-              FileType input_type,
-              IWString_and_File_Descriptor & output)
+rule_of_five(const char * fname,
+             FileType input_type,
+             IWString_and_File_Descriptor & output)
 {
   data_source_and_type<Molecule> input(input_type, fname);
   if (! input.ok())
@@ -587,9 +589,9 @@ rule_of_five (const char * fname,
 }
 
 static int
-open_output_object (const Command_Line & cl, Molecule_Output_Object & mstream,
-                    char cflag,
-                    const char * text)
+open_output_object(const Command_Line & cl, Molecule_Output_Object & mstream,
+                   char cflag,
+                   const char * text)
 {
   assert (cl.option_present(cflag));
   assert (0 == mstream.number_elements());
@@ -650,7 +652,7 @@ usage(int rc)
 }
 
 int
-rule_of_five (int argc, char ** argv)
+rule_of_five(int argc, char ** argv)
 {
   Command_Line cl(argc, argv, "vA:E:i:o:S:g:t:P:p:lW:z:O:BNfm");
 
@@ -935,7 +937,7 @@ rule_of_five (int argc, char ** argv)
 }
 
 int
-main (int argc, char ** argv)
+main(int argc, char ** argv)
 {
   prog_name = argv[0];
 

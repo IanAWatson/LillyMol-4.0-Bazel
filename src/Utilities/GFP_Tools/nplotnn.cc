@@ -2,15 +2,14 @@
   Process neighbor lists from a variety of programmes.
 */
 
-#include <limits>
-
 #include <fstream>
+#include <limits>
+#include <random>
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #include "Foundational/iwstring/iw_stl_hash_set.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 #include "Foundational/cmdline/cmdline.h"
-#include "Foundational/mtrand/iwrandom.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/histogram/iwhistogram.h"
@@ -120,9 +119,9 @@ class Smiles_ID_Dist_UID : public Smiles_ID_Dist
     IWString _uid;
 
   public:
-    Smiles_ID_Dist_UID (const IWString & s, const IWString & i, similarity_type_t d) : Smiles_ID_Dist (s, i, d) {};
+    Smiles_ID_Dist_UID(const IWString & s, const IWString & i, similarity_type_t d) : Smiles_ID_Dist(s, i, d) {};
 
-    void set_unique_identifier (const IWString & s) { _uid = s;}
+    void set_unique_identifier(const IWString & s) { _uid = s;}
 
     const IWString & unique_identifier() const { return _uid;}
 };
@@ -133,7 +132,7 @@ template class resizable_array_base<Smiles_ID_Dist_UID *>;
 #endif
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
   cerr << endl;
@@ -170,7 +169,7 @@ usage (int rc)
 }
 
 static void
-display_dash_x_options (std::ostream & os)
+display_dash_x_options(std::ostream & os)
 {
   os << " -X nonnum          suppress printing of neighbour number with each neighbour\n";
   os << " -X tcol=<col>      just write column <col> from the target molecules\n";
@@ -205,7 +204,7 @@ display_dash_x_options (std::ostream & os)
 }
 
 static void
-display_dash_u_options (std::ostream & os)
+display_dash_u_options(std::ostream & os)
 {
   cerr << " -u id            unique neighbours only - note that only identifiers are\n";
   cerr << "                  checked, NOT the unique smiles\n";
@@ -223,13 +222,13 @@ class Fatal_Error
     int _line_number;
 
   public:
-    Fatal_Error (const char *, int);
+    Fatal_Error(const char *, int);
 
     int line_number() const { return _line_number;}
     const IWString & fname() const { return _fname;}
 };
 
-Fatal_Error::Fatal_Error (const char * file_name, int n) : _fname(file_name), _line_number(n)
+Fatal_Error::Fatal_Error(const char * file_name, int n) : _fname(file_name), _line_number(n)
 {
 }
 
@@ -343,7 +342,7 @@ static int check_distance_ordering = 0;
 */
 
 static int
-passes_number_needed_within_distance (const resizable_array_p<Smiles_ID_Dist_UID> & neighbours)
+passes_number_needed_within_distance(const resizable_array_p<Smiles_ID_Dist_UID> & neighbours)
 {
   int nn = neighbours.number_elements();
 
@@ -365,9 +364,9 @@ passes_number_needed_within_distance (const resizable_array_p<Smiles_ID_Dist_UID
 }
 
 static int
-write_neighbour_list (const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
-                      const IWString & target_smiles,
-                      IWString_and_File_Descriptor & output)
+write_neighbour_list(const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
+                     const IWString & target_smiles,
+                     IWString_and_File_Descriptor & output)
 {
   if (suppress_neighbours)
     return 1;
@@ -532,16 +531,20 @@ write_statistics_for_neighbour_list(const resizable_array_p<T> & neighbours,
 }
 
 #ifdef __GNUG__
-template void write_statistics_for_neighbour_list (const resizable_array_p<Smiles_ID_Dist_UID> &, IWString &);
+template void write_statistics_for_neighbour_list(const resizable_array_p<Smiles_ID_Dist_UID> &, IWString &);
 #endif
 
+// Select neighbors that are biased towards closer neighbors.
 static void
-do_biased_subset (resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
-                  int nkeep)
+do_biased_subset(resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
+                 int nkeep)
 {
+  std::random_device rd;
+  std::default_random_engine generator(rd());
+  std::uniform_real_distribution<double> u(0.0, 1.0);
   while (neighbours.number_elements() > nkeep)
   {
-    random_number_t r = iwrandom();
+    double r = u(generator);
     r = r * r;
 
     int i = int(r * (neighbours.number_elements() - 1));
@@ -554,15 +557,17 @@ do_biased_subset (resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
 
 template <typename T>
 void
-random_subset (resizable_array_p<T> & neighbours,
-               int nkeep)
+random_subset(resizable_array_p<T> & neighbours,
+              int nkeep)
  
 {
   assert (nkeep > 0);
 
-  while (neighbours.number_elements() > nkeep)
-  {
-    int i = intbtwij(0, neighbours.number_elements() - 1);
+  std::random_device rd;
+  std::default_random_engine generator(rd());
+  while (neighbours.number_elements() > nkeep) {
+    std::uniform_int_distribution<int> u(0, neighbours.number_elements() - 1);
+    int i = u(generator);
 
     neighbours.remove_item(i);
   }
@@ -571,9 +576,9 @@ random_subset (resizable_array_p<T> & neighbours,
 }
 
 static int
-write_targets_not_written_if_requested (const IWString & smiles,
-                                        const IWString & id,
-                                        IWString_and_File_Descriptor & output)
+write_targets_not_written_if_requested(const IWString & smiles,
+                                       const IWString & id,
+                                       IWString_and_File_Descriptor & output)
 {
   if (! output.is_open())
     return 1;
@@ -586,7 +591,7 @@ write_targets_not_written_if_requested (const IWString & smiles,
 }
 
 static int
-do_check_distance_ordering (const resizable_array_p<Smiles_ID_Dist_UID> & neighbours)
+do_check_distance_ordering(const resizable_array_p<Smiles_ID_Dist_UID> & neighbours)
 {
   const int n = neighbours.number_elements();
 
@@ -615,7 +620,7 @@ do_check_distance_ordering (const resizable_array_p<Smiles_ID_Dist_UID> & neighb
 }
 
 #ifdef __GNUG__
-template void random_subset (resizable_array_p<Smiles_ID_Dist_UID> &, int);
+template void random_subset(resizable_array_p<Smiles_ID_Dist_UID> &, int);
 #endif
 
 // Generate delimited output that includes smiles.
@@ -791,8 +796,8 @@ process_molecule(const IWString & smiles,
 */
 
 static int
-same_structure_this_target (const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
-                            const IWString & usmi)
+same_structure_this_target(const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
+                           const IWString & usmi)
 {
   int n = neighbours.number_elements();
 
@@ -811,8 +816,8 @@ same_structure_this_target (const resizable_array_p<Smiles_ID_Dist_UID> & neighb
 */
 
 static int
-is_duplicate (const IWString_STL_Hash_Set & identifiers_encountered,
-              const IWString & id)
+is_duplicate(const IWString_STL_Hash_Set & identifiers_encountered,
+             const IWString & id)
 {
 //cerr << "Checking duplicate? '" << id << "'\n";
   if (identifiers_encountered.contains(id))
@@ -827,8 +832,8 @@ is_duplicate (const IWString_STL_Hash_Set & identifiers_encountered,
 }
 
 static int
-identifiers_the_same (const IWString & id1,
-                      const IWString & id2)
+identifiers_the_same(const IWString & id1,
+                     const IWString & id2)
 {
   if (id1 == id2)
     return 1;
@@ -854,10 +859,10 @@ identifiers_the_same (const IWString & id1,
 }
 
 static int
-neighbour_is_suppressed (const IWString & id_of_target,
-                         const IWString & id_of_nbr,
-                         resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
-                         float distance)
+neighbour_is_suppressed(const IWString & id_of_target,
+                        const IWString & id_of_nbr,
+                        resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
+                        float distance)
 {
 //cerr << "neighbour_is_suppressed " << discard_self_neighbours << " cmp " << id_of_target << "' and '" << id_of_nbr << "'\n";
 
@@ -884,12 +889,12 @@ neighbour_is_suppressed (const IWString & id_of_target,
 }
 
 static void
-create_neighbour_item (const IWString & id_of_target,
-                       resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
-                       const IWString & smiles,
-                       const IWString & id,
-                       float distance,
-                       float scale)
+create_neighbour_item(const IWString & id_of_target,
+                      resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
+                      const IWString & smiles,
+                      const IWString & id,
+                      float distance,
+                      float scale)
 {
   if (neighbour_is_suppressed(id_of_target, id, neighbours, distance))
     return;
@@ -957,9 +962,9 @@ create_neighbour_item (const IWString & id_of_target,
 }
 
 static int
-extract_tdt_value (const const_IWSubstring & buffer,
-                   int tag_length,
-                   IWString & result)
+extract_tdt_value(const const_IWSubstring & buffer,
+                  int tag_length,
+                  IWString & result)
 {
   if (! buffer.ends_with('>'))
   {
@@ -980,9 +985,9 @@ extract_tdt_value (const const_IWSubstring & buffer,
 }
 
 static int
-process_neighbour_list_item (const const_IWSubstring & buffer,
-                             const IWString & tag,
-                             IWString & result)
+process_neighbour_list_item(const const_IWSubstring & buffer,
+                            const IWString & tag,
+                            IWString & result)
 {
   if (result.length())
   {
@@ -1000,8 +1005,8 @@ process_neighbour_list_item (const const_IWSubstring & buffer,
 }
 
 static int
-fetch_missing_smiles (const IWString & id,
-                      IWString & smiles)
+fetch_missing_smiles(const IWString & id,
+                     IWString & smiles)
 {
   IW_STL_Hash_Map_String::const_iterator f = missing_smiles.find(id);
 
@@ -1031,8 +1036,8 @@ fetch_missing_smiles (const IWString & id,
 }
 
 static int
-reduce_to_token (IWString & s, 
-                 int w)
+reduce_to_token(IWString & s, 
+                int w)
 {
   if (1 == s.nwords())
     return 0;
@@ -1050,8 +1055,8 @@ reduce_to_token (IWString & s,
 }
 
 static int
-reduce_to_token (IWString & s,
-                 const resizable_array<int> & c)
+reduce_to_token(IWString & s,
+                const resizable_array<int> & c)
 {
   IWString rc;
 
@@ -1076,9 +1081,9 @@ reduce_to_token (IWString & s,
 */
 
 static int
-get_next_id (iwstring_data_source & input,
-             IWString & id,
-             int & fatal)
+get_next_id(iwstring_data_source & input,
+            IWString & id,
+            int & fatal)
 {
   const_IWSubstring buffer;
 
@@ -1121,10 +1126,10 @@ get_next_id (iwstring_data_source & input,
 */
 
 static int
-get_smiles_and_id (iwstring_data_source & input,
-                   IWString & smiles,
-                   IWString & id,
-                   int & fatal)
+get_smiles_and_id(iwstring_data_source & input,
+                  IWString & smiles,
+                  IWString & id,
+                  int & fatal)
 {
   const_IWSubstring buffer;
 
@@ -1193,9 +1198,9 @@ get_smiles_and_id (iwstring_data_source & input,
 // Handles both SCALE and DIST tags.
 
 static int
-process_neighbour_list_item (const const_IWSubstring & buffer,
-                             const IWString & tag,
-                             float & dist)
+process_neighbour_list_item(const const_IWSubstring & buffer,
+                            const IWString & tag,
+                            float & dist)
 {
   IWString tmp;
 
@@ -1215,14 +1220,14 @@ process_neighbour_list_item (const const_IWSubstring & buffer,
 }
 
 static int
-process_neighbour_list_record (const IWString & id_of_target,
-                               resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
-                               IWString & smiles,
-                               IWString & id,
-                               float & distance,
-                               const const_IWSubstring & buffer,
-                               float & scale,
-                               int record_number)
+process_neighbour_list_record(const IWString & id_of_target,
+                              resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
+                              IWString & smiles,
+                              IWString & id,
+                              float & distance,
+                              const const_IWSubstring & buffer,
+                              float & scale,
+                              int record_number)
 {
 //#define DEBUG_NLR
 #ifdef DEBUG_NLR
@@ -1976,8 +1981,6 @@ plotnn (int argc, char ** argv)
 
     if (verbose)
       cerr << "A random sampling of near neighbours will be shown\n";
-
-    iw_random_seed();
   }
 
   if (cl.option_present('u'))
@@ -2227,8 +2230,6 @@ plotnn (int argc, char ** argv)
 
         if (verbose)
           cerr << "Will choose a random set of neighbours, biased toward close neighbours\n";
-
-        iw_random_seed();
       }
       else if ("random" == x)
       {
@@ -2236,8 +2237,6 @@ plotnn (int argc, char ** argv)
 
         if (verbose)
           cerr << "A random sampling of near neighbours will be shown\n";
-
-        iw_random_seed();
       }
       else if (x.starts_with("SMITAG="))
       {

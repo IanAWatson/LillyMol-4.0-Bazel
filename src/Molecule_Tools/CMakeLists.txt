@@ -18,7 +18,6 @@ set(common_libs
   string_data_source
   iwre2
   iwstring
-  iwrandom
   xmlParser
 )
 

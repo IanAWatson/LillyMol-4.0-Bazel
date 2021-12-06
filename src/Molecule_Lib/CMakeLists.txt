@@ -205,7 +205,6 @@ set(libs_for_tests
   string_data_source
   binary_data_file
   xmlParser
-  iwrandom
   iwmisc
   iwbits
   iwre2

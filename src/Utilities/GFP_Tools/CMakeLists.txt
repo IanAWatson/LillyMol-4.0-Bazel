@@ -92,7 +92,6 @@ set(descriptor_file_to_01_fingerprints_srcs
 )
 set(descriptor_file_to_01_fingerprints_libs
   ${common_libs}
-  iwrandom
 )
 add_executable(descriptor_file_to_01_fingerprints ${descriptor_file_to_01_fingerprints_srcs})
 target_link_libraries(descriptor_file_to_01_fingerprints LINK_PUBLIC ${descriptor_file_to_01_fingerprints_libs})
@@ -104,7 +103,6 @@ set(gfp_catboost_score_srcs
 )
 set(gfp_catboost_score_libs
   ${common_libs}
-  iwrandom
   -lprotobuf
 )
 #add_executable(gfp_catboost_score ${gfp_catboost_score_srcs})
@@ -118,7 +116,6 @@ set(gfp_spread_libs
   spread_v2
   smiles_id_dist
   ${common_libs}
-  iwrandom
 )
 add_executable(gfp_spread ${gfp_spread_srcs})
 target_link_libraries(gfp_spread LINK_PUBLIC ${gfp_spread_libs})
@@ -163,7 +160,6 @@ set(gfp_spread_standard_srcs
 set(gfp_spread_standard_libs
   ${common_libs}
   gfp_standard
-  iwrandom
 )
 add_executable(gfp_spread_standard ${gfp_spread_standard_srcs})
 target_link_libraries(gfp_spread_standard LINK_PUBLIC ${gfp_spread_standard_libs} -fopenmp)
@@ -175,7 +171,6 @@ set(gfp_nearneighbours_single_file_srcs
 set(gfp_nearneighbours_single_file_libs
   ${common_libs}
   gfp_standard
-  iwrandom
   iwhistogram
 )
 add_executable(gfp_nearneighbours_single_file ${gfp_nearneighbours_single_file_srcs})
@@ -220,7 +215,6 @@ set(iwstats_libs
   metric
   bsquared
   ${common_libs}
-  iwrandom
 )
 add_executable(iwstats ${iwstats_srcs})
 target_link_libraries(iwstats LINK_PUBLIC ${iwstats_libs})
@@ -272,7 +266,6 @@ set(nplotnn_libs
   iwhistogram
   string_data_source
   xmlParser
-  iwrandom
   -lprotobuf -lsnappy
   ${common_libs}
 )

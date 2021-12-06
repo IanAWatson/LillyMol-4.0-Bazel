@@ -1,7 +1,6 @@
 #ifndef IW_SMILES_H
 #define IW_SMILES_H 1
 
-#include "Foundational/mtrand/iwrandom.h"
 #include "molecule.h"
 
 /*
@@ -42,6 +41,7 @@ class Temporarily_Set_Include_Chiral_Info_in_Smiles
     ~Temporarily_Set_Include_Chiral_Info_in_Smiles();
 };
 
+using random_number_seed_t = unsigned int;
 extern void set_smiles_random_number_seed(random_number_seed_t);
 extern random_number_seed_t set_smiles_random_number_seed_random();
 

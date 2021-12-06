@@ -7,7 +7,6 @@
 
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwbits/iwbits.h"
-#include "Foundational/mtrand/iwrandom.h"
 
 
 // Define this to get the molecule private functions defined here

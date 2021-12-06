@@ -8367,8 +8367,6 @@ iwdescr(int argc, char ** argv)
       return 63;
     }
 
-    int seed = 0;
-
     const_IWSubstring t;
     int i = 0;
     while (cl.value('T', t, i++))
@@ -8376,15 +8374,6 @@ iwdescr(int argc, char ** argv)
       if ("kg" == t)
       {
         keep_going_after_test_failure = 1;
-      }
-      else if (t.starts_with("seed="))
-      {
-        t.remove_leading_chars(5);
-        if (! t.numeric_value(seed))
-        {
-          cerr << "Invalid random number seed '" << t << "'\n";
-          return 3;
-        }
       }
       else if (! t.numeric_value(ntest) || ntest < 1)
       {
@@ -8403,11 +8392,6 @@ iwdescr(int argc, char ** argv)
       cerr << "Will perform tests on " << ntest << " random smiles permutations\n";
 
     saved_result = new Set_or_Unset<float>[NUMBER_DESCRIPTORS];
-
-    if (seed > 0)
-      iw_set_rnum_seed(seed);
-    else
-      iw_random_seed();
   }
 
   number_filters = cl.option_count('F');

@@ -4,6 +4,7 @@
 */
 
 #include <limits>
+#include <random>
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
@@ -11,7 +12,6 @@
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/histogram/iwhistogram.h"
-#include "Foundational/mtrand/iwrandom.h"
 
 #include "gfp.h"
 #include "tversky.h"
@@ -43,14 +43,14 @@ static int write_entire_input_records = 0;
 
 static int equal_weight_tanimoto = 0;
 
-static int strip_leading_zeros = 0;
+//static int strip_leading_zeros = 0;
 
 static int ignore_missing_identifiers = 0;
 
 static int missing_identifiers_ignored = 0;
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
   cerr << "Reports pair-wise distances. Input file has pairs of identifiers on each line\n";
@@ -72,7 +72,7 @@ usage (int rc)
 }
 
 static int
-read_pool (iwstring_data_source & input)
+read_pool(iwstring_data_source & input)
 {
   int items_read = 0;
 
@@ -135,7 +135,7 @@ read_pool (iwstring_data_source & input)
 }
 
 static int
-read_pool (const char * fname)
+read_pool(const char * fname)
 {
   iwstring_data_source input(fname);
   if (! input.good())
@@ -176,8 +176,8 @@ read_pool (const char * fname)
 }
 
 static similarity_type_t
-compute_the_distance (int ndx1, int ndx2,
-                      Tversky & tversky)
+compute_the_distance(int ndx1, int ndx2,
+                     Tversky & tversky)
 {
   if (tversky.active ())
     return static_cast<similarity_type_t>(1.0) - pool[ndx1].tversky(pool[ndx2], tversky);
@@ -267,8 +267,8 @@ gfp_pairwise_distance(const const_IWSubstring & buffer,
 }
 
 static int
-gfp_pairwise_distances (iwstring_data_source & input,
-                        IWString_and_File_Descriptor & output)
+gfp_pairwise_distances(iwstring_data_source & input,
+                       IWString_and_File_Descriptor & output)
 {
   const_IWSubstring buffer;
 
@@ -287,8 +287,8 @@ gfp_pairwise_distances (iwstring_data_source & input,
 }
 
 static int
-gfp_pairwise_distances (const char * fname,
-                        IWString_and_File_Descriptor & output)
+gfp_pairwise_distances(const char * fname,
+                       IWString_and_File_Descriptor & output)
 {
   iwstring_data_source input(fname);
 
@@ -302,17 +302,21 @@ gfp_pairwise_distances (const char * fname,
 }
 
 static int
-gfp_pairwise_distances_random (IWString_and_File_Descriptor & output)
+gfp_pairwise_distances_random(std::default_random_engine& generator,
+                              IWString_and_File_Descriptor & output)
 {
-  int i1 = intbtwij (0, pool_size - 1);
+
+  std::uniform_int_distribution<int> u(0, pool_size);
+
+  const int i1 = u(generator);
   int i2;
   do 
   {
-    i2 = intbtwij (0, pool_size - 1);
+    i2 = u(generator);
   }
   while (i2 == i1);
 
-  similarity_type_t d = compute_the_distance (i1, i2, tversky);
+  similarity_type_t d = compute_the_distance(i1, i2, tversky);
 
   if (verbose)
     distance_acc.extra(d);
@@ -324,7 +328,7 @@ gfp_pairwise_distances_random (IWString_and_File_Descriptor & output)
 }
 
 static int
-gfp_pairwise_distances (int argc, char ** argv)
+gfp_pairwise_distances(int argc, char ** argv)
 {
   Command_Line cl (argc, argv, "vp:s:F:V:P:gK:T:o:aqr:b");
 
@@ -470,11 +474,12 @@ gfp_pairwise_distances (int argc, char ** argv)
     if (verbose)
       cerr << "Will choose " << randomly_choose << " pairs at random\n";
 
-    iw_set_rnum_seed (random_seed_from_dev_random());
 
+    std::random_device rd;
+    std::default_random_engine generator(rd());
     for (int i = 0; i < randomly_choose; i++)
     {
-      gfp_pairwise_distances_random(output);
+      gfp_pairwise_distances_random(generator, output);
     }
   }
   else if (cl.option_present('K'))

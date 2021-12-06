@@ -17,6 +17,5 @@ cc_library(
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwstring:iwstring",
-        "//Foundational/mtrand:iwrandom",
     ],
 )
