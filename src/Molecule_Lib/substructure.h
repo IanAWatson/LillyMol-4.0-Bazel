@@ -3104,5 +3104,15 @@ Substructure_Atom::any_query_atom(T todo) const
   return 0;
 }
 
+namespace substructure_spec {
+
+// Exposed only for testing
+int SmartsNumericQualifier(const char * input,
+                       int max_chars,
+                       Min_Max_Specifier<int>& result);
+int SmartsFetchNumeric(const char * string, int & value, 
+                     int & qualifier);
+
+}  // namespace substructure_spec
 #endif
 

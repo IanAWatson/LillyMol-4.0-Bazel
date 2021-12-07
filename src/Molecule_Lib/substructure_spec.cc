@@ -1,5 +1,7 @@
 #include <cctype>
 
+#include "re2/re2.h"
+
 #include "aromatic.h"
 #include "misc2.h"
 #include "smiles.h"
@@ -24,13 +26,13 @@ h_means_exactly_one_hydrogen()
 }
 
 void
-set_h_means_exactly_one_hydrogen (int s)
+set_h_means_exactly_one_hydrogen(int s)
 {
   _h_means_exactly_one_hydrogen = s;
 }
 
 int
-Substructure_Atom_Specifier::atomic_number (atomic_number_t & z) const
+Substructure_Atom_Specifier::atomic_number(atomic_number_t & z) const
 {
   if (_element.number_elements())
   {
@@ -71,7 +73,7 @@ Substructure_Atom_Specifier::Substructure_Atom_Specifier()
   return;
 }
 
-Substructure_Atom_Specifier::Substructure_Atom_Specifier (const Element * e)
+Substructure_Atom_Specifier::Substructure_Atom_Specifier(const Element * e)
 {
   _default_values();
 
@@ -165,7 +167,7 @@ Substructure_Atom_Specifier::debug_print(std::ostream & os,
 }
 
 int
-Substructure_Atom_Specifier::terse_details (std::ostream & os,
+Substructure_Atom_Specifier::terse_details(std::ostream & os,
                                const IWString & indentation) const
 {
   assert (os.good());
@@ -232,7 +234,7 @@ Substructure_Atom_Specifier::involves_rings() const
 */
 
 int
-Substructure_Atom_Specifier::_adjust_nrings (int nr)
+Substructure_Atom_Specifier::_adjust_nrings(int nr)
 {
 //  There is nothing we can do in this case. Even if the atom in the query
 //  does not appear in a ring, the query can ultimately be embedded in a ring.
@@ -264,7 +266,7 @@ Substructure_Atom_Specifier::_adjust_nrings (int nr)
 */
 
 int
-Substructure_Atom_Specifier::_adjust_ring_sizes (const List_of_Ring_Sizes & ring_sizes_perceived)
+Substructure_Atom_Specifier::_adjust_ring_sizes(const List_of_Ring_Sizes & ring_sizes_perceived)
 {
   if (ring_sizes_perceived.empty())
     return 1;
@@ -293,7 +295,7 @@ Substructure_Atom_Specifier::_adjust_ring_sizes (const List_of_Ring_Sizes & ring
 */
 
 int
-Substructure_Atom_Specifier::adjust_ring_specifications (int nr, 
+Substructure_Atom_Specifier::adjust_ring_specifications(int nr, 
                                   const List_of_Ring_Sizes & ring_sizes)
 {
   assert (nr >= 0);
@@ -357,7 +359,7 @@ Substructure_Atom_Specifier::min_nbonds() const
 }
 
 int
-Substructure_Atom_Specifier::set_element (const Element * e)
+Substructure_Atom_Specifier::set_element(const Element * e)
 {
   assert (ok());
   assert (e->ok());
@@ -371,7 +373,7 @@ Substructure_Atom_Specifier::set_element (const Element * e)
 }
 
 int
-Substructure_Atom_Specifier::set_ncon (int ncon)
+Substructure_Atom_Specifier::set_ncon(int ncon)
 {
   assert (ok());
   assert (ncon >= 0);
@@ -380,7 +382,7 @@ Substructure_Atom_Specifier::set_ncon (int ncon)
 }
 
 int
-Substructure_Atom_Specifier::set_min_ncon (int ncon)
+Substructure_Atom_Specifier::set_min_ncon(int ncon)
 {
   assert (ok());
   assert (ncon >= 0);
@@ -389,7 +391,7 @@ Substructure_Atom_Specifier::set_min_ncon (int ncon)
 }
 
 int
-Substructure_Atom_Specifier::set_max_ncon (int ncon)
+Substructure_Atom_Specifier::set_max_ncon(int ncon)
 {
   assert (ok());
   assert (ncon >= 0);
@@ -398,7 +400,7 @@ Substructure_Atom_Specifier::set_max_ncon (int ncon)
 }
 
 int
-Substructure_Atom_Specifier::set_min_nbonds (int nbonds)
+Substructure_Atom_Specifier::set_min_nbonds(int nbonds)
 {
   assert (ok());
   assert (nbonds >= 0);
@@ -407,7 +409,7 @@ Substructure_Atom_Specifier::set_min_nbonds (int nbonds)
 }
 
 int
-Substructure_Atom_Specifier::set_max_nbonds (int nbonds)
+Substructure_Atom_Specifier::set_max_nbonds(int nbonds)
 {
   assert (ok());
   assert (nbonds >= 0);
@@ -416,7 +418,7 @@ Substructure_Atom_Specifier::set_max_nbonds (int nbonds)
 }
 
 int
-Substructure_Atom_Specifier::set_nbonds (int nbonds)
+Substructure_Atom_Specifier::set_nbonds(int nbonds)
 {
   assert (ok());
   assert (nbonds >= 0);
@@ -425,7 +427,7 @@ Substructure_Atom_Specifier::set_nbonds (int nbonds)
 }
 
 int
-Substructure_Atom_Specifier::set_ncon2 (int ncon2)
+Substructure_Atom_Specifier::set_ncon2(int ncon2)
 {
   assert (ok());
   assert (ncon2 >= 0);
@@ -434,7 +436,7 @@ Substructure_Atom_Specifier::set_ncon2 (int ncon2)
 }
 
 int
-Substructure_Atom_Specifier::set_nrings (int nrings)
+Substructure_Atom_Specifier::set_nrings(int nrings)
 {
   assert (ok());
   assert (nrings >= 0);
@@ -443,7 +445,7 @@ Substructure_Atom_Specifier::set_nrings (int nrings)
 }
 
 int
-Substructure_Atom_Specifier::set_min_nrings (int nr)
+Substructure_Atom_Specifier::set_min_nrings(int nr)
 {
   assert (ok());
   assert (nr > 0);
@@ -452,7 +454,7 @@ Substructure_Atom_Specifier::set_min_nrings (int nr)
 }
 
 int
-Substructure_Atom_Specifier::set_formal_charge (formal_charge_t fc)
+Substructure_Atom_Specifier::set_formal_charge(formal_charge_t fc)
 {
   assert (ok());
 
@@ -460,7 +462,7 @@ Substructure_Atom_Specifier::set_formal_charge (formal_charge_t fc)
 }
 
 int
-Substructure_Atom_Specifier::set_attached_heteroatom_count (int ahc)
+Substructure_Atom_Specifier::set_attached_heteroatom_count(int ahc)
 {
   assert (ok());
 
@@ -470,7 +472,7 @@ Substructure_Atom_Specifier::set_attached_heteroatom_count (int ahc)
 }
 
 int
-Substructure_Atom_Specifier::set_chirality (int c)
+Substructure_Atom_Specifier::set_chirality(int c)
 {
   assert (ok());
 
@@ -482,7 +484,7 @@ Substructure_Atom_Specifier::set_chirality (int c)
 }
 
 int
-Substructure_Atom_Specifier::formal_charge (formal_charge_t & fc) const
+Substructure_Atom_Specifier::formal_charge(formal_charge_t & fc) const
 {
   assert (ok());
 
@@ -1982,21 +1984,76 @@ Substructure_Atom::construct_from_smarts_token (const char * smarts, int nchars)
   return construct_from_smarts_token(tmp);
 }
 
+namespace substructure_spec {
+
+// Check whether `ring_sizes` contains valid ring size specifications.
+// Just checks for ring sizes < 3
+int
+ValidRingSizes(const Min_Max_Specifier<int>& ring_sizes) {
+  if (! ring_sizes.is_set()) {
+    return 1;
+  }
+
+  int value;
+  if (ring_sizes.min(value) && value < 3) {
+    return 0;
+  }
+  if (ring_sizes.max(value) && value < 3) {
+    return 0;
+  }
+
+  for (int r : ring_sizes) {
+    if (r < 3) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+bool
+ValidRingBondCount(const Min_Max_Specifier<int>& ring_bond_count) {
+  if (! ring_bond_count.is_set()) {
+    return true;
+  }
+
+  return true;
+}
+
+
+#ifdef DIDNOTWORKASNEEDED
+bool
+ValidNcon(const Min_Max_Specifier<int>& min_max_spec) {
+  if (! min_max_spec.is_set()) {
+    return true;
+  }
+  if (min_max_spec.number_elements()) {
+    for (int d : min_max_spec) {
+      if (d < 0) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+#endif
+
 /*
-  This is a variant of the fetch_numeric in misc2.cc
-  The only difference is that we allow a leading '>' or '<' before the digit
-
-  We return the number of characters processed
-
-  When gcc fixes namespaces, change this to get the leading '>' or '<' and
-  then call the function from misc2
-
-  Need to be careful here too, parsing just the '>' or '<' is an error
+  Parse `string` into a possible leading < or >, followed by a whole
+  number.
+  If a leading qualifier is present, set `qualifier` to be -1 for <
+  and +1 for >.
+  Returns the number of characters consumed.
+  `value` will be assigned the numeric.
+  Returns 0 on any error.
+  Note there is no checking on the length of `string`, it
+  comes from a well controlled environment where it is known
+  to terminate with a non digit.
 */
 
 int
-smarts_fetch_numeric (const char * string, int & value, 
-                      int & qualifier)
+SmartsFetchNumeric(const char * string, int & value, 
+                     int & qualifier)
 {
   int rc;
 
@@ -2022,8 +2079,6 @@ smarts_fetch_numeric (const char * string, int & value,
   while (isdigit(*string))
   {
     int tmp = *string - '0';
-    if (tmp < 0 || tmp > 9)    // how could this happen?
-      return 0;
 
     value = value * 10 + tmp;
 
@@ -2037,12 +2092,106 @@ smarts_fetch_numeric (const char * string, int & value,
 
   if (qualifier < 0 && 0 == value)
   {
-    cerr << "smarts_fetch_numeric: < 0 not allowed\n";
+    cerr << "SmartsFetchNumeric: < 0 not allowed\n";
     return 0;
   }
 
   return rc;
 }
+
+// Parse `input` as an RDKit smarts range specification.
+// max_chars is the max number of characters to be considered.
+// {3-} {-4} {3-4}
+int
+SmartsParseRange(const char * input,
+                 int max_chars,
+                 Min_Max_Specifier<int>& result) {
+  assert (*input == '{');
+  std::string to_parse;
+  for (int i = 0; i < max_chars; ++i) {
+    to_parse += input[i];
+    if (input[i] == '}') {
+      break;
+    }
+  }
+  if (to_parse.back() != '}') {
+    cerr << "SmartsParseRange:no closing brace\n";
+    return 0;
+  }
+
+  static re2::RE2 min_only("^{([0-9]+)-}");
+  static re2::RE2 max_only("^{-\([0-9]+)}");
+  static re2::RE2 range("^{([0-9]+)-([0-9]+)}");
+
+  int zmin, zmax;
+  if (RE2::FullMatch(to_parse, min_only, &zmin)) {
+    result.set_min(zmin);
+  } else if (RE2::FullMatch(to_parse, max_only, &zmax)) {
+    result.set_max(zmax);
+  } else if (RE2::FullMatch(to_parse, range, &zmin, &zmax)) {
+    if (zmin > zmax) {
+      cerr << "SmartsParseRange:invalid range [" << zmin << ',' << zmax << "]\n";
+      return 0;
+    }
+    result.set_min(zmin);
+    result.set_max(zmax);
+  } else {
+    cerr << "SmartsParseRange:unrecognised range '" << to_parse << "'\n";
+    return 0;
+  }
+  return to_parse.size();
+}
+
+// Parse smarts numeric qualifiers in `input` into a Min_Max_Specifier.
+// If input starts wtih < or > it sets the min or max.
+// If input starts with { then it is parsed as an RDKit range.
+// Returns the number of characters processed.
+int
+SmartsNumericQualifier(const char * input,
+                       int max_chars,
+                       Min_Max_Specifier<int>& result) {
+
+  if (*input == '<' || *input == '>') {
+    int value;
+    int ltgt;
+    int chars_consumed = substructure_spec::SmartsFetchNumeric(input, value, ltgt);
+    if (ltgt < 0) {
+      result.set_max(value - 1);
+    } else if (ltgt > 0) {
+      result.set_min(value + 1);
+    } else {
+      result.add(value);
+    }
+    return chars_consumed;
+  }
+
+  if (*input == '{') {
+    return SmartsParseRange(input, max_chars, result);
+  }
+
+  // Input might be a number.
+
+  int value = 0;
+  int rc = 0;
+  for (int i = 0; i < max_chars; ++i) {
+    if (! isdigit(input[i])) {
+      break;
+    }
+    value = value * 10 + input[i] - '0';
+    ++rc;
+  }
+
+  // No number detected.
+  if (rc == 0) {
+    return 0;
+  }
+
+  result.add(value);
+
+  return rc;
+}
+
+}  // namespace substructure_spec
 
 //#define DEBUG_GET_ATOMIC_NUMBER_OR_SYMBOL
 
@@ -2231,7 +2380,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
         next_char_is_lowercase_letter = 1;
       else if (isdigit(cnext))
         next_char_is_digit = 1;
-      else if ('>' == cnext || '<' == cnext)
+      else if ('>' == cnext || '<' == cnext || '{' == cnext)
         next_char_is_relational = 1;
       else if ('+' == cnext || '-' == cnext)
         next_char_is_charge = 1;
@@ -2245,20 +2394,11 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
 
     if ('H' == s && (next_char_is_digit || next_char_is_relational))
     {
-      int hh;
-      int gtlt;
-      nchars = smarts_fetch_numeric(smarts + 1, hh, gtlt);
-      if (0 == nchars)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed, _hcount);
+      if (nchars == 0) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "Bad H qualifier");
         return 0;
       }
-      if (1 == gtlt) //// '>' found
-        _hcount.set_min(hh + 1);
-      else if (-1 == gtlt)
-        _hcount.set_max(hh - 1);
-      else
-        _hcount.add(hh);
     }
     else if ('H' == s && next_char_is_lowercase_letter && (nchars = element_from_smarts_string(smarts, characters_to_process - characters_processed, e)))
     {
@@ -2342,25 +2482,11 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     }
     else if ('D' == s)       // degree specifier (note that Deuterium is not valid in a smarts)
     {
-      int ncon;
-      int gtlt;
-      nchars = smarts_fetch_numeric(smarts + 1, ncon, gtlt);
-      if (0 == nchars || ncon < 0)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _ncon);
+      if (nchars == 0) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "D specifier has no default");
         return 0;
       }
-
-      if (1 == gtlt)    // '>' found
-      {
-        _ncon.set_min(ncon + 1);
-      }
-      else if (-1 == gtlt)    // '<' found
-      {
-        _ncon.set_max(ncon - 1);
-      }
-      else
-        _ncon.add(ncon);
     }
     else if (isdigit(s))       // atomic mass specifier
     {
@@ -2453,110 +2579,72 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       _aromaticity = AROMATIC;
       previous_token_was = SMARTS_PREVIOUS_TOKEN_ELEMENT;
     }
+    else if (s == 'R' && ! next_char_is_relational && ! next_char_is_digit) {
+      _ring_bond_count.set_min(1);  // In a ring.
+    }
     else if ('R' == s)     // number of rings specifier
     {
-      int rr;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, rr, ltgt);
-      if (0 == nchars)
-        _ring_bond_count.set_min(1);  // In a ring.
-      else if (ltgt > 0)
-        _nrings.set_min(rr + 1);
-      else if (ltgt < 0)
-        _nrings.set_max(rr - 1);
-      else if (rr == 0)
-        _ring_bond_count.add(0);
-      else
-        _nrings.add(rr);
-
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _nrings);
+      if (nchars == 0) {
+        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "Invalid R qualificiaton");
+        return 0;
+      }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_RING;
+    }
+
+    // unqualified 'r' means any ring size.
+    else if (s == 'r' && ! next_char_is_relational && ! next_char_is_digit) {
+      _ring_bond_count.set_min(1);
     }
 
 //  March 2007. Beware of things like [rR1] and [R1r]
 
     else if ('r' == s)     // ring size specifier
     {
-      int rr;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, rr, ltgt);
-      if (0 == nchars)      // just 'r' by itself means in a ring
-        _nrings.set_min(1);
-      else if (0 == rr)     // 'r0' means not in a ring
-        _nrings.add(0);
-      else if (rr + ltgt < 3)
-      {
-        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "ring sizes must be >= 3");
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _ring_size);
+      if (nchars == 0) {
+        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "Invalid r qualificiaton");
         return 0;
       }
-      else if (ltgt > 0)
-        _ring_size.set_min(rr + 1);
-      else if (ltgt < 0)
-      {
-        assert (rr > 3);      // no such thing as a 2 membered ring, so 'r<3' is nonsensical
-        _ring_size.set_max(rr - 1);
+      if (! substructure_spec::ValidRingSizes(_ring_size)) {
+        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "Invalid r sizes");
+        return 0;
       }
-      else
-        _ring_size.add(rr);
       previous_token_was = SMARTS_PREVIOUS_TOKEN_RING;
     }
     else if ('X' == s)     // connectivity - total connections
     {
-      int xx;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, xx, ltgt);
-      if (0 == xx)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _daylight_x);
+      if (nchars == 0) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "the 'X' specifier must be followed by a whole number");
         return 0;
       }
-      if (ltgt > 0)
-        _daylight_x.set_min(xx + 1);
-      else if (ltgt < 0)
-        _daylight_x.set_max(xx - 1);
-      else
-        _daylight_x.add(xx);
-
       previous_token_was = SMARTS_PREVIOUS_TOKEN_X;
     }
-    else if ('x' == s)     // ring bond count
+    // Default for unqualified x is at least one. But 1 does not make sense.
+    else if (s == 'x' && ! next_char_is_relational && ! next_char_is_digit) {
+      _ring_bond_count.set_min(2);
+    }
+    else if ('x' == s)     // qualified ring bond count
     {
-      int xx;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, xx, ltgt);
-      if (0 == nchars)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _ring_bond_count);
+      if (0 == nchars || ! substructure_spec::ValidRingBondCount(_ring_bond_count)) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "the 'x' specifier must be followed by a whole number");
         return 0;
       }
-
-      if (ltgt > 0)
-        _ring_bond_count.set_min(xx + 1);
-      else if (ltgt < 0)
-        _ring_bond_count.set_max(xx - 1);
-      else
-        _ring_bond_count.add(xx);
-
       previous_token_was = SMARTS_PREVIOUS_TOKEN_RBC;
     }
-    else if ('v' == s)     // total valence (nbonds)
+    // Unqualified 'v'
+    else if (s == 'v' && ! next_char_is_relational && ! next_char_is_digit) {
+      _nbonds.add(1);
+    }
+    else if ('v' == s)     // qualified total valence (nbonds)
     {
-      int vv;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, vv, ltgt);
-      if (0 == vv)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _nbonds);
+      if (0 == nchars) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "the 'v' specifier must be followed by a whole number");
         return 0;
       }
-      else if (ltgt > 0)
-        _nbonds.set_min(vv + 1);
-      else if (ltgt < 0)
-      {
-        _nbonds.set_max(vv - 1);
-      }
-      else
-        _nbonds.add(vv);
-
       previous_token_was = SMARTS_PREVIOUS_TOKEN_V;
     }
     else if ('-' == s)     // negative charge specifier
@@ -2570,7 +2658,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       fc_encountered++;
 
       int ff;
-      nchars = fetch_numeric_char (smarts + 1, ff, zsmarts.length() - characters_processed - 1);
+      nchars = fetch_numeric_char(smarts + 1, ff, zsmarts.length() - characters_processed - 1);
       if (nchars)             // should do more error checking
         fc = -ff;
       else
@@ -2620,40 +2708,22 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
 
       previous_token_was = SMARTS_PREVIOUS_TOKEN_CHIRALITY;
     }
-    else if ('G' == s)    // unsaturation, iaw extension to smarts. Note we cannot use 'U' because that would be potentially ambiguous with Uranium
+    else if ('G' == s)    // unsaturation, iaw extension to smarts. Note we cannot use 'U' because that would be potentially ambiguous with Uranium. Chemaxon uses 'u', perhaps enable...
     {
-      int u;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, u, ltgt);
-      if (0 == nchars)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _unsaturation);
+      if (0 == nchars) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "The unsaturation specifier 'G' has no default");
         return 0;
       }
-      if (0 == ltgt)
-        _unsaturation.add(u);
-      else if (ltgt > 0)
-        _unsaturation.set_min(u + 1);
-      else if (ltgt < 0)
-        _unsaturation.set_max(u - 1);
-      previous_token_was = SMARTS_PREVIOUS_TOKEN_CHIRALITY;
+      previous_token_was = SMARTS_PREVIOUS_TOKEN_CHIRALITY;  // not really, but oK
     }
-    else if ('T' == s)   // attached heteroatom count, iaw extension to smarts
+    else if ('T' == s || s == 'z')   // attached heteroatom count, iaw extension to smarts, 'z' for rdkit
     {
-      int a;
-      int ltgt;
-      nchars = smarts_fetch_numeric(smarts + 1, a, ltgt);
-      if (0 == nchars)
-      {
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _attached_heteroatom_count);
+      if (0 == nchars) {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "The attached heteroatom count specifier 'T' has no default");
         return 0;
       }
-      if (0 == ltgt)
-        _attached_heteroatom_count.add(a);
-      else if (ltgt > 0)
-        _attached_heteroatom_count.set_min(a + 1);
-      else if (ltgt < 0)
-        _attached_heteroatom_count.set_max(a - 1);
       previous_token_was = SMARTS_PREVIOUS_TOKEN_T;
     }
 

@@ -1,6 +1,6 @@
-#include <stdlib.h>
 #include <assert.h>
 #include <iostream>
+#include <memory>
 
 /*
   Class for substructure matching. There will be one of these atoms for each
@@ -50,13 +50,13 @@
 static int _aromatic_bonds_lose_kekule_identity = 0;
 
 void
-set_aromatic_bonds_lose_kekule_identity (int s)
+set_aromatic_bonds_lose_kekule_identity(int s)
 {
   _aromatic_bonds_lose_kekule_identity = s;
 }
 
 int
-aromatic_bonds_lose_kekule_identity ()
+aromatic_bonds_lose_kekule_identity()
 {
   return _aromatic_bonds_lose_kekule_identity;
 }
@@ -68,7 +68,7 @@ aromatic_bonds_lose_kekule_identity ()
 static int initialise_element_counts = 0;
 
 void
-set_initialise_element_counts (int s)
+set_initialise_element_counts(int s)
 {
   initialise_element_counts = s;
 }
@@ -91,7 +91,7 @@ void set_global_setting_nbonds_includes_implicit_hydrogens(int s)
 
 
 Bond_and_Target_Atom & 
-Target_Atom::other (int i)
+Target_Atom::other(int i)
 {
   if (_ncon && nullptr == _other)
     _allocate_other();
@@ -108,7 +108,7 @@ Target_Atom::other (int i)
 */
 
 void
-Target_Atom::_default_values ()
+Target_Atom::_default_values()
 {
   _other = nullptr;
 
@@ -142,7 +142,7 @@ Target_Atom::_default_values ()
   return;
 };
 
-Target_Atom::Target_Atom ()
+Target_Atom::Target_Atom()
 {
   _default_values();
 
@@ -186,8 +186,8 @@ Target_Atom::invalidate()
 }
 
 void
-Target_Atom::initialise (Molecule * m, atom_number_t man, Atom * a,
-                         Molecule_to_Match * target)
+Target_Atom::initialise(Molecule * m, atom_number_t man, Atom * a,
+                        Molecule_to_Match * target)
 {
   _m = m;
   _my_atom_number = man;
@@ -201,7 +201,7 @@ Target_Atom::initialise (Molecule * m, atom_number_t man, Atom * a,
   return;
 }
 
-Target_Atom::~Target_Atom ()
+Target_Atom::~Target_Atom()
 {
   if (-8 == _ncon2)
     cerr << "Freeing already deleted Target_Atom\n";
@@ -218,14 +218,14 @@ Target_Atom::~Target_Atom ()
 }
 
 int
-Target_Atom::ok () const
+Target_Atom::ok() const
 {
   return 1;
-//return (OK_ATOM_NUMBER (_m, _my_atom_number));     takes too much time
+//return (OK_ATOM_NUMBER(_m, _my_atom_number));     takes too much time
 }
 
 int
-Target_Atom::debug_print (std::ostream & os) const
+Target_Atom::debug_print(std::ostream & os) const
 {
   os << "Target atom for atom " << _my_atom_number << " atomic number " << _element->atomic_number() << endl;
 
@@ -258,7 +258,7 @@ Target_Atom::discard_chirality()
 }
 
 int
-Target_Atom::nbonds ()
+Target_Atom::nbonds()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _nbonds)
   {
@@ -271,7 +271,7 @@ Target_Atom::nbonds ()
 }
 
 int
-Target_Atom::hcount ()
+Target_Atom::hcount()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _hcount)
   {
@@ -292,13 +292,13 @@ Target_Atom::hcount ()
 }
 
 int
-Target_Atom::daylight_x ()
+Target_Atom::daylight_x()
 {
   return _my_atom->implicit_hydrogens() + _ncon;
 }
 
 int
-Target_Atom::userAtomType ()
+Target_Atom::userAtomType()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _userAtomType)
     _userAtomType = _my_atom->userAtomType();
@@ -307,7 +307,7 @@ Target_Atom::userAtomType ()
 }
 
 int
-Target_Atom::isotope ()
+Target_Atom::isotope()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _isotope)
     _isotope = _my_atom->isotope();
@@ -316,7 +316,7 @@ Target_Atom::isotope ()
 }
 
 int
-Target_Atom::nrings ()
+Target_Atom::nrings()
 {
   if (_nrings >= 0)
     return _nrings;
@@ -332,7 +332,7 @@ Target_Atom::nrings ()
 }
 
 int
-Target_Atom::ring_bond_count ()
+Target_Atom::ring_bond_count()
 {
 //cerr << "On entry _ring_bond_count " << _ring_bond_count << endl;
   if (_ring_bond_count >= 0)
@@ -363,7 +363,7 @@ Target_Atom::ring_bond_count ()
 */
 
 int
-Target_Atom::attached_heteroatom_count ()
+Target_Atom::attached_heteroatom_count()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _attached_heteroatom_count)
   {
@@ -396,11 +396,11 @@ Target_Atom::attached_heteroatom_count ()
 }
 
 /*
-  This relies on attached_heteroatom_count () to do all the work
+  This relies on attached_heteroatom_count() to do all the work
 */
 
 int
-Target_Atom::multiple_bond_to_heteroatom ()
+Target_Atom::multiple_bond_to_heteroatom()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _multiple_bond_to_heteroatom)
     (void) attached_heteroatom_count();
@@ -409,7 +409,7 @@ Target_Atom::multiple_bond_to_heteroatom ()
 }
 
 int
-Target_Atom::is_ring_atom ()
+Target_Atom::is_ring_atom()
 {
   if (_nrings >= 0)
     return _nrings;
@@ -441,7 +441,7 @@ Target_Atom::is_ring_atom ()
 }
 
 int
-Target_Atom::is_non_ring_atom ()
+Target_Atom::is_non_ring_atom()
 {
   return ! is_ring_atom();
 }
@@ -458,7 +458,7 @@ Target_Atom::all_rings_kekule()
 }
 
 int
-Target_Atom::ncon2 ()
+Target_Atom::ncon2()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _ncon2)
     _compute_ncon2();
@@ -473,7 +473,7 @@ Target_Atom::ncon2_value_set() const
 }
 
 /*int
-Target_Atom::match_nbonds (int nbonds)
+Target_Atom::match_nbonds(int nbonds)
 {
   assert (nbonds >= 0);
 
@@ -484,7 +484,7 @@ Target_Atom::match_nbonds (int nbonds)
 }*/
 
 int
-Target_Atom::formal_charge ()
+Target_Atom::formal_charge()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _formal_charge)
     _formal_charge = _my_atom->formal_charge();
@@ -493,7 +493,7 @@ Target_Atom::formal_charge ()
 }
 
 int
-Target_Atom::_compute_ncon2 ()
+Target_Atom::_compute_ncon2()
 {
   _ncon2 = ncon();   // also forces computation of _ncon
 
@@ -507,14 +507,14 @@ Target_Atom::_compute_ncon2 ()
 }
 
 const List_of_Ring_Sizes *
-Target_Atom::sssr_ring_sizes ()
+Target_Atom::sssr_ring_sizes()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _nrings)
     _nrings = _m->nrings(_my_atom_number);
 
   if (0 == _nrings)
   {
-    assert (_sssr_ring_sizes.empty());
+    assert(_sssr_ring_sizes.empty());
     return &_sssr_ring_sizes;
   }
 
@@ -532,7 +532,7 @@ Target_Atom::sssr_ring_sizes ()
       cerr << "Molecule says " << _m->nrings(_my_atom_number) << endl;
       _m->debug_print(cerr);
       cerr << _m->smiles() << endl;
-      assert (_sssr_ring_sizes.number_elements());
+      assert(_sssr_ring_sizes.number_elements());
     }
   }
 
@@ -581,7 +581,7 @@ Target_Atom::aromatic_ring_sizes()
 }
 
 const List_of_Ring_Sizes *
-Target_Atom::aliphatic_ring_sizes ()
+Target_Atom::aliphatic_ring_sizes()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _nrings)
     _nrings = _m->nrings(_my_atom_number);
@@ -604,7 +604,7 @@ Target_Atom::aliphatic_ring_sizes ()
 //#define DEBUG_RING_SIZES_INCLUDING_NON_SSSR
 
 const List_of_Ring_Sizes *
-Target_Atom::ring_sizes_including_non_sssr ()
+Target_Atom::ring_sizes_including_non_sssr()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _nrings)
     _nrings = _m->nrings(_my_atom_number);
@@ -653,7 +653,7 @@ Target_Atom::ring_sizes_including_non_sssr ()
 */
 
 aromaticity_type_t
-Target_Atom::aromaticity ()
+Target_Atom::aromaticity()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _aromaticity)
   {
@@ -669,13 +669,13 @@ Target_Atom::aromaticity ()
 }
 
 int
-Target_Atom::is_aromatic ()
+Target_Atom::is_aromatic()
 {
-  return is_aromatic_atom (aromaticity());
+  return is_aromatic_atom(aromaticity());
 }
 
 Chiral_Centre *
-Target_Atom::chiral_centre ()
+Target_Atom::chiral_centre()
 {
   if (! _chirality_fetched)
   {
@@ -692,7 +692,7 @@ Target_Atom::chiral_centre ()
 */
 
 int
-Target_Atom::vinyl ()
+Target_Atom::vinyl()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _vinyl)
   {
@@ -726,7 +726,7 @@ Target_Atom::vinyl ()
 }
 
 int
-Target_Atom::aryl ()
+Target_Atom::aryl()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _aryl)
   {
@@ -751,7 +751,7 @@ Target_Atom::aryl ()
 }
 
 int
-Target_Atom::_count_heteroatoms_in_ring (const Ring * r) const
+Target_Atom::_count_heteroatoms_in_ring(const Ring * r) const
 {
   int rs = r->number_elements();
 
@@ -797,7 +797,7 @@ Target_Atom::_count_heteroatoms_in_ring (const Ring * r) const
 */
 
 int
-Target_Atom::heteroatoms_in_ring ()
+Target_Atom::heteroatoms_in_ring()
 {
 #ifdef DEBUG_CARBOCYCLE
   cerr << "Testing carbocycle attribute for atom " << _my_atom_number << endl;
@@ -851,7 +851,7 @@ Target_Atom::heteroatoms_in_ring ()
 }
 
 int
-Target_Atom::lone_pair_count ()
+Target_Atom::lone_pair_count()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _lone_pair_count)
   {
@@ -863,7 +863,7 @@ Target_Atom::lone_pair_count ()
 }
 
 int
-Target_Atom::_allocate_other ()
+Target_Atom::_allocate_other()
 {
   if (0 == _ncon)
     return 0;
@@ -890,7 +890,7 @@ Target_Atom::_allocate_other ()
 */
 
 Bond_and_Target_Atom *
-Target_Atom::bond_to_atom (atom_number_t a2)
+Target_Atom::bond_to_atom(atom_number_t a2)
 {
   if (_ncon && nullptr == _other)
     _allocate_other();
@@ -911,7 +911,7 @@ Target_Atom::bond_to_atom (atom_number_t a2)
 
 
 int
-Target_Atom::in_same_rings (Target_Atom * a)
+Target_Atom::in_same_rings(Target_Atom * a)
 {
   if (0 == a->nrings())
     return 0;
@@ -923,7 +923,7 @@ Target_Atom::in_same_rings (Target_Atom * a)
 }
 
 int
-Target_Atom::is_bonded_to (Target_Atom * other) const
+Target_Atom::is_bonded_to(Target_Atom * other) const
 {
   for (int i = 0; i < _ncon; i++)
   {
@@ -935,7 +935,7 @@ Target_Atom::is_bonded_to (Target_Atom * other) const
 }
 
 /*int
-Target_Atom::isolated_ring ()
+Target_Atom::isolated_ring()
 {
   if (! is_ring_atom())
     return 0;
@@ -955,7 +955,7 @@ Target_Atom::isolated_ring ()
 }*/
 
 int
-Target_Atom::fused_system_size ()
+Target_Atom::fused_system_size()
 {
   if (! is_ring_atom())
     return 0;
@@ -967,7 +967,7 @@ Target_Atom::fused_system_size ()
 }
 
 int
-Target_Atom::fragment_membership ()
+Target_Atom::fragment_membership()
 {
   return _m->fragment_membership(_my_atom_number);
 }
@@ -987,8 +987,8 @@ Target_Atom::establish_aromatic_bonds()
 }
 
 /*void
-Target_Atom::establish_aromatic_bonds (int matoms,
-                                       const int * in_fixed_kekule_ring)
+Target_Atom::establish_aromatic_bonds(int matoms,
+                                      const int * in_fixed_kekule_ring)
 {
   if (_ncon && nullptr == _other)
     _allocate_other();
@@ -1002,7 +1002,7 @@ Target_Atom::establish_aromatic_bonds (int matoms,
   return;
 }*/
 
-Bond_and_Target_Atom::Bond_and_Target_Atom ()
+Bond_and_Target_Atom::Bond_and_Target_Atom()
 {
   _nbonds = _nrings = _aromatic = TARGET_ATOM_NOT_COMPUTED;
 
@@ -1011,8 +1011,8 @@ Bond_and_Target_Atom::Bond_and_Target_Atom ()
 }
 
 void
-Bond_and_Target_Atom::initialise (const Bond * b,
-                                  Target_Atom & other)
+Bond_and_Target_Atom::initialise(const Bond * b,
+                                 Target_Atom & other)
 {
   _bond = b;
   _other = &other;
@@ -1023,9 +1023,9 @@ Bond_and_Target_Atom::initialise (const Bond * b,
 }
 
 /*void
-Bond_and_Target_Atom::initialise (const Bond * b,
-                                  Target_Atom & other,
-                                  int nr)
+Bond_and_Target_Atom::initialise(const Bond * b,
+                                 Target_Atom & other,
+                                 int nr)
 {
 //cerr << "Bond_and_Target_Atom::initialise: atoms " << b->a1() << " to " << b->a2() << " type " << b->btype() << endl;
   _bond = b;
@@ -1038,14 +1038,14 @@ Bond_and_Target_Atom::initialise (const Bond * b,
 }*/
 
 /*
-  After the Molecule_to_Match object has been created, and after initialise ()
+  After the Molecule_to_Match object has been created, and after initialise()
   has been run, the caller may decide that we need to get aromaticity information
   from the molecule again - for example the query uses aromatic bond
   specifications. That's why this is public
 */
 
 void
-Bond_and_Target_Atom::establish_aromatic_bonds ()
+Bond_and_Target_Atom::establish_aromatic_bonds()
 {
   assert (nullptr != _bond);
 
@@ -1083,9 +1083,9 @@ Bond_and_Target_Atom::establish_aromatic_bonds ()
 
 /*
 void
-Bond_and_Target_Atom::establish_aromatic_bonds (int matoms, 
-                                                atom_number_t a1,
-                                                const int * fixed_kekule_form)
+Bond_and_Target_Atom::establish_aromatic_bonds(int matoms, 
+                                               atom_number_t a1,
+                                               const int * fixed_kekule_form)
 {
   assert (nullptr != _bond);
   assert (nullptr != fixed_kekule_form);
@@ -1121,7 +1121,7 @@ Bond_and_Target_Atom::establish_aromatic_bonds (int matoms,
 */
 
 int
-Bond_and_Target_Atom::ok () const
+Bond_and_Target_Atom::ok() const
 {
   if (! _bond->ok())
     return 0;
@@ -1130,7 +1130,7 @@ Bond_and_Target_Atom::ok () const
 }
 
 int
-Bond_and_Target_Atom::nrings ()
+Bond_and_Target_Atom::nrings()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _nrings)
     _nrings = _bond->nrings();
@@ -1139,7 +1139,7 @@ Bond_and_Target_Atom::nrings ()
 }
 
 /*boolean
-Bond_and_Target_Atom::aromatic ()
+Bond_and_Target_Atom::aromatic()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _aromatic)
     _aromatic = (0 != _bond->is_aromatic());    // ensure 0 or 1
@@ -1207,7 +1207,7 @@ initialise_bond_types (Molecule & m,
 */
 
 void
-Molecule_to_Match::_initialise_molecule (Molecule * m)
+Molecule_to_Match::_initialise_molecule(Molecule * m)
 {
   assert (m->ok());
 
@@ -1303,7 +1303,7 @@ Molecule_to_Match::_initialise_molecule (Molecule * m)
   return;
 }
 
-Molecule_to_Match::Molecule_to_Match (Molecule * m) : _m(m)
+Molecule_to_Match::Molecule_to_Match(Molecule * m) : _m(m)
 {
   _initialise_molecule(m);
 
@@ -1325,7 +1325,7 @@ Molecule_to_Match::Molecule_to_Match()
   return;
 }
 
-Molecule_to_Match::~Molecule_to_Match ()
+Molecule_to_Match::~Molecule_to_Match()
 {
   if (nullptr != _target_atom)
   {
@@ -1345,13 +1345,13 @@ Molecule_to_Match::~Molecule_to_Match ()
 }
 
 int
-Molecule_to_Match::ok () const
+Molecule_to_Match::ok() const
 {
   return 1;    // for now
 }
 
 int
-Molecule_to_Match::debug_print (std::ostream & os) const
+Molecule_to_Match::debug_print(std::ostream & os) const
 {
   os << "Molecule_to_Match:natoms " << _natoms << endl;
 
@@ -1364,7 +1364,7 @@ Molecule_to_Match::debug_print (std::ostream & os) const
   return os.good();
 }
 int
-Molecule_to_Match::initialise_molecule (Molecule * m)
+Molecule_to_Match::initialise_molecule(Molecule * m)
 {
   assert (nullptr == _m);
 
@@ -1380,7 +1380,7 @@ Molecule_to_Match::initialise_molecule (Molecule * m)
 */
 
 int
-Molecule_to_Match::compute_aromaticity ()
+Molecule_to_Match::compute_aromaticity()
 {
   int rc = 1;
   for (int i = 0; i < _natoms; i++)
@@ -1453,7 +1453,7 @@ Molecule_to_Match::establish_aromatic_bonds()
 }
 
 int
-Molecule_to_Match::first (atomic_number_t z) const
+Molecule_to_Match::first(atomic_number_t z) const
 {
   assert (_first);
 
@@ -1464,7 +1464,7 @@ Molecule_to_Match::first (atomic_number_t z) const
 }
 
 int
-Molecule_to_Match::last (atomic_number_t z) const
+Molecule_to_Match::last(atomic_number_t z) const
 {
   assert (_last);
   
@@ -1472,7 +1472,7 @@ Molecule_to_Match::last (atomic_number_t z) const
 }
 
 int
-Molecule_to_Match::nrings ()
+Molecule_to_Match::nrings()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _nrings)
     _nrings = _m->nrings();
@@ -1525,7 +1525,7 @@ Molecule_to_Match::_determine_ring_counts()
 */
 
 int
-Molecule_to_Match::ring_object_count ()
+Molecule_to_Match::ring_object_count()
 {
   if (TARGET_ATOM_NOT_COMPUTED != _ring_object_count)
     return _ring_object_count;
@@ -1564,7 +1564,7 @@ Molecule_to_Match::ring_object_count ()
 
 // Now we need to count them
 
-  int * ring_already_done = new_int(_nrings);
+  int * ring_already_done = new_int(_nrings); std::unique_ptr<int[]> free_rad(ring_already_done);
 
 //cerr << "Checking " << _nrings << " rings\n";
   for (int i = 0; i < _nrings; i++)
@@ -1589,13 +1589,11 @@ Molecule_to_Match::ring_object_count ()
     }
   }
 
-  delete ring_already_done;
-
   return _ring_object_count;
 }
 
 int
-Molecule_to_Match::aromatic_ring_count ()
+Molecule_to_Match::aromatic_ring_count()
 {
   if (TARGET_ATOM_NOT_COMPUTED == _aromatic_ring_count)
     _determine_ring_counts();
@@ -1854,8 +1852,8 @@ Molecule_to_Match::_initialise_spinach_or_between_rings()
 }
 
 int
-Molecule_to_Match::_grow_spinach (atom_number_t zatom,
-                                  int flag)
+Molecule_to_Match::_grow_spinach(atom_number_t zatom,
+                                 int flag)
 {
   _spinach_or_between_rings[zatom] = flag;
 
@@ -1906,7 +1904,7 @@ Molecule_to_Match::_identify_between_rings(const atom_number_t aprev,
 }
 
 int
-Molecule_to_Match::is_superset (const IW_Bits_Base & fp) const
+Molecule_to_Match::is_superset(const IW_Bits_Base & fp) const
 {
   assert (nullptr != _fingerprint);
 
@@ -1924,13 +1922,13 @@ Molecule_to_Match::discard_chirality_information()
   return;
 }
 int
-Target_Atom::is_spinach () 
+Target_Atom::is_spinach() 
 { 
   return _target->is_spinach(_my_atom_number);
 }
 
 Target_Atom &
-Target_Atom::atom (int i) const
+Target_Atom::atom(int i) const
 {
   return _target->operator[](i);
 }

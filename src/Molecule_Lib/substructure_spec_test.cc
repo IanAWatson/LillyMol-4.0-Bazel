@@ -1285,7 +1285,7 @@ TEST_F(TestSubstructureSpec, TestAtomTypeGroupOrProblem)
     }
   )";
 
-  cerr << "Building query from proto\n";
+//cerr << "Building query from proto\n";
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &_proto));
   EXPECT_TRUE(_query.ConstructFromProto(_proto)) << "Cannot parse proto " << _proto.ShortDebugString();
 
@@ -1308,5 +1308,412 @@ TEST_F(TestSubstructureSpec, TestAtomTypeGroupOrProblem)
   ASSERT_EQ(_query.substructure_search(_m, _sresults), 0);
 }
 
-}  // namespace
+TEST(TestSmartsNumericQualifier, NoClosingBrace) {
+  const char * s("{foobar");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_FALSE(substructure_spec::SmartsNumericQualifier(s, nchars, result));
+}
 
+TEST(TestSmartsNumericQualifier, HasMin) {
+  const char * s(">2");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.set_min(3);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, HasMax) {
+  const char * s("<4");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.set_max(3);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, HasValue) {
+  const char * s("4");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.add(4);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, HasValue2) {
+  const char * s("46");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.add(46);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, HasValue3) {
+  const char * s("317");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.add(317);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, NotANumber) {
+  const char * s("V");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), 0);
+}
+
+TEST(TestSmartsNumericQualifier, RangeNoEndEmpty) {
+  const char * s("{");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), 0);
+}
+
+TEST(TestSmartsNumericQualifier, RangeNoEndNotEmpty) {
+  const char * s("{4");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), 0);
+}
+
+TEST(TestSmartsNumericQualifier, RangeMinOnly) {
+  const char * s("{4-}");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.set_min(4);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, RangemaxOnly) {
+  const char * s("{-10}");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.set_max(10);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, InvalidRange) {
+  const char * s("{3-2}");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), 0);
+}
+
+TEST(TestSmartsNumericQualifier, ValidRange) {
+  const char * s("{3-10}");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.set_min(3);
+  expected.set_max(10);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(TestSmartsNumericQualifier, JustANumber) {
+  const char * s("46");
+  const int nchars = strlen(s);
+  Min_Max_Specifier<int> result;
+  EXPECT_EQ(substructure_spec::SmartsNumericQualifier(s, nchars, result), nchars);
+  Min_Max_Specifier<int> expected;
+  expected.add(46);
+  EXPECT_EQ(result, expected);
+}
+
+struct SmilesSmartsNhits {
+  IWString smiles;
+  IWString smarts;
+  int nhits;
+};
+
+class TestRanges : public testing::TestWithParam<SmilesSmartsNhits> {
+  protected:
+    Substructure_Query _query;
+    Molecule _m;
+};
+
+TEST_P(TestRanges, TestH) {
+  const auto params = GetParam();
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+//cerr << "TestingH '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRanges, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[CH]", 0},
+  SmilesSmartsNhits{"C", "[CH0]", 0},
+  SmilesSmartsNhits{"C", "[CH1]", 0},
+  SmilesSmartsNhits{"C", "[CH2]", 0},
+  SmilesSmartsNhits{"C", "[CH3]", 0},
+  SmilesSmartsNhits{"C", "[CH{0-}]", 1},
+  SmilesSmartsNhits{"C", "[CH{1-}]", 1},
+  SmilesSmartsNhits{"C", "[CH{2-}]", 1},
+  SmilesSmartsNhits{"C", "[CH{3-}]", 1},
+  SmilesSmartsNhits{"C", "[CH{4-}]", 1},
+  SmilesSmartsNhits{"C", "[CH{-0}]", 0},
+  SmilesSmartsNhits{"C", "[CH{-1}]", 0},
+  SmilesSmartsNhits{"C", "[CH{-2}]", 0},
+  SmilesSmartsNhits{"C", "[CH{-3}]", 0},
+  SmilesSmartsNhits{"C", "[CH{-4}]", 1},
+  SmilesSmartsNhits{"C", "[CH{0-4}]", 1},
+  SmilesSmartsNhits{"C", "[CH{1-4}]", 1},
+  SmilesSmartsNhits{"C", "[CH{2-4}]", 1},
+  SmilesSmartsNhits{"C", "[CH{3-4}]", 1},
+  SmilesSmartsNhits{"C", "[CH{4-4}]", 1},
+  SmilesSmartsNhits{"C", "[CH{4-5}]", 1},
+  SmilesSmartsNhits{"C", "[CH{5-5}]", 0},
+  SmilesSmartsNhits{"C", "[CH<1]", 0},
+  SmilesSmartsNhits{"C", "[CH<2]", 0},
+  SmilesSmartsNhits{"C", "[CH<3]", 0},
+  SmilesSmartsNhits{"C", "[CH<4]", 0},
+  SmilesSmartsNhits{"C", "[CH<5]", 1},
+  SmilesSmartsNhits{"C", "[CH>0]", 1},
+  SmilesSmartsNhits{"C", "[CH>1]", 1},
+  SmilesSmartsNhits{"C", "[CH>2]", 1},
+  SmilesSmartsNhits{"C", "[CH>3]", 1},
+  SmilesSmartsNhits{"C", "[CH>4]", 0}
+));
+
+TEST_P(TestRanges, TestD) {
+  const auto params = GetParam();
+//cerr << "TestingD '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesD, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[CD0]", 1},
+  SmilesSmartsNhits{"C", "[CD1]", 0},
+  SmilesSmartsNhits{"C", "[CD2]", 0},
+  SmilesSmartsNhits{"C", "[CD3]", 0},
+  SmilesSmartsNhits{"C", "[CD>0]", 0},
+  SmilesSmartsNhits{"C", "[CD>1]", 0},
+  SmilesSmartsNhits{"C", "[CD<1]", 1},
+  SmilesSmartsNhits{"C", "[CD<2]", 1},
+  SmilesSmartsNhits{"C", "[CD{-0}]", 1},
+  SmilesSmartsNhits{"C", "[CD{-1}]", 1},
+  SmilesSmartsNhits{"C", "[CD{-2}]", 1},
+  SmilesSmartsNhits{"C", "[CD{0-2}]", 1},
+  SmilesSmartsNhits{"C", "[CD{1-2}]", 0},
+  SmilesSmartsNhits{"C", "[CD{2-2}]", 0},
+  SmilesSmartsNhits{"C-C", "[CD1]", 2},
+  SmilesSmartsNhits{"C-C", "[CD>0]", 2},
+  SmilesSmartsNhits{"C-C", "[CD>1]", 0},
+  SmilesSmartsNhits{"C-C", "[CD<1]", 0},
+  SmilesSmartsNhits{"C-C", "[CD<2]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{-1}]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{-2}]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{1-}]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{2-}]", 0},
+  SmilesSmartsNhits{"C-C", "[CD{0-1}]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{0-2}]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{1-3}]", 2},
+  SmilesSmartsNhits{"C-C", "[CD{2-3}]", 0},
+  SmilesSmartsNhits{"C-C-C", "[CD0]", 0},
+  SmilesSmartsNhits{"C-C-C", "[CD{0-}]", 3},
+  SmilesSmartsNhits{"C-C-C", "[CD{0-}]", 3},
+  SmilesSmartsNhits{"C-C-C", "[CD{1-}]", 3},
+  SmilesSmartsNhits{"C-C-C", "[CD{2-}]", 1},
+  SmilesSmartsNhits{"C-C-C", "[CD{1-2}]", 3},
+  SmilesSmartsNhits{"C-C-C", "[CD{1-1}]", 2},
+  SmilesSmartsNhits{"C-C-C", "[CD{2-2}]", 1},
+  SmilesSmartsNhits{"C-C-C", "[CD<2]", 2},
+  SmilesSmartsNhits{"C-C-C", "[CD>1]", 1},
+  SmilesSmartsNhits{"C-C-C", "[CD1,CD2]", 3},
+  SmilesSmartsNhits{"C-C-C", "[C;D1,D2]", 3},
+  SmilesSmartsNhits{"C-C-C", "[CD{1-2},CD{1-2}]", 3}
+));
+
+TEST_P(TestRanges, TestR) {
+  const auto params = GetParam();
+//cerr << "TestingR '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesR, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[CR]", 0},
+  SmilesSmartsNhits{"C", "[CR0]", 1},
+  SmilesSmartsNhits{"C", "[CR>0]", 0},
+  SmilesSmartsNhits{"C", "[CR<1]", 1},
+  SmilesSmartsNhits{"C", "[CR{-1}]", 1},
+  SmilesSmartsNhits{"C", "[CR{1-}]", 0},
+  SmilesSmartsNhits{"C", "[CR{0-0}]", 1},
+  SmilesSmartsNhits{"C1CC1", "[CR{0-0}]", 0},
+  SmilesSmartsNhits{"C1CC1", "[CR{1-1}]", 3},
+  SmilesSmartsNhits{"C1CC1", "[CR{1-}]", 3},
+  SmilesSmartsNhits{"C1CC1", "[CR0]", 0},
+  SmilesSmartsNhits{"C1CC1", "[CR]", 3},
+  SmilesSmartsNhits{"C1CC1", "[CR1]", 3},
+  SmilesSmartsNhits{"C1CC1", "[CR>0]", 3},
+  SmilesSmartsNhits{"C1CC1", "[CR>1]", 0},
+  SmilesSmartsNhits{"C1CC1", "[CR<1]", 0},
+  SmilesSmartsNhits{"C1CC1", "[CR<2]", 3}
+));
+
+TEST_P(TestRanges, Testr) {
+  const auto params = GetParam();
+//cerr << "Testingr '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesr, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[r]", 0},
+  SmilesSmartsNhits{"C", "[r>2]", 0},
+  SmilesSmartsNhits{"C", "[r{3-}]", 0},
+  SmilesSmartsNhits{"C1CC1", "[r]", 3},
+  SmilesSmartsNhits{"C1CC1", "[r3]", 3},
+  SmilesSmartsNhits{"C1CC1", "[r>2]", 3},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r3]", 3},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r4]", 4},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r5]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r>3]", 7},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r>4]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r<5]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{3-3}]", 3},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{4-4}]", 4},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{5-5}]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{3-}]", 8},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{4-}]", 7},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{5-}]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{3-4}]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{-4}]", 5},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{-5}]", 8},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[r{-6}]", 8}
+));
+
+TEST_P(TestRanges, Testx) {
+  const auto params = GetParam();
+//cerr << "Testingx '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesx, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[x]", 0},
+  SmilesSmartsNhits{"C", "[x0]", 1},
+  SmilesSmartsNhits{"C", "[x{0-}]", 1},
+  SmilesSmartsNhits{"C1CC1", "[x2]", 3},
+  SmilesSmartsNhits{"C1CC1", "[x3]", 0},
+  SmilesSmartsNhits{"C1CC1", "[x>2]", 0},
+  SmilesSmartsNhits{"C1CC1", "[x<3]", 3},
+  SmilesSmartsNhits{"C1CC1", "[r{3-}]", 3},
+  SmilesSmartsNhits{"C1CC1", "[r{-3}]", 3},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[x3]", 4},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[x2]", 4},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[x>1]", 8},
+  SmilesSmartsNhits{"C12CC2C3CCCC31", "[x{2-}]", 8}
+));
+
+TEST_P(TestRanges, Testv) {
+  const auto params = GetParam();
+//cerr << "Testingv '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesv, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[v]", 0},
+  SmilesSmartsNhits{"CC", "[v]", 2},
+  SmilesSmartsNhits{"C=C", "[v2]", 2},
+  SmilesSmartsNhits{"C#C", "[v3]", 2},
+  SmilesSmartsNhits{"C", "[v0]", 1},
+  SmilesSmartsNhits{"C", "[v{0-}]", 1},
+  SmilesSmartsNhits{"CC", "[v{0-}]", 2},
+  SmilesSmartsNhits{"CC", "[v{1-}]", 2},
+  SmilesSmartsNhits{"C=C", "[v{1-}]", 2},
+  SmilesSmartsNhits{"C=C", "[v{2-}]", 2},
+  SmilesSmartsNhits{"C=C", "[v{3-}]", 0},
+  SmilesSmartsNhits{"C#C", "[v{3-}]", 2}
+));
+
+TEST_P(TestRanges, TestG) {
+  const auto params = GetParam();
+//cerr << "TestingG '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesG, TestRanges, testing::Values(
+  SmilesSmartsNhits{"C", "[G0]", 1},
+  SmilesSmartsNhits{"CC", "[G0]", 2},
+  SmilesSmartsNhits{"C=C", "[G1]", 2},
+  SmilesSmartsNhits{"C#C", "[G2]", 2},
+  SmilesSmartsNhits{"C", "[G{0-}]", 1},
+  SmilesSmartsNhits{"C", "[G{1-}]", 0},
+  SmilesSmartsNhits{"C=C", "[G{1-}]", 2},
+  SmilesSmartsNhits{"C=C", "[G{2-}]", 0},
+  SmilesSmartsNhits{"C#C", "[G{2-}]", 2}
+));
+
+// Got through this a fair way and realised that these instantiations
+// seemed to be instantiating many instances of the original class.
+// Seems I should have made a separate class for each test??
+// Not worried about it now, but next time...
+class TestRangesT : public testing::TestWithParam<SmilesSmartsNhits> {
+  protected:
+    Substructure_Query _query;
+    Molecule _m;
+};
+
+TEST_P(TestRangesT, TestT) {
+  const auto params = GetParam();
+//cerr << "TestingT '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestRangesT, TestRangesT, testing::Values(
+  SmilesSmartsNhits{"C", "[T0]", 1},
+  SmilesSmartsNhits{"CC", "[T0]", 2},
+  SmilesSmartsNhits{"CCC", "[T0]", 3},
+  SmilesSmartsNhits{"CCO", "[T0]", 2},
+  SmilesSmartsNhits{"CCO", "[T1]", 1},
+  SmilesSmartsNhits{"OO", "[T0]", 0},
+  SmilesSmartsNhits{"OO", "[T1]", 2},
+  SmilesSmartsNhits{"OC(N)O", "[T0]", 3},
+  SmilesSmartsNhits{"OC(N)O", "[T1]", 0},
+  SmilesSmartsNhits{"OC(N)O", "[T2]", 0},
+  SmilesSmartsNhits{"OC(N)O", "[T3]", 1}
+));
+
+class TestInvalidSmarts : public testing::TestWithParam<IWString> {
+  protected:
+    Substructure_Query _query;
+};
+
+TEST_P(TestInvalidSmarts, TestInvalidSmarts) {
+  const auto params = GetParam();
+//cerr << "Testing bad smarts " << params << "\n";
+  EXPECT_FALSE(_query.create_from_smarts(params));
+}
+INSTANTIATE_TEST_SUITE_P(TestInvalidSmarts, TestInvalidSmarts, testing::Values(
+  IWString{"[CD]"},
+  IWString{"[r1]"},
+  IWString{"[r2]"},
+  IWString{"[r<2]"},
+  IWString{"[r<3]"},
+  IWString{"[r0]"},
+  IWString{"[r{0-}]"},
+  IWString{"[r{1-}]"},
+  IWString{"[r{2-}]"},
+  IWString{"[r{0-0}]"},
+  IWString{"[G]"}
+));
+
+}  // namespace

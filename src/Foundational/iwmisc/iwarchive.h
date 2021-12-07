@@ -41,6 +41,7 @@ class iwarchive : public resizable_array<T>
     int matches (const resizable_array<T> &) const;
 
     iwarchive<T> & operator= (const iwarchive<T> &);
+    bool operator== (const iwarchive<T> &) const;
 
 //  Specifications look like 'x' or 'x,y'
 
@@ -176,6 +177,16 @@ iwarchive<T>::operator = (const iwarchive<T> & other)
   _number_elements = other._number_elements;
 
   return * this;
+}
+
+template <typename T>
+bool
+iwarchive<T>::operator==(const iwarchive<T>& rhs) const {
+  if (_match_any && rhs._match_any) {
+    return true;
+  }
+
+  return resizable_array<T>::operator==(rhs);
 }
 
 template <typename T>
