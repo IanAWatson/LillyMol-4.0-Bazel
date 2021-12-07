@@ -22,19 +22,19 @@ using std::cerr;
 using std::endl;
 
 static int
-iw_open_file (const char * fname)
+iw_open_file(const char * fname)
 {
 #ifdef IW_SUN
-        int rc = open64 (fname, O_RDONLY);
+        int rc = open64(fname, O_RDONLY);
 #else
-        int rc = IW_FD_OPEN (fname, O_RDONLY);
+        int rc = IW_FD_OPEN(fname, O_RDONLY);
 #endif
 
         return rc;
 }
 
 void
-iwstring_data_source::_default_values (int lrecl)
+iwstring_data_source::_default_values(int lrecl)
 {
         _isstringbuffer = false;
 
@@ -79,7 +79,7 @@ iwstring_data_source::_default_values (int lrecl)
 }
 
 void
-iwstring_data_source::_setup_stream (const char * fname)
+iwstring_data_source::_setup_stream(const char * fname)
 {
         _open = 0;
         _good = 0;
@@ -135,7 +135,7 @@ iwstring_data_source::_setup_stream (const char * fname)
   A data source is created with a suggested starting size for the buffer
 */
 
-iwstring_data_source::iwstring_data_source (const char * fname, int lrecl) 
+iwstring_data_source::iwstring_data_source(const char * fname, int lrecl) 
 {
         assert (lrecl > 1);
         assert (nullptr != fname);
@@ -148,7 +148,7 @@ iwstring_data_source::iwstring_data_source (const char * fname, int lrecl)
 
 }
 
-iwstring_data_source::iwstring_data_source (const IWString & fname, int lrecl)
+iwstring_data_source::iwstring_data_source(const IWString & fname, int lrecl)
 {
         assert (lrecl > 1);
         assert (fname.length());
@@ -170,7 +170,7 @@ iwstring_data_source::iwstring_data_source()
         return;
 }
 
-iwstring_data_source::iwstring_data_source (int f)
+iwstring_data_source::iwstring_data_source(int f)
 {
   _default_values(STRING_DEFAULT_BUF_SIZE);
 
@@ -181,7 +181,7 @@ iwstring_data_source::iwstring_data_source (int f)
   return;
 }
 
-iwstring_data_source::iwstring_data_source (bool isstringbuffer, const char *stringbuffer, int stringbuffer_size)
+iwstring_data_source::iwstring_data_source(bool isstringbuffer, const char *stringbuffer, int stringbuffer_size)
 {
   _default_values(stringbuffer_size);
   _isstringbuffer = isstringbuffer;
@@ -228,7 +228,7 @@ iwstring_data_source::good() const
 }
 
 void
-iwstring_data_source::set_record_delimiter (char s)
+iwstring_data_source::set_record_delimiter(char s)
 {
   _record_delimiter = s;
 
@@ -253,7 +253,7 @@ iwstring_data_source::ok() const
 }
 
 int
-iwstring_data_source::debug_print (std::ostream & os) const
+iwstring_data_source::debug_print(std::ostream & os) const
 {
   assert (os.good());
 
@@ -302,7 +302,7 @@ iwstring_data_source::debug_print (std::ostream & os) const
 }
 
 int
-iwstring_data_source::open (const char * fname)
+iwstring_data_source::open(const char * fname)
 {
   assert (ok());
 
@@ -699,7 +699,7 @@ iwstring_data_source::_fetch_record()
 }
 
 int
-iwstring_data_source::most_recent_record (IWString & buffer)
+iwstring_data_source::most_recent_record(IWString & buffer)
 {
   assert (_lines_read > 0);
 
@@ -710,7 +710,7 @@ iwstring_data_source::most_recent_record (IWString & buffer)
 
 template <typename T>
 int
-iwstring_data_source::next_record (T & buffer)
+iwstring_data_source::next_record(T & buffer)
 {
         // TODO: for stringbuffer testing.
   if(_isstringbuffer)
@@ -829,7 +829,7 @@ template int iwstring_data_source::next_record(const_IWSubstring &);
 */
 
 int
-iwstring_data_source::skip_past (const char * pattern)
+iwstring_data_source::skip_past(const char * pattern)
 {
         assert (ok());
 
@@ -860,7 +860,7 @@ so that the next record read will be one with the pattern
 */
 
 int
-iwstring_data_source::skip_to (const char * pattern)
+iwstring_data_source::skip_to(const char * pattern)
 {
         assert (ok());
 
@@ -936,7 +936,7 @@ iwstring_data_source::tellg() const
 }
 
 int
-iwstring_data_source::seekg (off_t zoffset, int whence)
+iwstring_data_source::seekg(off_t zoffset, int whence)
 {
 //cerr << "iwstring_data_source::seekg:seeking " << zoffset << " by " << whence << endl;
 
@@ -1016,19 +1016,19 @@ public:
         IWSDS_State();
         ~IWSDS_State();
 
-        void set_offset (off_t p) { _offset = p;};
+        void set_offset(off_t p) { _offset = p;};
         off_t offset() const { return _offset;}
 
-        void set_lines_read (int lr) { _save_lines_read = lr;}
+        void set_lines_read(int lr) { _save_lines_read = lr;}
         int  lines_read() const { return _save_lines_read;}
 
-        void set_longest_record (int lr) { _save_longest_record = lr;}
+        void set_longest_record(int lr) { _save_longest_record = lr;}
         int  longest_record() const { return _save_longest_record;}
 
-        void set_record_buffered (int lr) { _save_record_buffered = lr;}
+        void set_record_buffered(int lr) { _save_record_buffered = lr;}
         int  record_buffered() const { return _save_record_buffered;}
 
-        void set_buffer (const IWString & b) { _save_buffer = b;}
+        void set_buffer(const IWString & b) { _save_buffer = b;}
         IWString & buffer() { return _save_buffer;}
 };
 
@@ -1079,7 +1079,7 @@ at_least_X_records_remaining.
 */
 
 int
-iwstring_data_source::records_remaining (int stop_counting_when)
+iwstring_data_source::records_remaining(int stop_counting_when)
 {
         if(_isstringbuffer)
         {
@@ -1208,7 +1208,7 @@ iwstring_data_source::records_remaining (int stop_counting_when)
 }
 
 int
-iwstring_data_source::at_least_X_records_remaining (int n)
+iwstring_data_source::at_least_X_records_remaining(int n)
 {
         assert (n > 0);
 
@@ -1222,7 +1222,7 @@ grep() do that before attempting a match? Well, it doesn't
 */
 
 int
-iwstring_data_source::grep (RE2 & rx)
+iwstring_data_source::grep(RE2 & rx)
 {
         assert (ok());
         assert (rx.ok());
@@ -1249,9 +1249,9 @@ iwstring_data_source::grep (RE2 & rx)
 */
 
 int
-iwstring_data_source::grep (int n,
-                            RE2 * rx,
-                            int * count)
+iwstring_data_source::grep(int n,
+                           RE2 * rx,
+                           int * count)
 {
         assert (ok());
 
@@ -1364,7 +1364,7 @@ iwstring_data_source::_save_state(IWSDS_State & zstate)
 */
 
 int
-iwstring_data_source::_restore_state (IWSDS_State & zstate)
+iwstring_data_source::_restore_state(IWSDS_State & zstate)
 {
   if (_fd <= 0)
   {
@@ -1536,7 +1536,7 @@ iwstring_data_source::echo(IWString_and_File_Descriptor & output, size_t nbytes)
 }
 
 int
-iwstring_data_source::skip_records (int nskip)
+iwstring_data_source::skip_records(int nskip)
 {
         assert (ok());
         assert (nskip >= 0);
@@ -1608,7 +1608,7 @@ iwstring_data_source::echo_records(std::ostream & os, int necho)
 }
 
 int
-iwstring_data_source::echo_records (IWString_and_File_Descriptor & os, int necho)
+iwstring_data_source::echo_records(IWString_and_File_Descriptor & os, int necho)
 {
         assert (ok());
         assert (necho >= 0);
@@ -1664,8 +1664,8 @@ iwstring_data_source::_copy_read_buffer_to_destination(void * destination,
 //#define DEBUG_READ_BYTES
 
 int
-iwstring_data_source::read_bytes (void * destination, 
-                                  size_t bytes_requested)
+iwstring_data_source::read_bytes(void * destination, 
+                                 size_t bytes_requested)
 {
 #ifdef DEBUG_READ_BYTES
   cerr << "read_bytes:looking for " << bytes_requested << " bytes\n";
@@ -1748,7 +1748,7 @@ iwstring_data_source::read_bytes (void * destination,
 #define IWSTRDS_BUF_SIZE 4096
 
 size_t
-iwstring_data_source::copy_raw_bytes (void * destination, const size_t bytes_to_copy)
+iwstring_data_source::copy_raw_bytes(void * destination, const size_t bytes_to_copy)
 {
   IWSDS_State zstate;
 

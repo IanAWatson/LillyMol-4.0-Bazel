@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include "Foundational/iwmisc/iwre2.h"
 
 #include "iwstring_string_data_source.h"
 
@@ -58,10 +58,11 @@ String_Data_Source::next_record(T & buffer)
   {
     int zend = newline - 1;
 
-    while (isspace(_src[zend]) && zend >= _iptr)
-      zend--;
+    while (zend >= _iptr && isspace(_src[zend])) {
+      --zend;
+    }
 
-    buffer.set(_src + _iptr, zend - _iptr);
+    buffer.set(_src + _iptr, zend - _iptr + 1);
   }
   else
     buffer.set(_src + _iptr, newline - _iptr);
@@ -69,6 +70,8 @@ String_Data_Source::next_record(T & buffer)
   _iptr = newline + 1;
 
   _lines_read++;
+
+  _most_recent_record = buffer;
 
   return 1;
 }
@@ -85,23 +88,19 @@ String_Data_Source::push_record()
     return 0;
   }
 
-  assert ('\n' == _src[_iptr] - 1);
+  assert ('\n' == _src[_iptr - 1]);
 
   _iptr = _iptr - 2;    // skip back past newline
 
-  while (1)
-  {
-    if (0 == _iptr)
-      return 1;
-
+  for ( ; _iptr > 0; --_iptr) {
     if ('\n' == _src[_iptr])
     {
       _iptr++;
       return 1;
     }
-
-    _iptr--;
   }
+
+  return 1;
 }
 
 int
@@ -126,7 +125,57 @@ String_Data_Source::good() const {
 }
 
 int
-String_Data_Source::most_recent_record(IWString& record) const {
-  record = "String_Data_Source::most_recent_record:not implemented";
+String_Data_Source::records_remaining() const {
+  int result = 0;
+  for (int myptr = _iptr; _src[myptr] != '\0'; ++myptr) {
+    if (_src[myptr] == '\n') {
+      ++result;
+    }
+  }
+
+  return result;
+}
+
+template <typename T>
+int
+String_Data_Source::most_recent_record(T& buffer) const {
+  buffer = _most_recent_record;
+  return 1;
+}
+
+template int String_Data_Source::most_recent_record(IWString&) const;
+template int String_Data_Source::most_recent_record(const_IWSubstring&) const;
+
+// Note that _most_recent_record is not saved, so after skipping
+// records, most_recent_record() will return the last record
+// skipped.
+int
+String_Data_Source::skip_records(int nskip) {
+  const_IWSubstring buffer;
+  for (int i = 0; i < nskip; ++i) {
+    if (! next_record(buffer)) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int
+String_Data_Source::skip_records(re2::RE2& rx, int nskip) {
+  int found = 0;
+  const_IWSubstring buffer;
+  while(true) {
+    if (! next_record(buffer)) {
+      return 0;
+    }
+    if (iwre2::RE2PartialMatch(buffer, rx)) {
+      ++found;
+      if (found == nskip) {
+        return 1;
+      }
+    }
+  }
+
   return 0;
 }

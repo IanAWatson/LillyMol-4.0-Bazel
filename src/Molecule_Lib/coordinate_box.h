@@ -2,6 +2,7 @@
 #define MOLECULE_LIB_COORDINATE_BOX_H
 
 #include <cstdint>
+#include <tuple>
 
 #include "Foundational/iwstring/iwstring.h"
 #include "Molecule_Lib/space_vector.h"

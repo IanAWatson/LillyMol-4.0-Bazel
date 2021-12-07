@@ -194,6 +194,8 @@ target_include_directories(iwreaction PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
   
 enable_testing()
 
+
+if(IWTEST)
 # tests
 
 set(libs_for_tests
@@ -255,3 +257,4 @@ set(ec_fingerprint_test_libs
 )
 add_executable(ec_fingerprint_test ${ec_fingerprint_test_srcs})
 target_link_libraries(ec_fingerprint_test LINK_PUBLIC ${ec_fingerprint_test_libs})
+endif(IWTEST)

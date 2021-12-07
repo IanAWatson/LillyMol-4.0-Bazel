@@ -1,5 +1,5 @@
-#ifndef IW_RE_H
-#define IW_RE_H
+#ifndef FOUNDATIONAL_IWMISC_IW_RE2_H
+#define FOUNDATIONAL_IWMISC_IW_RE2_H
 
 #include <memory>
 
@@ -17,4 +17,4 @@ bool RE2PartialMatch(const const_IWSubstring& s, RE2& rx);
 bool RE2Reset(std::unique_ptr<RE2>& rx, const IWString& s);
 bool RE2Reset(std::unique_ptr<RE2>& rx, const const_IWSubstring& s);
 }
-#endif
+#endif  // FOUNDATIONAL_IWMISC_IW_RE2_H

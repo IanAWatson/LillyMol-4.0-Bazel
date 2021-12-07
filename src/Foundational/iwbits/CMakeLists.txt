@@ -14,6 +14,7 @@ set(srcs
 add_library(iwbits ${srcs})
 
 
+IF(IWTEST)
 enable_testing()
 
 set(fixed_bit_vector_test_srcs
@@ -34,3 +35,4 @@ add_test(
 
 include(GoogleTest)
 gtest_discover_tests(fixed_bit_vector_test)
+endif(IWTEST)

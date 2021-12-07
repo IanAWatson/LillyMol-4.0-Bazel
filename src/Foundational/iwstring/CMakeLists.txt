@@ -34,6 +34,7 @@ set(tsclass_libs
 add_executable(tsclass ${tsclass_srcs})
 target_link_libraries(tsclass PUBLIC ${tsclass_libs})
 
+if(IWTEST)
 enable_testing()
 
 set(iwstring_test_srcs
@@ -56,3 +57,4 @@ add_test(
 
 include(GoogleTest)
 gtest_discover_tests(iwstring_test)
+endif(IWTEST)
