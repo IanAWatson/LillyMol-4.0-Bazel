@@ -10,6 +10,8 @@
 #include "target.h"
 #include "tokenise_atomic_smarts.h"
 
+constexpr char open_brace = '{';
+
 /*
   Feb 2005. Want to be able to modify the behaviour of the H
   directive in a smarts. The Daylight rule is that H means
@@ -1706,7 +1708,7 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
       continue;
     }
 
-    if ('{' == smarts[i])
+    if (open_brace == smarts[i])
     {
       curly_brace_level++;
       continue;
@@ -2106,7 +2108,7 @@ int
 SmartsParseRange(const char * input,
                  int max_chars,
                  Min_Max_Specifier<int>& result) {
-  assert (*input == '{');
+  assert (*input == open_brace);
   std::string to_parse;
   for (int i = 0; i < max_chars; ++i) {
     to_parse += input[i];
@@ -2119,6 +2121,7 @@ SmartsParseRange(const char * input,
     return 0;
   }
 
+  // The three different patterns this can be.
   static re2::RE2 min_only("^{([0-9]+)-}");
   static re2::RE2 max_only("^{-\([0-9]+)}");
   static re2::RE2 range("^{([0-9]+)-([0-9]+)}");
@@ -2165,7 +2168,7 @@ SmartsNumericQualifier(const char * input,
     return chars_consumed;
   }
 
-  if (*input == '{') {
+  if (*input == open_brace) {
     return SmartsParseRange(input, max_chars, result);
   }
 
@@ -2215,9 +2218,9 @@ Substructure_Atom_Specifier::_get_atomic_number_or_symbol(const char * smarts,
 
   const Element * e = nullptr;
 
-  if ('{' == smarts[0] && characters_to_process > 2)
+  if (open_brace == smarts[0] && characters_to_process > 2)
   {
-    const_IWSubstring s(smarts+1, characters_to_process-1);   // skip over '{'
+    const_IWSubstring s(smarts+1, characters_to_process-1);   // skip over open_brace
 
     int close_brace = s.index('}');
     if (close_brace <= 0)
@@ -2380,7 +2383,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
         next_char_is_lowercase_letter = 1;
       else if (isdigit(cnext))
         next_char_is_digit = 1;
-      else if ('>' == cnext || '<' == cnext || '{' == cnext)
+      else if ('>' == cnext || '<' == cnext || open_brace == cnext)
         next_char_is_relational = 1;
       else if ('+' == cnext || '-' == cnext)
         next_char_is_charge = 1;

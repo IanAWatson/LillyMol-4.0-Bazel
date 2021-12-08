@@ -186,6 +186,9 @@ const const_IWSubstring NAME_OF_HYDROGEN_OK_AS_ENVIRONMENT_MATCH = "hydrogen_ok"
 
 constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
 
+// Having unbalanced braces in the code messes up matching in the editor.
+constexpr char open_brace = '{';
+
 // Convert between the enumeration in the proto and the operators
 // needed by IW_Logical_Expression.
 int
@@ -1777,13 +1780,19 @@ Substructure_Environment::construct_from_proto(const SubstructureSearch::Substru
     const_IWSubstring x = smarts;
     const char * s = smarts.data();
 
-    if (x.length() && (isdigit(s[0]) || '>' == s[0] || '<' == s[0]))
-    {
+    if (x.length() && (isdigit(s[0]) || '>' == s[0] || '<' == s[0] || s[0] == open_brace)) {
+      int chars_consumed = substructure_spec::SmartsNumericQualifier(s, smarts.length(), _hits_needed);
+      if (chars_consumed == 0) {
+        cerr << "Substructure_Environment::construct_from_proto:invalid numeric qualifier '" << x << "'\n";
+        delete a;
+        return 0;
+      }
+#ifdef OLD_VERSION
       int value, qualifier;
       int chars_consumed = substructure_spec::SmartsFetchNumeric(s, value, qualifier);
       if (0 == chars_consumed)
       {
-        cerr << "Substructure_Environment::construct_from_msi_object:invalid numeric qualifier '" << x << "'\n";
+        cerr << "Substructure_Environment::construct_from_proto:invalid numeric qualifier '" << x << "'\n";
         delete a;
         return 0;
       }
@@ -1793,11 +1802,11 @@ Substructure_Environment::construct_from_proto(const SubstructureSearch::Substru
         _hits_needed.set_max(value-1);
       else
         _hits_needed.add(value);
+#endif
 
       x += chars_consumed;
-      if (! a->parse_smarts_specifier(x))
-      {
-        cerr << "Substructure_Environment::construct_from_msi_object:invalid smarts '" << x << "'\n";
+      if (! a->parse_smarts_specifier(x)) {
+        cerr << "Substructure_Environment::construct_from_proto:invalid smarts '" << x << "'\n";
         return 0;
       }
     }
@@ -2443,7 +2452,7 @@ Single_Substructure_Query::ConstructFromProto(const SubstructureSearch::SingleSu
   {
     if (! _build_chirality_specification_from_proto(chiral))
     {
-      cerr << "Single_Substructure_Query::construct_from_proto:invalid chirality '" << chiral.ShortDebugString() << "'\n";
+      cerr << "Single_Substructure_Query::ConstructFromProto:invalid chirality '" << chiral.ShortDebugString() << "'\n";
       return 0;
     }
   }
@@ -2475,7 +2484,7 @@ Single_Substructure_Query::ConstructFromProto(const SubstructureSearch::SingleSu
     const Bond * b = _no_matched_atoms_between[i];
     if (b->a1() >= _min_atoms_in_query || b->a2() >= _min_atoms_in_query)
     {
-      cerr << "Single_Substructure_Query::construct_from_proto: illegal no_matched_atoms_between specifier\n";
+      cerr << "Single_Substructure_Query::ConstructFromProto: illegal no_matched_atoms_between specifier\n";
       cerr << "There are as few as " << _min_atoms_in_query << " query atoms\n";
       cerr << "No matched atoms between " << i << " specifies atoms " << b->a1() << " and " << b->a2() << endl;
       cerr << "this is impossible\n";
@@ -2611,7 +2620,7 @@ Substructure_Ring_Base::ConstructFromProto(const SubstructureSearch::Substructur
   {
     if (_environment_atom.number_elements())
     {
-      cerr << "Substructure_Ring_Base::construct_from_msi_object:environment already specified '" << proto.ShortDebugString() << "'\n";
+      cerr << "Substructure_Ring_Base::ConstructFromProto:environment already specified '" << proto.ShortDebugString() << "'\n";
       return 0;
     }
 
@@ -2619,7 +2628,7 @@ Substructure_Ring_Base::ConstructFromProto(const SubstructureSearch::Substructur
     
     if (! _construct_environment(env))
     {
-      cerr << "Substructure_Ring_Base::construct_from_proto:invalid environment '" << env << "'\n";
+      cerr << "Substructure_Ring_Base::ConstructFromProto:invalid environment '" << env << "'\n";
       return 0;
     }
   }

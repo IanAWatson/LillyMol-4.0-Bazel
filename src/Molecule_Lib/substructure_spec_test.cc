@@ -1713,6 +1713,13 @@ INSTANTIATE_TEST_SUITE_P(TestInvalidSmarts, TestInvalidSmarts, testing::Values(
   IWString{"[r{1-}]"},
   IWString{"[r{2-}]"},
   IWString{"[r{0-0}]"},
+  IWString{"[D{}]"},
+  IWString{"[D{ }]"},
+  IWString{"[D{3}]"},
+  IWString{"[D{q-}]"},
+  IWString{"[D{-q}]"},
+  IWString{"[D{-3 }]"},
+  IWString{"[D{ 3-}]"},
   IWString{"[G]"}
 ));
 

@@ -733,4 +733,83 @@ TEST_F(TestSubstructureEnv, TestRejection)
   EXPECT_TRUE(_DoPerumationsTests(2));
 }
 
+TEST_F(TestSubstructureEnv, TestNumericEnv1) {
+  _string_proto = R"(
+    query {
+      smarts: "c1cnccc1"
+      environment {
+        smarts: ">1F"
+        attachment {
+          attachment_point: [0, 1, 2, 3, 4, 5]
+          bond: SS_SINGLE_BOND
+        }
+      }
+    }
+  )";
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &_proto));
+
+  EXPECT_TRUE(_query.ConstructFromProto(_proto)) << "Cannot parse proto " << _proto.ShortDebugString();
+
+  _smiles = "Fc1cnccc1";
+
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+
+  EXPECT_TRUE(_DoPerumationsTests(0));
+
+  _smiles = "Fc1cnc(F)cc1";
+
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 2);
+
+  EXPECT_TRUE(_DoPerumationsTests(2));
+}
+
+TEST_F(TestSubstructureEnv, TestNumericEnv2) {
+  _string_proto = R"(
+    query {
+      smarts: "c1cnccc1"
+      environment {
+        smarts: "{-2}F"
+        attachment {
+          attachment_point: [0, 1, 2, 3, 4, 5]
+          bond: SS_SINGLE_BOND
+        }
+      }
+    }
+  )";
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &_proto));
+
+  EXPECT_TRUE(_query.ConstructFromProto(_proto)) << "Cannot parse proto " << _proto.ShortDebugString();
+
+  _smiles = "Fc1cnccc1";
+
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 2);
+
+  EXPECT_TRUE(_DoPerumationsTests(2));
+
+  _smiles = "Fc1cnc(F)cc1";
+
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 2);
+
+  EXPECT_TRUE(_DoPerumationsTests(2));
+
+  _smiles = "Fc1cnc(F)c(F)c1";
+
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+
+  EXPECT_TRUE(_DoPerumationsTests(0));
+
+}
+
 }  // namespace
