@@ -136,6 +136,7 @@ String_Data_Source::records_remaining() const {
   return result;
 }
 
+#ifdef TEMPLATES_DID_NOT_WORK_WITH_CNAME
 template <typename T>
 int
 String_Data_Source::most_recent_record(T& buffer) const {
@@ -143,8 +144,21 @@ String_Data_Source::most_recent_record(T& buffer) const {
   return 1;
 }
 
-template int String_Data_Source::most_recent_record(IWString&) const;
-template int String_Data_Source::most_recent_record(const_IWSubstring&) const;
+template int String_Data_Source::most_recent_record<IWString>(IWString&) const;
+template int String_Data_Source::most_recent_record<const_IWSubstring>(const_IWSubstring&) const;
+#endif
+
+int
+String_Data_Source::most_recent_record(IWString& buffer) const {
+  buffer = _most_recent_record;
+  return 1;
+}
+
+int
+String_Data_Source::most_recent_record(const_IWSubstring& buffer) const {
+  buffer = _most_recent_record;
+  return 1;
+}
 
 // Note that _most_recent_record is not saved, so after skipping
 // records, most_recent_record() will return the last record

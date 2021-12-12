@@ -202,6 +202,7 @@ set(libs_for_tests
   moleculeio
   iwmolecule
   cmdline
+  gmock
   gtest_main
   iwstring_data_source
   string_data_source
@@ -234,6 +235,26 @@ set(atom_test_libs
 add_executable(atom_test ${atom_test_srcs})
 target_link_libraries(atom_test LINK_PUBLIC ${atom_test_libs})
 
+# coordinate_box_test
+set(coordinate_box_test_srcs
+  coordinate_box_test.cc
+)
+set(coordinate_box_test_libs
+  ${libs_for_tests}
+)
+add_executable(coordinate_box_test ${coordinate_box_test_srcs})
+target_link_libraries(coordinate_box_test LINK_PUBLIC ${coordinate_box_test_libs})
+
+# geometric_constraints_test
+set(geometric_constraints_test_srcs
+  geometric_constraints_test.cc
+)
+set(geometric_constraints_test_libs
+  ${libs_for_tests}
+)
+add_executable(geometric_constraints_test ${geometric_constraints_test_srcs})
+target_link_libraries(geometric_constraints_test LINK_PUBLIC ${geometric_constraints_test_libs})
+
 # linear_fingerprint_test
 set(linear_fingerprint_test_srcs
   linear_fingerprint_test.cc
@@ -246,6 +267,16 @@ set(linear_fingerprint_test_libs
 add_executable(linear_fingerprint_test ${linear_fingerprint_test_srcs})
 target_link_libraries(linear_fingerprint_test LINK_PUBLIC ${linear_fingerprint_test_libs})
 
+# misc2_test
+set(misc2_test_srcs
+  misc2_test.cc
+)
+set(misc2_test_libs
+  ${libs_for_tests}
+)
+add_executable(misc2_test ${misc2_test_srcs})
+target_link_libraries(misc2_test LINK_PUBLIC ${misc2_test_libs})
+
 # ec_fingerprint_test
 set(ec_fingerprint_test_srcs
   ec_fingerprint_test.cc
@@ -257,4 +288,191 @@ set(ec_fingerprint_test_libs
 )
 add_executable(ec_fingerprint_test ${ec_fingerprint_test_srcs})
 target_link_libraries(ec_fingerprint_test LINK_PUBLIC ${ec_fingerprint_test_libs})
+
+# iwreaction_test
+set(iwreaction_test_srcs
+  iwreaction_test.cc
+)
+set(iwreaction_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(iwreaction_test ${iwreaction_test_srcs})
+target_link_libraries(iwreaction_test LINK_PUBLIC ${iwreaction_test_libs})
+
+# molecule_each_index_test
+set(molecule_each_index_test_srcs
+  molecule_each_index_test.cc
+)
+set(molecule_each_index_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(molecule_each_index_test ${molecule_each_index_test_srcs})
+target_link_libraries(molecule_each_index_test LINK_PUBLIC ${molecule_each_index_test_libs})
+
+# ring_bond_count_test
+set(ring_bond_count_test_srcs
+  ring_bond_count_test.cc
+)
+set(ring_bond_count_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(ring_bond_count_test ${ring_bond_count_test_srcs})
+target_link_libraries(ring_bond_count_test LINK_PUBLIC ${ring_bond_count_test_libs})
+
+# rxnfile_test
+set(rxnfile_test_srcs
+  rxnfile_test.cc
+)
+set(rxnfile_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(rxnfile_test ${rxnfile_test_srcs})
+target_link_libraries(rxnfile_test LINK_PUBLIC ${rxnfile_test_libs})
+
+# rxnfile2_test
+set(rxnfile2_test_srcs
+  rxnfile2_test.cc
+)
+set(rxnfile2_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(rxnfile2_test ${rxnfile2_test_srcs})
+target_link_libraries(rxnfile2_test LINK_PUBLIC ${rxnfile2_test_libs})
+
+# smiles_test
+set(smiles_test_srcs
+  smiles_test.cc
+)
+set(smiles_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(smiles_test ${smiles_test_srcs})
+target_link_libraries(smiles_test LINK_PUBLIC ${smiles_test_libs})
+
+# space_vector_test
+set(space_vector_test_srcs
+  space_vector_test.cc
+)
+set(space_vector_test_libs
+  iwreaction
+  ${libs_for_tests}
+)
+add_executable(space_vector_test ${space_vector_test_srcs})
+target_link_libraries(space_vector_test LINK_PUBLIC ${space_vector_test_libs})
+
+# substructure_env_test
+set(substructure_env_test_srcs
+  substructure_env_test.cc
+)
+set(substructure_env_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_env_test ${substructure_env_test_srcs})
+target_link_libraries(substructure_env_test LINK_PUBLIC ${substructure_env_test_libs})
+
+# substructure_nmab_test
+set(substructure_nmab_test_srcs
+  substructure_nmab_test.cc
+)
+set(substructure_nmab_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_nmab_test ${substructure_nmab_test_srcs})
+target_link_libraries(substructure_nmab_test LINK_PUBLIC ${substructure_nmab_test_libs})
+
+# substructure_ring_test
+set(substructure_ring_test_srcs
+  substructure_ring_test.cc
+)
+set(substructure_ring_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_ring_test ${substructure_ring_test_srcs})
+target_link_libraries(substructure_ring_test LINK_PUBLIC ${substructure_ring_test_libs})
+
+# substructure_ring_system_test
+set(substructure_ring_system_test_srcs
+  substructure_ring_system_test.cc
+)
+set(substructure_ring_system_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_ring_system_test ${substructure_ring_system_test_srcs})
+target_link_libraries(substructure_ring_system_test LINK_PUBLIC ${substructure_ring_system_test_libs})
+
+# substructure_sepma_test
+set(substructure_sepma_test_srcs
+  substructure_sepma_test.cc
+)
+set(substructure_sepma_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_sepma_test ${substructure_sepma_test_srcs})
+target_link_libraries(substructure_sepma_test LINK_PUBLIC ${substructure_sepma_test_libs})
+
+# substructure_single_query_test
+set(substructure_single_query_test_srcs
+  substructure_single_query_test.cc
+)
+set(substructure_single_query_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_single_query_test ${substructure_single_query_test_srcs})
+target_link_libraries(substructure_single_query_test LINK_PUBLIC ${substructure_single_query_test_libs})
+
+# substructure_smarts_test
+set(substructure_smarts_test_srcs
+  substructure_smarts_test.cc
+)
+set(substructure_smarts_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_smarts_test ${substructure_smarts_test_srcs})
+target_link_libraries(substructure_smarts_test LINK_PUBLIC ${substructure_smarts_test_libs})
+
+# substructure_spec_test
+set(substructure_spec_test_srcs
+  substructure_spec_test.cc
+)
+set(substructure_spec_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_spec_test ${substructure_spec_test_srcs})
+target_link_libraries(substructure_spec_test LINK_PUBLIC ${substructure_spec_test_libs})
+
+# substructure_test
+set(substructure_test_srcs
+  substructure_test.cc
+)
+set(substructure_test_libs
+  ${libs_for_tests}
+)
+add_executable(substructure_test ${substructure_test_srcs})
+target_link_libraries(substructure_test LINK_PUBLIC ${substructure_test_libs})
+
+# symmetry_test
+set(symmetry_test_srcs
+  symmetry_test.cc
+)
+set(symmetry_test_libs
+  ${libs_for_tests}
+)
+add_executable(symmetry_test ${symmetry_test_srcs})
+target_link_libraries(symmetry_test LINK_PUBLIC ${symmetry_test_libs})
+
+# unique_test
+set(unique_test_srcs
+  unique_test.cc
+)
+set(unique_test_libs
+  ${libs_for_tests}
+)
+add_executable(unique_test ${unique_test_srcs})
+target_link_libraries(unique_test LINK_PUBLIC ${unique_test_libs})
 endif(IWTEST)

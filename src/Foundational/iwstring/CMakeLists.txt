@@ -43,6 +43,8 @@ set(iwstring_test_srcs
 set(iwstring_test_libs
   iwstring
   cmdline
+  gtest
+  gmock
   gtest_main
 )
 

@@ -4,8 +4,10 @@
 #include <fstream>
 namespace fs = std::filesystem;
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+//#include "googlemock/include/gmock/gmock.h"
+//#include "googletest/include/gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "iwstring_data_source.h"
 

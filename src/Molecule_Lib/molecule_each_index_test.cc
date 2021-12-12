@@ -1,7 +1,7 @@
 // Tester for the each_index member function
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "molecule.h"
 

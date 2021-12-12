@@ -84,7 +84,7 @@ static int place_single_feature_bits = 0;
 #define RSTYPE_HALOGEN 35
 
 static void
-usage (int rc)
+usage(int rc)
 {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
   cerr << "Computes ring substitution fingerprints\n";
@@ -99,7 +99,7 @@ usage (int rc)
   cerr << "  -E ...        element specifications, enter '-E help' for info\n";
   cerr << "  -v            verbose output\n";
 
-  exit (rc);
+  exit(rc);
 }
 
 static int
@@ -157,11 +157,11 @@ ring_substitution(const IWString & mname,
 }
 
 static int
-ring_substitution (Molecule & m,
-                   const int * atype,
-                   const Set_of_Atoms & par,
-                   int * tmp,
-                   Sparse_Fingerprint_Creator & sfpc)
+ring_substitution(Molecule & m,
+                  const int * atype,
+                  const Set_of_Atoms & par,
+                  int * tmp,
+                  Sparse_Fingerprint_Creator & sfpc)
 {
   resizable_array<int> abstract_path;
  
@@ -202,9 +202,9 @@ ring_substitution (Molecule & m,
 }
 
 static int
-ring_substitution (Molecule & m,
-                   const int * atype,
-                   Sparse_Fingerprint_Creator & sfpc)
+ring_substitution(Molecule & m,
+                  const int * atype,
+                  Sparse_Fingerprint_Creator & sfpc)
 {
   const int nr = m.nrings ();
 
@@ -214,13 +214,13 @@ ring_substitution (Molecule & m,
     return 1;
   }
 
-  const int matoms = m.natoms ();
+  const int matoms = m.natoms();
 
   int * ring_already_done = new_int(nr); std::unique_ptr<int[]> free_ring_already_done(ring_already_done);
 
   int * tmp = new int[matoms + matoms]; std::unique_ptr<int[]> free_tmp(tmp);
 
-  m.compute_aromaticity_if_needed ();
+  m.compute_aromaticity_if_needed();
 
 // Do all the non-fused rings first. Includes spiro fused
 
@@ -249,7 +249,7 @@ ring_substitution (Molecule & m,
 
 // Now any fused rings
 
-  int * in_ring_system = new_int (matoms); std::unique_ptr<int[]> free_in_ring_system (in_ring_system);
+  int * in_ring_system = new_int(matoms); std::unique_ptr<int[]> free_in_ring_system(in_ring_system);
 
   for (int i = 0; i < nr; i++)
   {
@@ -499,7 +499,7 @@ assign_atom_types(Molecule & m,
 }
 
 static void
-preprocess (Molecule & m)
+preprocess(Molecule & m)
 {
   if (reduce_to_largest_fragment)
     m.reduce_to_largest_fragment ();
@@ -542,7 +542,7 @@ ring_substitution(Molecule & m,
     sfpc.flatten_to_01();
 
   IWString tmp;
-  sfpc.daylight_ascii_form_with_counts_encoded (fingerprint_tag, tmp);
+  sfpc.daylight_ascii_form_with_counts_encoded(fingerprint_tag, tmp);
 
   output << tmp << '\n';
 
@@ -562,18 +562,18 @@ ring_substitution(Molecule & m,
 }
 
 static int
-ring_substitution (data_source_and_type<Molecule> & input,
-                   IWString_and_File_Descriptor & output)
+ring_substitution(data_source_and_type<Molecule> & input,
+                  IWString_and_File_Descriptor & output)
 {
   Molecule * m;
 
-  while (nullptr != (m = input.next_molecule ()))
+  while (nullptr != (m = input.next_molecule()))
   {
-    std::unique_ptr<Molecule> free_m (m);
+    std::unique_ptr<Molecule> free_m(m);
 
     molecules_read++;
 
-    if (! ring_substitution (*m, output))
+    if (! ring_substitution(*m, output))
       return 0;
 
     output.write_if_buffer_holds_more_than(4096);
@@ -583,18 +583,18 @@ ring_substitution (data_source_and_type<Molecule> & input,
 }
 
 static int
-ring_substitution (const char * fname,
-                   FileType input_type,
-                   IWString_and_File_Descriptor & output)
+ring_substitution(const char * fname,
+                  FileType input_type,
+                  IWString_and_File_Descriptor & output)
 {
   if (FILE_TYPE_INVALID == input_type)
   {
-    input_type = discern_file_type_from_name (fname);
+    input_type = discern_file_type_from_name(fname);
     assert (FILE_TYPE_INVALID != input_type);
   }
 
-  data_source_and_type<Molecule> input (input_type, fname);
-  if (! input.good ())
+  data_source_and_type<Molecule> input(input_type, fname);
+  if (! input.good())
   {
     cerr << "Cannot open '" << fname << "'\n";
     return 0;
@@ -603,7 +603,7 @@ ring_substitution (const char * fname,
   if (verbose > 2)
     input.set_verbose(1);
 
-  return ring_substitution (input, output);
+  return ring_substitution(input, output);
 }
 
 static int
@@ -637,7 +637,7 @@ ring_substitution_filter(iwstring_data_source & input,
     if (! buffer.starts_with(smiles_tag))
       continue;
 
-    if (! ring_substitution_filter_record (buffer, output))
+    if (! ring_substitution_filter_record(buffer, output))
     {
       cerr << "Fatal error, line " << input.lines_read() << endl;
       return 0;
@@ -683,29 +683,29 @@ ring_substitution(int argc, char ** argv)
   if (cl.unrecognised_options_encountered())
   {
     cerr << "Unrecognised options encountered\n";
-    usage (1);
+    usage(1);
   }
 
   verbose = cl.option_count('v');
 
-  if (! process_standard_aromaticity_options (cl, verbose > 1))
+  if (! process_standard_aromaticity_options(cl, verbose > 1))
   {
     cerr << "Cannot process -A option\n";
-    usage (11);
+    usage(11);
   }
 
-  if (! process_elements (cl, verbose > 1, 'E'))
+  if (! process_elements(cl, verbose > 1, 'E'))
   {
     cerr << "Cannot initialise elements\n";
-    usage (8);
+    usage(8);
   }
 
   if (cl.option_present('g'))
   {
-    if (! chemical_standardisation.construct_from_command_line (cl, verbose > 1, 'g'))
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
     {
       cerr << "Cannot process chemical standardisation options (-g)\n";
-      usage (32);
+      usage(32);
     }
   }
 
@@ -727,15 +727,15 @@ ring_substitution(int argc, char ** argv)
   FileType input_type = FILE_TYPE_INVALID;
   if (cl.option_present('i'))
   {
-    if (! process_input_type (cl, input_type))
+    if (! process_input_type(cl, input_type))
     {
       cerr << "Cannot determine input type\n";
-      usage (6);
+      usage(6);
     }
   }
   else if (cl.option_present('f'))
     ;
-  else if (! all_files_recognised_by_suffix (cl))
+  else if (! all_files_recognised_by_suffix(cl))
     return 4;
 
   if (cl.option_present('P'))
@@ -808,10 +808,10 @@ ring_substitution(int argc, char ** argv)
     }
   }
 
-  if (0 == cl.number_elements ())
+  if (0 == cl.number_elements())
   {
     cerr << "Insufficient arguments\n";
-    usage (2);
+    usage(2);
   }
 
   IWString_and_File_Descriptor output(1);
@@ -825,9 +825,9 @@ ring_substitution(int argc, char ** argv)
   }
   else
   {
-    for (int i = 0; i < cl.number_elements (); i++)
+    for (int i = 0; i < cl.number_elements(); i++)
     {
-      if (! ring_substitution (cl[i], input_type, output))
+      if (! ring_substitution(cl[i], input_type, output))
       {
         rc = i + 1;
         break;
@@ -848,7 +848,7 @@ ring_substitution(int argc, char ** argv)
 }
 
 int
-main (int argc, char ** argv)
+main(int argc, char ** argv)
 {
   prog_name = argv[0];
 

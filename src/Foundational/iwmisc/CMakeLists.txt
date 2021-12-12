@@ -69,3 +69,82 @@ set(tabular_data_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iw_tabular_data.cc
 )
 add_library(tabular_data ${tabular_data_srcs})
+
+set(memoized_floats_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/memoized_floats.cc
+)
+add_library(memoized_floats ${memoized_floats_srcs})
+target_include_directories(memoized_floats PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+
+if(IWTEST)
+enable_testing()
+
+set(iwdigits_test_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/iwdigits_test.cc
+)
+
+set(iwdigits_test_libs
+  iwmisc
+  iwstring
+  gtest
+  gmock
+  gtest_main
+)
+
+add_executable(iwdigits_test ${iwdigits_test_srcs})
+target_link_libraries(iwdigits_test LINK_PUBLIC ${iwdigits_test_libs})
+
+add_test(
+    NAME iwdigits_test
+    COMMAND iwdigits_test
+)
+gtest_discover_tests(iwdigits_test)
+
+set(memoized_floats_test_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/memoized_floats_test.cc
+)
+
+set(memoized_floats_test_libs
+  memoized_floats
+  iwmisc
+  iwstring
+  gtest
+  gmock
+  gtest_main
+)
+
+add_executable(memoized_floats_test ${memoized_floats_test_srcs})
+target_link_libraries(memoized_floats_test LINK_PUBLIC ${memoized_floats_test_libs})
+
+add_test(
+    NAME memoized_floats_test
+    COMMAND memoized_floats_test
+)
+
+gtest_discover_tests(memoized_floats_test)
+
+set(iwre2_test_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/iwre2_test.cc
+)
+
+set(iwre2_test_libs
+  iwre2
+  iwmisc
+  iwstring
+  gtest
+  gmock
+  gtest_main
+  -lre2
+)
+
+add_executable(iwre2_test ${iwre2_test_srcs})
+target_link_libraries(iwre2_test LINK_PUBLIC ${iwre2_test_libs})
+
+add_test(
+    NAME iwre2_test
+    COMMAND iwre2_test
+)
+
+gtest_discover_tests(iwre2_test)
+endif(IWTEST)

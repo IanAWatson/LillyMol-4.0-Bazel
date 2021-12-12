@@ -60,7 +60,12 @@ class String_Data_Source
     int eof() const { return '\0' == _src[_iptr];}
     int at_eof() const { return '\0' == _src[_iptr];}   // backwards compatability
 
-    template <typename T> int most_recent_record(T& buffer) const;
+    // For some reason, this would not link with cmake (bazel OK), so create
+    // two separate methods.
+    // template <typename T> int most_recent_record(T& buffer) const;
+    // Return the previously returned record
+    int most_recent_record(IWString& buffer) const;
+    int most_recent_record(const_IWSubstring& buffer) const;
 };
 
 #endif

@@ -1,12 +1,11 @@
 // Tester for functions defined in rxnfile2.cc
 
-#include "Molecule_Lib/smiles.h"
-
-#include "rxn_file.h"
-
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "google/protobuf/text_format.h"
+
+#include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/rxn_file.h"
 
 namespace {
 

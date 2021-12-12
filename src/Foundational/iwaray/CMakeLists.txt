@@ -36,3 +36,30 @@ file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cc)
 add_library(iwaray ${srcs})
 target_link_libraries(iwaray INTERFACE iwmisc)
 target_include_directories (iwaray PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(IWTEST)
+enable_testing()
+
+set(iwaray_test_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/iwaray_test.cc
+)
+
+set(iwaray_test_libs
+  iwaray
+  gtest
+  gmock
+  gtest_main
+)
+
+# Google Test not working yet... I can test with bazel.
+add_executable(iwaray_test ${iwaray_test_srcs})
+target_link_libraries(iwaray_test LINK_PUBLIC ${iwaray_test_libs})
+
+add_test(
+    NAME iwaray_test
+    COMMAND iwaray_test
+)
+
+include(GoogleTest)
+gtest_discover_tests(iwaray_test)
+endif(IWTEST)

@@ -175,6 +175,9 @@ enum IWDescr_Enum
   iwdescr_mxsdlp,
   iwdescr_avsdlp,
   iwdescr_mxsdlprl,
+  iwdescr_mdallp,
+  iwdescr_fmdallp,
+  iwdescr_fdiffallp,
   iwdescr_rotbond,
   iwdescr_ringatom,
   iwdescr_rhacnt,
@@ -695,6 +698,9 @@ fill_descriptor_extremeties (Descriptor * d,
   d[iwdescr_mxsdlp].set_min_max_resolution(0.0f, 8.80433f, resolution);
   d[iwdescr_avsdlp].set_min_max_resolution(0.0f, 6.5f, resolution);
   d[iwdescr_mxsdlprl].set_min_max_resolution(0.0f, 1.0f, resolution);
+  d[iwdescr_mdallp].set_min_max_resolution(0.0f, 15.0f, resolution);
+  d[iwdescr_fmdallp].set_min_max_resolution(0.0f, 1.0f, resolution);
+  d[iwdescr_fdiffallp].set_min_max_resolution(0.0f, 10.0f, resolution);
   d[iwdescr_rotbond].set_min_max_resolution(0.0f, 19.3958f, resolution);
   d[iwdescr_ringatom].set_min_max_resolution(0.0f, 19.3958f, resolution);
   d[iwdescr_rhacnt].set_min_max_resolution(0.0f, 10.70095f, resolution);
@@ -1194,6 +1200,9 @@ allocate_descriptors()
   descriptor[iwdescr_mxsdlp].set_name("mxsdlp");
   descriptor[iwdescr_avsdlp].set_name("avsdlp");
   descriptor[iwdescr_mxsdlprl].set_name("mxsdlprl");
+  descriptor[iwdescr_mdallp].set_name("mdallp");
+  descriptor[iwdescr_fmdallp].set_name("fmdallp");
+  descriptor[iwdescr_fdiffallp].set_name("fdiffallp");
   descriptor[iwdescr_rotbond].set_name("rotbond");
   descriptor[iwdescr_ringatom].set_name("ringatom");
   descriptor[iwdescr_rhacnt].set_name("rhacnt");
@@ -2461,6 +2470,47 @@ NearSymmetricDescriptors(Molecule& m) {
   return;
 }
 
+// Given separated atoms `a1` and `a2` compute the mean distance of
+// all other atoms to these.
+void
+compute_atom_distribution_along_longest_path(const Molecule & m,
+                        const int * dm,
+                        atom_number_t a1,
+                        atom_number_t a2) {
+
+  Accumulator_Int<int> to_a1, to_a2;
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    if (i == a1 || i == a2) {
+      continue;
+    }
+    int d = dm[a1 * matoms + i];
+    to_a1.extra(d);
+    d = dm[a2 * matoms + i];
+    to_a2.extra(d);
+  }
+
+//cerr << "Between atoms " << a1 << ' ' << to_a1 << '\n';
+//cerr << "Between atoms " << a2 << ' ' << to_a2 << '\n';
+
+  if (to_a1.n() == 0) {
+    descriptor[iwdescr_mdallp]  = 0.0f;
+    descriptor[iwdescr_fmdallp]  = 0.0f;
+    descriptor[iwdescr_fdiffallp]  = 0.0f;
+    return;
+  }
+
+  const float mean1 = to_a1.average();
+  const float mean2 = to_a2.average();
+  float mean = std::min(mean1, mean2);
+  descriptor[iwdescr_mdallp] = mean;
+  descriptor[iwdescr_fmdallp] = mean / static_cast<float>(dm[a1 * matoms + a2]);
+  const float diff = abs(mean1 - mean2);
+  descriptor[iwdescr_fdiffallp] = diff / static_cast<float>(dm[a1 * matoms + a2]);
+
+  return;
+}
+
 void
 AppendShell(const Molecule& m,
             atom_number_t zatom,
@@ -2683,6 +2733,8 @@ do_compute_distances_from_longest_path_descriptors(Molecule & m,
                                                    int * in_path,
                                                    const int longest_path)
 {
+  compute_atom_distribution_along_longest_path(m, dm, a1, a2);
+
   int matoms = m.natoms();
   
   set_vector(in_path, matoms, 0);
@@ -2738,7 +2790,6 @@ do_compute_distances_from_longest_path_descriptors(Molecule & m,
   {
     for (int j = i + 1; j < matoms; j++)
     {
-//    if (longest_path != m.bonds_between(i, j))
       if (longest_path != dm[i * matoms + j])
         continue;
 
@@ -2841,7 +2892,7 @@ do_compute_distance_matrix_descriptors(Molecule & m,
   Set_of_Atoms atoms_at_min_tot_d;
 
   int max_tot_d = totd[0];
-  atom_number_t atom_max_tot_d  = 0;
+//atom_number_t atom_max_tot_d  = 0;
 
   for (int i = 0; i < matoms; i++)
   {
@@ -2866,7 +2917,7 @@ do_compute_distance_matrix_descriptors(Molecule & m,
     if (totd[i] > max_tot_d)
     {
       max_tot_d = totd[i];
-      atom_max_tot_d = i;
+//    atom_max_tot_d = i;
     }
     else if (totd[i] < min_tot_d)
     {
@@ -8107,7 +8158,7 @@ parse_replicates_specification(const_IWSubstring & dname,
 int
 iwdescr(int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:szSB:d");
+  Command_Line cl(argc, argv, "g:N:u:A:fq:E:vi:lH:b:T:O:F:a:G:s:zSB:d");
 
   if (cl.unrecognised_options_encountered())
   {

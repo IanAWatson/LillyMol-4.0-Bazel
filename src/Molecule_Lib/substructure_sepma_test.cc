@@ -1,11 +1,11 @@
 // Tester for the separated_atoms query
 
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "google/protobuf/text_format.h"
+
 #include "aromatic.h"
 #include "substructure.h"
-
-#include "googletest/include/gtest/gtest.h"
-#include "google/protobuf/text_format.h"
-#include "googlemock/include/gmock/gmock.h"
 
 namespace {
 

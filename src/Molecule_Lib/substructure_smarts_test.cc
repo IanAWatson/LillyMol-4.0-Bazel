@@ -3,8 +3,8 @@
 #include "aromatic.h"
 #include "substructure.h"
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "google/protobuf/text_format.h"
 
 namespace {

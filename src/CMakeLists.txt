@@ -1,5 +1,5 @@
-#cmake_minimum_required(VERSION 3.16.1)
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.16.1)
+#cmake_minimum_required(VERSION 3.10.2)
 project(LillyMol)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,9 +8,10 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build)
 set(IW_EXTRA_LIBS -lz -lre2)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-option(IWTEST "configure for GoogleTest" OFF)
+option(IWTEST "configure for GoogleTest" ON)
 
 if(IWTEST)
+include(CTest)
 enable_testing()
 
 include(FetchContent)
@@ -32,7 +33,7 @@ endif(IWTEST)
 #FetchContent_MakeAvailable(clif)
 
 add_compile_options(-march=native)
-#add_link_options(-lz -lre2)
+add_link_options(-lz -lre2)
 SET(CMAKE_EXE_LINKER_FLAGS "-lz -lre2")
 
 add_subdirectory(Foundational/iwaray)

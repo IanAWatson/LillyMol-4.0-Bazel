@@ -2,10 +2,10 @@
 
 #include <unordered_map>
 
-#include "Molecule_Lib/molecule.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+#include "Molecule_Lib/molecule.h"
 
 struct MoleculeExpected
 {

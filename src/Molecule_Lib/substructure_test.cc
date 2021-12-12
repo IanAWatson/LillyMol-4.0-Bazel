@@ -1,11 +1,11 @@
 #include <string>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "google/protobuf/text_format.h"
+
 #include "aromatic.h"
 #include "substructure.h"
-
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
-#include "google/protobuf/text_format.h"
 
 namespace {
 
@@ -2497,6 +2497,93 @@ TEST_F(TestSubstructure, TestTwoPiElectronsAromatic) {
   _smiles = "CN(C)c1c(N)c(=O)c1=O";
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
   EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+}
+
+TEST_F(TestSubstructure, TestRidSame1) {
+  _string_proto = R"(query {
+    smarts: "[/IWrid1].[/IWrid1]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "C1CC1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 6);
+}
+
+TEST_F(TestSubstructure, TestRidSame2) {
+  _string_proto = R"(query {
+    smarts: "[/IWrid1].[/IWrid1]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "C1CC1CC1CC1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 12);
+}
+
+TEST_F(TestSubstructure, TestRidDifferentNumberOneRing) {
+  _string_proto = R"(query {
+    smarts: "[/IWrid1].[/IWrid2]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "C1CC1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+}
+
+TEST_F(TestSubstructure, TestRidDifferentNumberTwoRing) {
+  _string_proto = R"(query {
+    smarts: "[/IWrid1R].[/IWrid2R]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "C1CC1CC1CC1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 18);
+}
+
+// This leaves out the R specification in the smarts. In that case
+// the non-ring Carbon atom also counts as not in the same ring.
+TEST_F(TestSubstructure, TestRidChainAtomIsNotInTheSameRing) {
+  _string_proto = R"(query {
+    smarts: "[/IWrid1].[/IWrid2]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "C1CC1CC1CC1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 30);
 }
 
 }  // namespace

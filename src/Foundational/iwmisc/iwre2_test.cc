@@ -1,7 +1,9 @@
 #include "Foundational/iwmisc/iwre2.h"
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+//#include "googlemock/include/gmock/gmock.h"
+//#include "googletest/include/gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace {
 TEST(TEST_FullMatch, test_IWstring) {

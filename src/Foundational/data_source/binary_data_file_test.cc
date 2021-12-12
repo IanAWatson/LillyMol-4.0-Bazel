@@ -6,8 +6,10 @@
 #include <cstdio>
 #include <random>
 
-#include "googlemock/include/gmock/gmock.h"
-#include "googletest/include/gtest/gtest.h"
+//#include "googlemock/include/gmock/gmock.h"
+//#include "googletest/include/gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "google/protobuf/text_format.h"
 #include <google/protobuf/util/message_differencer.h>
 

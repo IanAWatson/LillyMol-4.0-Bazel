@@ -3,6 +3,7 @@
 //#include "googlemock/include/gmock/gmock.h"
 //#include "googletest/include/gtest/gtest.h"
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "iwstring.h"
 
