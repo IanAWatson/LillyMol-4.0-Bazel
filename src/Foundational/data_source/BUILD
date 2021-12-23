@@ -45,6 +45,7 @@ cc_library(
         "tfdatarecord.h",
     ],
     deps = [
+        "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwstring:iwstring",
         "@crc32//:crc32",
     ],
@@ -91,6 +92,17 @@ cc_test(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "test_tfdata_record",
+    srcs = [
+        "test_tfdata_record.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+        ":iwtfdata_record",
     ],
 )
 

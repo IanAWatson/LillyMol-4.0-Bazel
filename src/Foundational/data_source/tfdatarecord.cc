@@ -1,11 +1,14 @@
 #include <algorithm>
 #include <cstdint>
 
+#include <endian.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
 #include "crc32c/crc32c.h"
+
+#include "Foundational/iwmisc/misc.h"
 
 #include "tfdatarecord.h"
 
@@ -79,6 +82,7 @@ TFDataReader::OpenFile(const char * fname) {
   }
 
   _fd = IW_FD_OPEN(fname, O_RDONLY);
+  cerr << "Openfile " << fname << " returned " << _fd << '\n';
   if (_fd < 0) {
     _good = false;
     return false;
@@ -89,12 +93,24 @@ TFDataReader::OpenFile(const char * fname) {
   return true;
 }
 
+template <typename T>
+bool
+CheckCrc(const uint8_t* data, size_t nbytes, uint32_t expected) {
+  if (! iw_little_endian()) {
+    return true;
+  }
+  return true;
+}
+
 std::optional<uint64_t>
 TFDataReader::GetLength() {
   const uint64_t* lptr = reinterpret_cast<const uint64_t*>(_read_buffer.rawdata() + _next);
   const uint32_t* crc = reinterpret_cast<const uint32_t*>(_read_buffer.rawdata() + _next + sizeof_length);
 
-  uint32_t result = crc32c::Crc32c(reinterpret_cast<const uint8_t*>(lptr), sizeof_length);
+//cerr << "Length " << *lptr  << " crc " << *crc << '\n';
+  uint64_t len = *lptr;
+  uint32_t result = crc32c::Crc32c(reinterpret_cast<const char*>(&len), sizeof_length);
+  result = ((result >> 15) | (result << 17)) + 0xa282ead8ul;
   if (result != *crc) {
     cerr << "TFDataReader::GetLength:crc fails, length " << *lptr << '\n';
     _good = 0;
@@ -127,71 +143,60 @@ TFDataReader::Next() {
   if (! length) {
     return std::nullopt;
   }
-  if (_read_buffer.size() - _next + *length + sizeof_crc > _read_buffer.size()) {
-    if (! FillReadBuffer(*length)) {
+  if (_next + *length + sizeof_crc > _read_buffer.number_elements()) {
+//  cerr << "Filling buffer, need " << *length << "\n";
+    if (! FillReadBuffer(*length + sizeof_crc)) {
       return std::nullopt;
     }
   }
 
   const_IWSubstring result(_read_buffer.rawdata() + _next, *length);
+//cerr << "Got result with " << *length << " bytes\n";
 
-  const uint32_t crc_data = crc32c::Crc32c(reinterpret_cast<const uint8_t*>(result.data()), *length);
+  const uint32_t crc_data = crc32c::Crc32c(result.data(), *length);
+  const uint32_t masked_crc = ((crc_data >> 15) | (crc_data << 17)) + 0xa282ead8ul;
   const uint32_t * crc = reinterpret_cast<const uint32_t*>(_read_buffer.rawdata() + _next + *length);
-  if (crc_data != *crc) {
+//cerr << "t uata cmp " << masked_crc << " and " << *crc << '\n';
+  if (*crc != masked_crc) {
     cerr << "TFDataReader::Next:Invalid data crc " << *length << " bytes\n";
-    _good = 0;
-    return std::nullopt;
+//  _good = 0;
+//  return std::nullopt;
   }
+
+  _next += *length + sizeof_crc;
+//cerr << "_next now " << _next << '\n';
 
   ++_items_read;
   return result;
 }
-
-#ifdef NOT_NEEDED_JJJ
-bool
-TFDataReader::FillReadBuffer() {
-  const int existing_size = _read_buffer.number_elements();
-
-//cerr << "FillReadBuffer: starting pos " << IW_FD_LSEEK(_fd, 0, SEEK_CUR) << " bytes\n";
-  unsigned int unused_capacity = _read_buffer.elements_allocated() - existing_size;
-  if (unused_capacity < default_read_buffer_size) {
-    _read_buffer.resize(_read_buffer.elements_allocated() + default_read_buffer_size);
-    unused_capacity = _read_buffer.elements_allocated() - existing_size;
-  }
-  int bytes_read = IW_FD_READ(_fd, _read_buffer.rawdata() + existing_size, unused_capacity);
-  if (bytes_read < 0) {
-    _good = false;
-    return false;
-  }
-  if (bytes_read == 0) {
-    _eof = true;
-    return false;
-  }
-
-  _read_buffer.set_number_elements(existing_size + bytes_read);
-  return true;
-}
-#endif
 
 // The class is needs to be able to read `bytes_needed` into an item.
 // Upon exit, the next bytes_needed of data will be in the buffer.
 bool
 TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
   // If the next bytes_needed bytes are already in _read_buffer we are done.
+//cerr << "FillReadBuffer have " << _read_buffer.number_elements() << " _nexty " << _next << " need " << bytes_needed << '\n';
   if (_next + bytes_needed <= _read_buffer.number_elements()) {
     return true;
   }
   
   // We need to shift the data and maybe resize.
-  _read_buffer.remove_from_to(0, _next);
-  _next = 0;
-  if (_read_buffer.elements_allocated() < bytes_needed) {
-    _read_buffer.resize(bytes_needed);
+  if (_next > 0) {
+    _read_buffer.remove_from_to(0, _next);
+    _next = 0;
   }
 
-  int to_read = std::max(default_read_buffer_size, static_cast<uint32_t>(_read_buffer.elements_allocated()));
+  if (_read_buffer.number_elements() + bytes_needed < _read_buffer.elements_allocated()) {
+    _read_buffer.resize(_read_buffer.number_elements() + bytes_needed);
+  }
+  const int bytes_already_present = _read_buffer.number_elements();
+  const int unallocated_capacity = _read_buffer.elements_allocated() - _read_buffer.number_elements();
 
-  int bytes_read = IW_FD_READ(_fd, _read_buffer.rawdata(), to_read);
+  int to_read = unallocated_capacity;
+//cerr << "Reading " << to_read << " bytes\n";
+
+  int bytes_read = IW_FD_READ(_fd, _read_buffer.rawdata() + bytes_already_present, to_read);
+//cerr << "Read " << bytes_read << " bytes from file " << _fd << '\n';
   if (bytes_read < 0) {
     _good = false;
     return false;
@@ -201,12 +206,11 @@ TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
     return false;
   }
   if (bytes_read != to_read) {
-    cerr << "TFDataReader::cannot read " << to_read << " bytes\n";
-    _good = false;
-    return false;
+    _eof = true;
   }
 
-  _read_buffer.set_number_elements(bytes_read);
+  _read_buffer.set_number_elements(bytes_already_present + bytes_read);
+//cerr << "Read :" << bytes_read << " bytes\n";
   return true;
 }
 
