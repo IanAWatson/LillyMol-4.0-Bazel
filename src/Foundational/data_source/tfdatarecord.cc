@@ -82,7 +82,9 @@ TFDataReader::OpenFile(const char * fname) {
   }
 
   _fd = IW_FD_OPEN(fname, O_RDONLY);
+#ifdef DEBUG_IW_TF_DATA
   cerr << "Openfile " << fname << " returned " << _fd << '\n';
+#endif
   if (_fd < 0) {
     _good = false;
     return false;
@@ -93,21 +95,14 @@ TFDataReader::OpenFile(const char * fname) {
   return true;
 }
 
-template <typename T>
-bool
-CheckCrc(const uint8_t* data, size_t nbytes, uint32_t expected) {
-  if (! iw_little_endian()) {
-    return true;
-  }
-  return true;
-}
-
 std::optional<uint64_t>
 TFDataReader::GetLength() {
   const uint64_t* lptr = reinterpret_cast<const uint64_t*>(_read_buffer.rawdata() + _next);
   const uint32_t* crc = reinterpret_cast<const uint32_t*>(_read_buffer.rawdata() + _next + sizeof_length);
 
-//cerr << "Length " << *lptr  << " crc " << *crc << '\n';
+#ifdef DEBUG_IW_TF_DATA
+  cerr << "Length " << *lptr  << " crc " << *crc << '\n';
+#endif
   uint64_t len = *lptr;
   uint32_t result = crc32c::Crc32c(reinterpret_cast<const char*>(&len), sizeof_length);
   result = ((result >> 15) | (result << 17)) + 0xa282ead8ul;
@@ -134,7 +129,7 @@ TFDataReader::Next() {
       return std::nullopt;
     }
     if (_read_buffer.size() - _next < (sizeof_length + sizeof_crc)) {
-      _good = 0;
+      _eof = 1;
       return std::nullopt;
     }
   }
@@ -143,28 +138,24 @@ TFDataReader::Next() {
   if (! length) {
     return std::nullopt;
   }
-  if (_next + *length + sizeof_crc > _read_buffer.number_elements()) {
-//  cerr << "Filling buffer, need " << *length << "\n";
+  if (_next + *length + sizeof_crc > static_cast<uint64_t>(_read_buffer.number_elements())) {
     if (! FillReadBuffer(*length + sizeof_crc)) {
       return std::nullopt;
     }
   }
 
   const_IWSubstring result(_read_buffer.rawdata() + _next, *length);
-//cerr << "Got result with " << *length << " bytes\n";
 
   const uint32_t crc_data = crc32c::Crc32c(result.data(), *length);
   const uint32_t masked_crc = ((crc_data >> 15) | (crc_data << 17)) + 0xa282ead8ul;
   const uint32_t * crc = reinterpret_cast<const uint32_t*>(_read_buffer.rawdata() + _next + *length);
-//cerr << "t uata cmp " << masked_crc << " and " << *crc << '\n';
   if (*crc != masked_crc) {
     cerr << "TFDataReader::Next:Invalid data crc " << *length << " bytes\n";
-//  _good = 0;
-//  return std::nullopt;
+    _good = 0;
+    return std::nullopt;
   }
 
   _next += *length + sizeof_crc;
-//cerr << "_next now " << _next << '\n';
 
   ++_items_read;
   return result;
@@ -175,8 +166,7 @@ TFDataReader::Next() {
 bool
 TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
   // If the next bytes_needed bytes are already in _read_buffer we are done.
-//cerr << "FillReadBuffer have " << _read_buffer.number_elements() << " _nexty " << _next << " need " << bytes_needed << '\n';
-  if (_next + bytes_needed <= _read_buffer.number_elements()) {
+  if (_next + bytes_needed <= static_cast<uint64_t>(_read_buffer.number_elements())) {
     return true;
   }
   
@@ -185,18 +175,18 @@ TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
     _read_buffer.remove_from_to(0, _next);
     _next = 0;
   }
-
-  if (_read_buffer.number_elements() + bytes_needed < _read_buffer.elements_allocated()) {
-    _read_buffer.resize(_read_buffer.number_elements() + bytes_needed);
-  }
   const int bytes_already_present = _read_buffer.number_elements();
-  const int unallocated_capacity = _read_buffer.elements_allocated() - _read_buffer.number_elements();
 
-  int to_read = unallocated_capacity;
-//cerr << "Reading " << to_read << " bytes\n";
+  int to_read = default_read_buffer_size;
+  if (static_cast<uint64_t>(_read_buffer.elements_allocated()) < bytes_needed) {
+    _read_buffer.resize(bytes_needed);
+    to_read = bytes_needed - _read_buffer.number_elements();
+  }
 
   int bytes_read = IW_FD_READ(_fd, _read_buffer.rawdata() + bytes_already_present, to_read);
-//cerr << "Read " << bytes_read << " bytes from file " << _fd << '\n';
+#ifdef DEBUG_IW_TF_DATA
+  cerr << "Reading " << to_read << " got " << bytes_read << " bytes from file " << _fd << '\n';
+#endif
   if (bytes_read < 0) {
     _good = false;
     return false;
@@ -210,7 +200,6 @@ TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
   }
 
   _read_buffer.set_number_elements(bytes_already_present + bytes_read);
-//cerr << "Read :" << bytes_read << " bytes\n";
   return true;
 }
 
