@@ -35,6 +35,21 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "iwtfdata_record",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "tfdatarecord.cc",
+    ],
+    hdrs = [
+        "tfdatarecord.h",
+    ],
+    deps = [
+        "//Foundational/iwstring:iwstring",
+        "@crc32//:crc32",
+    ],
+)
+
 proto_library(
     name = "proto_for_testing",
     srcs = [

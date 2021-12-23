@@ -16,6 +16,22 @@ cc_proto_library(
     ],
 )
 
+proto_library(
+    name = "substructure_results_proto",
+    srcs = [
+        "substructure_results.proto",
+    ],
+    deps = [
+    ],
+)
+
+cc_proto_library(
+    name = "substructure_results_cc_proto",
+    deps = [
+        ":substructure_results_proto",
+    ],
+)
+
 cc_binary(
     name = "activity_consistency",
     srcs = [

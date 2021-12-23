@@ -218,7 +218,7 @@ Demerit::_add_hit_type(const int increment,
 #endif
 
 int
-Demerit::write_in_tdt_form (std::ostream & os) const
+Demerit::write_in_tdt_form(std::ostream & os) const
 {
   if (_score >= _rejection_threshold)
     os << "REJ<1>\n";
