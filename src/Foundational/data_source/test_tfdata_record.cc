@@ -1,8 +1,10 @@
 // Tests for TFDataRecord
+#include <cstdio>
 
 #include "Foundational/cmdline/cmdline.h"
 
 #include "tfdatarecord.h"
+#include "Foundational/data_source/proto_for_testing.pb.h"
 
 namespace test_tfdata {
 
@@ -14,6 +16,53 @@ void
 Usage(int rc) {
   exit(rc);
 }
+
+int
+TestWriteRead(const std::string& fname) {
+  iw_tf_data_record::TFDataWriter writer;
+  if (! writer.Open(fname)) {
+    cerr << "Cannot open '" << fname << "'\n";
+    return 0;
+  }
+  constexpr int nitmes = 100000;
+  for (int i = 0; i < nitmes; ++i) {
+    JustForTesting::TestMessage message;
+    message.set_i(-i);
+    message.set_u(i);
+
+    std::string serialized;
+    message.SerializeToString(&serialized);
+    writer.Write(serialized.data(), serialized.size());
+  }
+  writer.Close();
+  cerr << "Wrote " << nitmes << " to " << fname << '\n';
+
+  int rc = 1;
+  int items_read = 0;
+  iw_tf_data_record::TFDataReader reader(fname);
+  for (; ! reader.eof(); ++items_read) {
+    std::optional<const_IWSubstring> maybe_data = reader.Next();
+    if (! maybe_data) {
+      break;
+    }
+    JustForTesting::TestMessage message;
+    std::string as_string(maybe_data->data(), maybe_data->length());
+    if (! message.ParseFromString(as_string)) {
+      cerr << "Invalid data for i=" << items_read << '\n';
+      return 0;
+    }
+    if (message.i() != -items_read) {
+      cerr << "Mismatch on signed value, got " << message.i() << " expected -" << items_read << '\n';
+      rc = 0;
+    }
+    if (message.u() != static_cast<uint32_t>(items_read)) {
+      cerr << "Mismatch on unsigned value, got " << message.u() << " expected " << items_read << '\n';
+      rc = 0;
+    }
+  }
+  cerr << "Read " << items_read << " items\n";
+  return rc;
+} 
 
 int
 TestTfDataRecord(const char * fname,
@@ -35,10 +84,15 @@ TestTfDataRecord(const char * fname,
 
 int
 TestTfDataRecord(int argc, char** argv) {
-  Command_Line cl(argc, argv, "v");
+  Command_Line cl(argc, argv, "vw");
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options\n";
     Usage(1);
+  }
+
+  if (cl.option_present('w')) {
+    const std::string fname = std::tmpnam(nullptr);
+    TestWriteRead(fname);
   }
 
   IWString_and_File_Descriptor output(1);

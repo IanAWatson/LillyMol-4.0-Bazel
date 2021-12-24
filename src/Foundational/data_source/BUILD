@@ -101,8 +101,9 @@ cc_binary(
         "test_tfdata_record.cc",
     ],
     deps = [
-        "//Foundational/cmdline:iwcmdline",
         ":iwtfdata_record",
+        ":proto_for_testing_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
     ],
 )
 

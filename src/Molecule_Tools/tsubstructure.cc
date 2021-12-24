@@ -3128,7 +3128,7 @@ tsubstructure(int argc, char ** argv)
 #ifndef DLL_FLAG
 
 int
-main (int argc, char ** argv)
+main(int argc, char ** argv)
 {
   prog_name = argv[0];
 

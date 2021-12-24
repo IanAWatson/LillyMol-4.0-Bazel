@@ -6,10 +6,6 @@
 #include "Foundational/iwstring/iwstring.h"
 
 namespace iw_tf_data_record {
-class TFDataWriter {
-  private:
-  public:
-};
 
 class TFDataReader {
   private:
@@ -72,4 +68,62 @@ class TFDataReader {
     std::optional<P>
     ReadProto();
 };
+
+// Writes data files that can subsequently be read by TFDataReader.
+class TFDataWriter {
+  private:
+    // Handy abstraction that already has a file descriptor and
+    // methods for writing.
+    IWString_and_File_Descriptor _output;
+
+  // private functions
+
+  ssize_t WriteData(const void * data, uint64_t nbytes);
+  ssize_t WriteLength(const uint64_t nbytes);
+  int CommonWrite(const void * data, const uint64_t nbytes);
+
+  public:
+    TFDataWriter();
+    TFDataWriter(int fd);
+
+    int Open(const char * fname);
+    int Open(IWString& fname);
+    int Open(const const_IWSubstring& fname);
+
+    int Close();
+
+    ssize_t Write(const void * data, uint64_t nbytes);
+    ssize_t Write(const const_IWSubstring& data);
+    ssize_t Write(const IWString& data);
+
+    // Write a serialized proto.
+    template <typename P>
+    int WriteSerializedProto(const P& proto);
+};
+
+template <typename P>
+std::optional<P>
+TFDataReader::ReadProto() {
+  std::optional<const_IWSubstring> data = Next();
+  if (! data) {
+    return std::nullopt;
+  }
+  const std::string as_string(data->data(), data->length());
+  P proto;
+  if (! proto.ParseFromString(as_string)) {
+    std::cerr << "TFDataReader::ReadProto:cannot parse serialized form\n";
+    return std::nullopt;
+  }
+
+  return proto;
+}
+
+template <typename P>
+int
+TFDataWriter::WriteSerializedProto(const P& proto) {
+  std::string as_string;
+  proto.SerializeAsString(&as_string);
+  return Write(as_string.data(), as_string.size());
+}
+
 }  // namespace iw_tf_data_record
