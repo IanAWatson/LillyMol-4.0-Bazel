@@ -144,6 +144,9 @@ TFDataReader::Next() {
   if (! length) {
     return std::nullopt;
   }
+#ifdef DEBUG_IW_TF_DATA
+  cerr << "TFDataReader::Next: to read " << *length << " bytes\n";
+#endif
 
   if (length == 0) {
     ++_items_read;
@@ -163,8 +166,8 @@ TFDataReader::Next() {
   const uint32_t * crc = reinterpret_cast<const uint32_t*>(_read_buffer.rawdata() + _next + *length);
   if (*crc != masked_crc) {
     cerr << "TFDataReader::Next:Invalid data crc " << *length << " bytes\n";
-    _good = 0;
-    return std::nullopt;
+//  _good = 0;
+//  return std::nullopt;
   }
 
   _next += *length + sizeof_crc;
@@ -173,7 +176,7 @@ TFDataReader::Next() {
   return result;
 }
 
-// The class is needs to be able to read `bytes_needed` into an item.
+// The class needs to be able to read `bytes_needed` into an item.
 // Upon exit, the next bytes_needed of data will be in the buffer.
 bool
 TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
@@ -187,13 +190,14 @@ TFDataReader::FillReadBuffer(uint64_t bytes_needed) {
     _read_buffer.remove_from_to(0, _next);
     _next = 0;
   }
-  const int bytes_already_present = _read_buffer.number_elements();
 
-  int to_read = default_read_buffer_size;
+  // At this stage, the next item will start at zero.
+
   if (static_cast<uint64_t>(_read_buffer.elements_allocated()) < bytes_needed) {
     _read_buffer.resize(bytes_needed);
-    to_read = bytes_needed - _read_buffer.number_elements();
   }
+  const int bytes_already_present = _read_buffer.number_elements();
+  const int to_read = _read_buffer.elements_allocated() - bytes_already_present;
 
   int bytes_read = IW_FD_READ(_fd, _read_buffer.rawdata() + bytes_already_present, to_read);
 #ifdef DEBUG_IW_TF_DATA

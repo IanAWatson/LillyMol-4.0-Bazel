@@ -24,7 +24,7 @@ TestWriteRead(const std::string& fname) {
     cerr << "Cannot open '" << fname << "'\n";
     return 0;
   }
-  constexpr int nitmes = 100000;
+  constexpr int nitmes = 10;
   for (int i = 0; i < nitmes; ++i) {
     JustForTesting::TestMessage message;
     message.set_i(-i);
@@ -76,6 +76,7 @@ TestTfDataRecord(const char * fname,
     if (! maybe_data) {
       break;
     }
+//  cerr << "Read item with " << maybe_data->length() << " bytes\n";
   }
   cerr << "Read " << records_read << " records from " << fname << '\n';
 
