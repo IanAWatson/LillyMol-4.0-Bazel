@@ -1,4 +1,31 @@
 
+proto_library(
+    name = "dataset_proto",
+    srcs = [
+        "dataset.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "dataset_cc_proto",
+    deps = [
+        ":dataset_proto",
+    ],
+)
+
+cc_binary(
+    name = "get_3d_smiles",
+    srcs = [
+        "get_3d_smiles.cc",
+    ],
+    deps = [
+        "dataset_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
 cc_binary(
     name = "smu",
     srcs = [
