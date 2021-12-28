@@ -3004,8 +3004,8 @@ Chemical_Standardisation::_do_explicit_hydrogens_last (Molecule & m)
 
 
 int
-Chemical_Standardisation::_process (Molecule & m,
-                                    IWStandard_Current_Molecule & current_molecule_data)
+Chemical_Standardisation::_process(Molecule & m,
+                                   IWStandard_Current_Molecule & current_molecule_data)
 {
   int rc = 0;
 
@@ -3033,11 +3033,13 @@ Chemical_Standardisation::_process (Molecule & m,
   if (_transform_single_atom_ions.active())
     rc += _do_transform_single_atom_ions(m, current_molecule_data);
 
+  cerr << "B4 _do_transform_nplus_ominus " << m.smiles() << '\n';
   if (_transform_nplus_ominus.active() && current_molecule_data.nplus() && current_molecule_data.ominus())
     rc += _do_transform_nplus_ominus(m, current_molecule_data);
 
   if (_transform_plus_minus.active() && current_molecule_data.nneg() && current_molecule_data.npos())
     rc += _do_transform_plus_minus(m, current_molecule_data);
+  cerr << "after _do_transform_plus_minus " << m.smiles() << '\n';
 
 // I used to have this towards the end, but I think it should come to the front.
 
@@ -3098,23 +3100,18 @@ Chemical_Standardisation::_process (Molecule & m,
 // that have both a lactam/lactim AND an aromatic nitrogen issue, we must do the 
 // lactam/lactim thing first
 
-//cerr << "Before _transform_pyrazolone " << rc << '\n';
   if (_transform_pyrazolone.active())
     rc += _do_transform_pyrazolone(m, atom_already_changed, current_molecule_data);
 
-//cerr << "after _do_transform_pyrazolone " << rc << endl;
-
   if (_transform_lactim_lactam.active() && current_molecule_data.possible_lactam().number_elements() > 0)
     rc += _do_transform_non_ring_lactim(m, atom_already_changed, current_molecule_data);
-
-//cerr << " after _do_transform_non_ring_lactim " << rc << endl;
 
   if (_transform_lactim_lactam_ring.active() && current_molecule_data.possible_lactam().number_elements() > 0)
     rc += _do_transform_ring_lactim(m, atom_already_changed, current_molecule_data);
 
 //cerr << " after _do_transform_ring_lactim " << rc << endl;
 
-//#define DEBUG_LACTAM_LACTIM
+#define DEBUG_LACTAM_LACTIM
 #ifdef DEBUG_LACTAM_LACTIM
   cerr << "After lactam/lactim " << m.smiles() << endl;
 #endif
@@ -4965,6 +4962,7 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
     if (5 != ring_size[i])
       continue;
 
+//  cerr << "Ring " << i << " is possible charged imidazole\n";
     rc += _do_charged_imidazole(m, i, current_molecule_data);
   }
 
@@ -5292,7 +5290,7 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
   else
     c1 = INVALID_ATOM_NUMBER;  // pyrazole
 
-  // Do we really need to check the connectivity or c1
+  // Do we really need to check the connectivity of c1
   if (c1 == INVALID_ATOM_NUMBER)
     ;
   else if (z[c1] != 6 || ncon[c1] != 2)
@@ -5321,6 +5319,7 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
 
 #ifdef DEBUG_DO_CHARGED_IMIDAZOLE
   cerr << "Beginning out of ring charged imidazole detection, atoms " << r[nplus] << " and " << r[nd3] << "\n";
+  m.debug_print(cerr);
 #endif
 
   while (1)
@@ -5336,13 +5335,12 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
       return 0;
     else if (e1 < e2)
     {
-      if (c1 == INVALID_ATOM_NUMBER)
-      {
+      if (c1 == INVALID_ATOM_NUMBER) {
         if (! _swap_charged_pyrazole(m, ring_number, current_molecule_data, nplus, nd3))
           return 0;
-      }
-      else 
+      } else {
         _swap_imidazole(m, r[nd3], r[c1], r[nplus]);
+      }
 
       m.set_formal_charge(r[nplus], 0);
       m.set_formal_charge(r[nd3], 1);
@@ -5365,7 +5363,8 @@ Chemical_Standardisation::_do_charged_imidazole(Molecule & m,
 // [Cl-].[N+]1(=C(C)C=CN1CC1OC(=O)C(C1)(C1=CC=CC=C1)C1=CC=CC=C1)CC CHEMBL140300
 // thought about using the existing pyrazole swap, but seems more straightforward
 // to do a separate implemtation.
-// Parameters n1 and n2 are the indices ot the n+ and other nitrogen atoms.
+// Parameters n1 and n2 are the indices ot the n+ and other nitrogen atoms. These
+// are adjacent in the ring.
 int
 Chemical_Standardisation::_swap_charged_pyrazole(Molecule& m, const int ring_number,
                                         IWStandard_Current_Molecule & current_molecule_data,
@@ -5380,36 +5379,39 @@ Chemical_Standardisation::_swap_charged_pyrazole(Molecule& m, const int ring_num
 
   const Set_of_Atoms & r = *(current_molecule_data.ringi(ring_number));
   assert(r.number_elements() == 5);
-  assert(m.formal_charge(n1) == 1);
+  assert(m.formal_charge(r[n1]) == 1);
 #ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
   cerr << "_swap_charged_pyrazole: " << n1 << " (atom " << r[n1] << ") and " << n2 << " (atom " << r[n2] << ")\n";
 #endif
 
   Set_of_Atoms in_order(5);
-  in_order.add(n1);
-  in_order.add(n2);
-  in_order.add((n2 + 1) % 5);
-  in_order.add((n2 + 2) % 5);
-  in_order.add((n2 + 3) % 5);
-#ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
-  cerr << in_order << " in order\n";
-#endif
-
-  for (int i = 0; i < 5; ++i) {
-    in_order[i] = r[in_order[i]];
+  in_order.add(r[n1]);
+  in_order.add(r[n2]);
+  int direction;
+  if ((n1 + 1) % 5 == n2) {
+    direction = 1;
+  } else {
+    direction = -1;
   }
+  int ndx = n2;
+
+  for (int i = 0; i < 3; ++i) {
+    ndx = r.next_index_after_wrap(ndx, direction);
+    in_order << r[ndx];
+  }
+
 #ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
-  cerr << "In ring order " << in_order << endl;
+  cerr << "Ring " << r << " in order " << in_order << " before change " << m.smiles() << '\n';
 #endif
 
-  m.set_formal_charge(n1, 0);
-  m.set_formal_charge(n2, 1);
+  m.set_formal_charge(in_order[0], 0);
+  m.set_formal_charge(in_order[1], 1);
   m.set_bond_type_between_atoms(in_order[1], in_order[2], DOUBLE_BOND);
   m.set_bond_type_between_atoms(in_order[2], in_order[3], SINGLE_BOND);
   m.set_bond_type_between_atoms(in_order[3], in_order[4], DOUBLE_BOND);
   m.set_bond_type_between_atoms(in_order[4], in_order[0], SINGLE_BOND);
 #ifdef DEBUG_SWAP_CHARGED_PYRAZOLE
-  cerr << "Structure updated to " << m.smiles() << endl;
+  cerr << "Structure updated to " << m.unique_smiles() << endl;
 #endif
   return 1;
 }
@@ -6850,18 +6852,21 @@ Chemical_Standardisation::_process_lactim_in_isolated_aromatic_ring (Molecule & 
                                                 Possible_Lactim_Lactam & p,
                                                 IWStandard_Current_Molecule & current_molecule_data)
 {
+  cerr << "_process_lactim_in_isolated_aromatic_ring\n";
+  m.debug_print(cerr);
+  cerr << "carbon " << p.carbon() << " nitrogen " << p.nitrogen() << '\n';
   if (! p.could_change_to_lactim_with_current_bonding(m))
   {
     Toggle_Kekule_Form tkf;
 
     tkf.set_display_error_messages(0);
 
-//  cerr << "_process_lactim_in_isolated_aromatic_ring::processing " << m.smiles() << endl;
+    cerr << "_process_lactim_in_isolated_aromatic_ring::processing " << m.smiles() << endl;
 
     int changed;
     tkf.process(m, p.carbon(), p.nitrogen(), DOUBLE_BOND, changed);
 
-//  cerr << "after toggling " << m.smiles() << " changed? " << changed << endl;
+    cerr << "after toggling " << m.smiles() << " changed? " << changed << endl;
 
     if (! changed)
       return 0;
@@ -6870,6 +6875,7 @@ Chemical_Standardisation::_process_lactim_in_isolated_aromatic_ring (Molecule & 
       return 0;
   }
 
+  cerr << "Convert to_lactam_form\n";
   p.to_lactam_form(m, 1);
 
   return 1;

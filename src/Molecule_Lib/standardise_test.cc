@@ -166,7 +166,7 @@ TEST_F(TestStandardisation, TestChargedPyrazole)
   _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
   EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
 
-  EXPECT_EQ(_m1.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[N+]1=CC=[C+](N1CC)C");
+  EXPECT_EQ(_m1.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[n+]1[n](c(cc1)C)CC");
 
   _m1.invalidate_smiles();
 
@@ -177,8 +177,30 @@ TEST_F(TestStandardisation, TestChargedPyrazole)
     Molecule m;
     ASSERT_TRUE(m.build_from_smiles(smiles));
     _chemical_standardisation.process(m);
-    EXPECT_EQ(m.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[N+]1=CC=[C+](N1CC)C");
+    EXPECT_EQ(m.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[n+]1[n](c(cc1)C)CC");
   }
+}
+
+// Since the pyrazole algorithm depends on the atom ordering, do the same test with
+// different atom orderings.
+TEST_F(TestStandardisation, TestChargedPyrazoleIncreasing) {
+  _smiles = "ON1C=CC=[N+]1N";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
+
+  EXPECT_EQ(_m1.unique_smiles(), "O[n+]1[n](N)ccc1");
+}
+
+TEST_F(TestStandardisation, TestChargedPyrazoledecreasing) {
+  _smiles = "N[N+]1=CC=CN1O";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+  _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
+
+  EXPECT_EQ(_m1.unique_smiles(), "O[n+]1[n](N)ccc1");
 }
 
 TEST_F(TestStandardisation, TestChargedImidazole3ConnectedNplus) {
