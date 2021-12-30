@@ -154,6 +154,12 @@ Possible_Lactim_Lactam::could_change_to_lactim_with_current_bonding(const Molecu
 }
 
 int
+Possible_Lactim_Lactam::TwoDoubleBonds(const Molecule& m) const {
+  return (m.bond_between_atoms(_oxygen, _carbon)->is_double_bond() &&
+          m.bond_between_atoms(_carbon, _nitrogen)->is_double_bond());
+}
+
+int
 Possible_Lactim_Lactam::add_unique_nitrogens(Set_of_Atoms & unique_nitrogens) const
 {
   int rc = 0;
@@ -3033,13 +3039,11 @@ Chemical_Standardisation::_process(Molecule & m,
   if (_transform_single_atom_ions.active())
     rc += _do_transform_single_atom_ions(m, current_molecule_data);
 
-  cerr << "B4 _do_transform_nplus_ominus " << m.smiles() << '\n';
   if (_transform_nplus_ominus.active() && current_molecule_data.nplus() && current_molecule_data.ominus())
     rc += _do_transform_nplus_ominus(m, current_molecule_data);
 
   if (_transform_plus_minus.active() && current_molecule_data.nneg() && current_molecule_data.npos())
     rc += _do_transform_plus_minus(m, current_molecule_data);
-  cerr << "after _do_transform_plus_minus " << m.smiles() << '\n';
 
 // I used to have this towards the end, but I think it should come to the front.
 
@@ -3111,7 +3115,7 @@ Chemical_Standardisation::_process(Molecule & m,
 
 //cerr << " after _do_transform_ring_lactim " << rc << endl;
 
-#define DEBUG_LACTAM_LACTIM
+//#define DEBUG_LACTAM_LACTIM
 #ifdef DEBUG_LACTAM_LACTIM
   cerr << "After lactam/lactim " << m.smiles() << endl;
 #endif
@@ -6462,7 +6466,7 @@ Chemical_Standardisation::_do_transform_ring_lactim(Molecule & m,
 }
 
 int
-Chemical_Standardisation::__do_transform_ring_lactim (Molecule & m,
+Chemical_Standardisation::__do_transform_ring_lactim(Molecule & m,
                                                 int * atom_already_changed,
                                                 IWStandard_Current_Molecule & current_molecule_data)
 {
@@ -6497,7 +6501,7 @@ Chemical_Standardisation::__do_transform_ring_lactim (Molecule & m,
     Possible_Lactim_Lactam * p = possible_lactam[i];
 
 #ifdef DEBUG_LACTAM_LACTIM
-    cerr << "Possible lactam " << p->oxygen() << ' ' << p->carbon() << ' ' << p->nitrogen() << " ring " << p->is_ring() << " arom " << p->aromatic() << " fss " << p->fused_system_size() << endl;
+    cerr << "Possible lactam " << p->oxygen() << ' ' << p->carbon() << ' ' << p->nitrogen() << " ring " << p->is_ring() << " arom " << p->aromatic() << " fss " << p->fused_system_size() << " arom " << p->aromatic() << '\n';
 #endif
 
     if (! p->is_ring())
@@ -6848,25 +6852,21 @@ Chemical_Standardisation::__do_transform_ring_lactim (Molecule & m,
 }
 
 int
-Chemical_Standardisation::_process_lactim_in_isolated_aromatic_ring (Molecule & m,
+Chemical_Standardisation::_process_lactim_in_isolated_aromatic_ring(Molecule & m,
                                                 Possible_Lactim_Lactam & p,
                                                 IWStandard_Current_Molecule & current_molecule_data)
 {
-  cerr << "_process_lactim_in_isolated_aromatic_ring\n";
-  m.debug_print(cerr);
-  cerr << "carbon " << p.carbon() << " nitrogen " << p.nitrogen() << '\n';
-  if (! p.could_change_to_lactim_with_current_bonding(m))
-  {
+  // Guard against C1=N(=O)NC(=C1)O
+  if (p.TwoDoubleBonds(m)) {
+    return 0;
+  }
+  if (! p.could_change_to_lactim_with_current_bonding(m)) {
     Toggle_Kekule_Form tkf;
 
     tkf.set_display_error_messages(0);
 
-    cerr << "_process_lactim_in_isolated_aromatic_ring::processing " << m.smiles() << endl;
-
     int changed;
     tkf.process(m, p.carbon(), p.nitrogen(), DOUBLE_BOND, changed);
-
-    cerr << "after toggling " << m.smiles() << " changed? " << changed << endl;
 
     if (! changed)
       return 0;
@@ -6875,7 +6875,6 @@ Chemical_Standardisation::_process_lactim_in_isolated_aromatic_ring (Molecule & 
       return 0;
   }
 
-  cerr << "Convert to_lactam_form\n";
   p.to_lactam_form(m, 1);
 
   return 1;
@@ -7264,6 +7263,25 @@ identity_exocyclic_singly_bonded_oxygen(const Molecule & m,
   return 0;
 }
 
+// REturn true if `zatom` is doubly bonded to an Oxygen atom.
+// Note that we need to check all bonds in case we are processing
+// C1=N(=O)NC(=C1)O
+bool
+DoublyBondedToOxygen(const Molecule& m, atom_number_t zatom) {
+  const Atom& a = m.atom(zatom);
+  for (const Bond* b : a) {
+    if (! b->is_double_bond()) {
+      continue;
+    }
+    atom_number_t o = b->other(zatom);
+    if (m.atomic_number(o) == 8) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /*
   Change C1(=CC(=NN1)O)N to O=C1NNC=C1
 */
@@ -7356,7 +7374,15 @@ Chemical_Standardisation::_do_transform_pyrazolone(Molecule & m,
   if (7 != z[n1] || 7 != z[n2])
     return 0;
 
-  if (m.formal_charge(n2) != 0) {  // [O-]C1=C2C3=[N+](N1)C23
+  // If all transformations are activated, this probably will never
+  // be triggered, since the O- and N+ will have been converted.
+  if (m.formal_charge(exocyclic_singly_bonded_oxygen) != 0 ||
+      m.formal_charge(n2) != 0) {  // [O-]C1=C2C3=[N+](N1)C23
+    return 0;
+  }
+
+  // Guard against C1=N(=O)NC(=C1)O
+  if (DoublyBondedToOxygen(m, n2)) {
     return 0;
   }
 

@@ -35,4 +35,4 @@ build:clang_config --cpu=skylake
 
 build:clang_config --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
 
-test --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz
+#test --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz

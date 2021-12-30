@@ -56,6 +56,7 @@ TEST_F(TestStandardisation, TestChargedImidazole)
 {
   _smiles = "CN1C=C[N+](CC)=C1";
   ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  _m2 = _m1;
   EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
   EXPECT_EQ(_m1.molecular_formula(), "C6N2H11");
   EXPECT_EQ(_m1.smiles(), "CN1C=C[N+](=C1)CC");
@@ -73,10 +74,21 @@ TEST_F(TestStandardisation, TestChargedImidazole)
 
   _m1.invalidate_smiles();
 
-  // Some random runs to make sure things do not crash.
+  // The transformed molecule should not change
 
-  for (int i = 0; i < 5; ++i) {
+  constexpr int replicates = 10;
+  for (int i = 0; i < replicates; ++i) {
     const IWString & smiles = _m1.random_smiles();
+    Molecule m;
+    ASSERT_TRUE(m.build_from_smiles(smiles));
+    _chemical_standardisation.process(m);
+    EXPECT_EQ(m.unique_smiles(), "C[n]1c[n+](CC)cc1");
+  }
+
+  // Random variants should all get transformed to the same form.
+
+  for (int i = 0; i < replicates; ++i) {
+    const IWString & smiles = _m2.random_smiles();
     Molecule m;
     ASSERT_TRUE(m.build_from_smiles(smiles));
     _chemical_standardisation.process(m);
@@ -162,6 +174,7 @@ TEST_F(TestStandardisation, TestChargedPyrazole)
 {
   _smiles = "[N+]1(=C(C)C=CN1CC1OC(=O)C(C1)(C1=CC=CC=C1)C1=CC=CC=C1)CC";  // CHEMBL140300
   ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  _m2 = _m1;
   EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
   _chemical_standardisation.Activate(CS_CHARGED_IMIDAZOLE, /*verbose*/ false);
   EXPECT_EQ(_chemical_standardisation.process(_m1), 1);
@@ -170,10 +183,19 @@ TEST_F(TestStandardisation, TestChargedPyrazole)
 
   _m1.invalidate_smiles();
 
-  // Some random runs to make sure things do not crash.
+  // The transformed molecule should not change
 
-  for (int i = 0; i < 9; ++i) {
+  constexpr int replicates = 10;
+  for (int i = 0; i < replicates; ++i) {
     const IWString & smiles = _m1.random_smiles();
+    Molecule m;
+    ASSERT_TRUE(m.build_from_smiles(smiles));
+    _chemical_standardisation.process(m);
+    EXPECT_EQ(m.unique_smiles(), "O=C1OC(CC1(c1ccccc1)c1ccccc1)C[n+]1[n](c(cc1)C)CC");
+  }
+  // Random variants of the starting molecule should all end up the same.
+  for (int i = 0; i < replicates; ++i) {
+    const IWString & smiles = _m2.random_smiles();
     Molecule m;
     ASSERT_TRUE(m.build_from_smiles(smiles));
     _chemical_standardisation.process(m);
@@ -220,9 +242,21 @@ TEST_F(TestStandardisation, TestHRemoval) {
   EXPECT_GT(_chemical_standardisation.process(_m1), 0);
 }
 
+#ifdef REDUNDANT_TEST
+// Because of other transformations, this guard
+// is never made.
 TEST_F(TestStandardisation, NoChargedPyrazolones) {
   _smiles = "[O-]C1=C2C3=[N+](N1)C23";
   ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  _chemical_standardisation.activate_all();
+  EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
+}
+#endif
+
+TEST_F(TestStandardisation, PyrazoloneNoProcess) {
+  _smiles = "C1=N(=O)NC(=C1)O";
+  ASSERT_TRUE(_m1.build_from_smiles(_smiles));
+  _chemical_standardisation.activate_all();
   EXPECT_EQ(_chemical_standardisation.process(_m1), 0);
 }
 

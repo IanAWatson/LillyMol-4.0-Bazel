@@ -112,6 +112,9 @@ class Possible_Lactim_Lactam
     int hcount (Molecule &) const;
     int could_change_to_lactim_with_current_bonding (const Molecule & m) const;
 
+    // Returns non zero if `m` has _nitrogen=_carbon=_oxygen
+    int TwoDoubleBonds(const Molecule& m) const;
+
     int add_unique_nitrogens (Set_of_Atoms & unique_nitrogens) const;
     int reperceive (Molecule & m);
 };
