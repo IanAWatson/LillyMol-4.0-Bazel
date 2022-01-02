@@ -114,7 +114,7 @@ Substructure_Atom_Specifier::debug_print(std::ostream & os,
   os << indentation << "Substructure Atom Specifier, " << _attributes_specified << " attributes specified\n";
 
   if (_preference_value)
-    os << indentation << "  Preference " << _preference_value << endl;
+    os << indentation << "  Preference " << _preference_value << '\n';
 
   if (! ok())
     os << "Warning, OK fails\n";
@@ -126,44 +126,44 @@ Substructure_Atom_Specifier::debug_print(std::ostream & os,
     {
       os << " " << _element[i]->atomic_number();
     }
-    os << endl;
+    os << '\n';
   }
   else
     os << " not specified\n";
 
   if (_ncon.is_set())
-    os << indentation << "  ncon " << _ncon << endl;
+    os << indentation << "  ncon " << _ncon << '\n';
   if (_nbonds.is_set())
-    os << indentation << "  nbonds " << _nbonds << endl;
+    os << indentation << "  nbonds " << _nbonds << '\n';
   if (_ncon2.is_set())
-    os << indentation << "  ncon2 " << _ncon2 << endl;
+    os << indentation << "  ncon2 " << _ncon2 << '\n';
   if (_formal_charge.is_set())
-    os << indentation << "  Formal charge " << _formal_charge << endl;
+    os << indentation << "  Formal charge " << _formal_charge << '\n';
   if (_nrings.is_set())
-    os << indentation << "  Nrings " << _nrings << endl;
+    os << indentation << "  Nrings " << _nrings << '\n';
   if (_ring_bond_count.is_set())
-    os << indentation << "  RingBondCount " << _ring_bond_count << endl;
+    os << indentation << "  RingBondCount " << _ring_bond_count << '\n';
   if (_hcount.is_set())
-    os << indentation << "  Hcount " << _hcount << endl;
+    os << indentation << "  Hcount " << _hcount << '\n';
   if (_isotope.is_set())
-    os << indentation << "  Isotope " << _isotope << endl;
+    os << indentation << "  Isotope " << _isotope << '\n';
   if (_lone_pair_count.is_set())
-    os << indentation << "  Lone Pair " << _lone_pair_count << endl;
+    os << indentation << "  Lone Pair " << _lone_pair_count << '\n';
   if (_unsaturation.is_set())
-    os << indentation << "  unsaturation " << _unsaturation << endl;
+    os << indentation << "  unsaturation " << _unsaturation << '\n';
   if (_attached_heteroatom_count.is_set())
-  os << indentation << "  Attached heteroatom count " << _attached_heteroatom_count << endl;
+  os << indentation << "  Attached heteroatom count " << _attached_heteroatom_count << '\n';
   if (SUBSTRUCTURE_NOT_SPECIFIED != _aromaticity)
-    os << indentation << "  Aromaticity = " << _aromaticity << endl;
+    os << indentation << "  Aromaticity = " << _aromaticity << '\n';
 
   if (SUBSTRUCTURE_NOT_SPECIFIED != _chirality)
-    os << indentation << "  chiral " << _chirality << endl;
+    os << indentation << "  chiral " << _chirality << '\n';
   if (_symmetry_degree.is_set())
-    os << indentation << "  symmd " << _symmetry_degree << endl;
+    os << indentation << "  symmd " << _symmetry_degree << '\n';
   if (_symmetry_group > 0)
-    os << indentation << "  symmg " <<  _symmetry_group << endl;
+    os << indentation << "  symmg " <<  _symmetry_group << '\n';
 
-  os << endl;
+  os << '\n';
 
   return 1;
 }
@@ -181,34 +181,34 @@ Substructure_Atom_Specifier::terse_details(std::ostream & os,
 
   os << indentation << "Substructure atom specifications\n";
   if (_preference_value)
-    os << indentation << " preference " << _preference_value << endl;
+    os << indentation << " preference " << _preference_value << '\n';
   if (_element.number_elements())
   {
     os << indentation << " atomic number";
     for (int i = 0; i < _element.number_elements(); i++)
     {
-      os << ' ' << _element[i]->atomic_number();
+      os << ' ' << _element[i]->symbol();
     }
-    os << endl;
+    os << '\n';
   }
   if (_ncon.is_set())
-    os << indentation << " ncon " << _ncon << endl;
+    os << indentation << " ncon " << _ncon << '\n';
   if (_nbonds.is_set())
-    os << indentation << " nbonds " << _nbonds << endl;
+    os << indentation << " nbonds " << _nbonds << '\n';
   if (_ncon2.is_set())
-    os << indentation << " ncon2 " << _ncon2 << endl;
+    os << indentation << " ncon2 " << _ncon2 << '\n';
   if (_formal_charge.is_set())
-    os << indentation << " Formal charge " << _formal_charge << endl;
+    os << indentation << " Formal charge " << _formal_charge << '\n';
   if (_nrings.is_set())
-    os << indentation << " Nrings " << _nrings << endl;
+    os << indentation << " Nrings " << _nrings << '\n';
   if (_ring_bond_count.is_set())
-    os << indentation << " RingBondCount " << _ring_bond_count << endl;
+    os << indentation << " RingBondCount " << _ring_bond_count << '\n';
   if (_hcount.is_set())
-    os << indentation << " Hcount " << _hcount << endl;
+    os << indentation << " Hcount " << _hcount << '\n';
   if (_lone_pair_count.is_set())
-    os << indentation << " Lone Pair " << _lone_pair_count << endl;
+    os << indentation << " Lone Pair " << _lone_pair_count << '\n';
   if (SUBSTRUCTURE_NOT_SPECIFIED != _aromaticity)
-    os << indentation << "Aromaticity = " << _aromaticity << endl;
+    os << indentation << "Aromaticity = " << _aromaticity << '\n';
 
   return 1;
 }
@@ -706,6 +706,7 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
   }
 #endif
 
+// We no longer use _element for matching.
 #ifdef USING_ELEMENT
    if (_element.number_elements())
    {
@@ -1846,6 +1847,10 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
       ;
     else if (c.starts_with("Kl"))
       ;
+    else if (c.starts_with("organic"))
+      ;
+    else if (c.starts_with("nonorganic"))
+      ;
     else if (c.starts_with("Nv"))
     {
       c.remove_leading_chars(2);
@@ -2295,6 +2300,28 @@ Substructure_Atom_Specifier::_add_element (const Element * e)
 //cerr << "Substructure_Atom_Specifier::_add_element:added " << e->symbol() << " unique_id " << e->unique_id() << endl;
    
   return 1;
+}
+
+// Add all organic elements to the _atomic_number matcher.
+// Note this will fail if any non periodic elements have been
+// designated organic.
+void
+Substructure_Atom_Specifier::AddOrganicElements() {
+  for (int i = 1; i <= HIGHEST_ATOMIC_NUMBER; ++i) {
+    const Element* e = get_element_from_atomic_number(i);
+    if (e->organic()) {
+      _add_element(e);
+    }
+  }
+}
+void
+Substructure_Atom_Specifier::AddNonOrganicElements() {
+  for (int i = 1; i <= HIGHEST_ATOMIC_NUMBER; ++i) {
+    const Element* e = get_element_from_atomic_number(i);
+    if (! e->organic()) {
+      _add_element(e);
+    }
+  }
 }
 
 //#define DEBUG_CONSTRUCT_FROM_SMARTS_TOKEN
@@ -2895,6 +2922,14 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
         nchars = 3 + 2 + 1 - 1;
 //      _attributes_specified++;
       }
+      else if (c == "organic") {
+        AddOrganicElements();
+        nchars = 3 + 6;
+      }
+      else if (c == "nonorganic") {
+        AddNonOrganicElements();
+        nchars = 3 + 9;
+      }
       else
       {
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "unrecognised /IW qualifier");
@@ -2996,7 +3031,7 @@ Substructure_Atom_Specifier::construct_from_smiles_token(const const_IWSubstring
 */
 
 int
-Substructure_Atom_Specifier::reconcile_and_conditions (const Substructure_Atom_Specifier * s)
+Substructure_Atom_Specifier::reconcile_and_conditions(const Substructure_Atom_Specifier * s)
 {
   if (s->_element.number_elements())
   {
@@ -3211,8 +3246,6 @@ int
 Substructure_Atom_Specifier::attributes_specified()
 {
   int rc = 0;
-//if (_element.number_elements())
-//  rc++;
   if (_element_unique_id.number_elements())
     rc++;
   if (_ncon.is_set())
@@ -3274,8 +3307,9 @@ Substructure_Atom_Specifier::attributes_specified()
 
 //#define DEBUG_ATTRIBUTES_SPECIFIED
 #ifdef DEBUG_ATTRIBUTES_SPECIFIED
-  if (_element.number_elements())
-    cerr << "ele is specified \n";
+  if (_element_unique_id.number_elements()) {
+    cerr << "ele unique_id is specified \n";
+  }
   if (_ncon.is_set())
     cerr << "nc is specified \n";
   if (_ncon2.is_set())

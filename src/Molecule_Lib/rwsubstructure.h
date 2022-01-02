@@ -756,6 +756,29 @@ queries_from_file (const const_IWSubstring & fname, resizable_array_p<T> & queri
 
 template <typename T>
 int
+ReadTextProtoQuery(const const_IWSubstring& token, 
+                   resizable_array_p<T>& queries) {
+  SubstructureSearch::SubstructureQuery proto;
+
+  const std::string s(token.data(), token.length());
+  if (!google::protobuf::TextFormat::ParseFromString(s, &proto))
+  {
+    std::cerr << "ReadTextProtoQuery::cannot parse proto string '" << token << "'\n";
+    return 0;
+  }
+
+  T * query = new T();
+  if (! query->ConstructFromProto(proto)) {
+    std::cerr << "ReadTextProtoQuery::cannot parse proto data '" << token << "'\n";
+    delete query;
+    return 0;
+  }
+
+  return queries.add(query);
+}
+
+template <typename T>
+int
 queries_from_file (const IWString & fname, resizable_array_p<T> & queries,
                    int inherit_directory_path,
                    int verbose)
@@ -963,8 +986,14 @@ process_cmdline_token(char option,
       std::cerr << "process_queries::cannot read binary proto file '" << mytoken << "'\n";
       return 0;
     }
-  }
-  else
+  } else if (mytoken.starts_with("proto:")) {
+    // for example -q 'proto:query{min_natoms: 4}'
+    mytoken.remove_leading_chars(6);
+    if (! ReadTextProtoQuery(mytoken, queries)) {
+      std::cerr << "process_queries:cannot read text proto option '" << mytoken << "'\n";
+      return 0;
+    }
+  } else
   {
     if (! read_one_or_more_queries_from_file(queries, mytoken, verbose))
     {

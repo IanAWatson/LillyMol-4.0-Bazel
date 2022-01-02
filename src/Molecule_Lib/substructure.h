@@ -523,8 +523,11 @@ class Substructure_Atom_Specifier
 //  This next group of things can either be specified for the Substructure_Atom,
 //  or with individual Substructure_Atom_Specifiers.
 
+    // _element is no longer used for matching, _element_unique_id is now used.
+    // The _element array is retained so elemental properties can be retrieved.
     resizable_array<const Element *> _element;
     resizable_array<int>   _element_unique_id;
+
     Min_Max_Specifier<int> _ncon;
     Min_Max_Specifier<int> _ncon2;
     Min_Max_Specifier<int> _nbonds;
@@ -612,6 +615,8 @@ class Substructure_Atom_Specifier
     int _add_element (const Element * e);
 
     int _fetch_aromaticity(const SubstructureSearch::SubstructureAtomSpecifier & proto);
+    void AddOrganicElements();
+    void AddNonOrganicElements();
 
   public:
     Substructure_Atom_Specifier ();

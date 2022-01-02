@@ -2514,7 +2514,7 @@ Single_Substructure_Query::ReadProto(iwstring_data_source & input)
       break;
   }
 
-  std::string s(contents.rawchars(), contents.length());
+  const std::string s(contents.rawchars(), contents.length());
 
   SubstructureSearch::SingleSubstructureQuery proto;
 
