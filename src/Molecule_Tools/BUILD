@@ -181,8 +181,8 @@ cc_binary(
         "fileconv.cc",
         "fix_structures.cc",
         "fix_structures.h",
-        "do_remove_duplicate_fragments.cc",
-        "do_remove_duplicate_fragments.h",
+        "remove_duplicate_fragments.cc",
+        "remove_duplicate_fragments.h",
         "known_fragment_data.cc",
         "known_fragment_data.h",
     ],
@@ -196,6 +196,27 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "fileconv_opts",
+    srcs = [
+        "fileconv_opts.cc",
+        "fix_structures.cc",
+        "fix_structures.h",
+        "remove_duplicate_fragments.cc",
+        "remove_duplicate_fragments.h",
+        "known_fragment_data.cc",
+        "known_fragment_data.h",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
     ],
 )
 
