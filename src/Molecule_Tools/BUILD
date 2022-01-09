@@ -179,14 +179,9 @@ cc_binary(
     name = "fileconv",
     srcs = [
         "fileconv.cc",
-        "fix_structures.cc",
-        "fix_structures.h",
-        "remove_duplicate_fragments.cc",
-        "remove_duplicate_fragments.h",
-        "known_fragment_data.cc",
-        "known_fragment_data.h",
     ],
     deps = [
+        ":fileconv_lib",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/accumulator:accumulator",
@@ -203,6 +198,7 @@ cc_binary(
     name = "fileconv_opts",
     srcs = [
         "fileconv_opts.cc",
+        "fileconv_opts.h",
         "fix_structures.cc",
         "fix_structures.h",
         "remove_duplicate_fragments.cc",
@@ -211,6 +207,7 @@ cc_binary(
         "known_fragment_data.h",
     ],
     deps = [
+        ":fileconv_lib",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/accumulator:accumulator",
@@ -385,6 +382,18 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "mc_summarise",
+    srcs = [
+        "mc_summarise.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
     ],
 )
 
@@ -1159,6 +1168,25 @@ cc_library(
 )
 
 cc_library(
+    name = "fileconv_lib",
+    hdrs = [
+        "fileconv_opts.h",
+        "fix_structures.h",
+        "known_fragment_data.h",
+        "remove_duplicate_fragments.h",
+    ],
+    srcs = [
+        "fileconv_opts.cc",
+        "fix_structures.cc",
+        "known_fragment_data.cc",
+        "remove_duplicate_fragments.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
     name = "iwdemerit_lib",
     srcs = [
         "iwdemerit_lib.cc",
@@ -1321,6 +1349,20 @@ cc_test(
     linkopts = [
         "-lz",
     ],
+)
+
+cc_test( 
+    name = "fileconv_test",
+    srcs = [
+        "fileconv_test.cc",
+    ],
+    deps = [
+        ":fileconv_lib",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ],
+    timeout="short",
 )
 
 cc_test(

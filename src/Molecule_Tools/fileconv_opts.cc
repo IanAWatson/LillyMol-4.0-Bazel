@@ -8,9 +8,6 @@
 #include <limits>
 #include <memory>
 
-using std::cerr;
-using std::cout;
-
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 
 #include "Foundational/accumulator/accumulator.h"
@@ -18,7 +15,7 @@ using std::cout;
 #include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwqsort/iwqsort.h"
-#include "Foundational/iwstring/iwstring.h"
+
 #include "Molecule_Lib/allowed_elements.h"
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/charge_assigner.h"
@@ -28,7 +25,6 @@ using std::cout;
 #include "Molecule_Lib/is_actually_chiral.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/mdl.h"
-#include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/numass.h"
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/path.h"
@@ -37,472 +33,28 @@ using std::cout;
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
+
+#include "fileconv_opts.h"
 #include "remove_duplicate_fragments.h"
-#include "fix_structures.h"
-#include "known_fragment_data.h"
-#include "re2/re2.h"
 
 static const char* prog_name;
 
 namespace fileconv {
 
-struct FileconvConfig {
-  int audit_input = 0;
-
-  int verbose = 0;
-
-  int debug_print_each_molecule = 0;
-
-  // Geometric values can be printed.
-  int print_bond_lengths = 0;
-  int print_bond_angles = 0;
-  int print_torsions = 0;
-  int print_max_atom_separation = 0;
-
-  // If we are printing the max atom separation for each molecule
-  // may as well form summary stats across the entire input.
-  Accumulator<double> acc_longest_sep;
-
-  // Overall stats on input and output.
-  int molecules_read = 0;
-  int molecules_written = 0;
-
-  int molecules_changed = 0;
-
-  // We can append a string to the name of any molecule whose connection table is changed
-
-  IWString molecule_changed_string;
-
-  Chemical_Standardisation chemical_standardisation;
-
-  Charge_Assigner charge_assigner;
-
-  Donor_Acceptor_Assigner donor_acceptor_assigner;
-
-  Structure_Fixing structure_fixing;
-
-  int fragment_count = 0;
-  int reduce_to_largest_fragment = 0;
-  int reduce_to_all_largest_fragments = 0;
-  int reduce_to_largest_organic_fragment = 0;
-  int reduce_to_largest_organic_fragment_carefully = 0;
-  bool keep_all_organic_fragments = false;
-  int molecules_with_nonorganic_fragments_removed = 0;
-  int maximum_fragment_count = 0;
-  int min_size_max_fragment_count = 0;
-  int molecules_chopped = 0;
-  int molecules_with_too_many_components = 0;
-  int molecules_with_large_fragments = 0;
-  int remove_duplicate_fragments = 0;
-  int molecules_with_duplicate_fragments_removed = 0;
-  int remove_fragments_this_size_or_smaller = 0;
-  int molecules_with_very_small_fragments_removed = 0;
-  int remove_largest_fragment = 0;
-  int remove_molecules_with_non_largest_fragment_natoms = -1;
-  int strip_to_n_largest_fragments = 0;
-  int sort_by_fragment_size = 0;
-  IWString tag_for_removed_fragments;
-
-  // People are registering mixtures. This is very bad for us.
-  // If a molecule contains more than 1 fragment with more than
-  // a given number of atoms, discard the molecule
-
-  int discard_molecule_if_multiple_fragments_larger_than = 0;
-
-  int molecules_with_multiple_large_fragments = 0;
-
-  // Sometimes if things are ambiguous, just call it a mixture if the two
-  // largest fragments differ by a given amount or less
-
-  int mixture_if_largest_frags_differ_by = -1;
-
-  int molecules_declared_mixtures_by_atom_count_difference = 0;
-
-  Known_Fragment_Data known_fragment_data;
-
-  // We can keep track of how many atoms are lost
-
-  Accumulator_Int<int> atoms_lost;
-  extending_resizable_array<int> initial_fragment_count;
-
-  // For efficiency we have a single variable which indicates whether or not
-  // the fragment code must be called.
-
-  int need_to_call_process_fragments = 0;
-
-  int skip_molecules_with_abnormal_valences = 0;
-  int ok_bad_valence_on_isotopically_labelled = 0;
-  int molecules_with_abnormal_valences = 0;
-
-  int max_path_length = 0;
-  int molecules_with_longest_path_too_long = 0;
-
-  int exclude_isotopes = 0;
-  int molecules_containing_isotopes = 0;  // only if the isotopic attributes are changed
-
-  int convert_isotopes = 0;
-
-  int convert_all_isotopes_to = 0;
-
-  int remove_isotopic_atoms = 0;
-
-  int convert_isotopes_to_atom_map_numbers = 0;
-  int convert_atom_map_numbers_to_isotopes = 0;
-
-  resizable_array<int> convert_specific_isotopes;
-  resizable_array<int> convert_specific_isotopes_new_isotope;
-
-  resizable_array_p<Substructure_Query> convert_specific_isotopes_query;
-  resizable_array<int> convert_specific_isotopes_query_new_isotope;
-
-  int output_organic_only = 0;
-  int non_organic_molecules_found = 0;
-
-  int exclude_non_real_elements = 0;
-  int non_real_elements_found = 0;
-
-  int molecules_excluded_for_non_allowed_elements = 0;
-
-  double lower_molecular_weight_cutoff = 0.0;
-  double upper_molecular_weight_cutoff = 0.0;
-
-  int molecules_below_molecular_weight_cutoff = 0;
-  int molecules_above_molecular_weight_cutoff = 0;
-
-  Accumulator<molecular_weight_t> amw_accumulator;
-  Accumulator_Int<int> natoms_accumulator;
-  extending_resizable_array<int> atom_count;
-
-  int lower_atom_count_cutoff = 0;
-  int upper_atom_count_cutoff = 0;
-
-  /*
-    I never implemented these two, they are mostly taken care
-    of by atom_count_includes_only_atoms_in_largest_fragment
-    If that ever becomes a problem, go ahead and implement them
-
-    static int lower_atom_count_cutoff_applies_to_largest_fragment = 0;
-    static int upper_atom_count_cutoff_applies_to_largest_fragment = 0;
-  */
-
-  int include_implicit_hydrogens_in_upper_atom_count_comparison = 0;
-
-  int atom_count_includes_only_atoms_in_largest_fragment = 0;
-
-  int molecules_below_atom_count_cutoff = 0;
-  int molecules_above_atom_count_cutoff = 0;
-
-  std::unique_ptr<RE2> name_rx;
-
-  std::unique_ptr<RE2> change_name_rx;
-  int change_name_rx_must_match = 0;
-
-  // With the -B option, one specify the number of connection table errors
-  // allowed before programme exit.
-
-  int connection_table_errors_allowed = 0;
-
-  IWString connection_table_error_file;
-
-  IWString output_file_stem;
-
-  // When reducing fragment count, we can keep the smallest or largest
-  // fragment which matches a given query.
-
-  resizable_array_p<Substructure_Query> smallest_fragment_queries;
-  resizable_array_p<Substructure_Query> largest_fragment_queries;
-  resizable_array_p<Substructure_Query> keep_fragment_queries;
-  resizable_array_p<Substructure_Query> remove_fragment_queries;
-
-  int molecules_with_fragments_reduced_by_query = 0;
-  int molecules_not_matching_fragment_queries = 0;
-
-  int lower_ring_count_cutoff = 0;
-  int molecules_with_too_few_rings = 0;
-  int upper_ring_count_cutoff = -1;
-  int molecules_with_too_many_rings = 0;
-
-  int max_ring_systems_allowed = -1;
-  int molecules_with_too_many_ring_systems = 0;
-
-  int upper_ring_size_cutoff = 0;
-  int molecules_with_large_rings = 0;
-
-  int max_rings_in_a_ring_system = -1;
-  int molecules_with_ring_systems_too_large = 0;
-
-  // We can translate molecules if we wish
-
-  coord_t dx = 0.0;
-  coord_t dy = 0.0;
-  coord_t dz = 0.0;
-
-  // We can speed things up by having a single variable that indicates whether a translation
-  // is needed
-
-  int translation_specified = 0;
-
-  // What kind of partial charge do we want
-
-  int fileconv_partial_charge_type = 0;
-
-  enum ChargeType {
-    kNoChargeCalculation,
-    kGasteiger,
-    kGasteigerHuckel,
-    kAbraham,
-  };
-
-  // We can optionally assign each molecule written a number R(number).
-
-  Number_Assigner number_assigner;
-
-  Elements_to_Remove elements_to_remove;
-
-  // We can transform element types.
-
-  Element_Transformations element_transformations;
-
-  // With the -H option, we make implicit hydrogens explicit
-
-  int make_all_implicit_hydrogens_explicit = 0;
-
-  resizable_array_p<Substructure_Query> atoms_for_implicit_hydrogens;
-
-  int molecules_to_which_hydrogens_were_added = 0;
-
-  // Various things for chirality and stereo centres
-
-  int find_all_chiral_centres = 0;
-  int find_all_ring_chiral_centres = 0;
-  int invert_all_chiral_centres = 0;
-  int reflect_coordinates = 0;
-  int chiral_centres_inverted = 0;
-  int remove_invalid_chiral_centres = 0;
-  int molecules_with_invalid_chiral_centres = 0;
-  int molecules_with_chiral_centres = 0;
-  int remove_chiral_data_from_all_molecules = 0;
-  int remove_non_organic_chirality = 0;
-  int max_chiral_centres = 0;
-  int molecules_with_too_many_chiral_centres = 0;
-  extending_resizable_array<int> chiral_centre_count;
-
-  resizable_array_p<Substructure_Query> remove_chiral_centres_on;
-
-  int chiral_centres_removed_by_rmchiral = 0;
-  int molecules_with_chiral_centres_removed_by_rmchiral = 0;
-
-  int remove_directional_bonds_from_input = 0;
-
-  int remove_invalid_directional_bonds_from_input = 0;
-
-  int change_double_bonds_between_permanent_aromatic_to_single = 0;
-
-  // With the -O (organic) switch, we can specify a list of non-organic
-  // elements which are in fact OK
-
-  Set_of_Element_Matches ok_non_organics;
-
-  // Dec 2008. I want to be able to reject anything that contains certain elements
-  // Enabled by '-O def'
-
-  int filter_for_disallowed_elements = 0;
-
-  Allowed_Elements allowed_elements;
-
-  std::ofstream reject_log;
-
-  Molecule_Output_Object rejections_output_object;
-
-  // As part of the smiles infrastructure, I wanted to simultaneously
-  // produce llyg.smi and llygO.smi. This allows that...
-
-  IWString_and_File_Descriptor stream_for_smiles_before_filters;
-
-  int compute_molecular_weight_for_each = 0;
-
-  int compute_molecular_weight_based_on_largest_fragment = 0;
-
-  int appends_to_be_done = 0;
-
-  int do_appends_as_prepends = 0;
-
-  int appended_properties_from_largest_fragment = 0;
-
-  int append_molecular_weight_to_name = 0;
-
-  int append_molecular_weight_ok_isotope_to_name = 0;
-
-  int append_exact_mass_to_name = 0;
-
-  int append_heteratom_count_to_name = 0;
-
-  int append_molecular_formula_to_name = 0;
-
-  int append_isis_molecular_formula_to_name = 0;
-
-  int append_nrings_to_name = 0;
-
-  int append_aromatic_ring_count_to_name = 0;
-
-  int append_natoms_to_name = 0;
-
-  int append_nbonds_to_name = 0;
-
-  int append_net_formal_charge_to_name = 0;
-
-  int append_clnd_count_to_name = 0;
-
-  molecular_weight_t lower_amw_cutoff = -1.0;
-  int molecules_below_amw_cutoff = 0;
-  molecular_weight_t upper_amw_cutoff = -1.0;
-  int molecules_above_amw_cutoff = 0;
-
-  IWString substitute_for_whitespace_in_name;
-  int truncate_names_to_first_token = 0;
-
-  char truncate_name_at_first = '\0';
-  char truncate_name_at_last = '\0';
-
-  int name_token = -1;
-
-  IWString prepend_to_name;
-
-  resizable_array_p<Substructure_Query> aromatise_these_rings;
-
-  int molecules_changed_by_aromatising_rings = 0;
-
-  int remove_unnecessary_square_brackets = 0;
-
-  int remove_all_possible_square_brackets = 0;
-
-  int reset_atom_map_numbers = 0;
-
-  int molecule_to_fragments = 0;
-
-  // Private functions.
-  void DefaultValues();
-
-  void DoAppends(Molecule& m, IWString& extra_stuff);
-  int PrintTorsion(const Molecule& m, const Bond& b, std::ostream& output);
-  int PrintBondAngle(const Molecule& m,
-                     const atom_number_t a1,
-                     const atom_number_t a2,
-                     std::ostream& output);
-  int IdentifyMatchedAtomsWithChiralCentres(const Molecule& m,
-                                            const Set_of_Atoms& e,
-                                            Set_of_Atoms& atoms_with_chiral_centres_to_be_removed);
-
-  int RemoveChiralCentresOnMatchedAtoms(
-      Molecule& m, const resizable_array_p<Substructure_Query>& remove_chiral_centres_on);
-  int AromatiseTheseRings(Molecule& m, int* procecss_these_atoms);
-  int AromatiseTheseRings(Molecule& m,
-                          int* ring_labels,
-                          int* procecss_these_atoms,
-                          const Set_of_Atoms& e);
-  int AromatiseTheseRings(Molecule& m,
-                          resizable_array_p<Substructure_Query>& aromatise_these_rings);
-  int ExtractSmallerFragmentsIntoNameTag(Molecule& m, const IWString& tag_for_removed_fragments);
-  int RemoveByFragment(Molecule& m, const resizable_array<int>& fragments_to_remove);
-  int RemoveFragmentsThatMatchQuery(Molecule& m, resizable_array_p<Substructure_Query>& queries);
-  int RemoveLargestFragments(Molecule& m, int remove_largest_fragment);
-  int TooManyLargeFragments(Molecule& m,
-                            int min_size_max_fragment_count,
-                            int maximum_fragment_count);
-  void RemoveNonorganicFragments(Molecule& m, const int* frag_membership, int& fragments_removed);
-  void RemoveNonorganicFragments(Molecule& m, int& fragments_removed);
-  int IdentifyFragmentsToBeKept(Molecule& m, resizable_array_p<Substructure_Query>& q);
-  int IdentifyFragmentByQuery(Molecule& m,
-                              resizable_array_p<Substructure_Query>& queries,
-                              int largest);
-  int AtomsInNonLargestFragmentExceed(Molecule& m, int mxfs);
-  int TrimToFirstNFragments(Molecule& m, const int* frag_membership, int fragment_count);
-  int StripToNLargestFragments(Molecule& m, int n);
-  int LooksLikeMixtureByAtomCount(Molecule& m);
-
-  int ChangeName(Molecule& m, re2::RE2& change_name_rx);
-  int NameMatchesNameRx(const IWString& mname);
-  void SubstituteForWhitespaceInName(Molecule& m);
-  int DebugPrint(Molecule& m, std::ostream& os) const;
-
-  int ApplyAllFiltersInner(Molecule& m, IWString& rejection_reason, int& molecule_changed);
-  int ApplyAllFilters(Molecule& m, int molecule_number, int& molecule_changed);
-  int FileconvListOfFiles(iwstring_data_source& input,
-                          FileType input_type,
-                          Molecule_Output_Object& output);
-  int FileconvListOfFiles(const char* fname, FileType input_type, Molecule_Output_Object& output);
-  int Fileconv(const char* fname, FileType input_type, Molecule_Output_Object& output);
-  int Fileconv(data_source_and_type<Molecule>& input, Molecule_Output_Object& output_object);
-  int ReportResults(const Command_Line& cl, std::ostream& output) const;
-
- public:
-  FileconvConfig();
-
-  int ParseOrganicSpecification(Command_Line& cl, char flag);
-  int ParseMolecularWeightSpecifications(Command_Line& cl);
-  int ParseRingFiltering(Command_Line& cl);
-  int ParseAtomCountDirectives(Command_Line& cl);
-  int ParseBadHandlingoptions(Command_Line& cl, char flag);
-  int GetTranslations(Command_Line& cl, const char cflag);
-  int GetChargeCalculation(Command_Line& cl, char flag);
-  int ParseImplicitHydrogenDirectives(Command_Line& cl, char flag);
-  int GetIsotopeDirectives(Command_Line& cl, char flag);
-  int ParseMiscOptions(Command_Line& cl, char flag);
-  int GetChiralityInstructions(Command_Line& cl, char flag);
-  int GetFragmentSpecifications(Command_Line& cl);
-  int GatherAppendSpecifications(Command_Line& cl, char flag);
-  int SetupRejectionsFile(Command_Line& cl, char flag);
-  int ParseMkFragOptions(Command_Line& cl, char flag);
-  int Fileconv(int argc, char** argv);
-
-  int ComputeClnd(const Molecule& m);
-  void DoAppends(Molecule& m);
-  int RemoveFragmentsThisSizeOrSmaller(Molecule& m);
-  int ComputePartialCharges(Molecule& m);
-  int PrintMaxAtomSeparation(const Molecule& m, std::ostream& output);
-  int PrintTorsions(Molecule& m, std::ostream& output);
-  int PrintBondAngles(const Molecule& m, std::ostream& output);
-  int PrintBondLengths(const Molecule& m, std::ostream& output);
-  int InvertAllChiralCentres(Molecule& m);
-  int ReflectCoordinates(Molecule& m);
-  int FindAllChiralCentres(Molecule& m);
-  int RemoveIsotopes(Molecule& m);
-  int ConvertIsotopesToAtomMapNumbers(Molecule& m);
-  int ConvertAtomMapNumbersToIsotopes(Molecule& m);
-  int MakeImplicitHydrogensExplicit(Molecule& m);
-  int RemoveNonOrganicChirality(Molecule& m);
-  void SortByFragmentSize(Molecule& m);
-  int ReduceToAllLargestFragments(Molecule& m);
-  int RemoveLargestFragment(Molecule& m);
-  int ProcessFragments(Molecule& m);
-  int ExcludeForNonOrganicAndNonPeriodicTable(const Molecule& m);
-  int ExcludeForNonOrganic(const Molecule& m);
-  int ExcludeForNonRealElements(const Molecule& m);
-  int ExcludeForAtomTypes(const Molecule& m);
-  int ValenceCheckOk(Molecule& m);
-  int TooManyLargeFragments(Molecule& m);
-
-  int Process(Molecule& m, Molecule_Output_Object& output_object);
-};
+using std::cerr;
 
 FileconvConfig::FileconvConfig() { DefaultValues(); }
-
-/*
-  If we have multiple invocations, we need to reset some things
-*/
 
 void
 FileconvConfig::DefaultValues() {
   audit_input = 0;
-  debug_print_each_molecule = 0;
   verbose = 0;
   print_bond_lengths = 0;
   print_bond_angles = 0;
   print_torsions = 0;
   print_max_atom_separation = 0;
   acc_longest_sep.reset();
-  molecules_read = 0;
-  molecules_written = 0;
+  molecules_processed = 0;
   molecules_changed = 0;
   molecule_changed_string.resize_keep_storage(0);
 
@@ -597,12 +149,6 @@ FileconvConfig::DefaultValues() {
 
   name_rx.reset(nullptr);
 
-  connection_table_errors_allowed = 0;
-
-  connection_table_error_file.resize(0);
-
-  output_file_stem.resize(0);
-
   smallest_fragment_queries.resize(0);
   largest_fragment_queries.resize(0);
   keep_fragment_queries.resize(0);
@@ -664,8 +210,8 @@ FileconvConfig::DefaultValues() {
 
   ok_non_organics.resize(0);
 
+  // Not much we can do to reset these. Maybe close?
   // reject_log;
-
   // rejections_output_object;
 
   compute_molecular_weight_for_each = 0;
@@ -732,7 +278,7 @@ FileconvConfig::DefaultValues() {
 }
 
 void
-usage(int rc = 1) {
+Usage(int rc = 1) {
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << "\n";
   cerr << "usage: " << prog_name << " -i <input type> -o <output type> file1 file2...\n";
   cerr << "The following options are recognised\n";
@@ -754,7 +300,6 @@ usage(int rc = 1) {
   cerr << "  -R <n>         omit molecules with more  than <n> rings. Use S:n for ring systems\n";
   cerr << "  -m <ringsize>  discard molecules with rings larger than <ringsize>\n";
   cerr << "  -X <symbol>    extract/remove all atoms of type <symbol>. No bonds changed\n";
-  // cerr << "  -q <name>      only output molecules which   match the query in file <name>\n";
   cerr << "  -Q <type>      compute partial charges - enter '-Q help' for info\n";
   cerr << "  -I ...         isotope options, enter '-I help' for info'\n";
   cerr << "  -s <qual>      chirality options, enter '-s help' for details\n";
@@ -774,47 +319,22 @@ usage(int rc = 1) {
 #endif
   cerr << "  -S <string>    create output files with name stem <string>\n";
   cerr << "  -p <string>    append various things to the name. Enter '-p help' for info\n";
+  cerr << "  -J <...>       fix obvious structure errors, enter '-J help' for info\n";
+  cerr << "  -Y <...>       miscellaneous options, enter '-Y help' for info\n";
   cerr << "  -i <type>      specify input file type. Enter '-i help' for details\n";
   (void)display_standard_charge_assigner_options(cerr, 'N');
   (void)display_standard_chemical_standardisation_options(cerr, 'g');
   cerr << "  -H <..>        donor acceptor assignment, enter '-H help' for info\n";
-  //(void) display_standard_etrans_options(cerr, 't');
   cerr << "  -t E1=E2       standard element transformation options, enter '-t help'\n";
   (void)display_standard_aromaticity_options(cerr);
   (void)display_standard_smiles_options(cerr);
-  cerr << "  -J <...>       fix obvious structure errors, enter '-J help' for info\n";
-  cerr << "  -Y <...>       miscellaneous options, enter '-Y help' for info\n";
   cerr << "  -v             verbose output\n";
 
   exit(rc);
 }
 
 void
-display_chirality_options() {
-  // cerr << "  -s discard     discard all chiral information in the input\n";
-  cerr << "  -s good        ignore erroneous chiral input\n";
-  cerr << "  -s find        identify all stereo centres in the molecules (random chirality)\n";
-  cerr << "  -s rfind       identify stereo centres for ring atoms only\n";
-  cerr << "  -s invert      invert all stereo centres\n";
-  cerr << "  -s 1           include chiral info in output (default)\n";
-  cerr << "  -s 0           exclude chiral info from output\n";
-  cerr << "  -s remove      remove all chirality upon read\n";
-  cerr << "  -s rmchiral=... remove chiral centres on atoms that match query(s)\n";
-  cerr << "  -s 'rmchiral=SMARTS:[ND2H]' will remove 2 connected Nitrogen chiral centres\n";
-  cerr << "  -s 'rmchiral=SMARTS:[AR3]' will remove wedge bonds in adamantyl systems\n";
-  cerr << "  -s rmbad       remove chiral centres that really aren't chiral\n";
-  cerr << "  -s xctb        remove all cis-trans bonding information\n";
-  cerr << "  -s rmbctb      remove invalid cis-trans bonding information\n";
-  // cerr << "  -s d3d         discern chirality from the 3D structure\n";
-  cerr << "  -s nonocm      no non organic chirality messages\n";
-  cerr << "  -s rmnoc       remove chirality from non organic atoms\n";
-  cerr << "  -s maxc=<n>    discard molecules with more than <n> chiral centres\n";
-
-  return;
-}
-
-void
-display_f_directives(int rc) {
+DisplayfOptions(int rc) {
   cerr << "  -f <number>    remove fragments so that all written molecules\n";
   cerr << "                 have no more than <number> fragments\n";
   cerr << "  -f large       trim to largest fragment (can abbreviate to '-f l')\n";
@@ -841,6 +361,7 @@ display_f_directives(int rc) {
   cerr << "  -f kpallsalt   do not change a molecule if every fragment is a known salt\n";
   cerr << "  -f rmxt=<n>    discard molecules with >1 fragment with more than n atoms\n";
   cerr << "  -f rmxt        discard molecules with >1 fragment with more than 16 atoms\n";
+  cerr << "  -f sfs         sort fragments by size\n";
   cerr << "  -f dmxt=<d>    discard molecules where largest fragments differ by <d> atoms or "
           "fewer\n";
   cerr << "  -f manlf=<d>   discard molecules that have a non-largest fragment with more than <d> "
@@ -852,15 +373,15 @@ display_f_directives(int rc) {
 }
 
 void
-display_dash_F_options(std::ostream& os) {
-  os << "  -F <number>      discard molecules with more than <number> fragments\n";
-  os << "  -F mnsz=<n>      when counting fragments only count those with > <n> atoms\n";
+DisplayFOptions(int rc) {
+  cerr << "  -F <number>      discard molecules with more than <number> fragments\n";
+  cerr << "  -F mnsz=<n>      when counting fragments only count those with > <n> atoms\n";
 
-  exit(0);
+  exit(rc);
 }
 
 void
-display_p_directives(int rc) {
+DisplayPDirectives(int rc) {
   cerr << " Appends various molecular properties to the molecule name\n";
   cerr << "  -p AMW         append molecular weight to the name (isotopic atoms fail molecule)\n";
   cerr << "  -p AMWI        append molecular weight to the name (isotopic atoms handled)\n";
@@ -880,7 +401,7 @@ display_p_directives(int rc) {
 }
 
 void
-display_dash_y_options(std::ostream& os, char flag, int rc) {
+DisplayDashYOptions(std::ostream& os, char flag, int rc) {
   os << " -" << flag << " nbvm          No Bad Valence Messages, or strange electron counts\n";
   os << " -" << flag << " okbvi         during valence check, ok to have bad valence on isotopes\n";
   os << " -" << flag << " appchg=xxxx   append 'xxxx' to the name of molecules that are changed\n";
@@ -917,8 +438,9 @@ display_dash_y_options(std::ostream& os, char flag, int rc) {
 
   exit(rc);
 }
+
 void
-display_dash_I_options(char flag, std::ostream& os) {
+DisplayDashIOptions(char flag, std::ostream& os) {
   os << " -" << flag << " 0             discard molecules containing any isotopic atoms\n";
   os << " -" << flag << " change        change any isotopic atoms to normal form\n";
   os << " -" << flag << " change=<n>    change any isotope <n> atoms to normal form\n";
@@ -948,13 +470,6 @@ DisplayDashOOptions(char flag, std::ostream& os) {
   exit(1);
 }
 
-void
-DisplayDashBOptions(std::ostream& os) {
-  os << " -B <nn>        ignore as many as <nn> otherwise fatal input errors\n";
-  os << " -B log=<fname> echo (unchanged) rejected input records to <fname>\n";
-
-  exit(1);
-}
 
 // Recursively identify a contiguous group of Nitrogen atoms.
 int
@@ -983,7 +498,7 @@ identify_ngroup(const Molecule& m, atom_number_t n, int* ngroup) {
 }
 
 int
-is_azide(const Molecule& m, atom_number_t n1, int* ngroup) {
+IsAzide(const Molecule& m, atom_number_t n1, int* ngroup) {
   const Atom* an1 = m.atomi(n1);
 
   atom_number_t n2 = an1->other(n1, 0);
@@ -1051,7 +566,7 @@ FileconvConfig::ComputeClnd(const Molecule& m) {
     if (1 != m.ncon(i))
       continue;
 
-    if (is_azide(m, i, ngroup))
+    if (IsAzide(m, i, ngroup))
       rc += 1;
   }
 
@@ -2585,7 +2100,7 @@ FileconvConfig::ProcessFragments(Molecule& m) {
 }
 
 int
-max_ring_size(Molecule& m) {
+MaxRingSize(Molecule& m) {
   int nr = m.nrings();
 
   if (0 == nr)
@@ -2905,7 +2420,7 @@ FileconvConfig::ApplyAllFiltersInner(Molecule& m,
     AromatiseTheseRings(m, aromatise_these_rings);
   }
 
-  if (matoms) {
+  if (matoms > 0) {
     molecule_changed += elements_to_remove.process(m);
 
     molecule_changed += element_transformations.process(m);
@@ -2971,7 +2486,7 @@ FileconvConfig::ApplyAllFiltersInner(Molecule& m,
     if (verbose > 1)
       cerr << "Molecule contains too many ring systems\n";
     rejection_reason << "too many ring systems";
-  } else if (upper_ring_size_cutoff > 0 && max_ring_size(m) > upper_ring_size_cutoff) {
+  } else if (upper_ring_size_cutoff > 0 && MaxRingSize(m) > upper_ring_size_cutoff) {
     molecules_with_large_rings++;
     if (verbose > 1)
       cerr << "Molecule contains ring too large\n";
@@ -2982,7 +2497,7 @@ FileconvConfig::ApplyAllFiltersInner(Molecule& m,
     if (verbose > 1)
       cerr << "Molecule has ring system with too many rings\n";
     rejection_reason = "large ring system";
-  } else if (exclude_isotopes && m.number_isotopic_atoms()) {
+  } else if (exclude_isotopes && m.number_isotopic_atoms() > 0) {
     molecules_containing_isotopes++;
     if (verbose > 1)
       cerr << "Molecule contains isotopes\n";
@@ -3060,23 +2575,6 @@ FileconvConfig::ApplyAllFiltersInner(Molecule& m,
   }
 
   return 1;
-}
-
-int
-FileconvConfig::ApplyAllFilters(Molecule& m, int molecule_number, int& molecule_changed) {
-  IWString rejection_reason;
-  const int rc = ApplyAllFiltersInner(m, rejection_reason, molecule_changed);
-
-  if (rc)  // molecule is OK.
-    return rc;
-
-  if (reject_log.rdbuf()->is_open() && reject_log.good())
-    reject_log << molecule_number << " '" << m.name() << "' REASON " << rejection_reason << '\n';
-
-  if (rejections_output_object.good())
-    rejections_output_object.write(m);
-
-  return 0;
 }
 
 int
@@ -3360,14 +2858,25 @@ do_remove_all_possible_square_brackets(Molecule& m) {
   return m.remove_hydrogens_known_flag_to_fix_valence_errors();
 }
 
-int
-FileconvConfig::DebugPrint(Molecule& m, std::ostream& os) const {
-  if (0 == verbose)
-    os << "Molecule " << molecules_read << '\n';
-  m.ring_membership();
-  m.debug_print(os);
+// Returns false if `m` contains isotopic atoms or
+// covalently bonded non organics.
+bool
+IsOrganic(const Molecule& m) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    const Atom& a = m.atom(i);
+    if (a.isotope() > 0) {  // Isotope.
+      return false;
+    }
+    if (a.element()->organic()) {
+      continue;
+    }
+    if (a.ncon() > 0) {  // Covalently bonded non organic
+      return false;
+    }
+  }
 
-  return os.good();
+  return true;
 }
 
 int
@@ -3378,10 +2887,17 @@ FileconvConfig::NameMatchesNameRx(const IWString& mname) {
   return iwre2::RE2PartialMatch(mname, *name_rx);
 }
 
-int
-FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
-  if (!NameMatchesNameRx(m.name()))
-    return 1;
+FileconvResult
+FileconvConfig::Process(Molecule& m) {
+  ++molecules_processed;
+
+  FileconvResult result;
+
+  if (!NameMatchesNameRx(m.name())) {
+    result.rejected = 1;
+    result.rejection_reason = "name_mismatch";
+    return result;
+  }
 
   // if (verbose > 1)
   //   cerr << "Molecule " << input.molecules_read() << " finishes at line " << input.lines_read()
@@ -3409,13 +2925,14 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
   if (audit_input) {
     if (appends_to_be_done) {
       DoAppends(m);
-      cerr << molecules_read << ' ' << m.name() << '\n';
+      cerr << molecules_processed << ' ' << m.name() << '\n';
     }
 
-    return 1;
+    return result;
   }
 
-  int molecule_changed = 0;
+  int& molecule_changed = result.molecule_changed;  // Save typing
+  molecule_changed = 0;
 
   if (remove_directional_bonds_from_input) {
     if (m.revert_all_directional_bonds_to_non_directional()) {
@@ -3423,8 +2940,7 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
     }
   }
 
-  if (convert_isotopes)  // put here so chemical standardisation can get rid of converted Deuterium
-  {
+  if (convert_isotopes) {  // put here so chemical standardisation can get rid of converted Deuterium
     if (m.transform_to_non_isotopic_form()) {
       molecule_changed++;
       molecules_containing_isotopes++;
@@ -3477,17 +2993,10 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
 
   // This is a kludge for the selimsteg infrastructure
 
-  if (!stream_for_smiles_before_filters.is_open())
-    ;
-  else if (m.number_isotopic_atoms())  // not in the organic subset
-    ;
-  else if (contains_covalently_bonded_non_organic(m))  // not in the organic subset
-    ;
-  else  // organic subset
-  {
-    stream_for_smiles_before_filters << m.smiles();
-    stream_for_smiles_before_filters << ' ' << m.name() << "\n";
-    stream_for_smiles_before_filters.write_if_buffer_holds_more_than(32768);
+  if (!return_smiles_before_filters) {  // nothing to do
+  } else if (! IsOrganic(m)) {  // not writing this one
+  } else { // organic subset, store it.
+    result.smiles_before_filters << m.smiles() << ' ' << m.name();
   }
 
   if (remove_invalid_chiral_centres) {
@@ -3508,25 +3017,26 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
   if (remove_non_organic_chirality)
     RemoveNonOrganicChirality(m);
 
-  if (!ApplyAllFilters(m, molecules_read, molecule_changed))
-    return 1;
+  if (!ApplyAllFiltersInner(m, result.rejection_reason, molecule_changed)) {
+    result.rejected = 1;
+    return result;
+  }
 
-  if (truncate_name_at_first || truncate_name_at_last)
+  if (truncate_name_at_first || truncate_name_at_last) {
     do_truncate_name(m, truncate_name_at_first, truncate_name_at_last);
-  else if (truncate_names_to_first_token)
+  } else if (truncate_names_to_first_token) {
     do_truncate_names_to_first_token(m);
-  else if (substitute_for_whitespace_in_name.length())
+  } else if (substitute_for_whitespace_in_name.length()) {
     SubstituteForWhitespaceInName(m);
-  else if (name_token >= 0) {
+  } else if (name_token >= 0) {
     do_extract_token_as_name(m, name_token);
-  } else if (change_name_rx.get() == nullptr)  // not active.
-    ;
-  else if (ChangeName(m, *change_name_rx))
-    ;
-  else {
+  } else if (change_name_rx.get() == nullptr) {  // not active.
+  } else if (ChangeName(m, *change_name_rx)) {  // good, worked.
+  } else {
     if (verbose)
       cerr << "Cannot change name according to rx '" << change_name_rx->pattern() << "'\n";
-    return 0;
+    result.error = 1;
+    return result;
   }
 
   if (prepend_to_name.length() > 0) {
@@ -3545,8 +3055,10 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
   else if (find_all_chiral_centres || find_all_ring_chiral_centres)
     molecule_changed += FindAllChiralCentres(m);
 
-  if (translation_specified)
+  if (translation_specified) {
     m.translate_atoms(dx, dy, dz);
+    ++molecule_changed;
+  }
 
   if (charge_assigner.active()) {
     molecule_changed += charge_assigner.process(m);
@@ -3571,11 +3083,11 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
   if (fileconv_partial_charge_type != kNoChargeCalculation)
     ComputePartialCharges(m);
 
+  cerr << "Do we need to do appends " << appends_to_be_done << '\n';
   if (appends_to_be_done)
     DoAppends(m);
 
   if (molecule_changed) {
-    molecules_changed++;
     if (molecule_changed_string.length()) {
       IWString tmp(m.name());
       tmp.append_with_spacer(molecule_changed_string);
@@ -3583,14 +3095,8 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
     }
   }
 
-  if (!output_object.write(m))
-    return 0;
-
-  molecules_written++;
-
-  if (debug_print_each_molecule > 1)
-    m.debug_print(cerr);
-
+#ifdef IMPLEMENT_THIS_SOMETIME
+  the problem is that this function no longer sees the Molecule_Output_Object
   if (molecule_to_fragments && m.number_fragments() > 1) {
     resizable_array_p<Molecule> components;
     m.create_components(components);
@@ -3603,170 +3109,40 @@ FileconvConfig::Process(Molecule& m, Molecule_Output_Object& output_object) {
       output_object.write(*components[i]);
     }
   }
+#endif
 
-  return 1;
+  return result;
 }
 
-int
-FileconvConfig::Fileconv(data_source_and_type<Molecule>& input,
-                          Molecule_Output_Object& output_object) {
-  Molecule* m;
-  while (nullptr != (m = input.next_molecule())) {
-    std::unique_ptr<Molecule> free_m(m);
-
-    molecules_read++;
-
-    if (debug_print_each_molecule) {
-      m->compute_aromaticity_if_needed();
-      DebugPrint(*m, cerr);
-    }
-
-    if (!Process(*m, output_object))
-      return 0;
-  }
-
-  if (input.stopped_because_of_error())
-    return 0;
-
-  return 1;
-}
-
-int
-FileconvConfig::Fileconv(const char* fname, FileType input_type, Molecule_Output_Object& output) {
-  assert(nullptr != fname);
-
-  if (FILE_TYPE_INVALID == input_type) {
-    input_type = discern_file_type_from_name(fname);
-    assert(FILE_TYPE_INVALID != input_type);
-  }
-
-  data_source_and_type<Molecule> input(input_type, fname);
-  if (!input.good()) {
-    cerr << prog_name << ": cannot open '" << fname << "'\n";
-    return 0;
-  }
-
-  if (verbose > 1)
-    input.set_verbose(1);
-
-  if (connection_table_errors_allowed) {
-    input.set_connection_table_errors_allowed(connection_table_errors_allowed);
-    if (connection_table_error_file.length())
-      input.set_connection_table_error_file(connection_table_error_file);
-  }
-
-  if (audit_input)
-    ;
-  else if (output.name_token_for_file_name() >=
-           0)  // output file names generated by the output object
-    ;
-  else if (output_file_stem.length())
-    ;
-  else if (output.would_use_name(fname)) {
-    cerr << "fileconv: input '" << fname << "' and output must be distinct\n";
-    return 0;
-  }
-
-  // Set up the output object for this file stem
-  // If there is a new stem for output files, make sure we get it.
-  // Make sure we deal properly with the case of multiple input files
-  // and a single output file (via the -S option)
-
-  static int first_call = 1;
-
-  int rc = 0;
-  if (audit_input)
-    rc = 1;
-  else if (output_file_stem.length()) {
-    if (first_call)
-      rc = output.new_stem(output_file_stem);
-    else
-      rc = output.ok();
-
-    first_call = 0;
-  } else if (output.name_token_for_file_name() >= 0)
-    rc = 1;
-  else
-    rc = output.new_stem(fname);
-
-  if (0 == rc) {
-    cerr << "Output object could not open file\n";
-    return 0;
-  }
-
-  return Fileconv(input, output);
-}
-
-int
-FileconvConfig::FileconvListOfFiles(iwstring_data_source& input,
-                                     FileType input_type,
-                                     Molecule_Output_Object& output) {
-  input.set_strip_trailing_blanks(1);
-  input.set_skip_blank_lines(1);
-  input.set_strip_leading_blanks(1);
-
-  IWString buffer;
-
-  while (input.next_record(buffer)) {
-    if (buffer.starts_with('#'))
-      continue;
-
-    if (verbose > 1)
-      cerr << "Processing '" << buffer << "'\n";
-    if (!Fileconv(buffer.null_terminated_chars(), input_type, output)) {
-      cerr << "Fatal error processing file '" << buffer << "'\n";
-      return 0;
-    }
-  }
-
-  return 1;
-}
-
-int
-FileconvConfig::FileconvListOfFiles(const char* fname,
-                                     FileType input_type,
-                                     Molecule_Output_Object& output) {
-  const char* tmp = fname + 2;
-
-  iwstring_data_source input(tmp);
-
-  if (!input.good()) {
-    cerr << "Cannot open list of files to process '" << fname << "'\n";
-    return 0;
-  }
-
-  return FileconvListOfFiles(input, input_type, output);
+bool
+ValidAtomicNumber(const atomic_number_t z) {
+  return z > 0 && z <= HIGHEST_ATOMIC_NUMBER;
 }
 
 const Element*
-recognise_as_element(const const_IWSubstring& o) {
+RecogniseAsElement(const const_IWSubstring& o) {
   const Element* rc = get_element_from_symbol_no_case_conversion(o);
 
   if (nullptr == rc)
     return nullptr;
 
   atomic_number_t z = rc->atomic_number();
-
-  if (z <= 0)
+  if (! ValidAtomicNumber(z)) {
     return nullptr;
-
-  if (z > HIGHEST_ATOMIC_NUMBER)  // not sure how this could happen
-    return nullptr;
+  }
 
   return rc;
 }
 
 const Element*
-recognise_as_element_or_atomic_number(const const_IWSubstring& o) {
+RecogniseAsElementOrAtomicNumber(const const_IWSubstring& o) {
   int z;
-  if (!o.numeric_value(z))
-    return recognise_as_element(o);
-
-  if (z <= 0)
+  if (!o.numeric_value(z)) {
+    return RecogniseAsElement(o);
+  }
+  if (! ValidAtomicNumber(z)) {
     return nullptr;
-
-  if (z > HIGHEST_ATOMIC_NUMBER)
-    return nullptr;
+  }
 
   return get_element_from_atomic_number(z);
 }
@@ -3781,7 +3157,7 @@ FileconvConfig::ParseOrganicSpecification(Command_Line& cl, char flag) {
     } else if (o.starts_with("allow:")) {
       o.remove_leading_chars(6);
 
-      const Element* e = recognise_as_element_or_atomic_number(o);
+      const Element* e = RecogniseAsElementOrAtomicNumber(o);
 
       if (nullptr == e) {
         cerr << "Unrecognised element allow:'" << o << "'\n";
@@ -3921,13 +3297,13 @@ FileconvConfig::GetIsotopeDirectives(Command_Line& cl, char flag) {
         if (!s1.numeric_value(a) || a < 0 || !s2.numeric_value(b) || b < 0) {
           cerr << "The isotopic conversion directive must contain a valid set of isotopes '" << tmp
                << "' invalid\n";
-          display_dash_I_options('I', cerr);
+          DisplayDashIOptions('I', cerr);
         }
       } else {
         if (!tmp.numeric_value(a) || a < 0) {
           cerr << "The isotopic conversion directive must contain a valid set of isotopes '" << tmp
                << "' invalid\n";
-          display_dash_I_options('I', cerr);
+          DisplayDashIOptions('I', cerr);
         }
       }
 
@@ -3946,7 +3322,7 @@ FileconvConfig::GetIsotopeDirectives(Command_Line& cl, char flag) {
       if (ndx < 0) {
         cerr << "THe smarts for converting isotopes must have be 'smarts,new_isotope', '" << tmp
              << "' invalid\n";
-        display_dash_I_options('I', cerr);
+        DisplayDashIOptions('I', cerr);
       }
 
       const_IWSubstring s;
@@ -3974,7 +3350,7 @@ FileconvConfig::GetIsotopeDirectives(Command_Line& cl, char flag) {
       if (!tmp.numeric_value(convert_all_isotopes_to) || convert_all_isotopes_to < 0) {
         cerr << "The convert all isotopes 'alliso=' directive must have a valid isotopic value, '"
              << tmp << "' invalid\n";
-        display_dash_I_options('I', cerr);
+        DisplayDashIOptions('I', cerr);
       }
 
       if (verbose)
@@ -3984,10 +3360,10 @@ FileconvConfig::GetIsotopeDirectives(Command_Line& cl, char flag) {
       if (verbose)
         cerr << "All isotopically atoms will be removed\n";
     } else if ("help" == tmp) {
-      display_dash_I_options('I', cerr);
+      DisplayDashIOptions('I', cerr);
     } else {
       cerr << "Unrecognised -I qualifier '" << tmp << "'\n";
-      usage(55);
+      Usage(1);
     }
   }
   return 1;
@@ -4022,7 +3398,7 @@ FileconvConfig::GetChargeCalculation(Command_Line& cl, char flag) {
         cerr << "Will compute Abraham partial charges\n";
     } else {
       cerr << "Unrecognised partial charge specification '" << q << "'\n";
-      usage(12);
+      Usage(12);
     }
   }
   return 1;
@@ -4060,8 +3436,6 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       if (verbose) {
         cerr << "Max atom separation printed\n";
       }
-    } else if ("dbg" == y) {
-      debug_print_each_molecule++;
     } else if (y.starts_with("namerx=")) {
       y.remove_leading_chars(7);
       re2::StringPiece tmp(y.data(), y.length());
@@ -4138,7 +3512,7 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       }
       name_token--;
     } else if (y.starts_with("maxplen=")) {
-      y.remove_leading_chars(7);
+      y.remove_leading_chars(8);
       if (!y.numeric_value(max_path_length) || max_path_length < 1) {
         cerr << "The maxplen= directive must be followed by a +ve whole number\n";
         return 5;
@@ -4151,20 +3525,10 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       if (verbose)
         cerr << "Will change double bonds between permanent aromatic atoms to single\n";
     } else if (y.starts_with("B4F=")) {
-      y.remove_leading_chars(4);
-      IWString fname(y);
-      if ('-' == y)
-        ;
-      else if (!fname.ends_with(".smi"))
-        fname << ".smi";
-
-      if (!stream_for_smiles_before_filters.open(fname.null_terminated_chars())) {
-        cerr << "Cannot open stream for pre-filtered smiles '" << fname << "'\n";
-        return 3;
+      return_smiles_before_filters = 1;
+      if (verbose) {
+        cerr << "Pre filtered smiles will be written\n";
       }
-
-      if (verbose)
-        cerr << "Pre-filtered smiles written to '" << fname << "'\n";
     } else if ("aclf" == y) {
       atom_count_includes_only_atoms_in_largest_fragment = 1;
 
@@ -4218,7 +3582,7 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       if (verbose)
         cerr << "Will convert atom map numbers to isotopes\n";
     } else if ("help" == y) {
-      display_dash_y_options(cerr, 'Y', 2);
+      DisplayDashYOptions(cerr, 'Y', 2);
     } else {
       cerr << "Unrecognised -Y qualifier '" << y << "'\n";
       return 6;
@@ -4226,6 +3590,30 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
   }
 
   return 1;
+}
+
+void
+DisplayChiralityOptions() {
+//cerr << "  -s discard     discard all chiral information in the input\n";
+  cerr << "  -s good        ignore erroneous chiral input\n";
+  cerr << "  -s find        identify all stereo centres in the molecules (random chirality)\n";        
+  cerr << "  -s rfind       identify stereo centres for ring atoms only\n";
+  cerr << "  -s invert      invert all stereo centres\n";
+  cerr << "  -s 1           include chiral info in output (default)\n";
+  cerr << "  -s 0           exclude chiral info from output\n";
+  cerr << "  -s remove      remove all chirality upon read\n";
+  cerr << "  -s rmchiral=... remove chiral centres on atoms that match query(s)\n";
+  cerr << "  -s 'rmchiral=SMARTS:[ND2H]' will remove 2 connected Nitrogen chiral centres\n";
+  cerr << "  -s 'rmchiral=SMARTS:[AR3]' will remove wedge bonds in adamantyl systems\n";
+  cerr << "  -s rmbad       remove chiral centres that really aren't chiral\n";
+  cerr << "  -s xctb        remove all cis-trans bonding information\n";
+  cerr << "  -s rmbctb      remove invalid cis-trans bonding information\n";
+//cerr << "  -s d3d         discern chirality from the 3D structure\n";
+  cerr << "  -s nonocm      no non organic chirality messages\n";
+  cerr << "  -s rmnoc       remove chirality from non organic atoms\n";
+  cerr << "  -s maxc=<n>    discard molecules with more than <n> chiral centres\n";
+
+  return;
 }
 
 int
@@ -4239,7 +3627,7 @@ FileconvConfig::GetChiralityInstructions(Command_Line& cl, char flag) {
   IWString tmp;
   for (int i = 0; cl.value(flag, tmp, i); ++i) {
     if ("help" == tmp) {
-      display_chirality_options();
+      DisplayChiralityOptions();
       exit(1);
     }
 
@@ -4325,7 +3713,7 @@ FileconvConfig::GetChiralityInstructions(Command_Line& cl, char flag) {
              << " chiral centres\n";
     } else {
       cerr << "Unrecognised stereo/chiral specifier (-s) '" << tmp << "'\n";
-      usage(32);
+      Usage(32);
     }
   }
 
@@ -4443,27 +3831,27 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
       } else if (f.starts_with("Q:")) {
         f.remove_leading_chars(2);
         if (!FetchFragQueries(f, "largest", largest_fragment_queries, verbose))
-          usage(44);
+          Usage(44);
       } else if (f.starts_with("q:")) {
         f.remove_leading_chars(2);
         if (!FetchFragQueries(f, "smallest", smallest_fragment_queries, verbose))
-          usage(45);
+          Usage(45);
       } else if (f.starts_with("SMARTS:")) {
         f.remove_leading_chars(7);
         if (!FetchFragSmarts(f, "largest", largest_fragment_queries, verbose))
-          usage(46);
+          Usage(46);
       } else if (f.starts_with("smarts:")) {
         f.remove_leading_chars(7);
         if (!FetchFragSmarts(f, "smallest", smallest_fragment_queries, verbose))
-          usage(47);
+          Usage(47);
       } else if (f.starts_with("ALL:")) {
         f.remove_leading_chars(4);
         if (!FetchFragSmarts(f, "all", keep_fragment_queries, verbose))
-          usage(32);
+          Usage(32);
       } else if (f.starts_with("rm:")) {
         f.remove_leading_chars(3);
         if (!FetchFragSmarts(f, "rm", remove_fragment_queries, verbose))
-          usage(33);
+          Usage(33);
       } else if (f.starts_with("rmle=")) {
         f.remove_up_to_first('=');
         if (!f.numeric_value(remove_fragments_this_size_or_smaller) ||
@@ -4478,7 +3866,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
       } else if (f.numeric_value(fragment_count)) {
         if (fragment_count < 1) {
           cerr << "The -f <number> directive must be followed by a whole positive number\n";
-          usage(8);
+          Usage(8);
         }
         if (verbose)
           cerr << "A maximum of " << fragment_count << " fragments will be written\n";
@@ -4570,10 +3958,10 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
           return 2;
         }
       } else if ("help" == f) {
-        display_f_directives(0);
+        DisplayfOptions(1);
       } else {
         cerr << "Unrecognised -f directive '" << f << "'\n";
-        usage(14);
+        return 0;
       }
     }
 
@@ -4639,18 +4027,18 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         if (!f.numeric_value(min_size_max_fragment_count) || min_size_max_fragment_count < 1) {
           cerr << "The min size for the too many fragments (-F mnsz=) combination must be a whole "
                   "+ve number\n";
-          usage(3);
+          Usage(3);
         }
 
         if (verbose)
           cerr << "For max fragment count, will only consider fragments with > "
                << min_size_max_fragment_count << " atoms\n";
       } else if ("help" == f) {
-        display_dash_F_options(cerr);
+        DisplayFOptions(1);
       } else if (f.numeric_value(maximum_fragment_count)) {
         if (maximum_fragment_count < 1) {
           cerr << "The maximum fragment count (-F) must be a whole +ve number\n";
-          usage(3);
+          Usage(3);
         }
         if (verbose)
           cerr << "Molecules containing more than " << maximum_fragment_count
@@ -4756,10 +4144,10 @@ FileconvConfig::GatherAppendSpecifications(Command_Line& cl, char flag) {
 
       appends_to_be_done = 1;
     } else if ("help" == p) {
-      display_p_directives(0);
+      DisplayPDirectives(0);
     } else {
       cerr << "Unrecognised -p qualifier '" << p << "'\n";
-      display_p_directives(3);
+      DisplayPDirectives(1);
     }
   }
 
@@ -4784,7 +4172,7 @@ FileconvConfig::ParseMolecularWeightSpecifications(Command_Line& cl) {
         double tmp;
         if (!mtmp.numeric_value(tmp) || tmp <= 0.0) {
           cerr << "The lower molecular weight cutoff must be a positive number '" << mtmp << "'\n";
-          usage(21);
+          Usage(21);
         }
 
         lower_amw_cutoff = tmp;
@@ -4812,11 +4200,11 @@ FileconvConfig::ParseMolecularWeightSpecifications(Command_Line& cl) {
         double tmp;
         if (!mtmp.numeric_value(tmp) || tmp <= 0.0) {
           cerr << "The lower molecular weight cutoff must be a positive number '" << mtmp << "'\n";
-          usage(23);
+          Usage(23);
         }
         if (lower_amw_cutoff && tmp < lower_amw_cutoff) {
           cerr << "The upper amw cutoff must be greater than the lower " << tmp << '\n';
-          usage(22);
+          Usage(22);
         }
 
         upper_amw_cutoff = tmp;
@@ -4837,7 +4225,7 @@ FileconvConfig::ParseRingFiltering(Command_Line& cl) {
 
     if (!cl.value('r', lower_ring_count_cutoff) || lower_ring_count_cutoff < 1) {
       cerr << "-r option needs a whole number > 0\n";
-      usage(52);
+      Usage(52);
     }
 
     if (verbose)
@@ -4856,7 +4244,7 @@ FileconvConfig::ParseRingFiltering(Command_Line& cl) {
         if (!r.numeric_value(max_ring_systems_allowed) || max_ring_systems_allowed < 0) {
           cerr << "The max ring systems allowed (-R S:) option must be a whole non negative "
                   "number\n";
-          usage(2);
+          Usage(2);
         }
 
         if (verbose)
@@ -4878,7 +4266,7 @@ FileconvConfig::ParseRingFiltering(Command_Line& cl) {
         return 2;
       } else if (!r.numeric_value(upper_ring_count_cutoff) || upper_ring_count_cutoff < 1) {
         cerr << "The upper ring count cutoff (-R) option must be a whole +ve number\n";
-        usage(2);
+        Usage(2);
       } else if (verbose)
         cerr << "Molecules containing more than " << upper_ring_count_cutoff
              << " rings will be ignored\n";
@@ -4888,40 +4276,11 @@ FileconvConfig::ParseRingFiltering(Command_Line& cl) {
   if (cl.option_present('m')) {
     if (!cl.value('m', upper_ring_size_cutoff) || upper_ring_size_cutoff < 3) {
       cerr << "The upper ring size cutoff value (-m) must be a valid ring size\n";
-      usage(3);
+      Usage(3);
     }
 
     if (verbose)
       cerr << "Will discard molecules having ring sizes > " << upper_ring_size_cutoff << '\n';
-  }
-
-  return 1;
-}
-
-int
-FileconvConfig::ParseBadHandlingoptions(Command_Line& cl, char flag) {
-  if (!cl.option_present(flag)) {
-    return 1;
-  }
-
-  const_IWSubstring b;
-  for (int i = 0; cl.value(flag, b, i); ++i) {
-    if (b.starts_with("log=")) {
-      b.remove_leading_chars(4);
-      connection_table_error_file = b;
-
-      if (verbose)
-        cerr << "Will log connection table errors to '" << connection_table_error_file << "'\n";
-    } else if ("help" == b) {
-      DisplayDashBOptions(cerr);
-    } else if (b.numeric_value(connection_table_errors_allowed) &&
-               connection_table_errors_allowed >= 0) {
-      if (verbose)
-        cerr << connection_table_errors_allowed << " connection table errors allowed\n";
-    } else {
-      cerr << "Invalid -B qualifier '" << b << "'\n";
-      return 6;
-    }
   }
 
   return 1;
@@ -4940,10 +4299,10 @@ FileconvConfig::ParseAtomCountDirectives(Command_Line& cl) {
 
     if (!c.numeric_value(lower_atom_count_cutoff)) {
       cerr << "The lower atom count cutoff (-c) must be a whole +ve number\n";
-      usage(2);
+      Usage(2);
     } else if (lower_atom_count_cutoff < 0) {
       cerr << "The lower atom count cutoff (-c) must be a whole +ve number\n";
-      usage(2);
+      Usage(2);
     } else if (verbose)
       cerr << "Will exclude molecules with fewer than " << lower_atom_count_cutoff << " atoms\n";
   }
@@ -4970,7 +4329,7 @@ FileconvConfig::ParseAtomCountDirectives(Command_Line& cl) {
         cerr << "The upper atom count cutoff must be a whole positive number >= "
              << lower_atom_count_cutoff << '\n';
         cerr << "'" << c << "' is invalid\n";
-        usage(5);
+        Usage(5);
       } else if (verbose)
         cerr << "Will exclude molecules with more than " << upper_atom_count_cutoff << " atoms\n";
     }
@@ -4978,7 +4337,6 @@ FileconvConfig::ParseAtomCountDirectives(Command_Line& cl) {
 
   return 1;
 }
-
 
 int
 FileconvConfig::ParseImplicitHydrogenDirectives(Command_Line& cl, char flag) {
@@ -5006,7 +4364,7 @@ FileconvConfig::ParseImplicitHydrogenDirectives(Command_Line& cl, char flag) {
 
   if (make_all_implicit_hydrogens_explicit && atoms_for_implicit_hydrogens.number_elements()) {
     cerr << "Cannot specify both '-h query' and '-h all' is impossible\n";
-    usage(72);
+    Usage(72);
   }
 
   return 1;
@@ -5033,67 +4391,11 @@ FileconvConfig::ParseMkFragOptions(Command_Line& cl, char flag) {
 }
 
 int
-FileconvConfig::SetupRejectionsFile(Command_Line& cl, char flag) {
-  if (!cl.option_present(flag)) {
-    return 1;
-  }
-
-  if (!cl.option_present('o'))
-    rejections_output_object.add_output_type(FILE_TYPE_SMI);
-  else if (!rejections_output_object.determine_output_types(cl)) {
-    cerr << "Cannot discern output types for rejections file\n";
-    return 0;
-  }
-
-  IWString reject_log_file_name = cl.option_value(flag);
-//cl.value(flag, reject_log_file_name);
-
-  if (rejections_output_object.would_overwrite_input_files(cl, reject_log_file_name)) {
-    cerr << "Reject file '" << reject_log_file_name << "' cannot overwrite input file(s)\n";
-    return 0;
-  }
-
-  if (!rejections_output_object.new_stem(reject_log_file_name, 1)) {
-    cerr << "Rejections file cannot use stem '" << reject_log_file_name << "'\n";
-    return 0;
-  }
-
-  reject_log.open(reject_log_file_name.null_terminated_chars(), std::ios::out);
-  if (!reject_log.good()) {
-    cerr << "Cannot open reject file '" << reject_log_file_name << "'\n";
-    return 0;
-  }
-
-  if (verbose)
-    cerr << "Rejected structures will be written to '" << reject_log_file_name << "'\n";
-  return 1;
-}
-
-int
 FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) const {
   if (cl.number_elements() > 1)
-    cerr << molecules_read << " molecules read, ";
-  if (!audit_input)
-    cerr << molecules_written << " molecules written";
-  if (molecules_changed)
-    cerr << ' ' << molecules_changed << " molecules changed";
-  cerr << '\n';
-
-  for (int i = 0; i < initial_fragment_count.number_elements(); i++) {
-    if (initial_fragment_count[i])
-      cerr << initial_fragment_count[i] << " molecules had " << i << " fragments\n";
-  }
-
-  if (fragment_count && molecules_chopped) {
-    cerr << molecules_chopped << " molecules chopped to ";
-    if (reduce_to_largest_fragment)
-      cerr << "largest";
-    else
-      cerr << fragment_count;
-    cerr << " fragments\n";
-
-    cerr << "Molecules lost between " << atoms_lost.minval() << " and " << atoms_lost.maxval()
-         << " atoms\n";
+    cerr << molecules_processed << " molecules processed, ";
+  if (molecules_processed == 0) {
+    return 1;
   }
 
   if (natoms_accumulator.n() > 0) {
@@ -5110,6 +4412,32 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
       if (atom_count[i])
         cerr << atom_count[i] << " molecules had " << i << " atoms\n";
     }
+  }
+
+  if (audit_input) {
+    return 1;
+  }
+
+  if (molecules_changed) {
+    cerr << ' ' << molecules_changed << " molecules changed";
+  }
+
+  for (int i = 0; i < initial_fragment_count.number_elements(); i++) {
+    if (initial_fragment_count[i]) {
+      cerr << initial_fragment_count[i] << " molecules had " << i << " fragments\n";
+    }
+  }
+
+  if (fragment_count && molecules_chopped) {
+    cerr << molecules_chopped << " molecules chopped to ";
+    if (reduce_to_largest_fragment)
+      cerr << "largest";
+    else
+      cerr << fragment_count;
+    cerr << " fragments\n";
+
+    cerr << "Molecules lost between " << atoms_lost.minval() << " and " << atoms_lost.maxval()
+         << " atoms\n";
   }
 
   if (output_organic_only && non_organic_molecules_found)
@@ -5240,59 +4568,48 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
     }
   }
 
-  cerr << "N = " << acc_longest_sep.n() << " btw " << acc_longest_sep.minval() << " "
-       << acc_longest_sep.maxval() << " mean " << acc_longest_sep.average() << '\n';
+  if (acc_longest_sep.n() > 0) {
+    cerr << "longest separation N = " << acc_longest_sep.n() <<
+       " btw " << acc_longest_sep.minval() << " and " <<
+       acc_longest_sep.maxval() << " mean " << acc_longest_sep.average() << '\n';
+  }
 
   return 1;
 }
 
 int
-all_files_recognised_by_type(const Command_Line& cl) {
-  for (int i = 0; i < cl.number_elements(); i++) {
-    if (!discern_file_type_from_name(cl[i])) {
-      cerr << "Cannot determine file type from '" << cl[i] << "'\n";
-      return 0;
-    }
-  }
-
-  return 1;
-}
-int
-FileconvConfig::Fileconv(int argc, char** argv) {
-  Command_Line cl(argc,
-                  argv,
-                  "PN:T:eB:I:s:g:h:H:t:n:L:S:GA:K:w:W:m:X:c:C:Q:O:E:f:F:vVi:ao:r:R:p:J:Y:D:");
-  if (cl.unrecognised_options_encountered()) {
-    cerr << "Unrecognised options encountered\n";
-    usage(1);
-  }
-
+FileconvConfig::Build(Command_Line& cl) {
   verbose = cl.option_count('v');
 
   if (verbose)
     cerr << __FILE__ << " compiled " << __TIME__ << " " << __DATE__ << '\n';
 
+  if (cl.unrecognised_options_encountered()) {
+    cerr << "unrecognised_options_encountered\n";
+    return 0;
+  }
+
   if (!process_elements(cl))
-    usage(2);
+    Usage(2);
 
   if (!process_standard_smiles_options(cl, verbose)) {
-    usage(4);
+    Usage(4);
   }
 
   if (!process_standard_aromaticity_options(cl, verbose)) {
-    usage(5);
+    Usage(5);
   }
 
   if (cl.option_present('g')) {
     if (!chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g')) {
-      usage(6);
+      Usage(6);
     }
   }
 
   if (cl.option_present('N')) {
     if (!charge_assigner.construct_from_command_line(cl, verbose, 'N')) {
       cerr << "Cannot determine charge assigner from command line\n";
-      usage(77);
+      Usage(77);
     }
 
     if (Daylight != global_aromaticity_type()) {
@@ -5305,17 +4622,13 @@ FileconvConfig::Fileconv(int argc, char** argv) {
   if (cl.option_present('H')) {
     if (!donor_acceptor_assigner.construct_from_command_line(cl, 'H', verbose)) {
       cerr << "Cannot initialise donor/acceptor assigner (-H option)\n";
-      usage(6);
+      Usage(6);
     }
   }
 
-  // By default we echo any chiral info present in the input
-
-  set_include_chiral_info_in_smiles(1);
-
   if (cl.option_present('t')) {
     if (!element_transformations.construct_from_command_line(cl, verbose, 't'))
-      usage(8);
+      Usage(8);
   }
 
   // Processing the -O option is hard because it might be either
@@ -5338,47 +4651,14 @@ FileconvConfig::Fileconv(int argc, char** argv) {
       cerr << "Molecules containing elements not in periodic table will be discarded\n";
   }
 
-  FileType input_type = FILE_TYPE_INVALID;
-  if (cl.option_present('i')) {
-    if (!process_input_type(cl, input_type)) {
-      cerr << "Cannot determine input type\n";
-      usage(6);
-    }
-  }
-
-  if (FILE_TYPE_INVALID != input_type)  // great, explicitly specified
-    ;
-  else if (1 == cl.number_elements() &&
-           0 == strcmp("-", cl[0]))  // reading from a pipe, assume smiles input
-  {
-    if (verbose)
-      cerr << "Assuming smiles input from pipe read\n";
-    input_type = FILE_TYPE_SMI;
-  } else if (all_files_recognised_by_type(cl)) {
-  } else {
-    cerr << "Cannot discern file types from names\n";
-    return 4;
-  }
-
   if (cl.option_present('a')) {
     audit_input = 1;
     if (verbose)
       cerr << "No output, just audit input\n";
     if (cl.option_present('o') || cl.option_present('S')) {
       cerr << "The -a and -o/-S options are incompatible\n";
-      usage(5);
+      Usage(5);
     }
-  }
-
-  if (cl.option_present('S')) {
-    if (1 != cl.option_count('S')) {
-      cerr << "Sorry, only one -S option possible\n";
-      usage(3);
-    }
-
-    cl.value('S', output_file_stem);
-    if (verbose)
-      cerr << "New files will be created with stem '" << output_file_stem << "'\n";
   }
 
   if (!GetChiralityInstructions(cl, 's')) {
@@ -5396,14 +4676,14 @@ FileconvConfig::Fileconv(int argc, char** argv) {
   if (cl.option_present('J')) {
     if (!structure_fixing.initialise(cl, 'J', verbose > 1)) {
       cerr << "Cannot initialise structure fixing (-J option)\n";
-      usage(4);
+      Usage(4);
     }
   }
 
   if (cl.option_present('X')) {
     if (!elements_to_remove.construct_from_command_line(cl, verbose, 'X')) {
       cerr << "Cannot discern elements to remove from -X switch\n";
-      usage(18);
+      Usage(18);
     }
   }
 
@@ -5430,7 +4710,7 @@ FileconvConfig::Fileconv(int argc, char** argv) {
 
   if (!number_assigner.initialise(cl, 'n', verbose)) {
     cerr << "Cannot process -n option\n";
-    usage(51);
+    Usage(51);
   }
 
   if (!ParseRingFiltering(cl)) {
@@ -5451,10 +4731,6 @@ FileconvConfig::Fileconv(int argc, char** argv) {
     return 1;
   }
 
-  if (!ParseBadHandlingoptions(cl, 'B')) {
-    return 1;
-  }
-
   if (!GetTranslations(cl, 'T')) {
     return 1;
   }
@@ -5470,93 +4746,8 @@ FileconvConfig::Fileconv(int argc, char** argv) {
   if (!GatherAppendSpecifications(cl, 'p')) {
     return 1;
   }
-  Molecule_Output_Object output;
 
-  if (!audit_input)  // then we must get our output types
-  {
-    if (!cl.option_present('o')) {
-      output.add_output_type(FILE_TYPE_SMI);
-
-      if (verbose)
-        cerr << "Default output type smiles\n";
-    } else if (!output.determine_output_types(cl)) {
-      cerr << "Cannot determine output types\n";
-      usage(8);
-    }
-
-    if (cl.option_present('G')) {
-      output.set_molecules_per_file(1);
-      if (verbose)
-        cerr << "Each molecule written to its own file (-G option)\n";
-    }
-
-    if ("-" == output_file_stem)
-      ;
-    else if (output.would_overwrite_input_files(cl, output_file_stem)) {
-      cerr << "fileconv:cannot overwrite input file(s)\n";
-      return 4;
-    }
-  }
-
-  if (cl.empty()) {
-    cerr << prog_name << ": insufficient arguments " << argc << "\n";
-    usage(56);
-  }
-
-  if (! SetupRejectionsFile(cl, 'L')) {
-    return 1;
-  }
-
-  int rc = 0;
-  for (int i = 0; i < cl.number_elements(); i++) {
-    const char* fname = cl[i];
-    const const_IWSubstring as_string(fname);
-
-    if (verbose)
-      cerr << "Processing '" << fname << "'\n";
-
-    int myrc;
-
-    if (as_string.length() > 2 && as_string.starts_with("F:"))
-      myrc = FileconvListOfFiles(fname, input_type, output);
-    else
-      myrc = Fileconv(fname, input_type, output);
-
-    if (!myrc) {
-      rc = i + 1;
-      break;
-    }
-  }
-
-  if (verbose)
-    ReportResults(cl, std::cerr);
-
-  return rc;
+  return 1;
 }
 
 }  // namespace fileconv
-
-//#define DLL_FLAG=1
-#ifndef DLL_FLAG
-
-int
-main(int argc, char** argv) {
-  prog_name = argv[0];
-
-  fileconv::FileconvConfig params;
-  int rc = params.Fileconv(argc, argv);
-
-  return rc;
-}
-
-#endif
-
-#ifdef HZ_CSHARP
-
-extern "C" int
-fileconv_csharp(int argc, char** argv) {
-  fileconv::FileconvConfig params;
-  return params.Fileconv(argc, argv);
-}
-
-#endif

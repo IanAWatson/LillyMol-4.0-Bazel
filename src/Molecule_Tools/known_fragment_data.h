@@ -7,6 +7,7 @@
 
 #include "Foundational/iwstring/iw_stl_hash_set.h"
 
+#include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
 
 /*
