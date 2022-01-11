@@ -42,5 +42,7 @@ cc_test(
     deps = [
         ":iwaray",
         "@googletest//:gtest_main",
+	"@com_google_protobuf//:protobuf",
+
     ],
 )

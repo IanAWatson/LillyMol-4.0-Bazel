@@ -155,7 +155,7 @@ GFPCatboostScore(iwstring_data_source& input,
 unsigned int
 HighestValue(const google::protobuf::Map<unsigned int, unsigned int>& xref) {
   unsigned int maxval = 0;
-  for (const auto [key, value] : xref) {
+  for (const auto& [key, value] : xref) {
     if (value > maxval) {
       maxval = value;
     }

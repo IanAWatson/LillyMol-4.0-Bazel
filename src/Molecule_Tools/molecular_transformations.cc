@@ -1141,6 +1141,7 @@ in_place_transformation_maybe_append_to_name(IWReaction & rxn,
   return do_name_appends(m, rxn);
 }
 
+#ifdef OLD_VERSION
 static int
 in_place_transformations_maybe_append_to_name(IWReaction & rxn,
                                               Molecule & m,
@@ -1151,6 +1152,7 @@ in_place_transformations_maybe_append_to_name(IWReaction & rxn,
 
   return do_name_appends(m, rxn);
 }
+#endif
 
 int
 Set_of_Reactions::grouping_is_exhausted(const int reaction_number,
@@ -1566,7 +1568,7 @@ _doAllRegioIsomersAndSitesRecurs(Molecule & m,
 
 
       IWReaction & ri = sor.reaction(reactionNumber);
-      const AndORProb * ao = reinterpret_cast<const AndORProb *>(ri.user_specified_void_ptr());    // may be null
+//    const AndORProb * ao = reinterpret_cast<const AndORProb *>(ri.user_specified_void_ptr());    // may be null
 
       // do the reaction
 
@@ -1810,6 +1812,7 @@ molecular_transformations(Molecule & m,
 }
 
 
+#ifdef OLD_VERSION
 static int
 molecular_transformationsOLD(Molecule & m,
                           int & changes_this_molecule,
@@ -2013,6 +2016,7 @@ molecular_transformationsOLD(Molecule & m,
   }
   return molecular_transformations(m, changes_this_molecule, changed_by, sor, reaction_number + 1);
 }
+#endif
 
 /*
   We need to pass a lot of info from one level to the next. Easier to put it in a class
@@ -2792,7 +2796,7 @@ Set_of_Reactions::prepOneSideChain(IWString &rxn_string,
                   const double current_group_probability,
                   int &regioIsomer)
 {
-  if (sideChainIndex >= smilesLists.size())
+  if (sideChainIndex >= static_cast<int>(smilesLists.size()))
   {
                 // done with side chains - so add the new reaction with the chosen mappings
 
@@ -2819,7 +2823,7 @@ Set_of_Reactions::prepOneSideChain(IWString &rxn_string,
     r->set_user_specified_void_ptr(new AndORProb(thisGroup, thisAndor, current_group_probability,regioIsomer));
     _reaction.add(r);
 
-    if (currentMolAndEmbeddings.size() != r->number_sidechains())
+    if (static_cast<int>(currentMolAndEmbeddings.size()) != r->number_sidechains())
     {
       cerr << "Set_of_Reactions::prepOneSideChain:number of sidechains in rxn does not match directive from config file " << endl;
       return 0;

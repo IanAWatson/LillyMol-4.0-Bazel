@@ -62,6 +62,7 @@ cc_library(
         ":iwconfig",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwstring_data_source",
+	"@com_google_protobuf//:protobuf",
     ],
 )
 

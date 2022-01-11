@@ -57,7 +57,7 @@ Molecule::_determine_ring_or_non_ring(atom_number_t a)
 }
 
 int
-Molecule::is_non_ring_atom (atom_number_t a)
+Molecule::is_non_ring_atom(atom_number_t a)
 {
   assert (ok_atom_number(a));
   if (_ring_bond_count == nullptr)
@@ -2478,7 +2478,6 @@ Molecule::_compute_ring_bond_count()
   if (_ring_bond_count == nullptr) {
     _ring_bond_count = new_int(_number_elements);
   }
-
 
   // Computation of nrings requires fragment information to already exist. If there is
   // already valid fragment information present, we can use it.

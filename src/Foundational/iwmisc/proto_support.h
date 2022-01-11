@@ -3,6 +3,7 @@
 // Functions to support operating with protos.
 
 #include <fcntl.h>
+#include <optional>
 #include <ostream>
 
 #include "google/protobuf/text_format.h"

@@ -360,10 +360,11 @@ Ring_Extraction_Replacement_Conditions::can_be_processed (Molecule & m,
   return 1;
 }
 
+#ifdef NCON_IS_INCLUDED_SUBSET
 static int
-count_included_connections (const Molecule & m,
-                            atom_number_t zatom,
-                            const int * include_atom)
+count_included_connections(const Molecule & m,
+                           atom_number_t zatom,
+                           const int * include_atom)
 {
   const Atom * a = m.atomi(zatom);
 
@@ -373,7 +374,7 @@ count_included_connections (const Molecule & m,
 
   for (int i = 0; i < acon; i++)
   {
-    atom_number_t j = a->other (zatom, i);
+    atom_number_t j = a->other(zatom, i);
 
     if (include_atom[j])
       rc++;
@@ -381,6 +382,7 @@ count_included_connections (const Molecule & m,
 
   return rc;
 }
+#endif
 
 int 
 Ring_Extraction_Replacement_Conditions::append_connectivity_smarts (Molecule & m,

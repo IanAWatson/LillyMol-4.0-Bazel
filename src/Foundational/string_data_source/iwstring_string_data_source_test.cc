@@ -4,7 +4,6 @@
 //#include "googletest/include/gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "google/protobuf/text_format.h"
 
 #include "iwstring_string_data_source.h"
 

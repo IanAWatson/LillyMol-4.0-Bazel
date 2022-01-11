@@ -414,7 +414,7 @@ ECBuildPrecedent::WritePrecedentData(const char sep, const JobParameters& job_pa
   output << "#Atom type: \"" << job_parameters.atom_type_string << "\"\n";
   output << "#Bit Count Smiles Atype Radius\n";
 
-  for (const auto iter : _bit_count) 
+  for (const auto& iter : _bit_count) 
   {
     output << iter.first << sep <<                       // The bit
               iter.second.count << sep <<

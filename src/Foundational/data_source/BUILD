@@ -29,8 +29,6 @@ cc_library(
     deps = [
         "//Foundational/iwmisc:iwconfig",
         "//Foundational/iwmisc:iwre2",
-        "//Foundational/iwaray:iwaray",
-        "@re2//:re2",
         "//Foundational/iwstring:iwstring",
     ],
 )

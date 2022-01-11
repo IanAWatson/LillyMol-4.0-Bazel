@@ -1,6 +1,7 @@
 // Parse SMU TFDataRecords to extract smiles
 
 #include "Foundational/data_source/tfdatarecord.h"
+#include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
@@ -25,8 +26,18 @@ struct JobOptions {
   int no_optimized_geometry = 0;
 
   int atom_count_mismatch = 0;
+
+  int starting_topology_not_found = 0;
+
+  int write_smiles = 1;
   
+  // The position at which the starting BT is found.
+  extending_resizable_array<int> starting_topology_found;
+
+  // Number of BondTopologies in the input.
   extending_resizable_array<int> bt_count;
+
+  IWString_and_File_Descriptor stream_for_multiple_bt;
 };
 
 std::optional<Molecule>
@@ -107,6 +118,8 @@ MoleculeFromBondTopology(const BondTopology& bond_topology) {
   return result;
 }
 
+constexpr float kBohrToAngstrom = 0.529177f;
+
 int
 AddGeometry(const Geometry& geometry,
             JobOptions& options,
@@ -119,9 +132,9 @@ AddGeometry(const Geometry& geometry,
 
   for (int i = 0; i < matoms; ++i) {
     const Geometry::AtomPos& apos = geometry.atom_positions(i);
-    coord_t x = apos.x();
-    coord_t y = apos.y();
-    coord_t z = apos.z();
+    coord_t x = apos.x() * kBohrToAngstrom;
+    coord_t y = apos.y() * kBohrToAngstrom;
+    coord_t z = apos.z() * kBohrToAngstrom;
     m.setxyz(i, x, y, z);
   }
 
@@ -134,6 +147,77 @@ Usage(int rc) {
 }
 
 int
+MaybeWriteMultiBT(const Conformer& conformer,
+                  JobOptions& options) {
+  if (! options.stream_for_multiple_bt.is_open()) {
+    return 1;
+  }
+
+  const int matoms = conformer.bond_topologies(0).atoms().size();
+  int * ring_bond_count = new_int(matoms);
+  std::unique_ptr<int[]> free_ring_bond_count(ring_bond_count);
+
+  int ring_bond_count_differs = 0;
+  int find_first_at = -1;
+
+  const int number_bond_topologies = conformer.bond_topologies().size();
+
+  // Compute the smiles once.
+  IWString* smiles = new IWString[number_bond_topologies];
+  std::unique_ptr<IWString[]> free_smiles(smiles);
+
+  for (int i = 0; i < number_bond_topologies; ++i) {
+    const BondTopology & bt = conformer.bond_topologies(i);
+    std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(bt);
+    if (! maybe_mol) {
+      cerr << "No Molecule from BT\n";
+      continue;
+    }
+    AddGeometry(conformer.optimized_geometry(), options, *maybe_mol);
+    smiles[i] = maybe_mol->smiles();
+    if (bt.is_starting_topology()) {
+      find_first_at = i;
+    }
+
+    for (int j = 0; j < matoms; ++j) {
+      const int rbcj = maybe_mol->ring_bond_count(j);
+
+      if (i == 0) {
+        ring_bond_count[j] = rbcj;
+      } else if (rbcj != ring_bond_count[j]) {
+        ring_bond_count_differs = 1;
+      }
+    }
+  }
+
+  if (find_first_at < 0) {
+    options.starting_topology_not_found++;
+  } else {
+    options.starting_topology_found[find_first_at]++;
+  }
+
+  if (! options.write_smiles) {
+    return 1;
+  }
+  constexpr char sep = ' ';
+  for (int i = 0; i < number_bond_topologies; ++i) {
+    char is_first = (i == find_first_at ? '*' : '.');
+    options.stream_for_multiple_bt << smiles[i] <<
+         sep << conformer.conformer_id() <<
+         sep << conformer.properties().optimized_geometry_energy().value() <<
+         sep << conformer.fate() << 
+         sep << is_first <<
+         sep << find_first_at <<
+         sep << ring_bond_count_differs <<
+         sep << i << '\n';
+
+    options.stream_for_multiple_bt.write_if_buffer_holds_more_than(8192);
+  }
+
+  return options.stream_for_multiple_bt.good();
+}
+
+int
 Get3DSmiles(const Conformer& conformer,
             JobOptions& options,
             IWString_and_File_Descriptor& output) {
@@ -143,6 +227,15 @@ Get3DSmiles(const Conformer& conformer,
     options.no_bond_topologies++;
     return 0;
   }
+
+  if (conformer.bond_topologies().size() > 1) {
+    MaybeWriteMultiBT(conformer, options);
+  }
+
+  if (! options.write_smiles) {
+    return 1;
+  }
+
   std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(conformer.bond_topologies(0));
   if (! maybe_mol) {
     options.no_molecule_generated++;
@@ -188,6 +281,18 @@ Get3DSmiles(const const_IWSubstring& data,
 }
 
 int
+IndexLastNonZero(const extending_resizable_array<int>& values) {
+  int rc = -1;
+  for (int i = 0; i < values.number_elements(); ++i) {
+    if (values[i] > 0) {
+      rc = i;
+    }
+  }
+
+  return rc;
+}
+
+int
 Get3DSmiles(iw_tf_data_record::TFDataReader& reader,
             JobOptions& options,
             IWString_and_File_Descriptor& output) {
@@ -220,7 +325,7 @@ Get3DSmiles(const char * fname,
 
 int
 Get3DSmiles(int argc, char** argv) {
-  Command_Line cl(argc, argv, "v");
+  Command_Line cl(argc, argv, "vM:n");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -233,6 +338,27 @@ Get3DSmiles(int argc, char** argv) {
 
   JobOptions options;
   options.verbose = cl.option_count('v');
+
+  if (cl.option_present('n')) {
+    options.write_smiles = 0;
+    if (options.verbose)
+      cerr << "Output suppressed\n";
+  }
+
+  if (cl.option_present('M')) {
+    IWString mfile = cl.option_value('M');
+    if (! mfile.ends_with(".smi")) {
+      mfile << ".smi";
+    }
+    if (! options.stream_for_multiple_bt.open(mfile)) {
+      cerr << "Cannot open stream for multiple BondTopology '" << mfile << "'\n";
+      return 1;
+    }
+
+    if (options.verbose) {
+      cerr << "Molecules with multiple BT written to " << mfile << '\n';
+    }
+  }
 
   set_append_coordinates_after_each_atom(1);
 
@@ -250,8 +376,14 @@ Get3DSmiles(int argc, char** argv) {
     cerr << options.no_bond_topologies << " no bond topologies\n";
     cerr << options.no_molecule_generated << " no_molecule_generated\n";
     cerr << options.no_optimized_geometry << " no_optimized_geometry\n";
-    for (int i = 0; i < options.bt_count.number_elements(); ++i) {
+    cerr << options.starting_topology_not_found << " starting topology not recovered\n";
+    int nprint = IndexLastNonZero(options.bt_count);
+    for (int i = 0; i <= nprint; ++i) {
       cerr << options.bt_count[i] << " molecules had " << i << " bond topologoes\n";
+    }
+    nprint = IndexLastNonZero(options.starting_topology_found);
+    for (int i = 0; i <= nprint; ++i) {
+      cerr << options.starting_topology_found[i] << " starting bond topologies found in position " << i << '\n';
     }
   }
   return 0;

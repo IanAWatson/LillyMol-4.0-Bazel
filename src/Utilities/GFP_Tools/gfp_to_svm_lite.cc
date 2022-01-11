@@ -392,7 +392,7 @@ GfpBitsRetained::SetParams(Proto& proto, uint32_t highest_feature_number) const 
 void
 UpdateHighestFeature(const GfpBitSubset::BitXref& xref,
                      uint32_t& highest_feature_number) {
-  for (const auto [_, feature] : xref.bit_to_feature()) {
+  for (const auto& [_, feature] : xref.bit_to_feature()) {
     if (feature > highest_feature_number) {
       highest_feature_number = feature;
     }

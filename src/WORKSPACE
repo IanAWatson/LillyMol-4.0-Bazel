@@ -154,10 +154,23 @@ local_repository(
     path = "/home/ian/ord_schema",
 )
 
-local_repository(
+new_local_repository(
   name = "leveldb",
+# path = "/home/ian/pub/LEVELDB",
   path = "/home/ian/pub/leveldb",
+  build_file_content = """
+cc_library(
+    name = "leveldb",
+    strip_include_prefix = "include",
+    hdrs = glob(["include/leveldb/*.h"]),
+    srcs = [
+      "build/libleveldb.a",
+    ],
+    visibility = ["//visibility:public"],
 )
+"""
+)
+
 
 
 http_archive(

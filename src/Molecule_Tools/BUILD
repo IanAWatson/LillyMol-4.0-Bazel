@@ -77,10 +77,10 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
+        "@leveldb//:leveldb",
     ],
     linkopts = [
         "-lz",
-        "-lleveldb",
     ],
 )
 
@@ -195,29 +195,6 @@ cc_binary(
 )
 
 cc_binary(
-    name = "fileconv_opts",
-    srcs = [
-        "fileconv_opts.cc",
-        "fileconv_opts.h",
-        "fix_structures.cc",
-        "fix_structures.h",
-        "remove_duplicate_fragments.cc",
-        "remove_duplicate_fragments.h",
-        "known_fragment_data.cc",
-        "known_fragment_data.h",
-    ],
-    deps = [
-        ":fileconv_lib",
-        "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculeio",
-        "//Foundational/accumulator:accumulator",
-        "//Foundational/cmdline_v2:cmdline_v2",
-        "//Foundational/iwaray:iwaray",
-        "//Foundational/iwmisc:iwmisc",
-    ],
-)
-
-cc_binary(
     name = "geometric_descriptors",
     srcs = [
         "geometric_descriptors.cc",
@@ -259,10 +236,10 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
+        "@leveldb//:leveldb",
     ],
     linkopts = [
         "-lz",
-        "-lleveldb",
     ],
 )
 
@@ -1243,6 +1220,7 @@ cc_library(
         ":molecule_database_options_cc_proto",
         "//Foundational/iwstring:iwstring",
         "//Molecule_Lib:iwmolecule",
+        "@leveldb//:leveldb",
     ],
 )
 
