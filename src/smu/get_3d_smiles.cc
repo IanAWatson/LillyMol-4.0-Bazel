@@ -2,6 +2,7 @@
 
 #include "Foundational/data_source/tfdatarecord.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/report_progress.h"
 
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
@@ -30,6 +31,8 @@ struct JobOptions {
   int starting_topology_not_found = 0;
 
   int write_smiles = 1;
+
+  Report_Progress report_progress;
   
   // The position at which the starting BT is found.
   extending_resizable_array<int> starting_topology_found;
@@ -305,6 +308,10 @@ Get3DSmiles(iw_tf_data_record::TFDataReader& reader,
       cerr << "Cannot process item " << reader.items_read() << '\n';
       return 0;
     }
+
+    if (options.report_progress()) {
+      cerr << "Read " << options.report_progress.times_called() << " items\n";
+    }
   }
 
   return 1;
@@ -325,7 +332,7 @@ Get3DSmiles(const char * fname,
 
 int
 Get3DSmiles(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vM:n");
+  Command_Line cl(argc, argv, "vM:nr:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -338,6 +345,12 @@ Get3DSmiles(int argc, char** argv) {
 
   JobOptions options;
   options.verbose = cl.option_count('v');
+
+  if (cl.option_present('r')) {
+    if (! options.report_progress.initialise(cl, 'r', options.verbose)) {
+      cerr << "Cannot initialise progress reporting\n";
+    }
+  }
 
   if (cl.option_present('n')) {
     options.write_smiles = 0;
