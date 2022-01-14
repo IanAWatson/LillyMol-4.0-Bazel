@@ -35,6 +35,11 @@ class Space_Vector
 
     void setxyz(T, T, T);
     void setxyz(const Space_Vector<T> &);
+    // From any iterable containing at least 3 items.
+    // Note that this has a different name than the other setters, otherwise
+    // the compiler tries to overload setxyz(const Space_Vector<T>&) and
+    // there I have not implemented cbegin() - although perhaps why not?
+    template <typename C> void Setxyz(const C& iterable);
 
 //  function to help speed up whim
 
@@ -225,6 +230,18 @@ Space_Vector<T>::setxyz(const Space_Vector<T> & rhs)
 
   return;
 }
+
+template <typename T> template <typename C>
+void
+Space_Vector<T>::Setxyz(const C& iterable) {
+  auto iter = iterable.cbegin();
+  _x = *iter;
+  ++iter;
+  _y = *iter;
+  ++iter;
+  _z = *iter;
+}
+
 template <typename T>
 T
 Space_Vector<T>::operator ^ (const Space_Vector<T> & v2) const

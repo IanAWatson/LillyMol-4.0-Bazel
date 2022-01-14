@@ -23,6 +23,9 @@
 #include "smiles.h"
 #include "substructure.h"
 
+constexpr char oparen = '(';
+constexpr char cparen = ')';
+
 /*
   Aug 2002. 
    Aesthetic issue. If an atom comes in with [] around it, then it is assumed
@@ -276,7 +279,6 @@ Molecule::MaybeParseAsChemaxonExtension(const_IWSubstring& name,
   assert(name.starts_with('|'));
 
   int found_closing_vbar = ClosingVBar(name);
-  cerr << "In '" << name << "' found closing vbar at " << found_closing_vbar << '\n';
 
   // No closing vertical bar is fine, name might be '|foo bar'. `name` is unchanged.
   // Or should this be an error??
@@ -320,7 +322,7 @@ Molecule::ParseChemaxonExtension(const const_IWSubstring& chemaxon) {
 
   std::unique_ptr<int[]> claimed(new_int(chemaxon.length()));
   if (! ParseCoords(chemaxon, claimed.get())) {
-    cerr << "Molecule::ParseCoords:cannot process coordinates '" << chemaxon << "'\n";
+    cerr << "Molecule::ParseChemaxonExtension:cannot process coordinates '" << chemaxon << "'\n";
     return 0;
   }
   return 1;
@@ -352,9 +354,6 @@ FirstUnclaimed(const const_IWSubstring& chemaxon,
 std::tuple<int, int, int>
 OpenAndCloseParens(const const_IWSubstring& chemaxon,
                    int * claimed) {
-  constexpr char oparen = '(';
-  constexpr char cparen = ')';
-
   const int open_paren = FirstUnclaimed(chemaxon, 0, claimed, oparen);
   if (open_paren < 0) {
     return std::make_tuple(-1, -1, 1);  // No result, but OK.
@@ -375,11 +374,33 @@ OpenAndCloseParens(const const_IWSubstring& chemaxon,
 
 int
 Molecule::ParseCoords(const const_IWSubstring& chemaxon, int * claimed) {
-  auto maybe_parens = OpenAndCloseParens(chemaxon, claimed);
   const auto [open_paren, close_paren, rc] = OpenAndCloseParens(chemaxon, claimed);
-  if (open_paren < 0) {
+  if (open_paren < 0 || close_paren < 0) {
     return rc;
   }
+
+  // const_IWSubstring coords(chemaxon.data() + open_paren, close_paren - open_paren + 1);  with open and close parens
+  const_IWSubstring coords(chemaxon.data() + open_paren + 1, close_paren - open_paren - 1);
+  const_IWSubstring atom_token;
+  const_IWSubstring coord_token;
+  resizable_array<coord_t> values;
+  for (int i = 0, atom_number = 0; coords.nextword(atom_token, i, ';'); ++atom_number) {
+    if (atom_number >= _number_elements) {
+      cerr << "Molecule::ParseCoords:Too many atoms\n";
+      return 0;
+    }
+    values.resize_keep_storage(0);
+    for (int j = 0, xyz = 0; atom_token.nextword(coord_token, j, ','); ++xyz) {
+      coord_t value;
+      if (! coord_token.numeric_value(value)) {
+        cerr << "Molecule::ParseCoords:invalid numeric '" << coord_token << "'\n";
+        return 0;
+      }
+      values << value;
+    }
+    _things[atom_number]->Setxyz(values);
+  }
+
 
   return 1;
 }
