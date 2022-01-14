@@ -581,6 +581,19 @@ cc_test(
 )
 
 cc_test(
+    name = "smi_test",
+    srcs = [
+        "smi_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "smiles_test",
     srcs = [
         "smiles_test.cc",

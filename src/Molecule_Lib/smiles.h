@@ -210,6 +210,15 @@ extern int  include_atom_map_with_smiles();
 
 extern void set_write_formal_charge_as_consecutive_signs(int s);
 
+namespace smiles {
+// Set whether constructs such as 'smiles |chemaxon| name' are parsed.
+void SetDiscernChemaxonSmilesExtensions(int s);
+int DiscernChemaxonSmilesExtensions();
+
+void SetProcessQuotedSmiles(int s);
+int ProcessQuotedSmiles();
+}  //  namespace smiles
+
 /*
   Used for parsing leading numeric qualifiers
 */

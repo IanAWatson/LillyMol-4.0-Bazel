@@ -1,6 +1,6 @@
-#include <stdlib.h>
 #include <iostream>
 #include <memory>
+#include <tuple>
 #include <ctype.h>
 
 #define COMPILING_SMILES_CC
@@ -215,19 +215,173 @@ Molecule::write_molecule_rsmi (std::ostream & os, const IWString & comment)
   return os.good();
 }
 
-static void
-smiles_set_name(const char * s, int nchars, Molecule * m)
-{
-  const_IWSubstring tmp(s, nchars);
+// As part of smiles parsing a string is available as the molecule
+// name. If parsing of Chemaxon extensions is enabled, examine the
+// string to see if the first token can be consumed as Chemaxon
+// directives.
+// Arg `processing_quoted_smiles` is passed to MaybeParseAsChemaxonExtension.
+int
+Molecule::SmilesSetName(const char * s, int nchars,
+                        int processing_quoted_smiles) {
+  if (nchars == 0) {
+    return 1;
+  }
 
-//cerr << "Setting name, nchars = " << nchars << " possible name '" << tmp << "'\n";
+  const_IWSubstring name(s, nchars);
+//cerr << "Processing name '" << name << "'\n";
+  name.strip_leading_blanks();
+  name.strip_trailing_blanks();
+  if (name.empty()) {
+    return 1;
+  }
 
-  tmp.strip_leading_blanks();
+  if (! smiles::DiscernChemaxonSmilesExtensions() ||
+      ! name.starts_with('|')) {
+    set_name(name);
+    return 1;
+  }
 
-  if (tmp.nchars())
-    m->set_name(tmp);
+  // First token of name might be a Chemaxon extension
+  return MaybeParseAsChemaxonExtension(name, processing_quoted_smiles);
+}
 
-  return;
+// We are looking to see if `name` matches |...|.
+// Return the index of the closing |.
+int
+ClosingVBar(const const_IWSubstring& name) {
+  for (int i = 1; i < name.length(); ++i) {
+    if (isspace(name[i])) {  // Chemaxon patterns do not include spaces it seems...
+      return -1;
+    }
+    if (name[i] == '|') {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+// `name` starts with | and perhaps is a Chemaxon smiles extension
+// of the form |chemaxon| actual_name
+// If we can extract a valid Chemaxon directive, that is removed
+// from `name`. The molecule name is set.
+// If `processing_quoted_smiles` is set, that means the input would
+// have been
+// "smiles |chemaxon|" name
+// so we need to look for the closing quote.
+
+int
+Molecule::MaybeParseAsChemaxonExtension(const_IWSubstring& name,
+                        int processing_quoted_smiles) {
+  assert(name.starts_with('|'));
+
+  int found_closing_vbar = ClosingVBar(name);
+  cerr << "In '" << name << "' found closing vbar at " << found_closing_vbar << '\n';
+
+  // No closing vertical bar is fine, name might be '|foo bar'. `name` is unchanged.
+  // Or should this be an error??
+  if (found_closing_vbar < 0) {
+    set_name(name);
+    return 1;
+  }
+
+  // But if we have a closing vertical bar, then what is in there must be a valid
+  // Chemaxon directive. Disallow empty ||
+  if (found_closing_vbar == 1) {
+    cerr << "Molecule::MaybeParseAsChemaxonExtension:empty Chemaxon directive '" << name << "'\n";
+    return 0;
+  }
+
+  const_IWSubstring chemaxon(name.rawchars() + 1, found_closing_vbar - 1);
+
+  name.remove_leading_chars(found_closing_vbar + 1);
+  if (processing_quoted_smiles) {
+    if (name[0] != '"') {
+      cerr << "Molecule::MaybeParseAsChemaxonExtension:no closing quote '" << name << "'\n";
+      return 0;
+    }
+    name += 1;
+  }
+
+  if (! ParseChemaxonExtension(chemaxon)) {
+    cerr << "Molecule::MaybeParseAsChemaxonExtension:invalid Chemaxon directive '" << name << "'\n";
+    return 0;
+  }
+
+  name.strip_leading_blanks();
+  set_name(name);
+  return 1;
+}
+
+int
+Molecule::ParseChemaxonExtension(const const_IWSubstring& chemaxon) {
+  // Implement sometime...
+  cerr << "Molecule::ParseChemaxonExtension:ignoring " << chemaxon << '\n';
+
+  std::unique_ptr<int[]> claimed(new_int(chemaxon.length()));
+  if (! ParseCoords(chemaxon, claimed.get())) {
+    cerr << "Molecule::ParseCoords:cannot process coordinates '" << chemaxon << "'\n";
+    return 0;
+  }
+  return 1;
+}
+
+int
+FirstUnclaimed(const const_IWSubstring& chemaxon,
+               int istart,
+               int * claimed,
+               char to_find) {
+  const int nchars = chemaxon.length();
+  for (int i = istart; i < nchars; ++i) {
+    if (claimed[i]) {
+      continue;
+    }
+    if (chemaxon[i] == to_find) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+// Examine the unclaimed characters in `chemaxon` and look for
+// the pattern (unclaimed...)
+// If no such pattern is found, return -1, -1, 1
+// If the open paren but no close paren is found, return -1, -1, 0
+// If balanced parentheses are found, return (open, close, 1).
+std::tuple<int, int, int>
+OpenAndCloseParens(const const_IWSubstring& chemaxon,
+                   int * claimed) {
+  constexpr char oparen = '(';
+  constexpr char cparen = ')';
+
+  const int open_paren = FirstUnclaimed(chemaxon, 0, claimed, oparen);
+  if (open_paren < 0) {
+    return std::make_tuple(-1, -1, 1);  // No result, but OK.
+  }
+
+  const int close_paren = FirstUnclaimed(chemaxon, open_paren + 1, claimed, cparen);
+  if (close_paren < 0) {
+    cerr << "OpenAndCloseParens:no close paren '" << chemaxon << "'\n";
+    return std::make_tuple(-1, -1, 0);   // No result, fatal.
+  }
+
+  for (int i = open_paren; i <= close_paren; ++i) {
+    claimed[i] = 1;
+  }
+
+  return std::make_tuple(open_paren, close_paren, 1);  // All good.
+}
+
+int
+Molecule::ParseCoords(const const_IWSubstring& chemaxon, int * claimed) {
+  auto maybe_parens = OpenAndCloseParens(chemaxon, claimed);
+  const auto [open_paren, close_paren, rc] = OpenAndCloseParens(chemaxon, claimed);
+  if (open_paren < 0) {
+    return rc;
+  }
+
+  return 1;
 }
 
 /*
@@ -719,9 +873,9 @@ parse_smiles_token(const char * smiles,
 }
 
 static int
-maybe_deuterium_or_tritium (const char * smiles,
-                            const Element * & e,
-                            int & atomic_mass)
+maybe_deuterium_or_tritium(const char * smiles,
+                           const Element * & e,
+                           int & atomic_mass)
 {
   if ('D' == *smiles && interpret_d_as_deuterium())
     atomic_mass = 2;
@@ -1445,8 +1599,7 @@ initialise_compatability_table()
 }
 
 static int
-check_compatiability_table (int & previous_token_was,
-                            int nt)
+check_compatiability_table(int & previous_token_was, int nt)
 {
   if (0 == compatability_table[CTDIM * previous_token_was + nt])
     return 0;
@@ -1457,7 +1610,7 @@ check_compatiability_table (int & previous_token_was,
 }
 
 static int
-previous_token_should_be (int previous_token_was, int possible_values)
+previous_token_should_be(int previous_token_was, int possible_values)
 {
   if (previous_token_was & possible_values)
     return 1;
@@ -1466,7 +1619,7 @@ previous_token_should_be (int previous_token_was, int possible_values)
 }
 
 static int
-valid_end_of_smiles_character (int last_token)
+valid_end_of_smiles_character(int last_token)
 {
   if (PREVIOUS_TOKEN_WAS_BOND == last_token)
     return 0;
@@ -1477,10 +1630,10 @@ valid_end_of_smiles_character (int last_token)
 //#define DEBUG_BUILD_FROM_SMILES
 
 int
-Molecule::_build_from_smiles (const char * smiles,
-                              int characters_to_process,
-                              Smiles_Ring_Status & ring_status,
-                              int * aromatic_atoms)
+Molecule::_build_from_smiles(const char * smiles,
+                             int characters_to_process,
+                             Smiles_Ring_Status & ring_status,
+                             int * aromatic_atoms)
 {
   if (nullptr == smi_element_star)     // initialise elements first time through
     initialise_organic_subset();
@@ -1489,12 +1642,20 @@ Molecule::_build_from_smiles (const char * smiles,
 
 // We need to be somewhat careful about resizing, as we may be called recursively
 
-  if (_elements_allocated - _number_elements < characters_to_process)
-  {
+  if (_elements_allocated - _number_elements < characters_to_process) {
     resize(_elements_allocated + characters_to_process);
     if (_bond_list.elements_allocated() - _bond_list.number_elements() < characters_to_process)
       _bond_list.resize(_bond_list.elements_allocated() + characters_to_process);
   }
+
+  // If we are processing a quoted string, remove the leading quote and note the condtion.
+  int processing_quoted_smiles = 0;
+  if (*smiles == '"' && smiles::ProcessQuotedSmiles())  {
+    ++smiles;
+    --characters_to_process;
+    processing_quoted_smiles = 1;
+  }
+
 
 // Various stack to keep track of branches. Probably should be combined into
 // a single kind with a new object.
@@ -1681,20 +1842,21 @@ Molecule::_build_from_smiles (const char * smiles,
     }
     else if (' ' == *s || '\t' == *s || ',' == *s)
     {
-      if (0 != paren_level)
-      {
+      if (0 != paren_level) {
         smiles_error_message(smiles, characters_to_process, characters_processed, "Un-closed parenthesis");
         return 0;
       }
       if ( (PREVIOUS_TOKEN_ATOM_SPECIFIER != previous_token_was) &&
-           (PREVIOUS_TOKEN_RING_SPECIFIER != previous_token_was))
-      {
+           (PREVIOUS_TOKEN_RING_SPECIFIER != previous_token_was)) {
         smiles_error_message(smiles, characters_to_process, characters_processed, "Improperly terminated smiles");
         return 0;
       }
 
       if (characters_to_process - characters_processed > 1)
-        smiles_set_name(s + 1, characters_to_process - characters_processed - 1, this);
+        if (! SmilesSetName(s + 1, characters_to_process - characters_processed - 1, processing_quoted_smiles)) {
+          return 0;
+        }
+//      smiles_set_name(s + 1, characters_to_process - characters_processed - 1, this);
 
       return 1;
     }

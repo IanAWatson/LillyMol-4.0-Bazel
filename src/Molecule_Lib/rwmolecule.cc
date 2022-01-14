@@ -288,6 +288,32 @@ void set_coordinate_scaling(float scale) {
   coordinate_scaling = scale;
 }
 
+namespace smiles {
+// When reading a smiles, if the 2nd token looks like |...|, process
+// that as a Chemaxon smiles extension
+int _discern_chemaxon_smiles_extensions = 0;
+
+void
+SetDiscernChemaxonSmilesExtensions(int s) {
+  _discern_chemaxon_smiles_extensions = s;
+}
+
+int
+DiscernChemaxonSmilesExtensions() {
+  return _discern_chemaxon_smiles_extensions;
+}
+
+int process_quoted_smiles = 0;
+void
+SetProcessQuotedSmiles(int s) {
+  process_quoted_smiles = s;
+}
+int ProcessQuotedSmiles() {
+  return process_quoted_smiles;
+}
+
+}  // namespace smiles
+
 static IWString file_scope_newline_string('\n');
 
 void
@@ -1214,6 +1240,8 @@ display_input_help(std::ostream & os)
   os << " -i mfc=<charge>         set min and max plausible formal charges\n";
   os << " -i mdlsep=<..>          separator between tags when reading mdl files \n";
   os << " -i sasge                MDL V30: convert single atom SGROUP labels to elements\n";
+  os << " -i chemaxon             parse 'smiles |chemaxon| name' forms\n";
+  os << " -i squoted              smiles records may have double quotes (typically \"smiles |chemaxon|\", name)\n";
   os << " -i mscale=<scale>       multiply all coordinates by <scale> upon reading\n";
 
   exit(0);
@@ -1590,13 +1618,15 @@ process_input_type(const Command_Line & cl, FileType & input_type)
     {
        set_put_formal_charges_on_neutral_ND3v4(1);
     }
-    else if (optval.starts_with("mdlsep="))
-    {
+    else if (optval.starts_with("mdlsep=")) {
       optval.remove_leading_chars(7);
       mdlfos->set_mdl_insert_between_sdf_name_tokens(optval);
-    }
-    else if ("sasge" == optval) {
-      mdlfos->set_convert_single_atom_sgroup_to_element(1);
+    } else if ("sasge" == optval) {
+      mdlfos->set_convert_single_atom_sgroup_to_element(1); 
+    } else if (optval == "chemaxon") {
+      smiles::SetDiscernChemaxonSmilesExtensions(1);
+    } else if (optval == "squoted") {
+      smiles::SetProcessQuotedSmiles(1);
     } else if (optval.starts_with("mscale=")) {
       optval.remove_leading_chars(7);
       if (! optval.numeric_value(coordinate_scaling) || coordinate_scaling < 0.0f) {

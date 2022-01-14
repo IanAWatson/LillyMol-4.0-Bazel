@@ -3083,7 +3083,6 @@ FileconvConfig::Process(Molecule& m) {
   if (fileconv_partial_charge_type != kNoChargeCalculation)
     ComputePartialCharges(m);
 
-  cerr << "Do we need to do appends " << appends_to_be_done << '\n';
   if (appends_to_be_done)
     DoAppends(m);
 
