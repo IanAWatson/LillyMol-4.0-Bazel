@@ -2334,13 +2334,15 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
 
     const int nat = _compute_attribute_counts();
 
-    if (nat > 0)
-      ;
-    else if (_natoms.is_set() || _nrings.is_set() || _aromatic_rings.is_set() || _atoms_in_spinach.is_set() || _inter_ring_atoms.is_set() || _net_formal_charge.is_set())
-      ;
-    else
-    {
-      cerr << "And no global attributes specified, rejected\n";
+    if (nat > 0) {
+      // Great, got things to match.
+    } else if (_natoms.is_set() || _nrings.is_set() || _aromatic_rings.is_set() ||
+             _atoms_in_spinach.is_set() || _inter_ring_atoms.is_set() ||
+             _net_formal_charge.is_set() || 
+             _ring_specification.size() > 0 ||
+             _ring_system_specification.size() > 0) {
+    } else {
+      cerr << "No root atoms and no global attributes specified, rejected\n";
       return 0;
     }
   }
@@ -2635,6 +2637,10 @@ Substructure_Ring_Base::ConstructFromProto(const SubstructureSearch::Substructur
 
   if (proto.has_environment_can_match_in_ring_atoms())
     _environment_can_match_in_ring_atoms = proto.environment_can_match_in_ring_atoms();
+
+  if (proto.has_fill_matched_atoms_array()) {
+    _fill_matched_atoms_array = proto.fill_matched_atoms_array();
+  }
 
   static constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
 
