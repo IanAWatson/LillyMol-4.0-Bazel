@@ -325,6 +325,11 @@ Molecule::ParseChemaxonExtension(const const_IWSubstring& chemaxon) {
     cerr << "Molecule::ParseChemaxonExtension:cannot process coordinates '" << chemaxon << "'\n";
     return 0;
   }
+
+  if (! ParseSpecialAtoms(chemaxon, claimed.get())) {
+    cerr << "Molecule::ParseChemaxonExtension:cannot process special atoms '" << chemaxon << "'\n";
+    return 0;
+  }
   return 1;
 }
 
@@ -347,21 +352,27 @@ FirstUnclaimed(const const_IWSubstring& chemaxon,
 }
 
 // Examine the unclaimed characters in `chemaxon` and look for
-// the pattern (unclaimed...)
+// the pattern <open_group>..unclaimed...<close_group>
+// This is used for finding things like
+//  (...)
+//  $...$
+// In the Chemaxon smiles extensions.
 // If no such pattern is found, return -1, -1, 1
-// If the open paren but no close paren is found, return -1, -1, 0
-// If balanced parentheses are found, return (open, close, 1).
+// If the open group but no close group is found, return -1, -1, 0
+// If both ends are found, return (open, close, 1).
 std::tuple<int, int, int>
-OpenAndCloseParens(const const_IWSubstring& chemaxon,
-                   int * claimed) {
-  const int open_paren = FirstUnclaimed(chemaxon, 0, claimed, oparen);
+OpenAndCloseGroup(const const_IWSubstring& chemaxon,
+                  char open_group,
+                  char close_group,
+                  int * claimed) {
+  const int open_paren = FirstUnclaimed(chemaxon, 0, claimed, open_group);
   if (open_paren < 0) {
     return std::make_tuple(-1, -1, 1);  // No result, but OK.
   }
 
-  const int close_paren = FirstUnclaimed(chemaxon, open_paren + 1, claimed, cparen);
+  const int close_paren = FirstUnclaimed(chemaxon, open_paren + 1, claimed, close_group);
   if (close_paren < 0) {
-    cerr << "OpenAndCloseParens:no close paren '" << chemaxon << "'\n";
+    cerr << "OpenAndCloseGroup:no close paren '" << chemaxon << "'\n";
     return std::make_tuple(-1, -1, 0);   // No result, fatal.
   }
 
@@ -374,7 +385,7 @@ OpenAndCloseParens(const const_IWSubstring& chemaxon,
 
 int
 Molecule::ParseCoords(const const_IWSubstring& chemaxon, int * claimed) {
-  const auto [open_paren, close_paren, rc] = OpenAndCloseParens(chemaxon, claimed);
+  const auto [open_paren, close_paren, rc] = OpenAndCloseGroup(chemaxon, oparen, cparen, claimed);
   if (open_paren < 0 || close_paren < 0) {
     return rc;
   }
@@ -401,6 +412,51 @@ Molecule::ParseCoords(const const_IWSubstring& chemaxon, int * claimed) {
     _things[atom_number]->Setxyz(values);
   }
 
+
+  return 1;
+}
+
+// 
+const Element *
+GetElement(const char * symbol) {
+  const Element * e = get_element_from_symbol_no_case_conversion(symbol);
+  if (e != nullptr) {
+    return e;
+  }
+  // Need to create it.
+//const auto esave = auto_create_new_elements();
+//set_auto_create_new_elements(1);
+  e = create_element_with_symbol(symbol);
+//set_auto_create_new_elements(esave);
+
+  return e;
+}
+
+int
+Molecule::ParseSpecialAtoms(const const_IWSubstring& chemaxon, int * claimed) {
+  constexpr char dollar = '$';
+  const auto [first_dollar, second_dollar, rc] = OpenAndCloseGroup(chemaxon, dollar, dollar, claimed);
+  if (first_dollar < 0 || second_dollar < 0) {
+    return rc;
+  }
+
+  const_IWSubstring special_atoms(chemaxon.data() + first_dollar + 1, second_dollar - first_dollar - 1);
+
+  IWString token;
+  for (int i = 0, atom_number = 0; special_atoms.nextword_single_delimiter(token, i, ';'); ++atom_number) {
+    if (token.empty()) {
+      if (_things[atom_number]->atomic_symbol() == "*") {
+        _things[atom_number]->set_element(GetElement("A"));
+      }
+    } else if (token == "Q_e") {
+      _things[atom_number]->set_element(GetElement("Q"));
+    } else if (token == "star_e") {
+      _things[atom_number]->set_element(GetElement("*"));
+    } else if (token.ends_with("_p")) {
+      token.chop(2);
+      _things[atom_number]->set_element(GetElement(token.null_terminated_chars()));
+    }
+  }
 
   return 1;
 }

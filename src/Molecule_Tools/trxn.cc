@@ -150,6 +150,10 @@ static IW_STL_Hash_Set unique_smiles_generated_current_molecule;
 
 static int all_scaffold_possibilities_enumeration = 0;
 
+// In large enumerations it can be convenient to suppress the usually
+// helpful messages about multiple or no hits.
+static int emit_scaffold_nhits_messages = 1;
+
 static void
 usage (int rc)
 {
@@ -730,7 +734,8 @@ trxn(Molecule & m,
 
   if (verbose > 1 || nhits > 1)
   {
-    cerr << molecules_processed << " '" << m.name() << "' " << nhits << " hits in scaffold\n";
+    if (emit_scaffold_nhits_messages)
+      cerr << molecules_processed << " '" << m.name() << "' " << nhits << " hits in scaffold\n";
     if (0 == nhits)
       cerr << "only matched " << sresults.max_query_atoms_matched_in_search() << " query atoms\n";
   }
@@ -739,7 +744,7 @@ trxn(Molecule & m,
 
   if (0 == nhits)
   {
-    if (0 == verbose && 0 == smc.ignore_not_reacting())
+    if (0 == verbose && 0 == smc.ignore_not_reacting() && emit_scaffold_nhits_messages)
       cerr << molecules_processed << " '" << m.name() << "' " << " 0 hits in scaffold, only matched " << sresults.max_query_atoms_matched_in_search() << " query atoms\n";
 
     return handle_scaffolds_not_reacting(m, smc, output);
@@ -747,7 +752,7 @@ trxn(Molecule & m,
 
   if (nhits > smc.suppress_if_more_than_this_many_substructure_search_hits())
   {
-    if (0 == verbose || smc.ignore_not_reacting())
+    if ((0 == verbose || smc.ignore_not_reacting()) && emit_scaffold_nhits_messages)
       cerr << molecules_processed << " '" << m.name() << "' " << " " << nhits << " hits in scaffold, more than threshold " << smc.suppress_if_more_than_this_many_substructure_search_hits() << endl;
 
     return handle_scaffolds_not_reacting(m, smc, output);
@@ -1579,6 +1584,11 @@ trxn (int argc, char ** argv)
         set_smirks_lost_atom_means_remove_frgment(1);
         if (verbose)
           cerr << "In smirks, lost atoms mean remove fragment\n";
+      }
+      else if (j == "xnhits") {
+        emit_scaffold_nhits_messages = 0;
+        if (verbose)
+          cerr << "Will suppress messages about no/multiple scaffold embeddings\n";
       }
       else 
       {

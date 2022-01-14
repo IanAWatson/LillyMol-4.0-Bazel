@@ -131,4 +131,5 @@
     int MaybeParseAsChemaxonExtension(const_IWSubstring& name, int processing_quoted_smiles);
     int ParseChemaxonExtension(const const_IWSubstring& chemaxon);
     int ParseCoords(const const_IWSubstring& chemaxon, int * claimed);
+    int ParseSpecialAtoms(const const_IWSubstring& chemaxon, int * claimed);
 #endif
