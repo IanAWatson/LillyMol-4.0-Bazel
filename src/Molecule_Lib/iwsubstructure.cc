@@ -1962,7 +1962,8 @@ Single_Substructure_Query::_match_heteroatom_specifications(Molecule_to_Match & 
 */
 
 int
-Single_Substructure_Query::_match_ring_system_specifications(Molecule_to_Match & target_molecule)
+Single_Substructure_Query::_match_ring_system_specifications(Molecule_to_Match & target_molecule,
+                        std::unique_ptr<int[]>& matched_by_global_specs)
 {
 #ifdef DEBUG_MATCH_RING_SYSTEM_SPECIFICATIONS
   cerr << "Single_Substructure_Query::_match_ring_system_specifications:checking " << _ring_system_specification.number_elements() << " ring system specifications\n";
@@ -1971,7 +1972,7 @@ Single_Substructure_Query::_match_ring_system_specifications(Molecule_to_Match &
   int nr = _ring_system_specification.number_elements();
 
   if (1 == nr)
-    return _ring_system_specification[0]->matches(target_molecule);
+    return _ring_system_specification[0]->matches(target_molecule, matched_by_global_specs);
 
   _ring_system_specification_logexp.reset();
 
@@ -1980,7 +1981,7 @@ Single_Substructure_Query::_match_ring_system_specifications(Molecule_to_Match &
     if (! _ring_system_specification_logexp.result_needed(i))
       continue;
 
-    int m = _ring_system_specification[i]->matches(target_molecule);
+    int m = _ring_system_specification[i]->matches(target_molecule, matched_by_global_specs);
 
     _ring_system_specification_logexp.set_result(i, m);
 
@@ -1999,12 +2000,13 @@ Single_Substructure_Query::_match_ring_system_specifications(Molecule_to_Match &
 */
 
 int
-Single_Substructure_Query::_match_ring_specifications (Molecule_to_Match & target_molecule)
+Single_Substructure_Query::_match_ring_specifications(Molecule_to_Match & target_molecule,
+                std::unique_ptr<int[]> & matched_by_global_specs)
 {
   int nr = _ring_specification.number_elements();
 
   if (1 == nr)
-    return _ring_specification[0]->matches(target_molecule);
+    return _ring_specification[0]->matches(target_molecule, matched_by_global_specs);
 
   _ring_specification_logexp.reset();
 
@@ -2015,7 +2017,7 @@ Single_Substructure_Query::_match_ring_specifications (Molecule_to_Match & targe
 
     Substructure_Ring_Specification * ri = _ring_specification[i];
 
-    int m = ri->matches(target_molecule);
+    int m = ri->matches(target_molecule, matched_by_global_specs);
 
     _ring_specification_logexp.set_result(i, m > 0);
 
@@ -2029,9 +2031,9 @@ Single_Substructure_Query::_match_ring_specifications (Molecule_to_Match & targe
 }
 
 int
-Single_Substructure_Query::_match_nrings_specifications (Molecule_to_Match & target_molecule)
+Single_Substructure_Query::_match_nrings_specifications(Molecule_to_Match & target_molecule)
 {
-  return _nrings.matches (target_molecule.nrings());
+  return _nrings.matches(target_molecule.nrings());
 }
 
 int
@@ -2129,7 +2131,8 @@ Single_Substructure_Query::_discern_global_conditions_present ()
 */
 
 int
-Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & target_molecule)
+Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & target_molecule,
+                std::unique_ptr<int[]>& matched_by_global_specs)
 {
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
   cerr << "Checking global specifications: _natoms " << _natoms.is_set() << ", matches? " << _natoms.matches(target_molecule.natoms()) << endl;
@@ -2196,13 +2199,13 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
 
   if (_ring_specification.number_elements())
   {
-    if (! _match_ring_specifications(target_molecule))
+    if (! _match_ring_specifications(target_molecule, matched_by_global_specs))
       return 0;
   }
 
   if (_ring_system_specification.number_elements())
   {
-    if (! _match_ring_system_specifications(target_molecule))
+    if (! _match_ring_system_specifications(target_molecule, matched_by_global_specs))
       return 0;
   }
 
@@ -2270,7 +2273,10 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
   cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
 #endif
 
-  if (! _match_global_specifications(target_molecule))
+  // Perhaps one of the global conditions will mark some atoms.
+  std::unique_ptr<int[]> matched_by_global_specs;
+
+  if (! _match_global_specifications(target_molecule, matched_by_global_specs))
   {
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
     cerr << "Global specifications not matched\n";
@@ -2623,7 +2629,7 @@ Single_Substructure_Query::substructure_search(Molecule * m,
 //assert (ok ());
   assert (OK_MOLECULE(m));
 
-  int matoms = m->natoms();
+  const int matoms = m->natoms();
 
 // If the atom has fewer atoms than the "atoms" in the query, this cannot work
 

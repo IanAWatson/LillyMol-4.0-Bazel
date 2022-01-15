@@ -191,7 +191,8 @@ compute_within_ring_unsaturation (const Ring * r, Molecule_to_Match & target)
 //#define DEBUG_SS_RING_MATCHES
 
 int
-Substructure_Ring_Specification::matches(Molecule_to_Match & target)
+Substructure_Ring_Specification::matches(Molecule_to_Match & target,
+                                std::unique_ptr<int[]>& matched_by_global_specs)
 {
   if (SUBSTRUCTURE_NOT_SPECIFIED != _aromatic)
     target.molecule()->compute_aromaticity();

@@ -1607,7 +1607,7 @@ class Substructure_Ring_Specification : public Substructure_Ring_Base
     int BuildProto(SubstructureSearch::SubstructureRingSpecification& proto) const;
     int write_msi(std::ostream & os, int & object_id, int indentation) const;
 
-    int matches(Molecule_to_Match &);
+    int matches(Molecule_to_Match &, std::unique_ptr<int[]>& matched_by_global_specs);
 };
 
 /*
@@ -1726,7 +1726,7 @@ class Substructure_Ring_System_Specification : public Substructure_Ring_Base
     int BuildProto(SubstructureSearch::SubstructureRingSystemSpecification& proto) const;
     int write_msi(std::ostream & os, int & object_id, int indentation) const;
 
-    int matches(Molecule_to_Match &);
+    int matches(Molecule_to_Match &, std::unique_ptr<int[]>& matched_by_global_specs);
 };
 
 /*
@@ -2534,11 +2534,11 @@ class Single_Substructure_Query
 
 //  Function to handle _ring_specification
 
-    int _match_ring_specifications(Molecule_to_Match & target_molecule);
+    int _match_ring_specifications(Molecule_to_Match & target_molecule, std::unique_ptr<int[]>& matched_by_global_specs);
 
 //  Function to handle _ring_system_specification
 
-    int _match_ring_system_specifications(Molecule_to_Match & target_molecule);
+    int _match_ring_system_specifications(Molecule_to_Match & target_molecule, std::unique_ptr<int[]>& matched_by_global_specs);
 
     int _discern_global_conditions_present();
 
@@ -2546,7 +2546,7 @@ class Single_Substructure_Query
 
     int _match_ring_type_specifications(Molecule_to_Match & target_molecule);
     int _match_nrings_specifications   (Molecule_to_Match & target_molecule);
-    int _match_global_specifications   (Molecule_to_Match & target_molecule);
+    int _match_global_specifications   (Molecule_to_Match & target_molecule, std::unique_ptr<int[]>& matched_by_global_specs);
     int _spinach_atoms_match(Molecule_to_Match & target) const;
 
 //  Function to process the heteroatoms specifier

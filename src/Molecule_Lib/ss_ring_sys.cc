@@ -487,7 +487,8 @@ Substructure_Ring_System_Specification::_ring_size_counts_matched(const resizabl
 }
 
 int
-Substructure_Ring_System_Specification::matches(Molecule_to_Match & target)
+Substructure_Ring_System_Specification::matches(Molecule_to_Match & target,
+                                std::unique_ptr<int[]>& matched_by_global_specs)
 {
   const int nr = target.nrings();
 
