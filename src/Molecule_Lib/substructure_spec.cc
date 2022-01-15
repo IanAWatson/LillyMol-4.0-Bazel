@@ -1424,7 +1424,7 @@ Substructure_Atom::_parse_smarts_environment (const Atomic_Smarts_Component & en
 */
 
 int
-Substructure_Atom::_extract_initial_atom_number (const_IWSubstring & mysmarts)
+Substructure_Atom::_extract_initial_atom_number(const_IWSubstring & mysmarts)
 {
   if (mysmarts.ends_with(':'))
     return 0;
@@ -1463,9 +1463,9 @@ Substructure_Atom::_extract_initial_atom_number (const_IWSubstring & mysmarts)
 */
 
 /*static int
-fetch_atom_number (const_IWSubstring & smarts,
-                   int istart, 
-                   int & unique_id)
+fetch_atom_number(const_IWSubstring & smarts,
+                  int istart, 
+                  int & unique_id)
 {
   assert (':' == smarts[istart]);
 
@@ -1508,7 +1508,7 @@ fetch_atom_number (const_IWSubstring & smarts,
 */
 
 static int
-fetch_environment (const_IWSubstring & env)
+fetch_environment(const_IWSubstring & env)
 {
   assert (env.starts_with ("$("));
 
@@ -1594,14 +1594,14 @@ fetch_environment (const const_IWSubstring & env, int & characters_processed,
 static int respect_aliphatic_smarts = 1;
 
 void
-set_respect_aliphatic_smarts (int s)
+set_respect_aliphatic_smarts(int s)
 {
   respect_aliphatic_smarts = s;
 }
 
 static void
-truncate_after_digits (const const_IWSubstring & ignore_these,
-                       const_IWSubstring & s)
+truncate_after_digits(const const_IWSubstring & ignore_these,
+                      const_IWSubstring & s)
 {
   int nchars = s.length();
 
@@ -1828,6 +1828,15 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
         return 0;
       }
       _ring_id = c[0] - '0';
+    }
+    else if (c.starts_with("gid")) {
+      c.remove_leading_chars(3);
+      if (! isdigit(c[0]))    // only single digit ring ids are allowed in smarts
+      {
+        cerr << "Substructure_Atom::construct_from_smarts_token:invalid gid qualifier '" << c << "'\n";
+        return 0;
+      }
+      _global_match_id = c[0] - '0';
     }
     else if (c.starts_with("fss"))
       ;
@@ -2836,7 +2845,9 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       else if (c.length() > 3 && c.starts_with("rid"))
         nchars = 3 + 3 + 1 - 1;                     // will fail if more than two digits for rid
       else if (c.length() > 4 && c.starts_with("fsid"))
-        nchars = 3 + 4 + 1 - 1;                     // will fail if more than two digits for rid
+        nchars = 3 + 4 + 1 - 1;                     // will fail if more than two digits for fsid
+      else if (c.length() > 3 && c.starts_with("gid"))
+        nchars = 3 + 3 + 1 - 1;                     // will fail if more than two digits for gid
       else if (c.length() > 4 && c.starts_with("spch"))
       {
         c.remove_leading_chars(4);

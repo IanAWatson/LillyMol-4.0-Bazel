@@ -203,8 +203,9 @@ message SubstructureRingBase {
   optional bool environment_can_match_in_ring_atoms = 23;
 
   // By default, matches to rings and ring systems do not create
-  // matched atoms. That can be set.
-  optional uint32 fill_matched_atoms_array = 24;
+  // matched atoms. But if requested, they can set a per-atom
+  // value for the global_match_id.
+  optional uint32 set_global_id = 24;
 
 // Not supported from proto. Seems unnecessary.
 //optional string define_heteroatoms = 24;
@@ -562,6 +563,10 @@ message SubstructureAtom {
   // the same atom types. If different groups, then the atom types
   // assigned must be different.
   optional uint32 atom_type_group = 33;
+
+  // Per atom global match id value, used for matching query atoms
+  // to atoms marked by global match conditions.
+  optional uint32 global_match_id = 34;
 }
 
 // Specifications of the atoms adjacent to the matched atoms.

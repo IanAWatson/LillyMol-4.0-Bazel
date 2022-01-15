@@ -807,6 +807,12 @@ class Substructure_Atom : public Substructure_Atom_Specifier
 
     int _atom_map_number;
 
+    // Global matching conditions, like ring systems, can set global match numbers
+    // for each atom. If requested, we can only match with an atom that has a given
+    // global match id.
+    // Note that in smarts, these are restricted to single digits.
+    int _global_match_id;
+
     resizable_array_p<Substructure_Atom> _children;
 
 //  For alternate matches, we use the or id
@@ -1016,6 +1022,7 @@ class Substructure_Atom : public Substructure_Atom_Specifier
     int  add_ncon_preference_object (int n, int p);
 
     int atom_map_number() const { return _atom_map_number;}
+    int global_match_id() const { return _global_match_id;}
 
     int number_descendants () const;
 
@@ -1518,10 +1525,10 @@ class Substructure_Ring_Base
     resizable_array_p<Substructure_Atom> _environment_atom;
     IW_Logical_Expression _environment_logexp;
 
-    int _environment_can_match_in_ring_atoms;     // aug 2014. Need to be able to describe the ring itself
+    int _environment_can_match_in_ring_atoms;     // Aug 2014. Need to be able to describe the ring itself.
 
-    // Jan 2022. Optionally pass the matched atoms back to the caller of matches()
-    int _fill_matched_atoms_array;
+    // Jan 2022. Optionally set a global match id value for each member of the ring/system.
+    int _set_global_id;
 
     IWString _comment;
 
@@ -1535,8 +1542,8 @@ class Substructure_Ring_Base
 
     int ok() const;
 
-    int fill_matched_atoms_array() const {
-      return _fill_matched_atoms_array;
+    int set_global_id() const {
+      return _set_global_id;
     }
 
   protected:
@@ -1699,7 +1706,7 @@ class Substructure_Ring_System_Specification : public Substructure_Ring_Base
 
 //  private functions
 
-    int _matches(Molecule_to_Match &, int *, atom_number_t *);
+    int _matches(Molecule_to_Match &, int *, atom_number_t *, std::unique_ptr<int[]>& matched_by_global_specs);
 
     int _spinach_matches(Molecule_to_Match & target, const atom_number_t *) const;
     int _check_length_of_spinach(const Molecule & m, const int * in_system, atom_number_t atom_in_ring, atom_number_t first_spinach_atom) const;
@@ -2044,6 +2051,10 @@ class Substructure_Results
 
     // If multiple embeddings, compress them to just one.
     int CompressToSingleEmbedding();
+
+    // If per-atom global id values have been set, remove embeddings whose matched query
+    // atoms do not match those global match conditions.
+    int RemoveEmbeddingsNotSatisfyingGlobalId(const int * matched_by_global_conditions);
 };
 
 // Specify the bond separation between pairs of matched atoms.

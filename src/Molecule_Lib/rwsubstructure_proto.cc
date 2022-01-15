@@ -893,6 +893,10 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
   if (proto.has_fragment_id() && ! AssignValue(proto.fragment_id(), _fragment_id, [](int f) { return f > 0;}, "fragment_id"))
     return 0;
 
+  if (proto.has_global_match_id()) {
+    _global_match_id = proto.global_match_id();
+  }
+
   if (proto.has_fused_system_id())
     _fused_system_id = proto.fused_system_id();
 
@@ -1344,6 +1348,7 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
   SET_PROTO_IF_SET(proto, ring_id, 0);  // 9
   SET_PROTO_IF_SET(proto, fused_system_id, 0);  // 10
   SET_PROTO_IF_SET(proto, fragment_id, 0);  // 11
+  SetProtoIfSet(_global_match_id, 0, "global_match_id", proto);  // 34
 
   double nv;
   if (_numeric_value.value(nv)) {  // 12
@@ -2646,8 +2651,8 @@ Substructure_Ring_Base::ConstructFromProto(const SubstructureSearch::Substructur
   if (proto.has_environment_can_match_in_ring_atoms())
     _environment_can_match_in_ring_atoms = proto.environment_can_match_in_ring_atoms();
 
-  if (proto.has_fill_matched_atoms_array()) {
-    _fill_matched_atoms_array = proto.fill_matched_atoms_array();
+  if (proto.has_set_global_id()) {
+    _set_global_id = proto.set_global_id();
   }
 
   static constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
@@ -3135,8 +3140,8 @@ Substructure_Ring_Base::BuildProto(SubstructureSearch::SubstructureRingBase& pro
   if (_environment_can_match_in_ring_atoms) {
     proto.set_environment_can_match_in_ring_atoms(true);  // 23
   }
-  if (_fill_matched_atoms_array) {
-    proto.set_fill_matched_atoms_array(true);
+  if (_set_global_id) {
+    proto.set_set_global_id(_set_global_id);
   }
 
   return 1;

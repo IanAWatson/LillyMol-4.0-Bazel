@@ -1552,8 +1552,7 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
   cerr << "_got_embedding: environment also matched\n";
 #endif
 
-  if (! _save_matched_atoms)
-  {
+  if (! _save_matched_atoms) {
     results.got_embedding();
 
     if (0 == results.hits_found() % report_multiple_hits_threshold)
@@ -1862,8 +1861,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 
     Target_Atom & target_atom = target_molecule[j];
 
-    if (! r->matches(target_atom, already_matched))
-    {
+    if (! r->matches(target_atom, already_matched)) {
       continue;
     }
 
@@ -2127,6 +2125,10 @@ Single_Substructure_Query::_discern_global_conditions_present ()
   At the beginning of a substructure search, check any global specifications
   about the query - fused system sizes, number of rings, etc...
 
+  `matched_by_global_specs` might be set by one of the functions called. Those
+  entities might place a per-atom value in that array, which will later be
+  used for checking Global ID values.
+
   Make sure that _nrings is checked first!
 */
 
@@ -2292,19 +2294,25 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
   else
     results.set_symmetry_class(nullptr);
 
-  if (_atom_typing != nullptr)
-  {
+  if (_atom_typing != nullptr) {
     if (! target_molecule.AssignAtomTypes(*_atom_typing))
       return 0;
   }
 
   int * tmp = new_int(target_molecule.natoms()); std::unique_ptr<int[]> free_tmp(tmp);
+  // No, this is not the way to go....
+//if (matched_by_global_specs) {
+//  std::copy_n(matched_by_global_specs.get(), target_molecule.natoms(), tmp);
+//}
 
-  const int rc = _substructure_search(target_molecule, tmp, results);
+  int rc = _substructure_search(target_molecule, tmp, results);
 
-  for (auto* r : _root_atoms)
-  {
+  for (auto* r : _root_atoms) {
     r->recursive_release_hold();
+  }
+
+  if (matched_by_global_specs && rc > 0) {
+    rc = results.RemoveEmbeddingsNotSatisfyingGlobalId(matched_by_global_specs.get());
   }
 
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
@@ -2409,20 +2417,18 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
   results.set_save_matched_atoms(_save_matched_atoms);
 
   int nf = 1;
-  if (_all_hits_in_same_fragment)
-  {
+  if (_all_hits_in_same_fragment) {
     nf = target_molecule.molecule()->number_fragments();
     results.size_hits_per_fragment_array(nf);
-  }
-  else if (_only_keep_matches_in_largest_fragment)
+  } else if (_only_keep_matches_in_largest_fragment) {
     nf = target_molecule.molecule()->number_fragments();
+  }
 
   int rc = _substructure_search(target_molecule, results);
 
 //target_molecule.debug_print(cerr);
 
-  if (nullptr != save_bt)
-  {
+  if (nullptr != save_bt) {
     target_molecule.molecule()->set_bond_types_no_set_modified(save_bt);
     delete [] save_bt;
   }
@@ -2435,8 +2441,7 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
     cerr << " Hits needed not set, result " << rc << endl;
 #endif
 
-  if (0 == rc)
-  {
+  if (0 == rc) {
     if (_hits_needed.is_set())
       return _hits_needed.matches(0);
     else
@@ -2458,8 +2463,7 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
   cerr << "rc = " << rc << " _distance_between_hits " << _distance_between_hits.is_set() << endl;
 #endif
 
-  if (rc > 1 && _distance_between_hits.is_set())
-  {
+  if (rc > 1 && _distance_between_hits.is_set()) {
     int tmp = results.remove_hits_violating_distance(target_molecule, _distance_between_hits, _matched_atoms_to_check_for_hits_too_close);   // the number of hits removed
 
     if (tmp && _fail_if_embeddings_too_close)
@@ -2471,12 +2475,10 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
 
 // Do any adjustments for fragment stuff
 
-  if (0 == rc)    // no embeddings to worry about
+  if (0 == rc) {  // no embeddings to worry about
     ;
-  else if (_all_hits_in_same_fragment)
-  {
-    if (nf > 1 && rc > 1)
-    {
+  } else if (_all_hits_in_same_fragment) {
+    if (nf > 1 && rc > 1) {
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
       cerr << "nf = " << nf << " and all hits in same frag\n";
 #endif
@@ -2484,13 +2486,11 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
       const extending_resizable_array<int> & hits_per_fragment = results.hits_per_fragment();
 
       int found_match = 0;
-      for (int i = 0; i < nf; i++)
-      {
+      for (int i = 0; i < nf; i++) {
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
         cerr << hits_per_fragment[i] << " hits in fragment " << i << " matches " << _hits_needed.matches(hits_per_fragment[i]) << endl;
 #endif
-        if (_hits_needed.matches(hits_per_fragment[i]))
-        {
+        if (_hits_needed.matches(hits_per_fragment[i])) {
           found_match = 1;
           rc = hits_per_fragment[i];
           break;
@@ -2500,11 +2500,8 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
       if (! found_match)
         return 0;
     }
-  }
-  else if (_only_keep_matches_in_largest_fragment)
-  {
-    if (rc > 0 && nf > 1)
-    {
+  } else if (_only_keep_matches_in_largest_fragment) {
+    if (rc > 0 && nf > 1) {
       results.remove_hits_not_in_largest_fragment(target_molecule);
       rc = results.number_embeddings();
     }
@@ -2521,8 +2518,7 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
 // This is somewhat arbitrary. By definition, we honour _subtract_from_rc if
 // it is specified, and in that case, ignore all other modifications.
 
-  if (_subtract_from_rc)
-  {
+  if (_subtract_from_rc) {
     rc -= _subtract_from_rc;
     if (rc < 0)
       return 0;

@@ -22,6 +22,8 @@ Substructure_Atom::_default_values()
 
   _atom_map_number = -1;
 
+  _global_match_id = -1;
+
   _or_id = 0;
 
   _ring_id = 0;

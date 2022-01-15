@@ -22,7 +22,7 @@ Substructure_Ring_Base::Substructure_Ring_Base()
 
   _environment_can_match_in_ring_atoms = 0;
 
-  _fill_matched_atoms_array = 0;
+  _set_global_id = 0;
 
   return;
 }

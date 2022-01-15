@@ -2586,4 +2586,81 @@ TEST_F(TestSubstructure, TestRidChainAtomIsNotInTheSameRing) {
   EXPECT_EQ(_query.substructure_search(_m, _sresults), 30);
 }
 
+TEST_F(TestSubstructure, TestGlobalIDRing) {
+  _string_proto = R"(query {
+    ring_specification {
+      base {
+        heteroatom_count: 1
+        set_global_id: 2
+      }
+      aromatic: true
+    }
+    smarts: "[F,Br]-[/IWgid2a]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "Fc1ccc(cc1)CCc1cnc(Br)cc1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+  const Set_of_Atoms * e = _sresults.embedding(0);
+  EXPECT_EQ(e->size(), 2);
+  EXPECT_EQ(_m.atomic_number(e->item(0)), 35);
+}
+
+TEST_F(TestSubstructure, TestGlobalIDRingSysMatches) {
+  _string_proto = R"(query {
+    ring_system_specifier {
+      base {
+        set_global_id: 3
+      }
+      ring_sizes: [4, 6]
+      aromatic_ring_count: 1
+    }
+    smarts: "[F,Br]-[/IWgid3a]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "Fc1ccc2c(c1)C(C2)c1ccc2ccc(Cl)cc2c1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+  const Set_of_Atoms * e = _sresults.embedding(0);
+  EXPECT_EQ(e->size(), 2);
+  EXPECT_EQ(_m.atomic_number(e->item(0)), 9);
+}
+
+TEST_F(TestSubstructure, TestGlobalIDRingSysNoMatch) {
+  _string_proto = R"(query {
+    ring_system_specifier {
+      base {
+        set_global_id: 8
+      }
+      ring_sizes: [4, 6]
+      aromatic_ring_count: 1
+    }
+    smarts: "[F,Br]-[/IWgid3a]"
+  }
+  )";
+
+  SubstructureSearch::SubstructureQuery proto;
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &proto));
+
+  ASSERT_TRUE(_query.ConstructFromProto(proto)) << "Cannot parse proto " << proto.ShortDebugString();
+
+  _smiles = "Fc1ccc2c(c1)C(C2)c1ccc2ccc(Cl)cc2c1";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+}
 }  // namespace

@@ -10,6 +10,23 @@
 #include "substructure.h"
 #include "target.h"
 
+namespace ss_ring_sys {
+void
+FillMatchedAtomsArray(const int * atoms_in_system,
+                      int value, 
+                      const int matoms,
+                      std::unique_ptr<int[]>& matched_by_global_specs) {
+  if (! matched_by_global_specs) {
+    matched_by_global_specs.reset(new_int(matoms));
+  }
+  for (int i = 0; i < matoms; ++i) {
+    if (atoms_in_system[i] > 0) {
+      matched_by_global_specs[i] = value;
+    }
+  }
+}
+
+}  // namespace ss_ring_sys
 Substructure_Ring_System_Specification::Substructure_Ring_System_Specification()
 {
   _need_per_atom_array = -1;
@@ -67,6 +84,7 @@ Substructure_Ring_System_Specification::debug_print(std::ostream & os,
   os << ind << "  Atm in Spch " << _atoms_in_spinach_group << endl;
   os << ind << "  Len of Spch " << _length_of_spinach_group << endl;
   os << ind << "  Dist to Rng " << _distance_to_another_ring << endl;
+  os << ind << "  Set global id " << _set_global_id << endl;
 
   return os.good();
 }
@@ -109,6 +127,8 @@ Substructure_Ring_System_Specification::terse_details(std::ostream & os,
     os << ind << "  length of spinach " << _length_of_spinach_group << endl;
   if (_distance_to_another_ring.is_set())
     os << ind << "  dist to other ring " << _distance_to_another_ring << endl;
+  if (_set_global_id > 0)
+    os << ind << "  set global id " << _set_global_id << endl;
 
   return os.good();
 }
@@ -222,7 +242,8 @@ Substructure_Ring_System_Specification::_check_heteroatoms(const int * atoms_in_
 int
 Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
                int * ring_already_done,
-               atom_number_t * atoms_in_system)
+               atom_number_t * atoms_in_system,
+               std::unique_ptr<int[]>& matched_by_global_specs)
 {
   int nr = target.nrings();
 
@@ -406,21 +427,18 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
     cerr << "Checking environment " << _environment_atom.number_elements() << endl;
 #endif
 
-    if (_environment_atom.number_elements())
-    {
+    if (_environment_atom.number_elements()) {
       if (! _environment_matches(target, atoms_in_system))
         continue;
     }
 
     if (_number_spinach_groups.is_set() || _atoms_in_spinach_group.is_set() ||
-        _length_of_spinach_group.is_set() || _number_non_spinach_groups.is_set())
-    {
+        _length_of_spinach_group.is_set() || _number_non_spinach_groups.is_set()) {
       if (! _spinach_matches(target, atoms_in_system))
         continue;
     }
 
-    if (_distance_to_another_ring.is_set())
-    {
+    if (_distance_to_another_ring.is_set()) {
       if (! _match_distance_to_another_ring(target, atoms_in_system))
         continue;
     }
@@ -428,10 +446,12 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
 //  We have a ring system which matches!
 
     nhits++;
-    if (_all_hits_in_same_fragment)
-    {
+    if (_all_hits_in_same_fragment) {
       atom_number_t j = ri->item(0);
       hits_in_fragment[m->fragment_membership(j)]++;
+    }
+    if (_set_global_id > 0) {
+      ss_ring_sys::FillMatchedAtomsArray(atoms_in_system, _set_global_id, target.natoms(), matched_by_global_specs);
     }
   }
 
@@ -507,7 +527,8 @@ Substructure_Ring_System_Specification::matches(Molecule_to_Match & target,
     if (_heteroatom_count.is_set() || _ncon.is_set() || _atoms_in_system.is_set() ||
         _environment_atom.number_elements() || _number_spinach_groups.is_set() ||
         _atoms_in_spinach_group.is_set() || _length_of_spinach_group.is_set() ||
-        _distance_to_another_ring.is_set() || _number_non_spinach_groups.is_set())
+        _distance_to_another_ring.is_set() || _number_non_spinach_groups.is_set() ||
+        _set_global_id > 0)
       _need_per_atom_array = 1;
     else
       _need_per_atom_array = 0;
@@ -517,7 +538,7 @@ Substructure_Ring_System_Specification::matches(Molecule_to_Match & target,
   if (_need_per_atom_array)
     atmp.reset(new atom_number_t[target.natoms()]);
 
-  return _matches(target, rtmp, atmp.get());
+  return _matches(target, rtmp, atmp.get(), matched_by_global_specs);
 }
 
 int
@@ -660,7 +681,7 @@ Substructure_Ring_System_Specification::_check_length_of_spinach(const Molecule 
   return _length_of_spinach_group.matches(maxdist);
 }
 
-#define DEBUG_SHORTEST_DISTANCE_TO_ANOTHER_RING
+//#define DEBUG_SHORTEST_DISTANCE_TO_ANOTHER_RING
 
 static int
 shortest_distance_to_another_ring(Molecule_to_Match & target,

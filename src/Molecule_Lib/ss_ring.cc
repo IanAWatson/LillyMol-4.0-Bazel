@@ -9,6 +9,20 @@ using std::endl;
 #include "substructure.h"
 #include "target.h"
 
+namespace ss_ring {
+void
+FillMatchedAtomsArray(const Ring& r, 
+                      int value,
+                      int matoms,
+                      std::unique_ptr<int[]>& matched_by_global_specs) {
+  if (! matched_by_global_specs) {
+    matched_by_global_specs.reset(new_int(matoms));
+  }
+  r.set_vector(matched_by_global_specs.get(), value);
+}
+
+}  // namespace ss_ring
+
 Substructure_Ring_Specification::Substructure_Ring_Specification()
 {
   _aromatic = SUBSTRUCTURE_NOT_SPECIFIED;
@@ -346,6 +360,9 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
 #endif
 
     nhits++;
+    if (_set_global_id) {
+      ss_ring::FillMatchedAtomsArray(*r, _set_global_id, target.natoms(), matched_by_global_specs);
+    }
   }
 
   if (0 == nhits)
