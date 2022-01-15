@@ -1765,7 +1765,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
 }
 
 int
-Single_Substructure_Query::_find_embedding (Molecule_to_Match & target_molecule,
+Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
                                      Target_Atom & a,
                                      Query_Atoms_Matched & matched_atoms,
                                      int * already_matched,
@@ -1921,7 +1921,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 }
 
 int
-Single_Substructure_Query::_match_elements_needed (Molecule_to_Match & target_molecule) const
+Single_Substructure_Query::_match_elements_needed(Molecule_to_Match & target_molecule) const
 {
   int ne = _elements_needed.number_elements();
 
@@ -1935,7 +1935,7 @@ Single_Substructure_Query::_match_elements_needed (Molecule_to_Match & target_mo
 }
 
 int
-Single_Substructure_Query::_match_heteroatom_specifications (Molecule_to_Match & target_molecule)
+Single_Substructure_Query::_match_heteroatom_specifications(Molecule_to_Match & target_molecule)
 {
   if (_heteroatoms.empty())
     return _heteroatoms_in_molecule.matches(target_molecule.heteroatom_count());
@@ -1953,7 +1953,7 @@ Single_Substructure_Query::_match_heteroatom_specifications (Molecule_to_Match &
       heteroatoms_in_target++;
   }
 
-  return  _heteroatoms_in_molecule.matches(heteroatoms_in_target);
+  return _heteroatoms_in_molecule.matches(heteroatoms_in_target);
 }
 
 /*
@@ -2129,7 +2129,7 @@ Single_Substructure_Query::_discern_global_conditions_present ()
 */
 
 int
-Single_Substructure_Query::_match_global_specifications (Molecule_to_Match & target_molecule)
+Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & target_molecule)
 {
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
   cerr << "Checking global specifications: _natoms " << _natoms.is_set() << ", matches? " << _natoms.matches(target_molecule.natoms()) << endl;

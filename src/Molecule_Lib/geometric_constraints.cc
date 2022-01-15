@@ -402,4 +402,11 @@ SetOfGeometricConstraints::AtomNumbersPresent() const {
   return result;
 }
 
+int
+SetOfGeometricConstraints::BuildProto(GeometricConstraints::SetOfConstraints&) const {
+  // TODO:implement this
+  cerr << "SetOfConstraints::BuildProto:implement\n";
+  return 1;
+}
+
 }  // namespace geometric_constraints

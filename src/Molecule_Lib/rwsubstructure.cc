@@ -6582,7 +6582,7 @@ Substructure_Ring_Specification::construct_from_msi_object (const msi_object & m
 }
 
 int
-Substructure_Ring_Specification::write_msi (std::ostream & os, int & object_id, int indentation) const
+Substructure_Ring_Specification::write_msi(std::ostream & os, int & object_id, int indentation) const
 {
   assert (ok());
   assert (os.good());

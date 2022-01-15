@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <memory>
+#include <iostream>
 
 #include "Foundational/iwmisc/iwminmax.h"
 #include "Foundational/iwmisc/misc.h"
@@ -36,7 +37,7 @@ Substructure_Ring_System_Specification::ok() const
 }
 
 int
-Substructure_Ring_System_Specification::debug_print (std::ostream & os,
+Substructure_Ring_System_Specification::debug_print(std::ostream & os,
                                               const IWString & indentation) const
 {
   IWString ind = indentation;
@@ -71,7 +72,7 @@ Substructure_Ring_System_Specification::debug_print (std::ostream & os,
 }
 
 int
-Substructure_Ring_System_Specification::terse_details (std::ostream & os,
+Substructure_Ring_System_Specification::terse_details(std::ostream & os,
                                       const IWString & indentation) const
 {
   IWString ind = indentation;
@@ -118,7 +119,7 @@ Substructure_Ring_System_Specification::terse_details (std::ostream & os,
 */
 
 int
-Substructure_Ring_System_Specification::_check_ncon (const int * atoms_in_system,
+Substructure_Ring_System_Specification::_check_ncon(const int * atoms_in_system,
                     Molecule_to_Match & target) const
 {
   int atoms_in_molecule = target.natoms();
@@ -161,8 +162,8 @@ Substructure_Ring_System_Specification::_check_ncon (const int * atoms_in_system
 }
 
 static int
-compute_atoms_with_pi_electrons (const atom_number_t * in_ring, 
-                                 Molecule_to_Match & target)
+compute_atoms_with_pi_electrons(const atom_number_t * in_ring, 
+                                Molecule_to_Match & target)
 {
   assert (nullptr != in_ring);
 
@@ -197,7 +198,7 @@ compute_atoms_with_pi_electrons (const atom_number_t * in_ring,
 
 
 int
-Substructure_Ring_System_Specification::_check_heteroatoms (const int * atoms_in_system,
+Substructure_Ring_System_Specification::_check_heteroatoms(const int * atoms_in_system,
              Molecule_to_Match & target) const
 {
   int atoms_in_molecule = target.natoms();
@@ -486,9 +487,9 @@ Substructure_Ring_System_Specification::_ring_size_counts_matched(const resizabl
 }
 
 int
-Substructure_Ring_System_Specification::matches (Molecule_to_Match & target)
+Substructure_Ring_System_Specification::matches(Molecule_to_Match & target)
 {
-  int nr = target.nrings();
+  const int nr = target.nrings();
 
   if (0 == nr)
     return ! _match_as_match_or_rejection;
@@ -511,18 +512,11 @@ Substructure_Ring_System_Specification::matches (Molecule_to_Match & target)
       _need_per_atom_array = 0;
   }
 
-  int * atmp;
+  std::unique_ptr<int[]> atmp;
   if (_need_per_atom_array)
-    atmp = new atom_number_t[target.natoms()];
-  else 
-    atmp = nullptr;
+    atmp.reset(new atom_number_t[target.natoms()]);
 
-  int rc = _matches(target, rtmp, atmp);
-
-  if (nullptr != atmp)
-    delete [] atmp;
-
-  return rc;
+  return _matches(target, rtmp, atmp.get());
 }
 
 int
@@ -620,9 +614,9 @@ Substructure_Ring_System_Specification::_spinach_matches(Molecule_to_Match & tar
 }
 
 static int 
-max_length_of_spinach (const Molecule & m,
-                       int * already_done,
-                       atom_number_t zatom)
+max_length_of_spinach(const Molecule & m,
+                      int * already_done,
+                      atom_number_t zatom)
 {
   already_done[zatom] = 1;
 
@@ -649,7 +643,7 @@ max_length_of_spinach (const Molecule & m,
 }
 
 int
-Substructure_Ring_System_Specification::_check_length_of_spinach (const Molecule & m,
+Substructure_Ring_System_Specification::_check_length_of_spinach(const Molecule & m,
                                                 const int * in_system,
                                                 atom_number_t atom_in_ring, 
                                                 atom_number_t first_spinach_atom) const

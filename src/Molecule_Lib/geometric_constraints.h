@@ -154,6 +154,7 @@ class SetOfGeometricConstraints {
     SetOfGeometricConstraints();
 
     int BuildFromProto(const GeometricConstraints::SetOfConstraints& proto);
+    int BuildProto(GeometricConstraints::SetOfConstraints& proto) const;
 
     void DebugPrint(std::ostream& output) const;
 

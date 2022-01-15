@@ -7,7 +7,7 @@
 #include "substructure.h"
 #include "target.h"
 
-Substructure_Ring_Base::Substructure_Ring_Base ()
+Substructure_Ring_Base::Substructure_Ring_Base()
 {
   _match_as_match_or_rejection = 1;
 
@@ -22,10 +22,12 @@ Substructure_Ring_Base::Substructure_Ring_Base ()
 
   _environment_can_match_in_ring_atoms = 0;
 
+  _fill_matched_atoms_array = 0;
+
   return;
 }
 
-Substructure_Ring_Base::~Substructure_Ring_Base ()
+Substructure_Ring_Base::~Substructure_Ring_Base()
 {
   if (nullptr != _is_heteroatom)
     delete [] _is_heteroatom;
@@ -269,7 +271,7 @@ Substructure_Ring_Base::_environment_matches(Molecule_to_Match & target,
 */
 
 static int
-is_operator_character (char c)
+is_operator_character(char c)
 {
   if ('&' == c)
     return 1;
@@ -287,9 +289,9 @@ is_operator_character (char c)
 }
 
 static int
-is_logexp_operator (const const_IWSubstring & s,
-                    int offset,
-                    int & zop)
+is_logexp_operator(const const_IWSubstring & s,
+                   int offset,
+                   int & zop)
 {
   if (s.matches_at_position(offset, "&&"))
     zop = IW_LOGEXP_AND;
@@ -306,7 +308,7 @@ is_logexp_operator (const const_IWSubstring & s,
 }
 
 static int
-count_components (const const_IWSubstring & renv)
+count_components(const const_IWSubstring & renv)
 {
   int nchars = renv.length();
 
@@ -364,8 +366,8 @@ get_next_token(const const_IWSubstring & renv,
 */
 
 static int
-consume_digits (IWString & s,
-                int & c)
+consume_digits(IWString & s,
+               int & c)
 {
   c = 0;
 
@@ -385,8 +387,8 @@ consume_digits (IWString & s,
 }
 
 static int
-discern_leading_numerical_qualifier (Min_Max_Specifier<int> & m,
-                                     IWString & token)
+discern_leading_numerical_qualifier(Min_Max_Specifier<int> & m,
+                                    IWString & token)
 {
   char c0 = token[0];
 

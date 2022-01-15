@@ -202,6 +202,10 @@ message SubstructureRingBase {
   // atoms can include ring atoms.
   optional bool environment_can_match_in_ring_atoms = 23;
 
+  // By default, matches to rings and ring systems do not create
+  // matched atoms. That can be set.
+  optional uint32 fill_matched_atoms_array = 24;
+
 // Not supported from proto. Seems unnecessary.
 //optional string define_heteroatoms = 24;
 //optional string heteroatoms = 25;

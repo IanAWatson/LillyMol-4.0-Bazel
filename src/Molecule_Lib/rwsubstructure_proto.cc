@@ -1285,15 +1285,107 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   if (_comment.length())
     proto.set_comment(_comment.rawchars(), _comment.length());
 
+  proto.set_one_embedding_per_start_atom(_find_one_embedding_per_start_atom);
+  proto.set_normalise_rc_per_hits_needed(_normalise_rc_per_hits_needed);
+  proto.set_subtract_from_rc(_subtract_from_rc);
+  proto.set_max_matches_to_find(_max_matches_to_find);
+  proto.set_save_matched_atoms(_save_matched_atoms);
+  proto.set_ncon_ignore_singly_connected(_ncon_ignore_singly_connected);
+  if (_do_not_perceive_symmetry_equivalent_matches) {
+    proto.set_perceive_symmetric_equivalents(false);
+  } else {
+    proto.set_perceive_symmetric_equivalents(true);
+  }
+  proto.set_implicit_ring_condition(_implicit_ring_condition);
+  proto.set_all_hits_in_same_fragment(_all_hits_in_same_fragment);
+  proto.set_only_match_largest_fragment(_only_keep_matches_in_largest_fragment);
+  proto.set_embeddings_do_not_overlap(_embeddings_do_not_overlap);
+  proto.set_sort_by_preference_value(_sort_by_preference_value);
+
+  ADDREPEATEDFIELD(proto, numeric_value);
+
+  // TODO: implement this
+  for (const auto * nmb : _no_matched_atoms_between) {
+//  SubstructureSearch::NoMatchedAtomsBetween * p = proto.add_no_matched_atoms_between();
+//  nmb->BuildProtoNoBond(*p);
+  }
+  proto.set_no_matched_atoms_between_exhaustive(_no_matched_atoms_between_exhaustive);
+
+  for (const auto * lnk : _link_atom) {
+    SubstructureSearch::LinkAtoms* p = proto.add_link_atoms();
+    lnk->BuildProto(*p);
+  }
+  proto.set_fail_if_embeddings_too_close(_fail_if_embeddings_too_close);
+
+  // Not sure what is going on here...
+  //proto.set_distance_between_hits_ncheck(_distance_between_hits_ncheck);
+
+  SETPROTOVALUES(proto, attached_heteroatom_count, int);
+  SETPROTOVALUES(proto, hits_needed, int);
+  SETPROTOVALUES(proto, ring_atoms_matched, int);
+  SETPROTOVALUES(proto, heteroatoms_matched, int);
+  SETPROTOVALUES(proto, heteroatoms_in_molecule, int);
+  SETPROTOVALUES(proto, natoms, int);
+  SETPROTOVALUES(proto, nrings, int);
+  SETPROTOVALUES(proto, ncon, int);
+  SETPROTOVALUES(proto, fused_rings, int);
+  SETPROTOVALUES(proto, strongly_fused_rings, int);
+  SETPROTOVALUES(proto, isolated_rings, int);
+  SETPROTOVALUES(proto, isolated_ring_objects, int);
+  SETPROTOVALUES(proto, aromatic_rings, int);
+  SETPROTOVALUES(proto, non_aromatic_rings, int);
+  SETPROTOVALUES(proto, distance_between_hits, int);
+  SETPROTOVALUES(proto, number_isotopic_atoms, int);
+  SETPROTOVALUES(proto, number_fragments, int);
+  SETPROTOVALUES(proto, distance_between_root_atoms, int);
+  SETPROTOVALUES(proto, atoms_in_spinach, int);
+  SETPROTOVALUES(proto, inter_ring_atoms, int);
+  SETPROTOVALUES(proto, unmatched_atoms, int);
+  SETPROTOVALUES(proto, net_formal_charge, int);
+  // _min_fraction_atoms_matched
+  // _max_fraction_atoms_matched
+  proto.set_environment_must_match_unmatched_atoms(_environment_must_match_unmatched_atoms);
+
+  // TODO: Do something with _environments_can_share_attachment_points
   for (const auto* env : _environment) {
     env->BuildProto(*proto.add_environment());
   }
+  for (const auto* env : _environment_rejections) {
+    env->BuildProto(*proto.add_environment_no_match());
+  }
 
-//proto.set_environment_can_match_in_ring_atoms(_environment_can_match_in_ring_atoms);
-//proto.setall_hits_in_same_fragment(_all_hits_in_same_fragment);
+  for (const auto * ring_sys : _ring_system_specification) {
+    SubstructureSearch::SubstructureRingSystemSpecification * p = proto.add_ring_system_specifier();
+    ring_sys->BuildProto(*p);
+  }
 
-  SETPROTOVALUES(proto, hits_needed, int);
-  ADDREPEATEDFIELD(proto, numeric_value);
+  for (const auto * ring : _ring_specification) {
+    SubstructureSearch::SubstructureRingSpecification* p = proto.add_ring_specification();
+    ring->BuildProto(*p);
+  }
+
+  for (const auto * ele : _elements_needed) {
+    ele->BuildProto(*proto.add_elements_needed());
+  }
+  SETPROTOVALUES(proto, aromatic_atoms, int);
+  proto.set_unique_embeddings_only(_find_unique_embeddings_only);
+  ADDREPEATEDFIELD(proto, heteroatoms);
+  proto.set_respect_initial_atom_numbering(_respect_initial_atom_numbering);
+  proto.set_compress_embeddings(_compress_embeddings);
+
+  for (const auto * c: _chirality) {
+    c->BuildProto(*proto.add_chiral_centre());
+  }
+
+  // atom type
+
+  for (const auto* geom : _geometric_constraints) {
+    geom->BuildProto(*proto.add_geometric_constraints());
+  }
+
+  for (const auto* sep : _separated_atoms) {
+    sep->BuildProto(*proto.add_separated_atoms());
+  }
 
   extending_resizable_array<Substructure_Atom*> atoms;
   for (Substructure_Atom * a : _root_atoms) {
@@ -2909,6 +3001,7 @@ Link_Atom::ConstructFromProto(const SubstructureSearch::LinkAtoms & proto)
 
 
 #ifdef IMPLEMENT_THIS
+TODO
 int
 Single_Substructure_Query::_add_component(const SubstructureSearch::SubstructureChiralCenter::AtomNumberOrHLp& atom_or,
     void (Substructure_Chiral_Centre::*)(atom_number_t) setter,
@@ -3103,4 +3196,109 @@ Substructure_Query::ConstructFromProto(const SubstructureSearch::SubstructureQue
   }
 
   return _number_elements;
+}
+
+int
+Substructure_Ring_Base::BuildProto(SubstructureSearch::SubstructureRingBase& proto) const {
+  if (! _match_as_match_or_rejection) {  // Default is true.
+    proto.set_match_as_match(_match_as_match_or_rejection);  // 1
+  }
+
+  SETPROTOVALUES(proto, hits_needed, int);  // 2
+  SETPROTOVALUES(proto, attached_heteroatom_count, int);  // 5
+  SETPROTOVALUES(proto, heteroatom_count, int);  // 8
+  SETPROTOVALUES(proto, ncon, int);  // 11
+  if (_all_hits_in_same_fragment) {  // 14
+    proto.set_all_hits_in_same_fragment(true);
+  }
+  SETPROTOVALUES(proto, within_ring_unsaturation, int);  // 16
+  SETPROTOVALUES(proto, largest_number_of_bonds_shared_with_another_ring, int);  // 19
+  SETPROTOVALUES(proto, atoms_with_pi_electrons, int);  // 26
+  SETPROTOVALUES(proto, strongly_fused_ring_neighbours, int);  // 29
+  // environment as string....
+  if (_environment_can_match_in_ring_atoms) {
+    proto.set_environment_can_match_in_ring_atoms(true);  // 23
+  }
+  if (_fill_matched_atoms_array) {
+    proto.set_fill_matched_atoms_array(true);
+  }
+
+  return 1;
+}
+
+int
+Substructure_Ring_Specification::BuildProto(SubstructureSearch::SubstructureRingSpecification& proto) const {
+
+  ::Substructure_Ring_Base::BuildProto(*proto.mutable_base());
+
+  SETPROTOVALUES(proto, ring_size, int);  // 2
+  if (_aromatic) {
+    proto.set_aromatic(true);   // 5
+  }
+  SETPROTOVALUES(proto, fused, int);   // 6
+  SETPROTOVALUES(proto, fused_aromatic_neighbours, int);   // 9
+  SETPROTOVALUES(proto, fused_non_aromatic_neighbours, int);   // 12
+
+  return 1;
+}
+
+int
+Substructure_Ring_System_Specification::BuildProto(SubstructureSearch::SubstructureRingSystemSpecification& proto) const {
+  SETPROTOVALUES(proto, rings_in_system, int);  // 2
+  SETPROTOVALUES(proto, ring_sizes, int);  // 5
+
+  for (const RingSizeCount * rsc : _ring_size_count) {
+    SubstructureSearch::RingSizeRequirement* s = proto.add_ring_size_count();
+    rsc->BuildProto(*s);
+  }
+  SETPROTOVALUES(proto, aromatic_ring_count, int);  // 11
+  SETPROTOVALUES(proto, non_aromatic_ring_count, int);  // 14
+  SETPROTOVALUES(proto, degree_of_fusion, int);  // 17
+  SETPROTOVALUES(proto, atoms_in_system, int);  // 20
+  SETPROTOVALUES(proto, number_spinach_groups, int);  // 23
+  SETPROTOVALUES(proto, number_non_spinach_groups, int);  // 26
+  SETPROTOVALUES(proto, atoms_in_spinach_group, int);  // 29
+  SETPROTOVALUES(proto, length_of_spinach_group, int);  // 32
+  SETPROTOVALUES(proto, distance_to_another_ring, int);  // 35
+  SETPROTOVALUES(proto, strongly_fused_ring_count, int);  // 38
+
+  return 1;
+}
+
+int
+RingSizeCount::BuildProto(SubstructureSearch::RingSizeRequirement & proto) const {
+  proto.set_ring_size(_ring_size);
+  SETPROTOVALUES(proto, count, int);
+  return 1;
+}
+
+int
+Elements_Needed::BuildProto(SubstructureSearch::ElementsNeeded& proto) const {
+  proto.set_atomic_number(_z);
+  SETPROTOVALUES(proto, hits_needed, int);
+  return 1;
+}
+
+int
+Link_Atom::BuildProto(SubstructureSearch::LinkAtoms& proto) const {
+  proto.set_a1(_a1);
+  proto.set_a2(_a2);
+  SETPROTOVALUES(proto, distance, int);
+  return 1;
+}
+
+int
+Substructure_Chiral_Centre::BuildProto(SubstructureSearch::SubstructureChiralCenter& proto) const {
+  proto.set_center(_numeric->a());
+  // TODO implement this
+  return 1;
+}
+
+int
+SeparatedAtoms::BuildProto(SubstructureSearch::SeparatedAtoms& proto) const {
+  proto.set_a1(_a1);
+  proto.set_a2(_a2);
+// TODO name mismatch
+//SETPROTOVALUES(proto, separation, int);
+  return 1;
 }

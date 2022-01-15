@@ -121,6 +121,7 @@ class Substructure_Chiral_Centre
 
     int construct_from_msi_attribute (const msi_attribute &);
     int write_msi (std::ostream &, const IWString &, const char *) const;
+    int BuildProto(SubstructureSearch::SubstructureChiralCenter& proto) const;
 
     int is_matched (const Molecule * m) const;
 };
@@ -476,6 +477,7 @@ class Substructure_Bond
     int construct_from_msi_attribute (const msi_attribute *);
     int write_as_msi_attribute (std::ostream & os, int indentation) const;
     int BuildProto(SubstructureSearch::SubstructureBond& proto) const;
+    int BuildProtoNoBond(SubstructureSearch::SubstructureBond& proto) const;
 
     int make_single_or_aromatic ();
 
@@ -1405,6 +1407,7 @@ class Elements_Needed
     int construct_from_msi_object(const msi_object &);
     int ConstructFromProto(const SubstructureSearch::ElementsNeeded& proto);
     int write_msi(std::ostream & os, const char *, int & object_id, int indentation) const;
+    int BuildProto(SubstructureSearch::ElementsNeeded& proto) const;
 
     int matches(Query_Atoms_Matched & qam) const;
     int matches(Molecule_to_Match & target) const;
@@ -1517,24 +1520,32 @@ class Substructure_Ring_Base
 
     int _environment_can_match_in_ring_atoms;     // aug 2014. Need to be able to describe the ring itself
 
+    // Jan 2022. Optionally pass the matched atoms back to the caller of matches()
+    int _fill_matched_atoms_array;
+
     IWString _comment;
 
 //  private functions
 
-    int _construct_environment (const const_IWSubstring &);
+    int _construct_environment(const const_IWSubstring &);
 
   public:
-    Substructure_Ring_Base ();
-    ~Substructure_Ring_Base ();
+    Substructure_Ring_Base();
+    ~Substructure_Ring_Base();
 
-    int ok () const;
+    int ok() const;
+
+    int fill_matched_atoms_array() const {
+      return _fill_matched_atoms_array;
+    }
 
   protected:
-    int debug_print (std::ostream &) const;
+    int debug_print(std::ostream &) const;
 
     int write_msi_attributes(std::ostream & os, int & object_id, const const_IWSubstring & ind) const;
     int construct_from_msi_object(const msi_object &, int &);
     int ConstructFromProto(const SubstructureSearch::SubstructureRingBase& proto);
+    int BuildProto(SubstructureSearch::SubstructureRingBase& proto) const;
 
     int _environment_matches(Molecule_to_Match &, int *);
     int _environment_matches(Molecule_to_Match & target,
@@ -1593,6 +1604,7 @@ class Substructure_Ring_Specification : public Substructure_Ring_Base
 
     int construct_from_msi_object(const msi_object &);
     int ConstructFromProto(const SubstructureSearch::SubstructureRingSpecification& proto);
+    int BuildProto(SubstructureSearch::SubstructureRingSpecification& proto) const;
     int write_msi(std::ostream & os, int & object_id, int indentation) const;
 
     int matches(Molecule_to_Match &);
@@ -1618,6 +1630,7 @@ class RingSizeCount
     int ring_size() const { return _ring_size;}
 
     int ConstructFromProto(const SubstructureSearch::RingSizeRequirement&);
+    int BuildProto(SubstructureSearch::RingSizeRequirement& proto) const;
 
     int Matches(const int c) const {
       return _count.matches(c);
@@ -1710,6 +1723,7 @@ class Substructure_Ring_System_Specification : public Substructure_Ring_Base
 
     int construct_from_msi_object(const msi_object &);
     int ConstructFromProto(const SubstructureSearch::SubstructureRingSystemSpecification& proto);
+    int BuildProto(SubstructureSearch::SubstructureRingSystemSpecification& proto) const;
     int write_msi(std::ostream & os, int & object_id, int indentation) const;
 
     int matches(Molecule_to_Match &);
@@ -1817,6 +1831,7 @@ class Link_Atom
     int write_msi(std::ostream &, const IWString &, const char *) const;
     int initialise_from_mdl_record(const const_IWSubstring & buffer, int matoms, int & a);
     int write_M_LIN(atom_number_t, std::ostream &) const;
+    int BuildProto(SubstructureSearch::LinkAtoms& proto) const;
 
     int initialise_from_smarts(const const_IWSubstring &);
 
@@ -2046,6 +2061,7 @@ class SeparatedAtoms {
     SeparatedAtoms();
 
     int Build(const SubstructureSearch::SeparatedAtoms& proto);
+    int BuildProto(SubstructureSearch::SeparatedAtoms& proto) const;
 
     // Return true if atoms molecule[embedding[separated_atoms.a1]]
     //                  and molecule[embedding[aseparated_atoms.2]]
@@ -2753,7 +2769,7 @@ class Single_Substructure_Query
 
     const Query_Atoms_Matched * query_atoms_matching(int) const;
 
-    const Substructure_Atom *   query_atom_matching (int, int) const;
+    const Substructure_Atom *   query_atom_matching(int, int) const;
 
     int   root_atoms() const { return _root_atoms.number_elements();}
     const Substructure_Atom * root_atom(int i) const { return _root_atoms[i];}
