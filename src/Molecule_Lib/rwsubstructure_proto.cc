@@ -14,6 +14,7 @@ using std::endl;
   such.
 */
 
+#include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 
 #include "Foundational/iwmisc/misc.h"
@@ -31,163 +32,74 @@ using std::endl;
 #include "Molecule_Lib/substructure.pb.h"
 #include "Molecule_Lib/target.h"
 
-#ifdef NONE_OF_THESE_NEEDED_HERE
-const const_IWSubstring NAME_OF_RING_SPECIFIER_OBJECT = "ring_specifier";
-const const_IWSubstring NAME_OF_RING_SYSTEM_SPECIFIER_OBJECT = "ring_system_specifier";
-const const_IWSubstring NAME_OF_QUERY_BOND_OBJECT = "query_bond";
-const const_IWSubstring NAME_OF_QUERY_ATOM_SPECIFIER_OBJECT = "query_atom_specifier";
-const const_IWSubstring NAME_OF_ENVIRONMENT_OBJECT = "environment";
-const const_IWSubstring NAME_OF_QUERY_ATOM_PREFERENCE_OBJECT = "query_atom_preference";
-const const_IWSubstring NAME_OF_ENVIROMENT_REJECTION_OBJECT = "environment_no_match";
-const const_IWSubstring NAME_OF_QUERY_ATOM_OBJECT = "query_atom";
-const const_IWSubstring NAME_OF_ELEMENT_HITS_NEEDED_OBJECT = "element_hits_needed";
-const const_IWSubstring NAME_OF_ELEMENTS_NEEDED_OBJECT = "elements_needed";
-
-const const_IWSubstring NAME_OF_AND_OPERATOR = "and";
-const const_IWSubstring NAME_OF_OR_OPERATOR = "or";
-const const_IWSubstring NAME_OF_XOR_OPERATOR = "xor";
-const const_IWSubstring NAME_OF_LOW_PRIORITY_AND_OPERATOR = "low_priority_and";
-
-const const_IWSubstring NAME_OF_BOND_ATTRIBUTE = "bond";
-const const_IWSubstring NAME_OF_SINGLE_BOND_ATTRIBUTE = "single_bond";
-const const_IWSubstring NAME_OF_DOUBLE_BOND_ATTRIBUTE = "double_bond";
-const const_IWSubstring NAME_OF_TRIPLE_BOND_ATTRIBUTE = "triple_bond";
-const const_IWSubstring NAME_OF_AROMATIC_BOND_ATTRIBUTE = "aromatic_bond";
-const const_IWSubstring NAME_OF_BOND_SMARTS_ATTRIBUTE = "bond_smarts";
-
-const const_IWSubstring NAME_OF_AROMATICITY_ATTRIBUTE = "aromatic";
-const const_IWSubstring NAME_OF_OR_AROMATICITY_SPECIFIER = "or_aromatic";
-const const_IWSubstring NAME_OF_AND_AROMATICITY_SPECIFIER = "and_aromatic";
-const const_IWSubstring NAME_OF_REJECTION_ATTRIBUTE = "rejection";
-const const_IWSubstring NAME_OF_ATOMIC_NUMBER_ATTRIBUTE = "atomic_number";
-const const_IWSubstring NAME_OF_ATOMIC_SYMBOL_ATTRIBUTE = "atomic_symbol";
-const const_IWSubstring NAME_OF_NCON_ATTRIBUTE = "ncon";
-const const_IWSubstring NAME_OF_FORMAL_CHARGE_ATTRIBUTE = "formal_charge";
-const const_IWSubstring NAME_OF_CHARGED_ATTRIBUTE = "charged";
-const const_IWSubstring NAME_OF_HCOUNT_ATTRIBUTE = "hcount";
-const const_IWSubstring NAME_OF_NBONDS_ATTRIBUTE = "nbonds";
-const const_IWSubstring NAME_OF_NRINGS_ATTRIBUTE = "nrings";
-const const_IWSubstring NAME_OF_RING_BOND_COUNT_ATTRIBUTE = "ring_bond_count";
-const const_IWSubstring NAME_OF_CHIRALITY_SPECIFIER = "chirality";
-const const_IWSubstring NAME_OF_UNSATURATION_ATTRIBUTE = "unsaturation";
-const const_IWSubstring NAME_OF_DAYLIGHT_X_ATTRIBUTE = "daylight_x";
-const const_IWSubstring NAME_OF_LONE_PAIR_SPECIFIER = "lone_pair";
-const const_IWSubstring NAME_OF_ISOTOPE_ATTRIBUTE = "isotope";
-const const_IWSubstring NAME_OF_NUMBER_ISOTOPIC_ATOMS_ATTRIBUTE = "isotopic_atoms";
-const const_IWSubstring NAME_OF_CHIRAL_CENTRE_ATTRIBUTE = "chiral_center";
-const const_IWSubstring NAME_OF_SORT_MATCHES_BY = "sort_matches";
-
-// The isolated_ring attribute is deprecated, use fused system size
-
-const const_IWSubstring NAME_OF_ISOLATED_RING_ATTRIBUTE = "isolated_ring";
-
-const const_IWSubstring NAME_OF_INITIAL_ATOM_NUMBER_ATTRIBUTE = "initial_atom_number";
-const const_IWSubstring NAME_OF_ATOM_MAP_NUMBER_ATTRIBUTE = "atom_map_number";
-const const_IWSubstring NAME_OF_FUSED_SYSTEM_SIZE_ATTRIBUTE = "fused_system_size";
-const const_IWSubstring NAME_OF_RING_ID_SPECIFIER = "ring_id";
-const const_IWSubstring NAME_OF_FRAGMENT_ID_SPECIFIER = "fragment_id";
-const const_IWSubstring NAME_OF_ATTACHED_HETEROATOM_COUNT_SPECIFIER = "attached_heteroatom_count";
-const const_IWSubstring NAME_OF_COMMENT_ATTRIBUTE = "comment";
-const const_IWSubstring NAME_OF_TEXT_IDENTIFIER_ATTRIBUTE = "text_identifier";
-const const_IWSubstring NAME_OF_VERSION_ATTRIBUTE = "version";
-const const_IWSubstring NAME_OF_VINYL_ATTRIBUTE = "vinyl";
-const const_IWSubstring NAME_OF_ARYL_ATTRIBUTE  = "aryl";
-const const_IWSubstring NAME_OF_DEFINE_HETEROATOMS_ATTRIBUTE = "define_heteroatoms";
-const const_IWSubstring NAME_OF_HETEROATOMS_ATTRIBUTE = "heteroatom_count";
-const const_IWSubstring NAME_OF_ENVIRONMENT_REJECTION = "environment_rejection";
-const const_IWSubstring NAME_OF_ENVIRONMENT_HITS_NEEDED_ATTRIBUTE = "environment_hits_needed";
-const const_IWSubstring NAME_OF_ENVIRONMENT_OPTIONAL_REJECTION = "optional_rejection";
-const const_IWSubstring NAME_OF_MAX_ENVIRONMENT_MATCHES_PER_ATTACHMENT_POINT = "max_env_matches_per_anchor";
-const const_IWSubstring NAME_OF_ENVIRONMENTS_CAN_SHARE_ATTACHMENT_POINTS = "env_matches_share_attachment_points";
-const const_IWSubstring NAME_OF_QUERY_HITS_NEEDED_ATTRIBUTE = "hits_needed";
-const const_IWSubstring NAME_OF_FUSED_RING_SYSTEM_SIZE = "fused_ring_system_size";
-const const_IWSubstring NAME_OF_ONE_EMBEDDING_PER_START_ATOM = "one_embedding_per_start_atom";
-const const_IWSubstring NAME_OF_UNIQUE_EMBEDDINGS_ONLY = "unique_embeddings_only";
-const const_IWSubstring NAME_OF_EMBEDDINGS_DO_NOT_OVERLAP_ATTRIBUTE = "embeddings_do_not_overlap";
-const const_IWSubstring NAME_OF_NORMALISE_RC_PER_HITS_NEEDED = "normalise_rc_per_hits_needed";
-const const_IWSubstring NAME_OF_SUBTRACT_FROM_RC = "subtract_from_rc";
-const const_IWSubstring NAME_OF_RESPECT_INITIAL_NUMBERING_ATTRIBUTE = "respect_initial_numbering";
-const const_IWSubstring NAME_OF_MAX_MATCHES_TO_FIND = "max_matches_to_find";
-const const_IWSubstring NAME_OF_NCON_IGNORE_SINGLY_CONNECTED = "ncon_ignore_singly_connected";
-const const_IWSubstring NAME_OF_NUMERIC_VALUE_ATTRIBUTE = "numeric_value";
-const const_IWSubstring NAME_OF_INCLUDE_IN_EMBEDDING_ATTRIBUTE = "include_in_embedding";
-const const_IWSubstring NAME_OF_DO_NOT_PERCEIVE_SYMMETRIC_EQUIVALENTS = "do_not_perceive_symmetric_equivalents";
-const const_IWSubstring NAME_OF_ATOM_SMARTS_ATTRIBUTE = "atom_smarts";
-const const_IWSubstring NAME_OF_SMARTS_ATTRIBUTE = "smarts";
-const const_IWSubstring NAME_OF_SMILES_ATTRIBUTE = "smiles";
-const const_IWSubstring NAME_OF_RING_SIZE_ATTRIBUTE = "ring_size";
-const const_IWSubstring NAME_OF_RINGS_THAT_MUST_MATCH_RING_SIZE_ATTRIBUTE = "rings_that_must_match_ring_size";
-const const_IWSubstring NAME_OF_AROMATIC_RING_SIZE_ATTRIBUTE = "aromatic_ring_size";
-const const_IWSubstring NAME_OF_ALIPHATIC_RING_SIZE_ATTRIBUTE = "aliphatic_ring_size";
-const const_IWSubstring NAME_OF_RING_FUSED_ATTRIBUTE = "fused";
-const const_IWSubstring NAME_OF_NATOMS_ATTRIBUTE = "natoms";
-const const_IWSubstring NAME_OF_PREFERENCE_VALUE_ATTRIBUTE = "preference_value";
-const const_IWSubstring NAME_OF_SUM_ALL_PREFERENCE_HITS_ATTRIBUTE = "sum_all_preference_hits";
-const const_IWSubstring NAME_OF_DISTANCE_BETWEEN_HITS_ATTRIBUTE = "distance_between_hits";
-const const_IWSubstring NAME_OF_DISTANCE_BETWEEN_HITS_NCHECK_ATTRIBUTE = "distance_between_hits_ncheck";
-const const_IWSubstring NAME_OF_FAIL_IF_EMBEDDINGS_TOO_CLOSE_ATTRIBUTE = "fail_if_embeddings_too_close";
-const const_IWSubstring NAME_OF_SORT_BY_PREFERENCE_VALUE_ATTRIBUTE = "sort_by_preference_value";
-const const_IWSubstring NAME_OF_HETEROATOMS_MATCHED_ATTRIBUTE = "heteroatoms_matched";
-const const_IWSubstring NAME_OF_RING_ATOMS_MATCHED_ATTRIBUTE = "ring_atoms_matched";
-const const_IWSubstring NAME_OF_HETEROATOMS_IN_RING_ATTRIBUTE = "heteroatoms_in_ring";
-const const_IWSubstring NAME_OF_UNMATCHED_ATOMS_ATTACHED = "unmatches_atoms_attached";
-const const_IWSubstring NAME_OF_ALL_HITS_IN_SAME_FRAGMENT_ATTRIBUTE = "all_hits_in_same_fragment";
-const const_IWSubstring NAME_OF_ONLY_MATCH_LARGEST_FRAGMENT_ATTRIBUTE = "only_match_largest_fragment";
-const const_IWSubstring NAME_OF_NUMBER_FRAGMENTS_ATTRIBUTE = "number_fragments";
-const const_IWSubstring NAME_OF_EACH_COMPONENT_SEARCH_ATTRIBUTE = "match_each_component";
-const const_IWSubstring NAME_OF_NUMBER_SPINACH_GROUPS = "number_spinach_groups";
-const const_IWSubstring NAME_OF_NUMBER_NON_SPINACH_GROUPS = "number_non_spinach_groups";
-const const_IWSubstring NAME_OF_ATOMS_IN_SPINACH_ATTRIBUTE = "atoms_in_spinach_group";
-const const_IWSubstring NAME_OF_LENGTH_OF_SPINACH_ATTRIBUTE = "length_of_spinach_group";
-const const_IWSubstring NAME_OF_DISTANCE_TO_ANOTHER_RING_ATTRIBUTE = "distance_to_another_ring";
-const const_IWSubstring NAME_OF_NET_FORMAL_CHARGE_ATTRIBUTE = "net_formal_charge";
-
-const const_IWSubstring NAME_OF_ALL_RINGS_KEKULE = "all_rings_kekule";
-
-const const_IWSubstring NAME_OF_SYMMETRY_DEGREE_ATTRIBUTE = "symmetry_degree";
-const const_IWSubstring NAME_OF_SYMMETRY_GROUP_ATTRIBUTE = "symmetry_group";
-
-const const_IWSubstring NAME_OF_ENVIRONMENT_MUST_MATCH_UNMATCHED_ATOMS_ATTRIBUTE = "environment_must_match_unmatched_atoms";
-const const_IWSubstring NAME_OF_ENVIRONMENT_CAN_MATCH_IN_RING_ATOMS = "environment_can_match_in_ring_atoms";
-
-const const_IWSubstring NAME_OF_SPINACH_ATOMS_ATTRIBUTE = "spinach_atoms";
-const const_IWSubstring NAME_OF_INTER_RING_ATOMS_ATTRIBUTE = "inter_ring_atoms";
-
-const const_IWSubstring NAME_OF_NO_OTHER_SUBSTITUENTS_ALLOWED_ATTRIBUTE = "no_other_substituents_allowed";
-
-const const_IWSubstring NAME_OF_FUSED_RING_COUNT_SPECIFIER = "fused_ring_count";
-const const_IWSubstring NAME_OF_ISOLATED_RING_COUNT_SPECIFIER = "isolated_ring_count";
-const const_IWSubstring NAME_OF_AROMATIC_RING_COUNT_SPECIFIER = "aromatic_ring_count";
-const const_IWSubstring NAME_OF_NON_AROMATIC_RING_COUNT_SPECIFIER = "non_aromatic_ring_count";
-const const_IWSubstring NAME_OF_STRONGLY_FUSED_RING_COUNT_SPECIFIER = "strongly_fused_ring_count";
-
-const const_IWSubstring NAME_OF_FUSED_AROMATIC_NEIGHBOURS_SPECIFIER = "fused_aromatic_neighbours";
-const const_IWSubstring NAME_OF_FUSED_NON_AROMATIC_NEIGHBOURS_SPECIFIER = "fused_non_aromatic_neighbours";
-const const_IWSubstring NAME_OF_LARGEST_NUMBER_SHARED_BONDS_SPECIFIER = "shared_bonds";
-const const_IWSubstring NAME_OF_STRONGLY_FUSED_RING_NEIGHBOUR_SPECIFIER = "strongly_fused_neighbours";
-const const_IWSubstring NAME_OF_DISTANCE_BETWEEN_ROOT_ATOMS_SPECIFIER = "dist_between_root_atoms";
-const const_IWSubstring NAME_OF_NO_MATCHED_ATOMS_BETWEEN_SPECIFIER = "no_matched_atoms_between";
-const const_IWSubstring NAME_OF_LINK_ATOMS_SPECIFIER = "link_atoms";
-
-const const_IWSubstring NAME_OF_ISOLATED_RING_OBJECTS = "isolated_ring_objects";
-
-const const_IWSubstring NAME_OF_SAVE_HITS_ATTRIBUTE = "save_hits";
-
-const const_IWSubstring NAME_OF_IMPLICIT_RING_CONDITION = "implicit_ring_condition";
-
-const const_IWSubstring NAME_OF_ATOMS_WITH_PI_ELECTRONS = "atoms_with_pi_electrons";
-
-const const_IWSubstring NAME_OF_UNMATCHED_ATOMS = "unmatched_atoms";
-const const_IWSubstring NAME_OF_MIN_FRACTION_ATOMS_MATCHED = "min_fraction_atoms_matched";
-const const_IWSubstring NAME_OF_MAX_FRACTION_ATOMS_MATCHED = "max_fraction_atoms_matched";
-
-const const_IWSubstring NAME_OF_HYDROGEN_OK_AS_ENVIRONMENT_MATCH = "hydrogen_ok";
-#endif
-
 constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
 
 // Having unbalanced braces in the code messes up matching in the editor.
 constexpr char open_brace = '{';
+
+using google::protobuf::Descriptor;
+using google::protobuf::FieldDescriptor;
+using google::protobuf::Reflection;
+
+template <typename P>
+void
+SetValue(uint32_t value,
+         const char * min_max,
+         const char * name_stem,
+         const Descriptor* descriptor,
+         const Reflection* reflection,
+         P& proto) {
+  IWString name;
+  name << min_max << name_stem;
+  const FieldDescriptor* fd = descriptor->FindFieldByName(name.null_terminated_chars());
+  reflection->SetUInt32(&proto, fd, value);
+}
+
+// Convert `values` to `proto`.
+// The name for the proto field is `name_stem`, with
+// min_name_stem and max_name_stem possibly being populated.
+template <typename P>
+int
+SetProtoValues(const Min_Max_Specifier<int> & values,
+               const char * name_stem,
+               P& proto) {
+  const Descriptor* descriptor = proto.GetDescriptor();
+  const Reflection * reflection = proto.GetReflection();
+  if (values.size() > 0) {
+    const FieldDescriptor * fd = descriptor->FindFieldByName(name_stem);
+    for (int v : values) {
+      reflection->AddUInt32(&proto, fd, static_cast<uint32_t>(v));
+    }
+  }
+
+  int v;
+  if (values.min(v)) {
+    SetValue<P>(v, "min_", name_stem, descriptor, reflection, proto);
+  }
+  if (values.max(v)) {
+    SetValue<P>(v, "max_", name_stem, descriptor, reflection, proto);
+  }
+
+  return 1;
+}
+
+template <typename P>
+int
+SetProtoIfSet(int value,
+              int minval,
+              const char * name,
+              P& proto) {
+  if (value < minval) {
+    return 0;
+  }
+
+  const Descriptor* descriptor = proto.GetDescriptor();
+  const Reflection * reflection = proto.GetReflection();
+  const FieldDescriptor* fd = descriptor->FindFieldByName(name);
+  reflection->SetUInt32(&proto, fd, value);
+
+  return 1;
+}
 
 // Convert between the enumeration in the proto and the operators
 // needed by IW_Logical_Expression.
@@ -1296,7 +1208,9 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   } else {
     proto.set_perceive_symmetric_equivalents(true);
   }
-  proto.set_implicit_ring_condition(_implicit_ring_condition);
+  if (_implicit_ring_condition >= 0) {
+    proto.set_implicit_ring_condition(_implicit_ring_condition);
+  }
   proto.set_all_hits_in_same_fragment(_all_hits_in_same_fragment);
   proto.set_only_match_largest_fragment(_only_keep_matches_in_largest_fragment);
   proto.set_embeddings_do_not_overlap(_embeddings_do_not_overlap);
@@ -1320,28 +1234,28 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   // Not sure what is going on here...
   //proto.set_distance_between_hits_ncheck(_distance_between_hits_ncheck);
 
-  SETPROTOVALUES(proto, attached_heteroatom_count, int);
-  SETPROTOVALUES(proto, hits_needed, int);
-  SETPROTOVALUES(proto, ring_atoms_matched, int);
-  SETPROTOVALUES(proto, heteroatoms_matched, int);
-  SETPROTOVALUES(proto, heteroatoms_in_molecule, int);
-  SETPROTOVALUES(proto, natoms, int);
-  SETPROTOVALUES(proto, nrings, int);
-  SETPROTOVALUES(proto, ncon, int);
-  SETPROTOVALUES(proto, fused_rings, int);
-  SETPROTOVALUES(proto, strongly_fused_rings, int);
-  SETPROTOVALUES(proto, isolated_rings, int);
-  SETPROTOVALUES(proto, isolated_ring_objects, int);
-  SETPROTOVALUES(proto, aromatic_rings, int);
-  SETPROTOVALUES(proto, non_aromatic_rings, int);
-  SETPROTOVALUES(proto, distance_between_hits, int);
-  SETPROTOVALUES(proto, number_isotopic_atoms, int);
-  SETPROTOVALUES(proto, number_fragments, int);
-  SETPROTOVALUES(proto, distance_between_root_atoms, int);
-  SETPROTOVALUES(proto, atoms_in_spinach, int);
-  SETPROTOVALUES(proto, inter_ring_atoms, int);
-  SETPROTOVALUES(proto, unmatched_atoms, int);
-  SETPROTOVALUES(proto, net_formal_charge, int);
+  SetProtoValues(_attached_heteroatom_count, "attached_heteroatom_count", proto);
+  SetProtoValues(_hits_needed, "hits_needed", proto);
+  SetProtoValues(_ring_atoms_matched, "ring_atoms_matched", proto);
+  SetProtoValues(_heteroatoms_matched, "heteroatoms_matched", proto);
+  SetProtoValues(_heteroatoms_in_molecule, "heteroatoms_in_molecule", proto);
+  SetProtoValues(_natoms, "natoms", proto);
+  SetProtoValues(_nrings, "nrings", proto);
+  SetProtoValues(_ncon, "ncon", proto);
+  SetProtoValues(_fused_rings, "fused_rings", proto);
+  SetProtoValues(_strongly_fused_rings, "strongly_fused_rings", proto);
+  SetProtoValues(_isolated_rings, "isolated_rings", proto);
+  SetProtoValues(_isolated_ring_objects, "isolated_ring_objects", proto);
+  SetProtoValues(_aromatic_rings, "aromatic_rings", proto);
+  SetProtoValues(_non_aromatic_rings, "non_aromatic_rings", proto);
+  SetProtoValues(_distance_between_hits, "distance_between_hits", proto);
+  SetProtoValues(_number_isotopic_atoms, "number_isotopic_atoms", proto);
+  SetProtoValues(_number_fragments, "number_fragments", proto);
+  SetProtoValues(_distance_between_root_atoms, "distance_between_root_atoms", proto);
+  SetProtoValues(_atoms_in_spinach, "atoms_in_spinach", proto);
+  SetProtoValues(_inter_ring_atoms, "inter_ring_atoms", proto);
+  SetProtoValues(_unmatched_atoms, "unmatched_atoms", proto);
+  SetProtoValues(_net_formal_charge, "net_formal_charge", proto);
   // _min_fraction_atoms_matched
   // _max_fraction_atoms_matched
   proto.set_environment_must_match_unmatched_atoms(_environment_must_match_unmatched_atoms);
@@ -1354,6 +1268,7 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
     env->BuildProto(*proto.add_environment_no_match());
   }
 
+  cerr << "Processing " << _ring_system_specification.size() << " ring system specifiers\n";
   for (const auto * ring_sys : _ring_system_specification) {
     SubstructureSearch::SubstructureRingSystemSpecification * p = proto.add_ring_system_specifier();
     ring_sys->BuildProto(*p);
@@ -1367,7 +1282,7 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   for (const auto * ele : _elements_needed) {
     ele->BuildProto(*proto.add_elements_needed());
   }
-  SETPROTOVALUES(proto, aromatic_atoms, int);
+  SetProtoValues(_aromatic_atoms, "aromatic_atoms", proto);
   proto.set_unique_embeddings_only(_find_unique_embeddings_only);
   ADDREPEATEDFIELD(proto, heteroatoms);
   proto.set_respect_initial_atom_numbering(_respect_initial_atom_numbering);
@@ -1421,8 +1336,8 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
     proto.set_text_identifier(_text_identifier.data(), _text_identifier.length());  // 3
   }
 
-  SET_PROTO_IF_SET(proto, atom_map_number, -1);  // 4
-  SET_PROTO_IF_SET(proto, initial_atom_number, -1);  // 5
+  SetProtoIfSet(_atom_map_number, -1, "atom_map_number", proto);  // 4
+  SetProtoIfSet(_initial_atom_number, -1, "initial_atom_number", proto);  // 4
 #ifdef OR_ID_NO_LONGER_PROCESSED
   SET_PROTO_IF_SET(proto, or_id, 0);  // 6
 #endif
@@ -1464,7 +1379,8 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
     SETPROTOVALUES(proto, unmatched_atoms_attached, int);
   }
 
-  SET_PROTO_IF_SET(proto, atom_type_group, 0);
+//SET_PROTO_IF_SET(proto, atom_type_group, 0);
+  SetProtoIfSet(_atom_map_number, 0, "atom_type_group", proto);
 
   if (_components.number_elements() == 0) {
     const Substructure_Atom_Specifier* me = this;
@@ -1536,14 +1452,14 @@ Substructure_Atom_Specifier::BuildProto(SubstructureSearch::SubstructureAtomSpec
     }
   }
 
-  SETPROTOVALUES(proto, ncon, int);  // 3
-  SETPROTOVALUES(proto, ncon2, int);  // 6
-  SETPROTOVALUES(proto, nbonds, int);  // 9
-  SETPROTOVALUES(proto, formal_charge, int);  // 12
-  SETPROTOVALUES(proto, nrings, int);  // 15
-  SETPROTOVALUES(proto, ring_bond_count, int);  // 18
-  SETPROTOVALUES(proto, ring_size, int);  // 21
-  SETPROTOVALUES(proto, hcount, int);  // 24
+  SetProtoValues(_ncon, "ncon", proto);  // 3
+  SetProtoValues(_ncon2, "ncon2", proto);  // 6
+  SetProtoValues(_nbonds, "nbonds", proto);  // 9
+  SetProtoValues(_formal_charge, "formal_charge", proto);  // 12
+  SetProtoValues(_nrings, "nrings", proto);  // 15
+  SetProtoValues(_ring_bond_count, "ring_bond_count", proto);  // 18
+  SetProtoValues(_ring_size, "ring_size", proto);  // 21
+  SetProtoValues(_hcount, "hcount", proto);  // 24
   if (_aromaticity == SUBSTRUCTURE_NOT_SPECIFIED) {
   }  else if (_aromaticity == AROMATIC) {  // 27
     proto.set_aromatic(true);
@@ -1552,24 +1468,24 @@ Substructure_Atom_Specifier::BuildProto(SubstructureSearch::SubstructureAtomSpec
   }
   if (_chirality != SUBSTRUCTURE_NOT_SPECIFIED)
     proto.set_chirality(true);  // 28
-  SETPROTOVALUES(proto, aromatic_ring_size, int);  // 30
-  SETPROTOVALUES(proto, aliphatic_ring_size, int);  // 33
-  SETPROTOVALUES(proto, attached_heteroatom_count, int);  // 36
-  SETPROTOVALUES(proto, lone_pair_count, int);  // 39
-  SETPROTOVALUES(proto, unsaturation, int);  // 42
-  SETPROTOVALUES(proto, daylight_x, int);  // 45
-  SETPROTOVALUES(proto, isotope, int);  // 48
-  SETPROTOVALUES(proto, aryl, int);  // 51
-  SETPROTOVALUES(proto, vinyl, int);  // 54
-  SETPROTOVALUES(proto, fused_system_size, int);  // 57
+  SetProtoValues(_aromatic_ring_size, "aromatic_ring_size", proto);  // 30
+  SetProtoValues(_aliphatic_ring_size, "aliphatic_ring_size", proto);  // 33
+  SetProtoValues(_attached_heteroatom_count, "attached_heteroatom_count", proto);  // 36
+  SetProtoValues(_lone_pair_count, "lone_pair_count", proto);  // 39
+  SetProtoValues(_unsaturation, "unsaturation", proto);  // 42
+  SetProtoValues(_daylight_x, "daylight_x", proto);  // 45
+  SetProtoValues(_isotope, "isotope", proto);  // 48
+  SetProtoValues(_aryl, "aryl", proto);  // 51
+  SetProtoValues(_vinyl, "vinyl", proto);  // 54
+  SetProtoValues(_fused_system_size, "fused_system_size", proto);  // 57
   if (_all_rings_kekule != SUBSTRUCTURE_NOT_SPECIFIED) {
     proto.set_all_rings_kekule(true);  // 60
   }
-  SETPROTOVALUES(proto, heteroatoms_in_ring, int);  // 61
+  SetProtoValues(_heteroatoms_in_ring, "heteroatoms_in_ring", proto);  // 61
   SET_PROTO_IF_SET(proto, match_spinach_only, -1);  // 64
-  SETPROTOVALUES(proto, scaffold_bonds_attached_to_ring, int);  // 65
+  SetProtoValues(_scaffold_bonds_attached_to_ring, "scaffold_bonds_attached_to_ring", proto);  // 65
   SET_PROTO_IF_SET(proto, preference_value, 0);  // 68
-  SETPROTOVALUES(proto, symmetry_degree, int);  // 69
+  SetProtoValues(_symmetry_degree, "symmetry_degree", proto);  // 69
   SET_PROTO_IF_SET(proto, symmetry_group, 0);  // 72
 
   // Not sure what to do with operator...
@@ -3284,6 +3200,7 @@ Link_Atom::BuildProto(SubstructureSearch::LinkAtoms& proto) const {
   proto.set_a1(_a1);
   proto.set_a2(_a2);
   SETPROTOVALUES(proto, distance, int);
+  SetProtoValues(_distance, "distance", proto);
   return 1;
 }
 
