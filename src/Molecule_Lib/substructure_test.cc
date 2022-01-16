@@ -1774,7 +1774,7 @@ TEST_F(TestSubstructure, TestChiral3Matches)
           atom_number: 2
         }
         left_down {
-          h_or_lp: "H"
+          h_or_lp: HYDROGEN
         }
         right_down {
           atom_number: 3
@@ -2588,7 +2588,7 @@ TEST_F(TestSubstructure, TestRidChainAtomIsNotInTheSameRing) {
 
 TEST_F(TestSubstructure, TestGlobalIDRing) {
   _string_proto = R"(query {
-    ring_specification {
+    ring_specifier {
       base {
         heteroatom_count: 1
         set_global_id: 2

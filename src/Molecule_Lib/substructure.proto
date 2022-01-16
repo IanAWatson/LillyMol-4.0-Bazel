@@ -42,10 +42,14 @@ enum Operator {
 // In a chirality specification, some positions are atom
 // numbers, and others may be an implicit Hydrogen. Leaving
 // the door open to future lone pair specifications.
-message AtomNumberOrHLp {
+message AtomNumberHydrogenLonePair {
+  enum HorLP {
+    HYDROGEN = 1;
+    LONEPAIR = 2;
+  }
   oneof AtomNumberOr {
     uint32 atom_number = 1;
-    string h_or_lp = 2;
+    HorLP h_or_lp = 2;
   }
 }
 
@@ -54,13 +58,13 @@ message SubstructureChiralCenter {
 
   optional uint32 center = 1;
 
-  optional AtomNumberOrHLp top_front = 2;
+  optional AtomNumberHydrogenLonePair top_front = 2;
 
-  optional AtomNumberOrHLp top_back = 3;
+  optional AtomNumberHydrogenLonePair top_back = 3;
 
-  optional AtomNumberOrHLp left_down = 4;
+  optional AtomNumberHydrogenLonePair left_down = 4;
 
-  optional AtomNumberOrHLp right_down = 5;
+  optional AtomNumberHydrogenLonePair right_down = 5;
 }
 
 // A Substructure Bond has one or more bond specifications, combined
@@ -862,7 +866,7 @@ message SingleSubstructureQuery {
   // environments.
   optional bool env_matches_can_share_attachment_points = 97;
 
-  repeated SubstructureRingSpecification ring_specification = 98;
+  repeated SubstructureRingSpecification ring_specifier = 98;
   repeated Operator ring_specification_logexp = 99;
 
   repeated SubstructureRingSystemSpecification ring_system_specifier = 100;

@@ -88,7 +88,7 @@ TEST_F(TestSubstructureRing, TestRingHitsNeededMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           hits_needed: 2
         }
@@ -115,7 +115,7 @@ TEST_F(TestSubstructureRing, TestRingHitsNeededNoMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           min_hits_needed: 3
         }
@@ -142,7 +142,7 @@ TEST_F(TestSubstructureRing, TestAttachedHeteroatomCountMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           attached_heteroatom_count: 1
         }
@@ -170,7 +170,7 @@ TEST_F(TestSubstructureRing, TestAttachedHeteroatomCountNoMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           attached_heteroatom_count: 0
         }
@@ -198,7 +198,7 @@ TEST_F(TestSubstructureRing, TestHeteroatomCountMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           heteroatom_count: 2
         }
@@ -226,7 +226,7 @@ TEST_F(TestSubstructureRing, TestHeteroatomCountNoMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           heteroatom_count: 1
         }
@@ -254,7 +254,7 @@ TEST_F(TestSubstructureRing, TestNconMatchesIsolated)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           ncon: 1
         }
@@ -282,7 +282,7 @@ TEST_F(TestSubstructureRing, TestNconMatchesFused)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           ncon: 2
         }
@@ -311,7 +311,7 @@ TEST_F(TestSubstructureRing, TestallHitsInSameFragmentMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           all_hits_in_same_fragment: true
           hits_needed: 2
@@ -341,7 +341,7 @@ TEST_F(TestSubstructureRing, TestallHitsInSameFragmentNoMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           all_hits_in_same_fragment: true
           hits_needed: 2
@@ -371,7 +371,7 @@ TEST_F(TestSubstructureRing, TestWithinRingUnsaturation)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           within_ring_unsaturation: 2
           hits_needed: 2
@@ -400,7 +400,7 @@ TEST_F(TestSubstructureRing, TestLargestNumberOfBondsSharedWithAnotherRingIsolat
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           largest_number_of_bonds_shared_with_another_ring: 0
         }
@@ -426,7 +426,7 @@ TEST_F(TestSubstructureRing, TestLargestNumberOfBondsSharedWithAnotherRing1)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           largest_number_of_bonds_shared_with_another_ring: 1
         }
@@ -452,7 +452,7 @@ TEST_F(TestSubstructureRing, TestLargestNumberOfBondsSharedWithAnotherRing2)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           largest_number_of_bonds_shared_with_another_ring: 2
         }
@@ -478,7 +478,7 @@ TEST_F(TestSubstructureRing, TestLargestNumberOfBondsSharedWithAnotherRingNoMatc
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           largest_number_of_bonds_shared_with_another_ring: 1
         }
@@ -504,7 +504,7 @@ TEST_F(TestSubstructureRing, TestPiElectrionsZero)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           atoms_with_pi_electrons: 0
         }
@@ -530,7 +530,7 @@ TEST_F(TestSubstructureRing, TestPiElectrionsBenzene)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           atoms_with_pi_electrons: 6
         }
@@ -556,7 +556,7 @@ TEST_F(TestSubstructureRing, TestStronglyFusedRingNeighbours)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           strongly_fused_ring_neighbours: 2
         }
@@ -582,7 +582,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentZeroMatchLess)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment: "<2c-F"
         }
@@ -608,7 +608,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentOkMatchLess)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment: "<2c-F"
         }
@@ -634,7 +634,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentAnd)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment: "<2c-F&&1c-N"
         }
@@ -660,7 +660,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentOr)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment: "<2c-F||1c-N"
         }
@@ -686,7 +686,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentXor1)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment: "<2c-F^^1c-N"
         }
@@ -714,7 +714,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentXor2)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         aromatic: true
         base {
           environment: "<2c-F^^1c-N"
@@ -742,7 +742,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentXor3)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment: "<2c-F^^1c-N"
         }
@@ -768,7 +768,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentEnvironmentCanMatchInRingAtoms)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment_can_match_in_ring_atoms: true
           environment: "1ncN"
@@ -795,7 +795,7 @@ TEST_F(TestSubstructureRing, TestEnvironmentEnvironmentCanMatchInRingAtomsX)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         base {
           environment_can_match_in_ring_atoms: true
           environment: "1ncN"
@@ -823,7 +823,7 @@ TEST_F(TestSubstructureRing, TestFusedNoRing)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused: 0
       }
       smarts: "*"
@@ -847,7 +847,7 @@ TEST_F(TestSubstructureRing, TestFused0)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused: 0
       }
       smarts: "*"
@@ -871,7 +871,7 @@ TEST_F(TestSubstructureRing, TestFused2)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused: 2
         base {
           hits_needed: 1
@@ -899,7 +899,7 @@ TEST_F(TestSubstructureRing, TestFusedAdamantane2)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused: 2
         base {
           hits_needed: 3
@@ -926,7 +926,7 @@ TEST_F(TestSubstructureRing, TestFused3)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused: 3
         ring_size: 4
         base {
@@ -954,7 +954,7 @@ TEST_F(TestSubstructureRing, TestFusedAromaticNeighborsNotFusedAtAll)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused_aromatic_neighbours: 1
       }
       smarts: "*"
@@ -978,7 +978,7 @@ TEST_F(TestSubstructureRing, TestFusedAromaticNeighborsZero)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused_aromatic_neighbours: 0
       }
       smarts: "*"
@@ -1002,7 +1002,7 @@ TEST_F(TestSubstructureRing, TestFusedAromaticNeighborsMatches2)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused_aromatic_neighbours: 2
       }
       smarts: "C"
@@ -1026,7 +1026,7 @@ TEST_F(TestSubstructureRing, TestFusedAromaticNeighborsMatches1)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused_aromatic_neighbours: 1
       }
       smarts: "[Cx2H2D2T0G0AX4+0]"
@@ -1050,7 +1050,7 @@ TEST_F(TestSubstructureRing, TestFusedNonAromaticNoRingsMin)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         min_fused_non_aromatic_neighbours: 1
       }
       smarts: "[*]";
@@ -1074,7 +1074,7 @@ TEST_F(TestSubstructureRing, TestFusedNonAromaticNoRingsNeverMatches)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused_non_aromatic_neighbours: 0
       }
       smarts: "[*]";
@@ -1098,7 +1098,7 @@ TEST_F(TestSubstructureRing, TestFusedNonAromaticRingsNeedToMatch)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         max_fused_non_aromatic_neighbours: 1
       }
       smarts: "[*]";
@@ -1122,7 +1122,7 @@ TEST_F(TestSubstructureRing, TestFusedNonAromaticNeighborsNoSpiro)
 {
   _string_proto = R"(
     query {
-      ring_specification {
+      ring_specifier {
         fused_non_aromatic_neighbours: 1
       }
       smarts: "[aT2]";

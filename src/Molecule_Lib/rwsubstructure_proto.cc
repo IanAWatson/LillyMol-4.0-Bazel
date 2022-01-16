@@ -1223,10 +1223,12 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   ADDREPEATEDFIELD(proto, numeric_value);
 
   // TODO: implement this
+#ifdef IMPLEMENT_NO_MATCHED_ATOMS_BETWEEN
   for (const auto * nmb : _no_matched_atoms_between) {
-//  SubstructureSearch::NoMatchedAtomsBetween * p = proto.add_no_matched_atoms_between();
-//  nmb->BuildProtoNoBond(*p);
+    SubstructureSearch::NoMatchedAtomsBetween * p = proto.add_no_matched_atoms_between();
+    nmb->BuildProtoNoBond(*p);
   }
+#endif
   proto.set_no_matched_atoms_between_exhaustive(_no_matched_atoms_between_exhaustive);
 
   for (const auto * lnk : _link_atom) {
@@ -1235,8 +1237,8 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   }
   proto.set_fail_if_embeddings_too_close(_fail_if_embeddings_too_close);
 
-  // Not sure what is going on here...
-  //proto.set_distance_between_hits_ncheck(_distance_between_hits_ncheck);
+  if (_matched_atoms_to_check_for_hits_too_close > 0)
+    proto.set_distance_between_hits_ncheck(_matched_atoms_to_check_for_hits_too_close);
 
   SetProtoValues(_attached_heteroatom_count, "attached_heteroatom_count", proto);
   SetProtoValues(_hits_needed, "hits_needed", proto);
@@ -1260,9 +1262,14 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   SetProtoValues(_inter_ring_atoms, "inter_ring_atoms", proto);
   SetProtoValues(_unmatched_atoms, "unmatched_atoms", proto);
   SetProtoValues(_net_formal_charge, "net_formal_charge", proto);
-  // _min_fraction_atoms_matched
-  // _max_fraction_atoms_matched
   proto.set_environment_must_match_unmatched_atoms(_environment_must_match_unmatched_atoms);
+
+  if (_min_fraction_atoms_matched > 0.0f) {
+    proto.set_min_fraction_atoms_matched(_min_fraction_atoms_matched);
+  }
+  if (_max_fraction_atoms_matched > 0.0f) {
+    proto.set_max_fraction_atoms_matched(_max_fraction_atoms_matched);
+  }
 
   // TODO: Do something with _environments_can_share_attachment_points
   for (const auto* env : _environment) {
@@ -1279,7 +1286,7 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   }
 
   for (const auto * ring : _ring_specification) {
-    SubstructureSearch::SubstructureRingSpecification* p = proto.add_ring_specification();
+    SubstructureSearch::SubstructureRingSpecification* p = proto.add_ring_specifier();
     ring->BuildProto(*p);
   }
 
@@ -1502,7 +1509,7 @@ Substructure_Atom_Specifier::BuildProto(SubstructureSearch::SubstructureAtomSpec
 int
 Single_Substructure_Query::_parse_ring_specifier(const SubstructureSearch::SingleSubstructureQuery& proto)
 {
-  for (const auto& ring_spec : proto.ring_specification())
+  for (const auto& ring_spec : proto.ring_specifier())
   {
     Substructure_Ring_Specification * r = new Substructure_Ring_Specification();
     if (! r->ConstructFromProto(ring_spec))
@@ -2249,7 +2256,7 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
     return 0;
   }
 
-  if (proto.ring_specification_size() > 0)
+  if (proto.ring_specifier_size() > 0)
   {
     if ( ! _parse_ring_specifier(proto))
       return 0;
@@ -2924,7 +2931,7 @@ Link_Atom::ConstructFromProto(const SubstructureSearch::LinkAtoms & proto)
 #ifdef IMPLEMENT_THIS
 TODO
 int
-Single_Substructure_Query::_add_component(const SubstructureSearch::SubstructureChiralCenter::AtomNumberOrHLp& atom_or,
+Single_Substructure_Query::_add_component(const SubstructureSearch::SubstructureChiralCenter::AtomNumberHydrogenLonePair&& atom_or,
     void (Substructure_Chiral_Centre::*)(atom_number_t) setter,
     resizable_array<int>& numbers_encountered)
 {
@@ -2934,7 +2941,7 @@ Single_Substructure_Query::_add_component(const SubstructureSearch::Substructure
 int
 Single_Substructure_Query::_build_chirality_component(const SubstructureSearch::SubstructureChiralCenter& proto,
                                                       void (Substructure_Chiral_Centre::* ptrmfn)(const Substructure_Atom*),
-                                                      const SubstructureSearch::AtomNumberOrHLp& atom_or,
+                                                      const SubstructureSearch::AtomNumberHydrogenLonePair& atom_or,
                                                       Substructure_Chiral_Centre& c,
                                                       resizable_array<int>& numbers_encountered)
 {
@@ -2957,12 +2964,12 @@ Single_Substructure_Query::_build_chirality_component(const SubstructureSearch::
     }
     (c.*ptrmfn)(a);
   }
-  else
+  else  // hydrogen or lone pair 
   { 
-    const IWString h_or_lp = atom_or.h_or_lp();
-    if ('H' == h_or_lp)
+    const auto h_or_lp = atom_or.h_or_lp();
+    if (h_or_lp == SubstructureSearch::AtomNumberHydrogenLonePair::HYDROGEN)
       ;
-    else if ("LP" == h_or_lp) 
+    else if (h_or_lp == SubstructureSearch::AtomNumberHydrogenLonePair::LONEPAIR) 
     {
       cerr <<"Single_Substructure_Query::_build_chirality_specification_from_proto:lp directive not supported yet " << proto.ShortDebugString() << endl;
       return 0;
@@ -3212,7 +3219,41 @@ Link_Atom::BuildProto(SubstructureSearch::LinkAtoms& proto) const {
 int
 Substructure_Chiral_Centre::BuildProto(SubstructureSearch::SubstructureChiralCenter& proto) const {
   proto.set_center(_numeric->a());
-  // TODO implement this
+  const auto tf = _numeric->top_front();
+  if (tf == CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN) {
+    proto.mutable_top_front()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::HYDROGEN);
+  } else if (tf == CHIRAL_CONNECTION_IS_LONE_PAIR) {
+    proto.mutable_top_front()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::LONEPAIR);
+  } else {
+    proto.mutable_top_front()->set_atom_number(tf);
+  }
+
+  const auto tb = _numeric->top_back();
+  if (tb == CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN) {
+    proto.mutable_top_back()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::HYDROGEN);
+  } else if (tb == CHIRAL_CONNECTION_IS_LONE_PAIR) {
+    proto.mutable_top_back()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::LONEPAIR);
+  } else {
+    proto.mutable_top_back()->set_atom_number(tb);
+  }
+
+  const auto ld = _numeric->left_down();
+  if (ld == CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN) {
+    proto.mutable_left_down()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::HYDROGEN);
+  } else if (ld == CHIRAL_CONNECTION_IS_LONE_PAIR) {
+    proto.mutable_left_down()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::LONEPAIR);
+  } else {
+    proto.mutable_left_down()->set_atom_number(ld);
+  }
+
+  const auto rd = _numeric->right_down();
+  if (rd == CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN) {
+    proto.mutable_right_down()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::HYDROGEN);
+  } else if (rd == CHIRAL_CONNECTION_IS_LONE_PAIR) {
+    proto.mutable_right_down()->set_h_or_lp(SubstructureSearch::AtomNumberHydrogenLonePair::LONEPAIR);
+  } else {
+    proto.mutable_right_down()->set_atom_number(rd);
+  }
   return 1;
 }
 
@@ -3220,7 +3261,6 @@ int
 SeparatedAtoms::BuildProto(SubstructureSearch::SeparatedAtoms& proto) const {
   proto.set_a1(_a1);
   proto.set_a2(_a2);
-// TODO name mismatch
-//SETPROTOVALUES(proto, separation, int);
+  SetProtoValues(_separation, "bonds_between", proto);
   return 1;
 }

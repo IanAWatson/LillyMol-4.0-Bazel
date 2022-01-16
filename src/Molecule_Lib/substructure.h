@@ -2612,7 +2612,7 @@ class Single_Substructure_Query
     int _build_chirality_specification_from_msi_attribute(const IWString & s);
     int _build_chirality_component(const SubstructureSearch::SubstructureChiralCenter& proto,
                                                       void (Substructure_Chiral_Centre::* ptrmfn)(const Substructure_Atom *),
-                                                      const SubstructureSearch::AtomNumberOrHLp& atom_or,
+                                                      const SubstructureSearch::AtomNumberHydrogenLonePair& atom_or,
                                                       Substructure_Chiral_Centre& c,
                                                       resizable_array<int>& numbers_encountered);
     int _build_chirality_specification_from_proto(const SubstructureSearch::SubstructureChiralCenter & proto);
