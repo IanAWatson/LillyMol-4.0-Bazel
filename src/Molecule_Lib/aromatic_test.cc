@@ -67,7 +67,10 @@ TEST_P(TestRoundTrip, Various) {
 INSTANTIATE_TEST_SUITE_P(TestRoundTrip, TestRoundTrip, testing::Values(
   // https://issueexplorer.com/issue/rdkit/rdkit/4701
   IWString{"[C:12]12([CH:62]([CH3:65])[c:61]3[cH:64][cH:67][cH:68][cH:66][cH:63]3)[CH:20]4[c:30]5[c:40]6[c:49]7[c:57]8[c:60]([c:59]9[c:55]([c:47]([c:44]([c:52]9[c:51]([c:43]%10[c:35]%11[c:25]%12[c:19]%13%14)[c:53]8[c:45]%11[c:39]6[c:29]4%13)[c:34]([c:24]%15[c:15]%16[c:7]%17[c:3]%18%19)[c:33]%10[c:23]%16[c:16]%12[c:8]%18[c:11]%14[c:5]1%20)[c:37]([c:36]%21[c:26]%22[c:18]%23[c:10]%24[c:13]%25[c:6]%26%27)[c:27]%15[c:17]%22[c:9]%17[c:4]%24[c:1]%19[c:2]%20%26)[c:54]([c:46]%21[c:38]%28[c:28]%23[c:21]%25%29)[c:56]%30[c:48]%28[c:41]%31[c:31]%29[c:22]%32[c:14]2%27)[c:58]%30[c:50]7[c:42]%31[c:32]5%32"},
-  IWString{"[CH3:36][c:30]1[cH:35][cH:41][cH:37][c:31]([c:27]1[N+:26]2=[C:29]([CH-:33][C:40](=[N+:32]([Al+:28]2)[c:39]3[c:42]([cH:45][cH:49][cH:47][c:43]3[CH3:48])[CH3:46])[CH3:44])[CH3:34])[CH3:38]"}
+  IWString{"[CH3:36][c:30]1[cH:35][cH:41][cH:37][c:31]([c:27]1[N+:26]2=[C:29]([CH-:33][C:40](=[N+:32]([Al+:28]2)[c:39]3[c:42]([cH:45][cH:49][cH:47][c:43]3[CH3:48])[CH3:46])[CH3:44])[CH3:34])[CH3:38]"},
+  IWString{"C1Cn2cn[nH]c2=N1"},  // From GBD
+  IWString{"N1=c2[nH][n]c[n]2CC1"}, // From GBD, input is unique form.
+  IWString{"C1CN2C=NNC2=N1"}  // From GBD, input is kekule form.
 ));
 
 }  //namespace

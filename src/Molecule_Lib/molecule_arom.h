@@ -81,8 +81,7 @@
     int _determine_aromaticity_of_fused_systems (int * already_done,
                                                  int * pi_electron_count,
                                                  const int * impossible_aromatic,
-                                                 const int aromaticity_rules,
-                                                 int *);
+                                                 const int aromaticity_rules);
     int _determine_aromaticity (const Set_of_Atoms &,
                                 aromaticity_type_t &,
                                 int &,

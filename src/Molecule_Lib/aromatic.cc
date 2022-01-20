@@ -530,18 +530,14 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
          << aj->implicit_hydrogens() << " = " << aj->ncon() + aj->implicit_hydrogens() << endl;
 #endif
 
-    if (aj->element()->organic())    // great
-      ;
-    else if (aj->permanent_aromatic())
-      ;
-    else
-    {
+    if (aj->element()->organic()) {  // great
+    } else if (aj->permanent_aromatic()) {
+    } else {
       impossible_aromatic = 1;
       return 0;
     }
 
-    if (! aj->valence_ok())
-    {
+    if (! aj->valence_ok()) {
       impossible_aromatic = 1;
       result = NOT_AROMATIC;
       return 0;
@@ -705,6 +701,7 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
     }
     else if (3 == jcon && 5 == jbonds)    // if both bonds in ring, not aromatic
     {
+      // Look for multiple doubly bonded atoms in the system.
       atom_number_t double_bond_1_in_system = INVALID_ATOM_NUMBER;
       atom_number_t double_bond_2_in_system = INVALID_ATOM_NUMBER;
 
@@ -716,8 +713,8 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
 
         atom_number_t ak = b->other(j);
 
-        if (! p.contains(
-                ak))    // found a double bond outside the system, there can't be two in the ring system
+        // If there is a double bond outside the system, there cannot be two in the ring.
+        if (! p.contains(ak))
           break;
 
         if (INVALID_ATOM_NUMBER == double_bond_1_in_system)
@@ -750,19 +747,15 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
         return 1;
       }
 
-      if (2 == jcon && 2 == jbonds &&
-          Pearlman ==
-              aromaticity_determination_type)    // dec 2002, Sulphur never aromatic in Pearlman's world
-      {
+      // dec 2002, Sulphur never aromatic in Pearlman's world
+      if (2 == jcon && 2 == jbonds && Pearlman == aromaticity_determination_type) {
         impossible_aromatic = 1;
         result = NOT_AROMATIC;
         return 1;
       }
 
-      //    Jan 2006: MDDR242489. make it not aromatic
-
-      if (3 == jcon && 4 == jbonds && _doubly_bonded_to_something_outside_ring(j))
-      {
+      // Jan 2006: MDDR242489. make it not aromatic
+      if (3 == jcon && 4 == jbonds && _doubly_bonded_to_something_outside_ring(j)) {
         impossible_aromatic = 1;
         result = NOT_AROMATIC;
         return 1;
@@ -833,7 +826,7 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
 
         const Atom * al = _things[l];
 
-        //      Apr 2004. Conversations with Vijay. c=C does not contribute
+        // Apr 2004. Conversations with Vijay. c=C does not contribute
 
         if (Vijay_Gombar == aromaticity_determination_type && 6 == zj && 6 == al->atomic_number() &&
             ! p.contains(l))
@@ -858,7 +851,9 @@ Molecule::_determine_aromaticity(const Set_of_Atoms & p, aromaticity_type_t & re
 
         //      Atom J is doubly bonded to something outside the ring
 
-        if (1 == al->ncon() || is_non_ring_atom(l) || (! in_same_ring(j, l)))
+        // Jan 2022: make sure C1Cn2cn[nH]c2=N1 is handled.
+        // if (1 == al->ncon() || is_non_ring_atom(l) || (! in_same_ring(j, l)))
+        if (1 == al->ncon() || is_non_ring_atom(l) || (! p.contains(l)))
         {
           if (16 == zj)    // mar 2004. The S atom in O=C1NS(=O)NC2=CC=CC=C12 PBCHM71359875 contributes electrons
             ;
@@ -1720,12 +1715,14 @@ Molecule::_unshared_pi_electrons(const Ring * r, const int * pi_electrons)
 */
 
 int
-Molecule::_determine_aromaticity_of_fused_systems(int * ring_already_done, int * pi_electron_count,
+Molecule::_determine_aromaticity_of_fused_systems(int * ring_already_done,
+                                                  int * pi_electron_count,
                                                   const int * impossible_aromatic,
-                                                  const int aromaticity_rules,
-                                                  int * include_in_ring_systems)
+                                                  const int aromaticity_rules)
 {
   int nr = _sssr_rings.number_elements();
+
+  int * include_in_ring_systems = new_int(nr, 1); std::unique_ptr<int[]> free_include_in_ring_systems(include_in_ring_systems);
 
 #ifdef DEBUG_INCLUDE_IN_RING_SYSTEMS
   cerr << "_determine_aromaticity_of_fused_systems:checking " << nr << " rings\n";
@@ -2009,6 +2006,7 @@ Molecule::_compute_aromaticity(int * already_done, int * impossible_aromatic,
     }
     else if (impossible_aromatic[i] || AROMATIC == arom)
     {
+//    cerr << "Ring " << i << " atoms " << *ri << " either aromatic " << arom << " or impossible_aromatic " << impossible_aromatic[i] << '\n';
       already_done[i] = 1;
       undetermined_rings--;
     }
@@ -2066,11 +2064,8 @@ Molecule::_compute_aromaticity(int * already_done, int * impossible_aromatic,
   // non aromatic by themselves. First look at entire fused systems and see if
   // any of them can be classified as aromatic in their entirety
 
-  int * tmp = new_int(nr, 1);
-  std::unique_ptr<int[]> free_tmp(tmp);
-
   rc = _determine_aromaticity_of_fused_systems(already_done, pi_electron_count, impossible_aromatic,
-                                               aromaticity_rules, tmp);
+                                               aromaticity_rules);
 
   return rc;
 }
@@ -3697,11 +3692,8 @@ Molecule::__kekule_arom_test_rings(const int * process_these_atoms,
   int * impossible_aromatic_not_used = new_int(rings_in_molecule);
   std::unique_ptr<int[]> free_impossible_aromatic_not_used(impossible_aromatic_not_used);
 
-  int * tmp = new_int(rings_in_molecule, 1);
-  std::unique_ptr<int[]> free_tmp(tmp);
-
   int rc = _determine_aromaticity_of_fused_systems(already_done, pi_e, impossible_aromatic_not_used,
-                                                   Simple_4n_plus_2, tmp);
+                                                   Simple_4n_plus_2);
 
   // _compute_aromaticity_with_fused_rings updates the aromaticity information
   // in the molecule. For now, we are leaving it in place, but watch out for
@@ -3815,8 +3807,17 @@ Molecule::_bonded_to_heteroatom_outside_system(atom_number_t zatom, const int * 
     //    atom j is non ring
     //    atom j is not in this ring, nor are atoms j and l in any ring together.
 
-    if (is_non_ring_atom(j) || (0 == aromatic_system[j] && ! in_same_ring(zatom, j)))
+    // A terminal atom is definitely outside the ring, likely most common case.
+    if (_things[j]->ncon() == 1) {
       return 1;
+    }
+
+    // Jan 2022. Make sure we handle C1Cn2cn[nH]c2=N1
+    // if (0 == aromatic_system[j] && ! in_same_ring(zatom, j))
+    //   return 1;
+    if (aromatic_system[j] == 0) {
+      return 1;
+    }
   }
 
   return 0;
@@ -4873,8 +4874,10 @@ Molecule::_convert_atom_to_permanent_aromatic(atom_number_t zatom)
 }
 
 /*
-  Do some rudimentary tests on whether or not an atom can be aromatic.
-  Return 1 if it cannot, 0 if it could
+  Do some rudimentary tests on whether or not any of the atoms in
+  `process_these_atoms` can be aromatic.
+  As atoms are examined, update `aromatic_atoms_found` and `a_atoms_found`.
+  Return 1 if any of the atoms in `process_these_atoms` cannot be aromatic.
 */
 
 int
@@ -5315,7 +5318,7 @@ Molecule::_kekule_suppress_non_aromatic_rings(Kekule_Temporary_Arrays & kta)
     {
       atom_number_t k = r->item(j);
 
-      if (nrings(k) > 1)    // whatever pi electrons this atom has are shared
+      if (nrings(k) > 1)    // whatever pi electrons this atom has are shared: This is wrong, C1Cn2cn[nH]c2=N1 TODO monitor...
         continue;
 
       Atom * ak = _things[k];
@@ -5402,6 +5405,7 @@ Molecule::_only_process_rings_with_all_aromatic_atoms(Kekule_Temporary_Arrays & 
 
   int nr = _sssr_rings.number_elements();
 
+  // Ring numbers that have only some of their atoms in `aromatic_atoms`.
   resizable_array<int> problematic_rings;
 
   for (int i = 0; i < nr; i++)
@@ -5412,11 +5416,10 @@ Molecule::_only_process_rings_with_all_aromatic_atoms(Kekule_Temporary_Arrays & 
 
     //  cerr << "Ring " << i << ' ' << (*ri) << " N = " << n << endl;
 
-    if (n == ri->number_elements())
+    if (n == ri->number_elements())  // All ring members are aromatic
       continue;
 
-    if (0 == n)
-    {
+    if (0 == n) {  // No ring atoms are aromatic.
       process_these_rings[i] = 0;
       continue;
     }

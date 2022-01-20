@@ -25,7 +25,11 @@ int molecules_read = 0;
 
 int molecules_containing_unmarked_chirality = 0;
 
+int test_build_from_unique_smiles = 0;
+
 int failures = 0;
+
+int unique_smiles_cannot_be_parsed = 0;
 
 int display_error_messages = 1;
 
@@ -77,6 +81,9 @@ preprocess(Molecule& m) {
 void
 make_report(std::ostream & output) {
   output << "Read " << molecules_read << " molecules, " << failures << " failures\n";
+  if (test_build_from_unique_smiles) {
+    output << unique_smiles_cannot_be_parsed << " unique smiles could not be parsed\n";
+  }
   if (molecules_containing_unmarked_chirality > 0)
     output << "Skipped " << molecules_containing_unmarked_chirality << " molecules containing unmarked chirality\n";
 }
@@ -118,12 +125,35 @@ contains_unmarked_or_wrong_chirality(Molecule& m) {
 }
 
 int
+MaybeTryBuildFromUniqueSmiles(Molecule& m,
+                              const IWString& initial_smiles) {
+  if (! test_build_from_unique_smiles) {
+    return 1;
+  }
+
+  Molecule m2;
+  if (m2.build_from_smiles(initial_smiles)) {
+    return 1;
+  }
+  ++unique_smiles_cannot_be_parsed;
+  if (stream_for_failures.active()) {
+    stream_for_failures.write(m);
+  }
+  if (display_error_messages) {
+    cerr << "Cannot build from unique smiles " << initial_smiles << ' ' << m.name() << '\n';
+  }
+
+  return 1;
+}
+
+int
 tsmiles(Molecule& m) {
   if (contains_unmarked_or_wrong_chirality(m)) {
     molecules_containing_unmarked_chirality++;
     return 1;
   }
   const IWString initial_smiles = m.unique_smiles();
+  MaybeTryBuildFromUniqueSmiles(m, initial_smiles);
   for (int i = 0; i < permutations; ++i) {
     Molecule mcopy;
     const IWString& rsmi = m.random_smiles();
@@ -180,8 +210,7 @@ tsmiles(const char * fname,
   }
 
   data_source_and_type<Molecule> input(input_type, fname);
-  if (! input.ok())
-  {
+  if (! input.ok()) {
     cerr << "Cannot open '" << fname << "' for input\n";
     return 1;
   }
@@ -190,7 +219,7 @@ tsmiles(const char * fname,
 }
 
 int tsmiles(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vA:l:g:K:i:r:p:qF:hcCs:b");
+  Command_Line cl(argc, argv, "vA:l:g:K:i:r:p:qF:hcCs:bu");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     usage(1);
@@ -198,14 +227,12 @@ int tsmiles(int argc, char** argv) {
 
   verbose = cl.option_count('v');
 
-  if (! process_elements(cl, verbose))
-  {
+  if (! process_elements(cl, verbose)) {
     cerr << "Cannot parse element specifications\n";
     usage(2);
   }
 
-  if (cl.option_present('K'))
-  {
+  if (cl.option_present('K')) {
     if (! process_standard_smiles_options(cl, verbose, 'K'))
       usage(5);
   }
@@ -222,8 +249,7 @@ int tsmiles(int argc, char** argv) {
     return 1;
   }
 
-  if (cl.option_present('g'))
-  {
+  if (cl.option_present('g')) {
     if(! chemical_standardisation.construct_from_command_line(cl, verbose > 2))
     {
       cerr << "Cannot parse -g option\n";
@@ -262,6 +288,13 @@ int tsmiles(int argc, char** argv) {
     set_unique_smiles_legacy_atom_ordering(1);
     if (verbose)
       cerr << "Will use legacy atom ordering in unique determination\n";
+  }
+
+  if (cl.option_present('u')) {
+    test_build_from_unique_smiles = 1;
+    if (verbose) {
+      cerr << "Will test building from the unique smiles\n";
+    }
   }
 
   if (cl.option_present('q')) {
