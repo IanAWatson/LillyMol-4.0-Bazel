@@ -383,6 +383,7 @@ ECBuildPrecedent::Bit(const ShellInfo& shell_info,
 
   if (f == _bit_count.end())  // Newly discovered bit.
   {
+//  cerr << "got " << running_sum << '\n';
     Molecule mcopy(shell_info.m());
     mcopy.set_atom_map_number(a0, radius + 1);
     BitCount tmp(mcopy.smiles(), shell_info.atom_type(a0),
@@ -416,6 +417,7 @@ ECBuildPrecedent::WritePrecedentData(const char sep, const JobParameters& job_pa
 
   for (const auto& iter : _bit_count) 
   {
+//  cerr << "writ " << iter.first << '\n';
     output << iter.first << sep <<                       // The bit
               iter.second.count << sep <<
               iter.second.smiles << sep <<
@@ -474,7 +476,7 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
   }
 
 #ifdef DEBUG_USE_PRECEDENT
-  cerr << "Bit: we have info on " << running_sum << " radius " << radius << " db " << std::get<1>(f->second) << endl;
+  cerr << "Bit: we have info on " << running_sum << " radius " << radius << " db " << f->second.radius << endl;
 #endif
   if (f->second.radius != radius)  // collision
     return;

@@ -26,6 +26,22 @@ cc_binary(
          "//Molecule_Lib:moleculeio",
     ],
 )
+
+cc_binary(
+    name = "get_nmr",
+    srcs = [
+        "get_nmr.cc",
+    ],
+    deps = [
+        "dataset_cc_proto",
+        ":support",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
+
 cc_binary(
     name = "smu",
     srcs = [
@@ -116,5 +132,20 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_library(
+    name = "support",
+    srcs = [
+      "support.cc",
+    ],
+    hdrs = [
+      "support.h",
+    ],
+    deps = [
+        ":dataset_cc_proto",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
     ],
 )

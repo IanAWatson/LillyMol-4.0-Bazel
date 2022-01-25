@@ -374,6 +374,13 @@ EcFingerprint(int argc, char ** argv)
       cerr << "Will reduce to largest fragment\n";
   }
 
+  if (cl.option_present('g')) {
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g')) {
+      cerr << "Cannot initialise chemical standardisation\n";
+      return 1;
+    }
+  }
+
   job_parameters.smiles_tag = smiles_tag;
   job_parameters.identifier_tag = identifier_tag;
 
