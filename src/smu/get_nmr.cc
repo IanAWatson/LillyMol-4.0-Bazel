@@ -74,7 +74,7 @@ WriteIfExtremeValue(const Conformer& conformer,
                     const std::vector<std::pair<int, int>> & quantiles,
                     IWString_and_File_Descriptor& output) {
   const BondTopology& bt0 = conformer.bond_topologies(0);
-  const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_6_31ppgdp().values();
+  const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
   const int matoms = bt0.atoms().size();
   resizable_array<int> outlier_atoms;
   resizable_array<int> outlier_values;
@@ -104,9 +104,9 @@ WriteIfExtremeValue(const Conformer& conformer,
   int max_outlier_value = 0;
   IWString outlier_atomic_symbol;
   for (int i = 0; i < outlier_atoms.number_elements(); ++i) {
-    int v = std::abs(outlier_values[i]);
-    maybe_mol->set_isotope(outlier_atoms[i], v);
-    if (v > max_outlier_value) {
+    int v = outlier_values[i];
+    maybe_mol->set_isotope(outlier_atoms[i], std::abs(v));
+    if (std::abs(v) > std::abs(max_outlier_value)) {
       max_outlier_value = v;
       outlier_atomic_symbol = maybe_mol->atomic_symbol(outlier_atoms[i]);
     }
@@ -119,8 +119,10 @@ WriteIfExtremeValue(const Conformer& conformer,
          << (conformer.conformer_id() / 1000) << sep
          << max_outlier_value << sep
          << outlier_atomic_symbol << sep
-         << conformer.properties().single_point_energy_pbe0d3_6_311gd().value()
+         << conformer.properties().single_point_energy_atomic_b5().value()
          << '\n';
+
+  output.write_if_buffer_holds_more_than(8192);
 
   return 1;
 }
@@ -135,12 +137,12 @@ CopyData(const Conformer& source,
     *bt = existing_bt;
   }
 
-  destination.mutable_properties()->mutable_single_point_energy_pbe0d3_6_311gd()->set_value(source.properties().single_point_energy_pbe0d3_6_311gd().value());
-  for (const double existing_nmr : source.properties().nmr_isotropic_shielding_pbe0_6_31ppgdp().values()) {
-    destination.mutable_properties()->mutable_nmr_isotropic_shielding_pbe0_6_31ppgdp()->add_values(existing_nmr);
+  destination.mutable_properties()->mutable_single_point_energy_atomic_b5()->set_value(source.properties().single_point_energy_atomic_b5().value());
+  for (const double existing_nmr : source.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values()) {
+    destination.mutable_properties()->mutable_nmr_isotropic_shielding_pbe0_aug_pcs_1()->add_values(existing_nmr);
   }
-  // single_point_energy_pbe0d3_6_311gd
-  // nmr_isotropic_shielding_pbe0_6_31ppgdp
+  // single_point_energy_atomic_b5
+  // nmr_isotropic_shielding_pbe0_aug_pcs_1
 }
 
 int
@@ -150,10 +152,10 @@ GetLowEnergyNmr(const Conformer& conformer,
   if (conformer.fate() != Conformer::FATE_SUCCESS) {
     return 1;
   }
-  if (! conformer.properties().has_nmr_isotropic_shielding_pbe0_6_31ppgdp()) {
+  if (! conformer.properties().has_nmr_isotropic_shielding_pbe0_aug_pcs_1()) {
     return 1;
   }
-  if (! conformer.properties().has_single_point_energy_pbe0d3_6_311gd()) {
+  if (! conformer.properties().has_single_point_energy_atomic_b5()) {
     return 1;
   }
   if (conformer.bond_topologies().size() == 0) {
@@ -176,8 +178,8 @@ GetLowEnergyNmr(const Conformer& conformer,
   // If this is higher energy than anything previously found for this bond_topology_id,
   // not interested.
   if (iter != low_energy.end()) {
-    if (conformer.properties().single_point_energy_pbe0d3_6_311gd().value() >
-        iter->second.properties().single_point_energy_pbe0d3_6_311gd().value()) {
+    if (conformer.properties().single_point_energy_atomic_b5().value() >
+        iter->second.properties().single_point_energy_atomic_b5().value()) {
       return 1;
     }
     // Update info stored.
@@ -321,14 +323,14 @@ GetNMR(int argc, char ** argv) {
   for (const auto& [btid, conformer] : low_energy) {
     output << conformer.bond_topologies(0).smiles() << sep 
            << conformer.conformer_id() << sep
-           << conformer.properties().single_point_energy_pbe0d3_6_311gd().value() << sep
+           << conformer.properties().single_point_energy_atomic_b5().value() << sep
            << conformer.fate() << sep
            << conformer.bond_topologies().size() << '\n';
     const BondTopology& bt0 = conformer.bond_topologies(0);
     const int natoms = bt0.atoms().size();
     for (int i = 0; i < natoms; ++i) {
       const int atomic_number = ToAtomicNumber(bt0.atoms(i));
-      double s = conformer.properties().nmr_isotropic_shielding_pbe0_6_31ppgdp().values(i);
+      double s = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values(i);
       int j = static_cast<int>(s);
       shielding[atomic_number][j] += 1;
     }

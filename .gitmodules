@@ -1,0 +1,4 @@
+[submodule "third_party/pybond11"]
+	path = third_party/pybond11
+	url = ../../pybind/pybind11
+	branch = stable
