@@ -206,7 +206,6 @@ set(libs_for_tests
   gtest_main
   iwstring_data_source
   string_data_source
-  binary_data_file
   xmlParser
   iwmisc
   iwbits

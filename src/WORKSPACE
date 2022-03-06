@@ -1,7 +1,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "bazel_skylib",
     urls = [
@@ -12,6 +12,26 @@ http_archive(
 )
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
+
+#load("//build_deps/py:python_configure.bzl", "python_configure")
+#python_configure(name = "local_config_python")
+
+# pybond11
+git_repository(
+    name = "pybind11_bazel",
+    commit = "f22df0e57ba664c2d3cf439ddfb7f8804e3f36c1",
+    remote = "https://github.com/pybind/pybind11_bazel.git",
+)
+
+http_archive(
+    name = "pybind11",
+    build_file = "@pybind11_bazel//:pybind11.BUILD",
+    strip_prefix = "pybind11-2.9.0",
+    urls = [
+        "https://github.com/pybind/pybind11/archive/v2.9.0.tar.gz",
+    ],
+)
+
 
 # The next were all copied from Riegeli's WORKSPACE to enable riegeli
 http_archive(
@@ -103,16 +123,13 @@ rules_proto_dependencies()
 rules_proto_toolchains()
 
 
+
 load("@rules_cc//cc:repositories.bzl", "rules_cc_dependencies")
 rules_cc_dependencies()
 
 load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_java_toolchains")
 rules_java_dependencies()
 rules_java_toolchains()
-
-#load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-#rules_proto_dependencies()
-#rules_proto_toolchains()
 
 # copied from
 # https://chromium.googlesource.com/external/github.com/google/protobuf/+/HEAD/examples/WORKSPACE

@@ -15,9 +15,8 @@
   a separate file.
 */
 
+#include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
-#define BINARY_FILE_PROTO_IMPLEMENTATION
-#include "Foundational/data_source/binary_data_file.h"
 #include "Foundational/iwmisc/msi_object.h"
 
 #include "istream_and_type.h"
@@ -95,38 +94,6 @@ ReadFileOfProtoQueries(const const_IWSubstring fname, resizable_array_p<T>& quer
   return 1;
 }
 
-template <typename T>
-int
-ReadQueriesFromBinaryProtoFile(binary_data_file::BinaryDataFileReader& input,
-                        resizable_array_p<T>& queries) {
-  while (1) {
-    std::optional<SubstructureSearch::SubstructureQuery> proto =
-         input.ReadProto<SubstructureSearch::SubstructureQuery>();
-    if (! proto) {
-      return queries.number_elements();
-    }
-    std::unique_ptr<T> query = std::make_unique<T>();
-    if (! query->ConstructFromProto(*proto)) {
-      cerr << "ReadQueriesFromBinaryProtoFile:cannot build query\n";
-      return 0;
-    }
-    queries.add(query.release());
-  }
-  // Should never come here.
-}
-
-template <typename T>
-int
-ReadQueriesFromBinaryProtoFile(const const_IWSubstring& fname,
-                        resizable_array_p<T>& queries) {
-  binary_data_file::BinaryDataFileReader input(fname);
-  if (! input.good()) {
-    cerr << "ReadQueriesFromBinaryProtoFile:cannot open '" << fname << "'\n";
-    return 0;
-  }
-
-  return ReadQueriesFromBinaryProtoFile(input, queries);
-}
 template <typename T>
 int
 build_query_from_smiles(const const_IWSubstring & smiles,
