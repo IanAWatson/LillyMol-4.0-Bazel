@@ -168,6 +168,29 @@ cc_binary(
 
 
 cc_binary(
+    name = "gfp_spread_standard_ptrs",
+    srcs = [
+        "gfp_spread_standard_ptrs.cc",
+    ],
+    copts = [
+#       "-fopenmp=libiomp5", llvm
+        "-fopenmp",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_standard",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iw_tdt:iw_tdt",
+    ],
+    linkopts = [
+        "-lz",
+#       "-L/usr/lib/llvm-11/lib/",  # clang
+        "-lgomp",
+    ],
+)
+
+
+cc_binary(
     name = "gfp_nearneighbours_single_file",
     srcs = [
         "gfp_nearneighbours_single_file.cc",

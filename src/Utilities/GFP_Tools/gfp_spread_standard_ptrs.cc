@@ -1,5 +1,7 @@
 /*
   Spread implementation with fixed fingerprints
+  This version uses pointers in order to avoid assignment
+  during pool squeezing.
 */
 
 #include <algorithm>
@@ -195,6 +197,8 @@ get_previously_computed_from_name_column(const IWString& id,
   return 1;
 }
 
+
+#ifdef SEEMINGLY_NOT_USED
 template <typename F>
 void
 do_output(const F* pool,
@@ -230,6 +234,7 @@ do_output(const F* pool,
 
   return;
 }
+#endif
 
 static void
 set_selected_item(Selected_Item& s, const int isel, const int nsn, const float d)
@@ -243,7 +248,7 @@ set_selected_item(Selected_Item& s, const int isel, const int nsn, const float d
 
 template <typename F>
 int
-mark_all_remaining_items_selected(F* pool,
+mark_all_remaining_items_selected(F** pool,
                                   const int pool_size,
                                   Selected_Item* selected_item,
                                   int ndx,
@@ -261,12 +266,12 @@ mark_all_remaining_items_selected(F* pool,
 
     rc++;
 
-    const int n = pool[nearest_previously_selected[i]].initial_ndx();
+    const int n = pool[nearest_previously_selected[i]]->initial_ndx();
 
     // cerr << "Zero distance item i = " << i << " ndx " << pool[i].initial_ndx() << " prev " << n
     // << " dist " << distances[i] << endl;
 
-    set_selected_item(selected_item[ndx], pool[i].initial_ndx(), n, distances[i]);
+    set_selected_item(selected_item[ndx], pool[i]->initial_ndx(), n, distances[i]);
     ndx++;
   }
 
@@ -380,11 +385,19 @@ spread_with_weights(F* fingerprints,
   return 1;
 }
 
+// Squeeze already selected items out of `pool`.
+// `next_selected` is the index of the next item to be
+// selected. The return code is the index of `next_selected`
+// in the updated `pool`.
+// Arrays `selected`, `nearest_previously_selected` and `distances`
+// are all compressed to keep them in sync with `pool`.
 template <typename F>
 int
-do_squeeze(F* pool, int& pool_size,
+do_squeeze(F** pool, int& pool_size,
            int next_selected,
-           int* selected, int* nearest_previously_selected, float* distances)
+           int* selected,
+           int* nearest_previously_selected,
+           float* distances)
 {
   if (pool_size < 1000)
     return next_selected;
@@ -397,20 +410,20 @@ do_squeeze(F* pool, int& pool_size,
       continue;
 
     if (i == ndx) {
-      ndx++;
+      ++ndx;
       continue;
     }
-
+    
     if (i == next_selected) {
       rc = ndx;
     }
 
     pool[ndx] = pool[i];
-    assert(pool[ndx].initial_ndx() == pool[i].initial_ndx());
-    selected[ndx] = selected[i];  // Should always be 0.
+    assert(pool[ndx]->initial_ndx() == pool[i]->initial_ndx());
+    selected[ndx] = 0;  // selected[i] is zero
     nearest_previously_selected[ndx] = nearest_previously_selected[i];
     distances[ndx] = distances[i];
-    ndx++;
+    ++ndx;
   }
 
   pool_size = ndx;
@@ -420,7 +433,7 @@ do_squeeze(F* pool, int& pool_size,
 
 template <typename F>
 int
-spread2(F* pool, int& pool_size, Selected_Item* selected_item)
+spread2(F** pool, int& pool_size, Selected_Item* selected_item)
 {
   int s;
 
@@ -436,7 +449,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
   if (!previously_selected_file_specified) {
 #pragma omp parallel for schedule(dynamic, 256)
     for (int i = 0; i < pool_size; i++) {
-      distances[i] = fingerprints[s].tanimoto_distance(fingerprints[i]);
+      distances[i] = pool[s]->tanimoto_distance(*pool[i]);
       nearest_previously_selected[i] = s;
     }
 
@@ -450,10 +463,17 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
     //  cerr << " s = " << s << endl;
     //  iw_write_array(spread_order, pool_size, "selected", cerr);
 
-    set_selected_item(selected_item[items_selected],
-                      s,
-                      nearest_previously_selected[s],
-                      distances[s]);
+    if (nearest_previously_selected[s] >= 0) {
+      set_selected_item(selected_item[items_selected],
+                        pool[s]->initial_ndx(),
+                        pool[nearest_previously_selected[s]]->initial_ndx(),
+                        distances[s]);
+    } else {
+      set_selected_item(selected_item[items_selected],
+                        pool[s]->initial_ndx(),
+                        -1,
+                        distances[s]);
+    }
 
     selected[s] = 1;
 
@@ -470,7 +490,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
         if (selected[i] || 0.0f == distances[i])
           continue;
 
-        const float d = pool[s].tanimoto_distance(pool[i]);
+        const float d = pool[s]->tanimoto_distance(*pool[i]);
         if (d < distances[i]) {
           distances[i] = d;
           nearest_previously_selected[i] = s;
@@ -1159,12 +1179,15 @@ gfp_spread_standard(int argc, char** argv)
            << endl;
   }
 
-  IWString_and_File_Descriptor output(1);
-
   if (scaling_factor_specified)
     spread_with_weights(fingerprints, pool_size, weight, selected_item);
-  else
-    spread2(fingerprints, pool_size, selected_item);
+  else {
+    std::unique_ptr<SSpread_Item*[]> ptrs(new SSpread_Item*[pool_size]);
+    for (int i = 0; i < pool_size; ++i) {
+      ptrs[i] = fingerprints + i;
+    }
+    spread2(ptrs.get(), pool_size, selected_item);
+  }
 
 //#define DEBUG_SPREAD
 #ifdef DEBUG_SPREAD
@@ -1183,6 +1206,8 @@ gfp_spread_standard(int argc, char** argv)
     if (verbose)
       cerr << "Brief output\n";
   }
+
+  IWString_and_File_Descriptor output(1);
 
   if (brief_output) {
     for (int i = 0; i < nsel; ++i) {

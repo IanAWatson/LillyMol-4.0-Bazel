@@ -98,7 +98,7 @@ class TFDataWriter {
 
     // Write a serialized proto.
     template <typename P>
-    int WriteSerializedProto(const P& proto);
+    ssize_t WriteSerializedProto(const P& proto);
 };
 
 template <typename P>
@@ -119,10 +119,15 @@ TFDataReader::ReadProto() {
 }
 
 template <typename P>
-int
+ssize_t
 TFDataWriter::WriteSerializedProto(const P& proto) {
+// March 2022. Seems the API has changed to a more modern form.
+#ifdef EARLIER_API
   std::string as_string;
   proto.SerializeAsString(&as_string);
+#endif
+
+  const std::string as_string = proto.SerializeAsString();
   return Write(as_string.data(), as_string.size());
 }
 
