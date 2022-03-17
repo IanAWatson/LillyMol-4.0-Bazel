@@ -1,6 +1,10 @@
+#include <cmath>
+
 #include "smu/support.h"
 
 namespace smu {
+
+constexpr float kBohrToAngstrom = 0.529177f;
 
 using std::cerr;
 
@@ -80,6 +84,63 @@ MoleculeFromBondTopology(const BondTopology& bond_topology) {
   }
 
   return result;
+}
+
+int
+AddGeometry(const Geometry& geometry,
+            Molecule& m) {
+  const int matoms = m.natoms();
+  if (matoms != geometry.atom_positions().size()) {
+    return 0;
+  }
+
+  for (int i = 0; i < matoms; ++i) {
+    const Geometry::AtomPos& apos = geometry.atom_positions(i);
+    coord_t x = apos.x() * kBohrToAngstrom;
+    coord_t y = apos.y() * kBohrToAngstrom;
+    coord_t z = apos.z() * kBohrToAngstrom;
+    m.setxyz(i, x, y, z);
+  }
+
+  return 1;
+}
+
+std::optional<int>
+AtomTypeToAtomicNumber(BondTopology::AtomType atype) {
+  switch (atype) {
+    case BondTopology::ATOM_H:
+      return 1;
+    case BondTopology::ATOM_C:
+      return 6;
+    case BondTopology::ATOM_N:
+      return 7;
+    case BondTopology::ATOM_NPOS:
+      return 7;
+    case BondTopology::ATOM_O:
+      return 8;
+    case BondTopology::ATOM_ONEG:
+      return 8;
+    case BondTopology::ATOM_F:
+      return 9;
+    case BondTopology::ATOM_UNDEFINED:
+      cerr << "AtomTypeToAtomicNumber:unrecognised " << atype << '\n';
+      return std::nullopt;
+    default:
+        cerr << "AtomTypeToAtomicNumber::invalid atom type " << atype << '\n';
+        return std::nullopt;
+  }
+}
+
+double
+DistanceBetweenAtoms(const Geometry& geometry, int a1, int a2)
+{
+  const Geometry::AtomPos pos1 = geometry.atom_positions(a1);
+  const Geometry::AtomPos pos2 = geometry.atom_positions(a2);
+  return kBohrToAngstrom * sqrt(
+        (pos1.x() - pos2.x()) * (pos1.x() - pos2.x()) +
+        (pos1.y() - pos2.y()) * (pos1.y() - pos2.y()) +
+        (pos1.z() - pos2.z()) * (pos1.z() - pos2.z())
+  );
 }
 
 }  // namespace smu

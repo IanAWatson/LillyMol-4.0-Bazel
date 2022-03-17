@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package Smu;
+
+import "Molecule_Lib/substructure.proto";
+
+message BondLengthDistribution {
+  // The two atomic numbers, by convention, sorted a1 < a2.
+  optional int32 at1 = 1;
+  optional int32 at2 = 2;
+
+  // The bond type
+  optional SubstructureSearch.BondType btype = 3;
+
+  // Statistics of the distribution.
+  optional float min = 4;
+  optional float max = 5;
+  optional float mean = 6;
+};

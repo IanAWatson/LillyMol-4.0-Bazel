@@ -13,6 +13,54 @@ cc_proto_library(
     ],
 )
 
+proto_library(
+    name = "bond_length_distribution_proto",
+    srcs = [
+        "bond_length_distribution.proto",
+    ],
+    deps = [
+        "//Molecule_Lib:substructure_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "bond_length_distribution_cc_proto",
+    deps = [
+        ":bond_length_distribution_proto",
+    ],
+)
+
+cc_binary(
+    name = "bond_score",
+    srcs = [
+        "bond_score.cc",
+    ],
+    deps = [
+        ":bond_length_distribution_cc_proto",
+        ":dataset_cc_proto",
+        ":support",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
+    name = "get_bond_length_distribution",
+    srcs = [
+         "get_bond_length_distribution.cc",
+    ],
+    deps = [
+        ":bond_length_distribution_cc_proto",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
+
 cc_binary(
     name = "get_3d_smiles",
     srcs = [
