@@ -359,6 +359,12 @@ int IntBtwij(T min, T max) {
   return u(generator);
 }
 
+template <typename T, typename A>
+T
+Fraction(A numerator, A denominator) {
+  return static_cast<T>(numerator) / static_cast<T>(denominator);
+}
+
 }  // namespace iwmisc
 
 

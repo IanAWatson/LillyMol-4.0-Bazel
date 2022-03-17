@@ -342,6 +342,51 @@ GFP_Standard::tanimoto_distance_2(GFP_Standard const & fp1,
   return;
 }
 
+std::optional<float>
+GFP_Standard::tanimoto_distance(const GFP_Standard& rhs, float must_be_closer_than) const {
+  // The calculations are done in similarity space, so convert one time.
+  const float similarity_needed = 1.0 - must_be_closer_than;
+
+  float rc = static_cast<float>(0.0);
+  
+  for (int i = 0; i < 8; ++i)
+  {
+    const int j = _molecular_properties[i] * 256 + rhs._molecular_properties[i];
+    rc += precomputed_ratio[j];
+  }
+
+  if ((rc  + 3.0f) / 4.0f < similarity_needed) {
+    return std::nullopt;
+  }
+
+  if (_nset_mk2 || rhs._nset_mk2)
+  {
+    int bic = popcount_2fp((const unsigned *) _mk2, (const unsigned *) rhs._mk2, 8);
+    rc += iwmisc::Fraction<float>(bic, _nset_mk2 + rhs._nset_mk2 - bic);
+    if ((rc + 2.0) / 4.0 < similarity_needed) {
+      return std::nullopt;
+    }
+  }
+
+  if (_nset_mk || rhs._nset_mk)
+  {
+    int bic = popcount_2fp((const unsigned *) _mk, (const unsigned *) rhs._mk, 8);
+    rc += iwmisc::Fraction<float>(bic, _nset_mk + rhs._nset_mk - bic);
+    if ((rc + 1.0) / 3.0 < similarity_needed) {
+      return std::nullopt;
+    }
+  }
+
+  int bic = popcount_2fp((const unsigned *) _iw, (const unsigned *)rhs._iw, 64);
+  rc += iwmisc::Fraction<float>(bic, _nset_iw + rhs._nset_iw - bic);
+
+  if (rc < similarity_needed) {
+    return std::nullopt;
+  }
+
+  return 1.0f - 0.25 * rc;
+}
+
 int
 standard_fingerprints_present()
 {

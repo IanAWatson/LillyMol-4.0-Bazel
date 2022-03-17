@@ -241,6 +241,21 @@ set_selected_item(Selected_Item& s, const int isel, const int nsn, const float d
   return;
 }
 
+
+// Item pool[selected] has been selected. Update the info into 's`.
+static void
+set_selected_item(SSpread_Item* pool,
+                  int selected,
+                  const int * nearest_previously_selected,
+                  const float * distances,
+                  Selected_Item& s) {
+  s._sel = pool[selected].initial_ndx();
+  if (nearest_previously_selected[selected] >= 0) {
+    s._nsn = pool[nearest_previously_selected[selected]].initial_ndx();
+  }
+  s._dist = distances[selected];
+}
+
 template <typename F>
 int
 mark_all_remaining_items_selected(F* pool,
@@ -450,10 +465,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
     //  cerr << " s = " << s << endl;
     //  iw_write_array(spread_order, pool_size, "selected", cerr);
 
-    set_selected_item(selected_item[items_selected],
-                      s,
-                      nearest_previously_selected[s],
-                      distances[s]);
+    set_selected_item(pool, s, nearest_previously_selected, distances, selected_item[items_selected]);
 
     selected[s] = 1;
 
@@ -470,9 +482,12 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
         if (selected[i] || 0.0f == distances[i])
           continue;
 
-        const float d = pool[s].tanimoto_distance(pool[i]);
-        if (d < distances[i]) {
-          distances[i] = d;
+        std::optional<float> d = pool[s].tanimoto_distance(pool[i], distances[i]);
+        if (! d) {
+          continue;
+        }
+        if (*d < distances[i]) {
+          distances[i] = *d;
           nearest_previously_selected[i] = s;
         }
 

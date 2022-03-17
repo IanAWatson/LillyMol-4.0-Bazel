@@ -1,6 +1,8 @@
 #ifndef GFP_STANDARD_H
 #define GFP_STANDARD_H
 
+#include <optional>
+
 /*
   We so often deal with MPR MK MK2 IW we want to make a very efficient
   implementation
@@ -45,6 +47,9 @@ class GFP_Standard
     float tanimoto (const GFP_Standard &) const;
     float tanimoto_distance (const GFP_Standard & rhs) const { return 1.0f - tanimoto(rhs);}
     void tanimoto_distance_2 (const GFP_Standard & rhs, const GFP_Standard & rhs2, float *) const;
+
+    // Only return a result if the value will be <= `must_be_closer_than`.
+    std::optional<float> tanimoto_distance(const GFP_Standard& rhs, float must_be_closer_than) const;
 };
 
 extern int can_be_compared (const GFP_Standard & fp1, const GFP_Standard & fp2);
