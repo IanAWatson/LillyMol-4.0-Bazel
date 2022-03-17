@@ -947,12 +947,6 @@ process_cmdline_token(char option,
       std::cerr << "process_queries:cannot read file of proto files '" << mytoken << "'\n";
       return 0;
     }
-  } else if (mytoken.starts_with("BPROTO:")) {
-    mytoken.remove_leading_chars(7);
-    if (! ReadQueriesFromBinaryProtoFile(mytoken, queries)) {
-      std::cerr << "process_queries::cannot read binary proto file '" << mytoken << "'\n";
-      return 0;
-    }
   } else if (mytoken.starts_with("proto:")) {
     // for example -q 'proto:query{min_natoms: 4}'
     mytoken.remove_leading_chars(6);

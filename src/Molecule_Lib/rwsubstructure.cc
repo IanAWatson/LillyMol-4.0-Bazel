@@ -4427,6 +4427,7 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
     }
   }
 
+#ifdef OR_ID_NO_LONGER_NEEDED
   att = msi.attribute(NAME_OF_OR_OPERATOR);
   if (att)
   {
@@ -4437,8 +4438,8 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
       return 0;
     }
   }
+#endif
 
-#ifdef OR_ID_NO_LONGER_NEEDED
   att = msi.attribute(NAME_OF_AND_OPERATOR);
   if (att)
   {
@@ -4455,7 +4456,6 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
     cerr << "Substructure_Environment::construct_from_msi_object:cannot have both OR and AND specifications\n";
     return 0;
   }
-#endif
 
 // Now construct the structural specification. There can be any number
 
