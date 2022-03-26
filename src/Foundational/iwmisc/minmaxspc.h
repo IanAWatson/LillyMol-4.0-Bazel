@@ -29,11 +29,15 @@ class Min_Max_Specifier : public iwarchive<T>
 
     Set_or_Unset<T> _min_val;
     Set_or_Unset<T> _max_val;
+#ifdef MINMAXSPC_HAS_NAME
     IWString        _name;
+#endif
 
   public:
     Min_Max_Specifier();
+#ifdef MINMAXSPC_HAS_NAME
     Min_Max_Specifier(const char * name);
+#endif
     Min_Max_Specifier(const T v);
     ~Min_Max_Specifier();
 
@@ -95,6 +99,7 @@ Min_Max_Specifier<T>::Min_Max_Specifier(const T v)
   return;
 }
 
+#ifdef MINMAXSPC_HAS_NAME
 template <typename T>
 Min_Max_Specifier<T>::Min_Max_Specifier(const char * name)
 {
@@ -102,6 +107,7 @@ Min_Max_Specifier<T>::Min_Max_Specifier(const char * name)
 
   return;
 }
+#endif
 
 template <typename T>
 Min_Max_Specifier<T>::~Min_Max_Specifier()
@@ -430,7 +436,9 @@ Min_Max_Specifier<T>::operator = (const Min_Max_Specifier<T> & other)
 
   _min_val = other._min_val;
   _max_val = other._max_val;
+#ifdef MINMAXSPC_HAS_NAME
   _name = other._name;
+#endif
   _is_set = other._is_set;
 
   iwarchive<T>::operator=(other);

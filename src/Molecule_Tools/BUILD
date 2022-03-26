@@ -195,6 +195,19 @@ cc_binary(
 )
 
 cc_binary(
+    name = "separated_atoms_match",
+    srcs = [
+        "generate_atom_separations.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "geometric_descriptors",
     srcs = [
         "geometric_descriptors.cc",
@@ -381,9 +394,9 @@ cc_binary(
     ],
     deps = [
         "//Foundational/cmdline:iwcmdline",
-        "//Foundational/data_source:binary_data_file",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
+        "@com_google_protobuf//:protobuf",
     ],
     linkopts = [
         "-lz",
@@ -513,6 +526,7 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
+        "@com_google_protobuf//:protobuf",
     ],
     linkopts = [
         "-lz",
@@ -666,6 +680,7 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
     linkopts = [
         "-lz",
@@ -1338,6 +1353,7 @@ cc_test(
         ":fileconv_lib",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
         "//Molecule_Lib:moleculeio",
     ],
     timeout="short",
