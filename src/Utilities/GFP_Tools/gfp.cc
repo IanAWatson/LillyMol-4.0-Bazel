@@ -1436,6 +1436,210 @@ IW_General_Fingerprint::tanimoto(IW_General_Fingerprint & rhs)
   return result;
 }
 
+// This version will return nothing unless the result is less than `must_be_closer_than`.
+// In order to drive out complexity, we only handle the case of equally weighted
+// components, and some seldom used things are simply ignored - probably should
+// remove them from the code, just don't use...
+std::optional<similarity_type_t>
+IW_General_Fingerprint::distance(IW_General_Fingerprint & rhs, const float must_be_closer_than)
+{
+#ifdef DEBUG_TANIMOTO
+  cerr << "Between " << id() << " and " << rhs.id() << endl;
+#endif
+  // The calculations are done in similarity space, so convert one time.
+  const float similarity_needed = 1.0 - must_be_closer_than;
+
+  int components = 0;
+  if (_molecular_properties_integer.active()) {
+    ++components;
+  }
+  components += number_fingerprints_to_use_in_computations;
+  components += _number_sparse_fingerprints_to_use_in_computations;
+  int components_remaining = components;
+
+  similarity_type_t result = 0.0;
+
+  if (_molecular_properties_integer.active()) {
+    result = result + _property_weight_integer * _molecular_properties_integer.similarity(rhs._molecular_properties_integer);
+    --components_remaining;
+    if ((result + components_remaining) / components < similarity_needed) {
+      return std::nullopt;
+    }
+  }
+
+#ifdef DEBUG_TANIMOTO
+  if (_molecular_properties_integer.active())
+    cerr << "Molecular properties integer " << ( _property_weight_integer * _molecular_properties_integer.similarity (rhs._molecular_properties_integer)) << ", result so far " << result << endl;
+#endif
+
+  for (int i = 0; i < number_fingerprints_to_use_in_computations; i++)
+  {
+    IWDYFP & fp2 = rhs._fingerprint[i];
+
+#ifdef DEBUG_TANIMOTO
+    cerr << "Metric " << _dense_fingerprint_distance_metric[i] << " weight " << _fingerprint_weight[i] << endl;
+#endif
+
+    if (DENSE_DISTANCE_METRIC_TANIMOTO == _dense_fingerprint_distance_metric[i])
+      result += _fingerprint_weight[i] * _fingerprint[i].tanimoto(fp2);
+    else if (FVB_MODIFIED_TANIMOTO == _dense_fingerprint_distance_metric[i])
+      result += _fingerprint_weight[i] * _fingerprint[i].fvb_modified_tanimoto(fp2);
+    else if (RUSSEL_RAO == _dense_fingerprint_distance_metric[i])
+      result +=  _fingerprint_weight[i] *_fingerprint[i].russel_rao(fp2);
+    else if (FORBES_SIMILARITY == _dense_fingerprint_distance_metric[i])
+      result += _fingerprint_weight[i] * _fingerprint[i].forbes_similarity(fp2);
+    else if (SIMPLE_MATCHING == _dense_fingerprint_distance_metric[i])
+      result += _fingerprint_weight[i] * _fingerprint[i].simple_matching(fp2);
+    else if (DICE_DISTANCE_METRIC == _dense_fingerprint_distance_metric[i])
+      result += _fingerprint_weight[i] * _fingerprint[i].sorensendice(fp2);
+    else if (DENSE_DISTNANCE_OVERLAP == _dense_fingerprint_distance_metric[i])
+      result += _fingerprint_weight[i] * _fingerprint[i].overlap(fp2);
+
+#ifdef DEBUG_TANIMOTO
+    cerr << _fingerprint[i].nbits() << " bits, " << _fingerprint[i].nset() << " bits set and " << fp2.nset() << endl;
+    _fingerprint[i].PrintOn(cerr);
+    cerr << endl;
+    fp2.PrintOn(cerr);
+    cerr << endl;
+    cerr << " FP " << i << " similarity " <<  _fingerprint[i].tanimoto(fp2) << " weight " << _fingerprint_weight[i] << " bic " << _fingerprint[i].bits_in_common (rhs._fingerprint[i]) << endl;
+#endif
+    --components_remaining;
+    if ((result + components_remaining) / components < similarity_needed) {
+      return std::nullopt;
+    }
+
+#ifdef DEBUG_TANIMOTO
+    cerr << "Fingerprint component " << i << " " << (_fingerprint[i].tanimoto(fp2) * _fingerprint_weight[i]) << ", result so far " << result << endl;
+#endif
+  }
+
+  for (int i = 0; i < _number_sparse_fingerprints_to_use_in_computations; i++)
+  {
+    similarity_type_t tmp;
+
+    if (SPARSE_DISTANCE_METRIC_TANIMOTO == _sparse_fingerprint_distance_metric[i])
+    {
+      if (sparse_fingerprint_counts_limited)
+        tmp = _sparse_fingerprint[i].tanimoto(rhs._sparse_fingerprint[i]);
+      else
+        tmp = _sparse_fingerprint[i].tanimoto_with_unlimited_counts(rhs._sparse_fingerprint[i]);
+    }
+    else if (SPARSE_DISTANCE_METRIC_BINARY == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].tanimoto_binary(rhs._sparse_fingerprint[i]);
+    else if (FVB_MODIFIED_TANIMOTO == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].fvb_modified_tanimoto(rhs._sparse_fingerprint[i]);
+    else if (MANHATTAN_DISTANCE_METRIC == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].manhattan_distance(rhs._sparse_fingerprint[i]);
+    else if (SOERGEL_DISTANCE_METRIC == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].soergel_similarity(rhs._sparse_fingerprint[i]);
+    else if (SOERGEL_VARIANT_DISTANCE_METRIC == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].soergel_variant_similarity(rhs._sparse_fingerprint[i]);
+    else if (CTAN_DISTANCE_METRIC == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].continuous_tanimoto(rhs._sparse_fingerprint[i]);
+    else if (DICE_DISTANCE_METRIC == _sparse_fingerprint_distance_metric[i])
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].cosine_coefficient(rhs._sparse_fingerprint[i]);
+    else
+      tmp = _sparse_fingerprint_weight[i] * _sparse_fingerprint[i].cosine_measure(rhs._sparse_fingerprint[i]);
+
+    result += tmp;
+
+    --components_remaining;
+    if ((result + components_remaining) / components < similarity_needed) {
+      return std::nullopt;
+    }
+#ifdef DEBUG_TANIMOTO
+    cerr << "sparse fingerprint component " << i << ", weight " << _sparse_fingerprint_weight[i] << ", value " << tmp << " total " << result <<endl;
+#endif
+  }
+
+  for (int i = 0; i < number_fixed_size_counted_fingerprints_to_use_in_computations; i++)
+  {
+    if (SPARSE_DISTANCE_METRIC_TANIMOTO == _fixed_size_counted_fingerprint_distance_metric[i])
+      result += _fixed_size_counted_fingerprint[i].tanimoto(rhs._fixed_size_counted_fingerprint[i]);
+    else if (FVB_MODIFIED_TANIMOTO == _fixed_size_counted_fingerprint_distance_metric[i])
+      result += _fixed_size_counted_fingerprint[i].fvb_modified_tanimoto(rhs._fixed_size_counted_fingerprint[i]);
+    else
+    {
+      cerr << "IW_General_Fingerprint::unrecognised fixed counted distance metric " << _fixed_size_counted_fingerprint_distance_metric[i] << endl;
+      abort();
+    }
+#ifdef DEBUG_TANIMOTO
+    cerr << "After fixed size counted fingerprint " << i << " result " << result <<endl;
+#endif
+  }
+
+#ifdef DEBUG_TANIMOTO
+  cerr << "Any multiconformer_fingerprints_present " << multiconformer_fingerprints_present << ", result so far " << result << endl;
+#endif
+
+  // Not handled here.
+  if (multiconformer_fingerprints_present)
+  {
+    for (int i = 0; i < number_multiconformer_01_fingerprints_in_file; i++)
+    {
+      if (multiconformer_use_average_similarity)
+        result += _multiconformer_01[i].average_tanimoto(rhs._multiconformer_01[i]) * _multiconformer_01_weight[i];
+      else
+        result += _multiconformer_01[i].tanimoto(rhs._multiconformer_01[i]) * _multiconformer_01_weight[i];
+#ifdef DEBUG_TANIMOTO
+      cerr << "After multiconformer 01 " << result << endl;
+#endif
+    }
+
+    for (int i = 0; i < number_multiconformer_fixed_size_counted_fingerprints_in_file; i++)
+    {
+      result += _multiconformer_fixed_size_counted[i].tanimoto(rhs._multiconformer_fixed_size_counted[i]) * _multiconformer_fixed_size_counted_weight[i];
+    }
+
+    for (int i = 0; i < number_multiconformer_sparse_fingerprints_in_file; i++)
+    {
+      result += _multiconformer_sparse[i].tanimoto(rhs._multiconformer_sparse[i]) * _multiconformer_sparse_weight[i];
+#ifdef DEBUG_TANIMOTO
+      cerr << "After multiconformer sparse " << i << " result " << result << ", w = " << _multiconformer_sparse_weight[i] << endl;
+#endif
+    }
+  }
+
+  // Not handled here.
+  if (_molecular_properties_continuous.active())
+    result = result + _property_weight_continuous * _molecular_properties_continuous.similarity (rhs._molecular_properties_continuous);
+
+#ifdef DEBUG_TANIMOTO
+  if (_molecular_properties_continuous.active())
+    cerr << "Continuous molecular properties " << (_property_weight_continuous * _molecular_properties_continuous.similarity(rhs._molecular_properties_continuous)) << ", result so far " << result << endl;
+#endif
+
+#ifdef DEBUG_TANIMOTO
+  cerr << "result " << result << endl;
+#endif
+
+// Jan 02. Sometimes we get numerical roundoff issues
+
+  if (result > static_cast<similarity_type_t>(1.0))
+  {
+    if (result < static_cast<similarity_type_t>(1.01))
+    {
+//    cerr << "IW_General_Fingerprint::tanimoto: ignoring numeric roundoff " << (result - 1.0) << endl;   happens often, don't bother printing
+      return static_cast<similarity_type_t>(1.0);
+    }
+
+    cerr << "IW_General_Fingerprint::tanimoto: invalid similarity " << result << " between '" << _id << "' and '" << rhs._id << "'\n";
+    cerr << _property_weight_integer << " property weight\n";
+    for (int i = 0; i < number_fingerprints_to_use_in_computations; i++)
+    {
+      cerr << " i = " << i << " fixed weight " << _fingerprint_weight[i] << endl;
+    }
+    for (int i = 0; i < _number_sparse_fingerprints_to_use_in_computations; i++)
+    {
+      cerr << " i = " << i << " sparse weight " << _sparse_fingerprint_weight[i] << endl;
+    }
+    return static_cast<similarity_type_t>(1.0);
+  }
+
+
+  return 1.0f - result;
+}
+
 //#define DEBUG_TVERSKY
 
 similarity_type_t

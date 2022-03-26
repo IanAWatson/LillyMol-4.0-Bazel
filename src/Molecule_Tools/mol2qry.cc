@@ -10,7 +10,6 @@
 #include "google/protobuf/text_format.h"
 
 #include "Foundational/cmdline/cmdline.h"
-#include "Foundational/data_source/binary_data_file.h"
 #include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/aromatic.h"
@@ -53,10 +52,6 @@ IWString stem_for_output;
 */
 
 int next_file_name_to_produce = 0;
-
-// If we are writing binary protos, a stream for those.
-
-std::unique_ptr<binary_data_file::BinaryDataFileWriter> proto_destination;
 
 std::ofstream stream_for_names_of_query_files;
 
@@ -367,12 +362,15 @@ mol2qry(MDL_Molecule & m,
     query[0]->set_comment(tmp);
   }
 
+#ifdef FIX_SOMETIME
   if (proto_destination) {
     SubstructureSearch::SubstructureQuery proto = query.BuildProto();
     std::string serialized;
     proto.SerializeToString(&serialized);
     return proto_destination->Write(serialized.data(), serialized.size());
-  } else if (! query.write_msi(output)) {
+  } else
+#endif
+  if (! query.write_msi(output)) {
     return 0;
   }
 
@@ -393,10 +391,12 @@ mol2qry(MDL_Molecule & m,
   if (all_queries_in_one_file)
     return mol2qry(m, mqs, stream_for_all_queries);
 
+#ifdef BINARY_DATA_FIX
   // If writing protos to a binary file, the output stream is not used, so pass anything.
   if (proto_destination) {
     return mol2qry(m, mqs, std::cout);
   }
+#endif
 
   IWString output_fname(output_stem);
 
@@ -512,7 +512,7 @@ mol2qry(const char * ifile,
   if (all_queries_in_one_file) {  // file already opened elsewhere
   } else if (stem_for_output.length()) {
     output_fname = stem_for_output;
-  } else if (proto_destination) {
+  //} else if (proto_destination) {
   } else {
     output_fname = ifile;
     output_fname.remove_suffix();
@@ -718,6 +718,7 @@ mol2qry(int  argc, char ** argv) {
     }
   }
 
+#ifdef FIX_SOMETIME
   if (cl.option_present('P')) {
     IWString fname = cl.string_value('P');
     proto_destination = std::make_unique<binary_data_file::BinaryDataFileWriter>();
@@ -730,6 +731,7 @@ mol2qry(int  argc, char ** argv) {
       cerr << "serialized protos written to " << fname << "'\n";
     }
   }
+#endif
 
 
   FileType input_type = FILE_TYPE_INVALID;

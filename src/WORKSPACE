@@ -63,16 +63,16 @@ http_archive(
         "https://github.com/google/brotli/releases/tag/v1.0.9",
     ],
 )
-http_archive(
-    name = "snappy",
-    build_file = "//third_party:snappy.BUILD",
-    sha256 = "38b4aabf88eb480131ed45bfb89c19ca3e2a62daeb081bdf001cfb17ec4cd303",
-    strip_prefix = "snappy-1.1.8",
-    urls = [
-        "https://mirror.bazel.build/github.com/google/snappy/archive/1.1.8.zip",
-        "https://github.com/google/snappy/archive/1.1.8.zip",  # 2020-01-14
-    ],
-)
+#http_archive(
+##    name = "snappy",
+#    build_file = "//third_party:snappy.BUILD",
+#    sha256 = "38b4aabf88eb480131ed45bfb89c19ca3e2a62daeb081bdf001cfb17ec4cd303",
+#    strip_prefix = "snappy-1.1.8",
+#    urls = [
+#        "https://mirror.bazel.build/github.com/google/snappy/archive/1.1.8.zip",
+#        "https://github.com/google/snappy/archive/1.1.8.zip",  # 2020-01-14
+#    ],
+#)
 
 # rules_cc defines rules for generating C++ code from Protocol Buffers.
 http_archive(

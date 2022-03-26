@@ -132,6 +132,8 @@ Spread_Object::_update_nsn_stuff(const Spread_Object & fpsel,
   return;
 }
 
+//#define OLD_VERSION
+#ifdef OLD_VERSION
 int
 Spread_Object::object_has_been_selected(Spread_Object & fpsel)
 {
@@ -144,6 +146,21 @@ Spread_Object::object_has_been_selected(Spread_Object & fpsel)
 
   return 1;
 }
+#else
+int
+Spread_Object::object_has_been_selected(Spread_Object & fpsel)
+{
+  std::optional<similarity_type_t> new_distance = IW_General_Fingerprint::distance(fpsel, _nearest_selected_neighbour.distance());
+  if (! new_distance) {
+    return 1;
+  }
+
+  _update_nsn_stuff(fpsel, *new_distance);
+
+  return 1;
+}
+#endif
+
 
 int
 Spread_Object::object_has_been_selected(Spread_Object & fpsel,

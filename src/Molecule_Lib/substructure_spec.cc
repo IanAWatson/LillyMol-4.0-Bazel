@@ -854,13 +854,13 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
 
   if (SUBSTRUCTURE_NOT_SPECIFIED != _aromaticity)
   {
-    aromaticity_type_t tmp = target.aromaticity();
+    aromaticity_type_t target_arom = target.aromaticity();
 
-    if (tmp == _aromaticity)
+    if (target_arom == _aromaticity)
       ;
-    else if (is_aromatic_atom(_aromaticity) && is_aromatic_atom(tmp))
+    else if (is_aromatic_atom(_aromaticity) && is_aromatic_atom(target_arom))
       ;
-    else if (is_aliphatic_atom(_aromaticity) && is_aliphatic_atom(tmp))
+    else if (is_aliphatic_atom(_aromaticity) && is_aliphatic_atom(target_arom))
       ;
     else
       return 0;

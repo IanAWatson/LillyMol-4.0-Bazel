@@ -255,6 +255,8 @@ class IW_General_Fingerprint
     similarity_type_t tversky  (IW_General_Fingerprint &, const Tversky &);
 
     similarity_type_t distance  (IW_General_Fingerprint & rhs) { return static_cast<similarity_type_t> (1.0) - tanimoto (rhs);}
+    // Only return a result if the distance is less than `must_be_closer_than`.
+    std::optional<similarity_type_t> distance (IW_General_Fingerprint & rhs, float must_be_closer_than);
 
 //  possibly faster similarity function with a cutoff
 

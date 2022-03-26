@@ -13,3 +13,4 @@ Makefile
 CTestTestfile.cmake
 *.cmake
 _deps
+.gdb_history

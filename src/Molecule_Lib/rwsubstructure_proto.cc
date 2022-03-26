@@ -369,9 +369,9 @@ Substructure_Atom_Specifier::construct_from_proto(const SubstructureSearch::Subs
   if (proto.has_aromatic())
   {
     if (proto.aromatic())
-      _aromaticity = 1;
+      _aromaticity = AROMATIC;
     else
-      _aromaticity = 0;
+      _aromaticity = NOT_AROMATIC;
   }
 
   if (proto.has_match_spinach_only())

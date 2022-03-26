@@ -363,5 +363,15 @@ TEST_F(TestNMAB, AllRingAtomsButNotBonds) {
   EXPECT_EQ(_query.substructure_search(&_m, _sresults), 2);
 }
 
+// The reason this was confusing is that I was looking for
+// hydroxy groups near an acetylene, but with no matched atoms
+// in between. This matched, which seemed wrong. But the ring
+// atom is not an unmatched atom between the two groups, but
+// a matched atom, and so this is a correct match.
+TEST_F(TestNMAB, ConfusingAtFirst) {
+  ASSERT_TRUE(_query.create_from_smarts("C#C...{<4;0[R]}[CX4]-[OH]"));
+  ASSERT_TRUE(_m.build_from_smiles("OC1(CCN2CCCC12)C#C"));
+  EXPECT_EQ(_query.substructure_search(&_m, _sresults), 1);
+}
 
 }  // namespace

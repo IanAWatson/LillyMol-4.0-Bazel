@@ -654,6 +654,7 @@ average (const char * fname,
   Accumulator<double> global_accumulator;
 
   int n = columns_to_process.number_elements();
+  cerr << "n = " << n << '\n';
 
   if (n > 0)
   {

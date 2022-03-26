@@ -277,6 +277,7 @@ cc_library(
         "//Foundational/iwstring:iwstring",
         "//Foundational/iw_tdt:iw_tdt",
         "//Foundational/xmlParser:xmlparser",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -352,6 +353,7 @@ cc_library(
         ":reaction_cc_proto",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Foundational/iwmisc:iwmisc",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

@@ -107,7 +107,7 @@ Single_Substructure_Query::_nmab_satisfied(Molecule_to_Match& target, Query_Atom
       cerr << ' ' << i;
   }
   cerr << endl;
-  cerr << "Checking " << _nmab.size() << " nmab conditions\n";
+  cerr << "Checking " << _nmab.size() << " nmab conditions, _no_matched_atoms_between_exhaustive " << _no_matched_atoms_between_exhaustive << '\n';
 #endif
 
   if (_no_matched_atoms_between_exhaustive) {
@@ -611,7 +611,6 @@ int
 NMAB_Token::Parse(const const_IWSubstring& s, int& i)
 {
   assert(s.length() > 0);
-  cerr << "Examining '" << s << "' at position " << i << " char " << s[i] << endl;
 
   if (s[i] == '&') {
     _op = IW_LOGEXP_AND;
@@ -634,7 +633,6 @@ NMAB_Token::Parse(const const_IWSubstring& s, int& i)
 
   // After the leading operator, there may be a relational.
 
-  cerr << i << " in '" << s << "'\n";
   if (s[i] == '<') {
     _relational = -1;
     i++;
@@ -759,7 +757,6 @@ TokeniseNMABSpecification(const_IWSubstring s, resizable_array_p<NMAB_Token>& to
 
   s++;
   s.chop();
-  cerr << "Token stripped to '" << s << "'\n";
 
   // Or should we silently ignore this??
   if (s.empty()) {
@@ -770,14 +767,12 @@ TokeniseNMABSpecification(const_IWSubstring s, resizable_array_p<NMAB_Token>& to
   int i = 0;
   while (i < s.length()) {
     std::unique_ptr<NMAB_Token> token = std::make_unique<NMAB_Token>(0, 1);  // arbitrary query atoms numbers.
-    cerr << "Going to parse\n";
     if (! token->Parse(s, i)) {
       cerr << "No_Matched_Atoms_Between::Initialise:invalid spec '" << s << "'\n";
       return 0;
     }
     tokens.add(token.release());
   }
-  cerr << "At end of parsing loop\n";
 
   if (tokens.empty())
     return 0;
@@ -1033,7 +1028,7 @@ No_Matched_Atoms_Between::MatchesExhaustive(Molecule_to_Match& target,
   const atom_number_t a2 = matched_atoms[_a2]->current_hold_atom()->atom_number();
 
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << " matched atoms " <<  a1 << " " << m->smarts_equivalent_for_atom(a1) << " and " << a2 << " " << m->smarts_equivalent_for_atom(a2) << endl;
+  cerr << " MatchesExhaustive matched atoms " <<  a1 << " " << m->smarts_equivalent_for_atom(a1) << " and " << a2 << " " << m->smarts_equivalent_for_atom(a2) << endl;
 #endif
 
   // probably should check if a1 and a2 are ok atom numbers...
@@ -1098,7 +1093,7 @@ No_Matched_Atoms_Between::_is_a_match(Molecule_to_Match& target,
                                 const int * in_path)
 {
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << "_is_a_match\n";
+  cerr << "_is_a_match, any specifications " << _specs.number_elements() << '\n';
 #endif
   if (_specs.empty())  // We have found a path, no constraints on it.
     return 1;
