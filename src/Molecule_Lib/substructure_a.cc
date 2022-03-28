@@ -837,7 +837,9 @@ Substructure_Atom::_adjust_ring_sizes (const List_of_Ring_Sizes & ring_sizes_per
     return 1;
   }
 
-  _ring_size.add_non_duplicated_elements(ring_sizes_perceived);
+  for (int r : ring_sizes_perceived) {
+    _ring_size.add_if_not_already_present(r);
+  }
 
   return 1;
 }
@@ -1379,13 +1381,14 @@ Substructure_Atom::determine_ring_or_non_ring (int & result) const
     return 1;
   }
 
-  if (_nrings.empty())    // must just be a max value specified
+  if (_nrings.number_elements() == 0)    // must just be a max value specified
     return 0;
 
 // There are multiple values for nrings. If they are all > 0, then ok.
 // Fingerprint just needs to know ring or non ring.
 
-  for (const int r : _nrings)
+  const resizable_array<int> values = _nrings.ValuesMatched();
+  for (const int r : values)
   {
     if (0 == r)
       return 0;
@@ -1393,7 +1396,7 @@ Substructure_Atom::determine_ring_or_non_ring (int & result) const
 
 // All _nrings values were > 0
 
-  result = _nrings[0];
+  result = values[0];
   return 1;
 }
 
@@ -1494,12 +1497,19 @@ Substructure_Atom::check_internal_consistency(int connections) const
   return 1;
 }
 
+// TODO I think I should be able to call Substructure_Atom_Specifier::ring_sizes_specified
 int
 Substructure_Atom::ring_sizes_specified(resizable_array<int> & ring_sizes) const
 {
-  ring_sizes.add_non_duplicated_elements(_aromatic_ring_size);
+  resizable_array<int> values = _aromatic_ring_size.ValuesMatched();
+  for (int r : values) {
+    ring_sizes.add_if_not_already_present(r);
+  }
 
-  ring_sizes.add_non_duplicated_elements(_aliphatic_ring_size);
+  values = _aliphatic_ring_size.ValuesMatched();
+  for (int r : values) {
+    ring_sizes.add_if_not_already_present(r);
+  }
 
   return ring_sizes.number_elements();
 }

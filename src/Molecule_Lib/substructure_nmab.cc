@@ -428,12 +428,11 @@ Link_Atom::initialise_from_mdl_record(const const_IWSubstring & buffer,
   {
     _distance.reset();
 
-    if (_distance.initialise(token))
-    {
-      for (int j = 0; j < _distance.number_elements(); j++)    // convert from atom count to bond count
-      {
-        _distance[j] = _distance[j] + 1;
-      }
+    if (_distance.initialise(token)) {
+      // Convert from atom count to bond count.
+      _distance.UpdateValues([](int d) {
+        return d + 1;
+      });
     }
     else
     {

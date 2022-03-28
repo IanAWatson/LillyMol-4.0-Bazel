@@ -9,6 +9,7 @@
 #endif
 
 #include "Foundational/iwaray/iwaray.h"
+#include "Foundational/iwmisc/matcher.h"
 #include "Foundational/iwmisc/minmaxspc.h"
 #include "Foundational/iwmisc/iwminmax.h"
 #include "Foundational/iwbits/iwbits.h"
@@ -530,32 +531,32 @@ class Substructure_Atom_Specifier
     resizable_array<const Element *> _element;
     resizable_array<int>   _element_unique_id;
 
-    Min_Max_Specifier<int> _ncon;
-    Min_Max_Specifier<int> _ncon2;
-    Min_Max_Specifier<int> _nbonds;
+    iwmatcher::Matcher<int> _ncon;
+    iwmatcher::Matcher<int> _ncon2;
+    iwmatcher::Matcher<int> _nbonds;
     Min_Max_Specifier<int> _formal_charge;
-    Min_Max_Specifier<int> _nrings;
-    Min_Max_Specifier<int> _ring_bond_count;
-    Min_Max_Specifier<int> _ring_size;
-    Min_Max_Specifier<int> _hcount;
+    iwmatcher::Matcher<int> _nrings;
+    iwmatcher::Matcher<int> _ring_bond_count;
+    iwmatcher::Matcher<int> _ring_size;
+    iwmatcher::Matcher<int> _hcount;
     aromaticity_type_t     _aromaticity;
     int                    _chirality;
-    Min_Max_Specifier<int> _aromatic_ring_size;
-    Min_Max_Specifier<int> _aliphatic_ring_size;
-    Min_Max_Specifier<int> _attached_heteroatom_count;
-    Min_Max_Specifier<int> _lone_pair_count;
-    Min_Max_Specifier<int> _unsaturation;
-    Min_Max_Specifier<int> _daylight_x;
+    iwmatcher::Matcher<int> _aromatic_ring_size;
+    iwmatcher::Matcher<int> _aliphatic_ring_size;
+    iwmatcher::Matcher<int> _attached_heteroatom_count;
+    iwmatcher::Matcher<int> _lone_pair_count;
+    iwmatcher::Matcher<int> _unsaturation;
+    iwmatcher::Matcher<int> _daylight_x;
     Min_Max_Specifier<int> _isotope;
     int                    _userAtomType = 0;
-    Min_Max_Specifier<int> _aryl;
-    Min_Max_Specifier<int> _fused_system_size;
-    Min_Max_Specifier<int> _vinyl;
+    iwmatcher::Matcher<int> _aryl;
+    iwmatcher::Matcher<int> _fused_system_size;
+    iwmatcher::Matcher<int> _vinyl;
     int                    _all_rings_kekule;
 
 //  int                    _carbocycle;
 
-    Min_Max_Specifier<int> _heteroatoms_in_ring;
+    iwmatcher::Matcher<int> _heteroatoms_in_ring;
 
 //  We can specify that an atom only match an atom in the molecular
 //  spinach or not. Note that this is not an atom property, but can
@@ -568,7 +569,7 @@ class Substructure_Atom_Specifier
 
 //  We want to be able to look for an atom in a "terminal" ring.
 
-    Min_Max_Specifier<int> _scaffold_bonds_attached_to_ring;
+    iwmatcher::Matcher<int> _scaffold_bonds_attached_to_ring;
 
     // If the query contains atom typing.
     atom_type_t _atom_type;
@@ -583,7 +584,7 @@ class Substructure_Atom_Specifier
 //   a. the number of atoms in a symmetry group (F in CF3 is 3) [DEGREE]
 //   b. relationship to other matched atoms   [GROUP]
 
-    Min_Max_Specifier<int> _symmetry_degree;
+    iwmatcher::Matcher<int> _symmetry_degree;
     int _symmetry_group;
 
 //  During matching is it desirable to keep track of how many attributes
@@ -881,7 +882,7 @@ class Substructure_Atom : public Substructure_Atom_Specifier
 
     // The number of unmatched atoms attached.
     // Note this is matched once all atoms have been matched.
-    Min_Max_Specifier<int> _unmatched_atoms_attached;
+    iwmatcher::Matcher<int> _unmatched_atoms_attached;
 
     Substructure_Atom * _parent;
     Substructure_Bond * _bond_to_parent;
@@ -1285,7 +1286,7 @@ class Substructure_Environment : public resizable_array_p<Substructure_Atom>
 //  Note that this is only useful in cases where multiple attachment points
 //  are specified.
 
-    Min_Max_Specifier<int> _hits_needed;
+    iwmatcher::Matcher<int> _hits_needed;
 
 //  In the case of multiple possible attachment points, we often want to
 //  be able to say that either the environment is attached at a point,
@@ -1398,7 +1399,7 @@ class Elements_Needed
   private:
     atomic_number_t _z;
 
-    Min_Max_Specifier<int> _hits_needed;
+    iwmatcher::Matcher<int> _hits_needed;
 
   public:
     Elements_Needed();
@@ -1441,7 +1442,7 @@ class Substructure_Environment_Rejection : public Substructure_Environment
 class Substructure_Environment_Fuzzy : public Substructure_Environment
 {
   private:
-    Min_Max_Specifier<int> _distance;    // how many bonds from root atom
+    iwmatcher::Matcher<int> _distance;    // how many bonds from root atom
 
     int _path_includes_matched_atoms;
 
@@ -1462,7 +1463,7 @@ class Substructure_Ring_Environment : public Substructure_Atom
   private:
     int _active;
 
-    Min_Max_Specifier<int> _hits_needed;
+    iwmatcher::Matcher<int> _hits_needed;
 
   public:
     Substructure_Ring_Environment ();
@@ -1795,7 +1796,7 @@ class Link_Atom
 
     int _bond_topology;
 
-    Min_Max_Specifier<int> _distance;
+    iwmatcher::Matcher<int> _distance;
 
 //  the symbol could be almost anything. C, N, O, [OD2], *, A, Q, etc
 
@@ -2066,7 +2067,7 @@ class SeparatedAtoms {
     int _a1;
     int _a2;
     // The bonds_between value that must be met.
-    Min_Max_Specifier<int> _separation;
+    iwmatcher::Matcher<int> _separation;
 
   public:
     SeparatedAtoms();
@@ -2141,23 +2142,23 @@ class Single_Substructure_Query
 
 //  Various whole molecule conditions for a match
 
-    Min_Max_Specifier<int> _natoms;
-    Min_Max_Specifier<int> _nrings;
+    iwmatcher::Matcher<int> _natoms;
+    iwmatcher::Matcher<int> _nrings;
 
 //  Simple counts of the number of each type of ring
 
-    Min_Max_Specifier<int> _aromatic_rings;
-    Min_Max_Specifier<int> _aromatic_atoms;
-    Min_Max_Specifier<int> _non_aromatic_rings;
-    Min_Max_Specifier<int> _fused_rings;
-    Min_Max_Specifier<int> _strongly_fused_rings;
-    Min_Max_Specifier<int> _isolated_rings;
-    Min_Max_Specifier<int> _number_isotopic_atoms;
+    iwmatcher::Matcher<int> _aromatic_rings;
+    iwmatcher::Matcher<int> _aromatic_atoms;
+    iwmatcher::Matcher<int> _non_aromatic_rings;
+    iwmatcher::Matcher<int> _fused_rings;
+    iwmatcher::Matcher<int> _strongly_fused_rings;
+    iwmatcher::Matcher<int> _isolated_rings;
+    iwmatcher::Matcher<int> _number_isotopic_atoms;
 
 //  Nov 98. Needed something to get molecules with two isolated rings or
 //  ring systems.
 
-    Min_Max_Specifier<int> _isolated_ring_objects;
+    iwmatcher::Matcher<int> _isolated_ring_objects;
 
     resizable_array_p<Substructure_Ring_Specification> _ring_specification;
 
@@ -2185,13 +2186,13 @@ class Single_Substructure_Query
 //  When specifying an attached heteroatom count, one can also specify
 //  the atoms which will be considered "heteroatoms"
 
-    Min_Max_Specifier<int> _attached_heteroatom_count;
+    iwmatcher::Matcher<int> _attached_heteroatom_count;
     resizable_array<atomic_number_t> _heteroatoms;
 
 //  We can also put constraints on the number of heteroatoms in the molecule.
 //  These will depend on the definition of heteroatoms stored in _heteroatoms
 
-    Min_Max_Specifier<int> _heteroatoms_in_molecule;
+    iwmatcher::Matcher<int> _heteroatoms_in_molecule;
 
 //  Before examining the molecule, we can make sure that we have
 //  a certain number of elements
@@ -2201,7 +2202,7 @@ class Single_Substructure_Query
 //  Sometimes it is useful to put constraints on the number of ring
 //  atoms which are matched
 
-    Min_Max_Specifier<int> _ring_atoms_matched;
+    iwmatcher::Matcher<int> _ring_atoms_matched;
 
 // We can also specify that there must be a distance between any hits
 // We first find all the embeddings, and then reject those which are
@@ -2221,24 +2222,24 @@ class Single_Substructure_Query
 
 //  We can only check molecules that have a given number of fragments
 
-    Min_Max_Specifier<int> _number_fragments;
+    iwmatcher::Matcher<int> _number_fragments;
 
 //  We can set constraints on the number of spinach atoms
 
-    Min_Max_Specifier<int> _atoms_in_spinach;
+    iwmatcher::Matcher<int> _atoms_in_spinach;
 
 //  The atoms between rings
 
-    Min_Max_Specifier<int> _inter_ring_atoms;
+    iwmatcher::Matcher<int> _inter_ring_atoms;
 
 //  Jan 2005. We may have constraints on the number of unmatched atoms
 
-    Min_Max_Specifier<int> _unmatched_atoms;
+    iwmatcher::Matcher<int> _unmatched_atoms;
 
     float _min_fraction_atoms_matched;
     float _max_fraction_atoms_matched;
 
-    Min_Max_Specifier<int> _net_formal_charge;
+    iwmatcher::Matcher<int> _net_formal_charge;
 
     // If atom types are specified this will be active.
     // Incorporate as pointer to lessen the dependency on this.
@@ -2275,7 +2276,7 @@ class Single_Substructure_Query
 
 //  We can insist on a range of hits in order to get a match
 
-    Min_Max_Specifier<int> _hits_needed;
+    iwmatcher::Matcher<int> _hits_needed;
 
 //  We can also specify that multiple embeddings have no atoms in
 //  common. Note that this will imply _find_one_embedding_per_start_atom
@@ -2305,7 +2306,7 @@ class Single_Substructure_Query
 
 //  We can specify conditions on the number of heteroatoms matched
 
-    Min_Max_Specifier<int> _heteroatoms_matched;
+    iwmatcher::Matcher<int> _heteroatoms_matched;
 
 //  We can specify arbitrary conditions on the number of given
 //  atom types which must match
@@ -2374,7 +2375,7 @@ class Single_Substructure_Query
 
 //  We can impose constraints on the distance between root atoms
 
-    Min_Max_Specifier<int> _distance_between_root_atoms;
+    iwmatcher::Matcher<int> _distance_between_root_atoms;
 
 //  In cases where we have multiple root atoms we can specify that there be no
 //  matched atoms on any path between matched root atoms. We need an object to
@@ -3142,6 +3143,9 @@ namespace substructure_spec {
 int SmartsNumericQualifier(const char * input,
                        int max_chars,
                        Min_Max_Specifier<int>& result);
+int SmartsNumericQualifier(const char * input,
+                       int max_chars,
+                       iwmatcher::Matcher<int>& result);
 int SmartsFetchNumeric(const char * string, int & value, 
                      int & qualifier);
 

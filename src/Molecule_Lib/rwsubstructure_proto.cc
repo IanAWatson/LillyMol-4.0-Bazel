@@ -82,6 +82,31 @@ SetProtoValues(const Min_Max_Specifier<int> & values,
 
   return 1;
 }
+template <typename P>
+int
+SetProtoValues(const iwmatcher::Matcher<int> & matcher,
+               const char * name_stem,
+               P& proto) {
+  const Descriptor* descriptor = proto.GetDescriptor();
+  const Reflection * reflection = proto.GetReflection();
+  if (matcher.number_elements() > 0) {
+    const FieldDescriptor * fd = descriptor->FindFieldByName(name_stem);
+    const resizable_array<int> values = matcher.ValuesMatched();
+    for (int v : values) {
+      reflection->AddUInt32(&proto, fd, static_cast<uint32_t>(v));
+    }
+  }
+
+  int v;
+  if (matcher.min(v)) {
+    SetValue<P>(v, "min_", name_stem, descriptor, reflection, proto);
+  }
+  if (matcher.max(v)) {
+    SetValue<P>(v, "max_", name_stem, descriptor, reflection, proto);
+  }
+
+  return 1;
+}
 
 template <typename P>
 int
@@ -211,13 +236,13 @@ AppendIntValue(const T value,
   return 1;
 }
 
-template <typename T>
+template <typename T, typename M>
 bool
 ReallyGruesome(const ::google::protobuf::RepeatedField<T> values,
                const std::optional<T>(minval), const std::optional<T>(maxval),
                const T min_allowed, const T max_allowed,
                const char * attribute,
-               Min_Max_Specifier<int>& target)
+               M& target)
 {
   if (minval.has_value())
     target.set_min(minval.value());
@@ -1179,6 +1204,15 @@ Single_Substructure_Query::WriteProto(std::ostream& output)
   return 0;
 }
 
+// for all the individual values in Matcher `p`, add them as
+// repeated fields of the same to proto `p`.
+#define ADDREPEATEDFIELDMATCHER(p, field) { \
+  const resizable_array<int> values = _ ##field.ValuesMatched(); \
+  for (auto v : values) { \
+    proto.add_ ## field(v); \
+  }  \
+}
+
 #define ADDREPEATEDFIELD(p, field) { \
   for (auto value : _ ## field) { \
     proto.add_ ## field(value); \
@@ -1188,6 +1222,16 @@ Single_Substructure_Query::WriteProto(std::ostream& output)
 // Populates a Min_Max_Specifier.
 #define SETPROTOVALUES(p, attribute, type) { \
   ADDREPEATEDFIELD(p, attribute) \
+  type tmp; \
+  if (_ ## attribute.min(tmp)) \
+    p.set_min_ ## attribute(tmp); \
+  if (_ ## attribute.max(tmp)) \
+    p.set_max_ ## attribute(tmp); \
+}
+
+// Populates a Matcher.
+#define SETPROTOVALUESMATCHER(p, attribute, type) { \
+  ADDREPEATEDFIELDMATCHER(p, attribute) \
   type tmp; \
   if (_ ## attribute.min(tmp)) \
     p.set_min_ ## attribute(tmp); \
@@ -1388,7 +1432,7 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
   }
 
   if (_unmatched_atoms_attached.is_set()) {
-    SETPROTOVALUES(proto, unmatched_atoms_attached, int);
+    SETPROTOVALUESMATCHER(proto, unmatched_atoms_attached, int);
   }
 
 //SET_PROTO_IF_SET(proto, atom_type_group, 0);
@@ -1683,7 +1727,7 @@ Substructure_Environment::BuildProto(SubstructureSearch::SubstructureEnvironment
   SET_PROTO_IF_SET(proto, or_id, 0);  // 8
   SET_PROTO_IF_SET(proto, and_id, 0);  // 9
 
-  SETPROTOVALUES(proto, hits_needed, int);  // 10
+  SETPROTOVALUESMATCHER(proto, hits_needed, int);  // 10
   if (_no_other_substituents_allowed) {
     proto.set_no_other_substituents_allowed(true);  // 13
   }
@@ -3203,7 +3247,7 @@ RingSizeCount::BuildProto(SubstructureSearch::RingSizeRequirement & proto) const
 int
 Elements_Needed::BuildProto(SubstructureSearch::ElementsNeeded& proto) const {
   proto.set_atomic_number(_z);
-  SETPROTOVALUES(proto, hits_needed, int);
+  SETPROTOVALUESMATCHER(proto, hits_needed, int);
   return 1;
 }
 
@@ -3211,7 +3255,7 @@ int
 Link_Atom::BuildProto(SubstructureSearch::LinkAtoms& proto) const {
   proto.set_a1(_a1);
   proto.set_a2(_a2);
-  SETPROTOVALUES(proto, distance, int);
+  SETPROTOVALUESMATCHER(proto, distance, int);
   SetProtoValues(_distance, "distance", proto);
   return 1;
 }

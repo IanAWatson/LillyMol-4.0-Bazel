@@ -359,11 +359,12 @@ get_float_attribute(const msi_object & msi,
   Append resulting int values to SPECIFIER.
 */
 
-static int
+template <typename M>
+int
 append_int_values(const msi_object & msi,
                   const IWString & attribute_name,
                   int min_val, int max_val,
-                  Min_Max_Specifier<int> & specifier,
+                  M & specifier,
                   int & attributes_specified)
 {
   assert (specifier.ok());
@@ -468,9 +469,9 @@ really_gruesome (resizable_array<int> & specifier, const msi_object * msi,
   ATTRIBUTES_SPECIFIED by one, since it is really Substructure_Atom_Specifier::_attributes_specified
 */
 
-template <typename T>
+template <typename T, typename M>
 int
-_really_gruesome (Min_Max_Specifier<T> & specifier, const msi_object & msi,
+_really_gruesome (M & specifier, const msi_object & msi,
                   const IWString & attribute_name, int & attributes_specified,
                   T min_value_allowed, T max_value_allowed)
 {
@@ -522,9 +523,9 @@ template int _really_gruesome (Min_Max_Specifier<int> & specifier, const msi_obj
                   const IWString & attribute_name, int & attributes_specified,
                   int min_value_allowed, int max_value_allowed);
 
-template <typename T>
+template <typename T, typename M>
 int
-really_gruesome (Min_Max_Specifier<T> & specifier,
+really_gruesome (M & specifier,
                  const msi_object & msi,
                  const IWString & attribute_name,
                  int & attributes_specified,

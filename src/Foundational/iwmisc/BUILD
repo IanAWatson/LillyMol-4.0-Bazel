@@ -47,6 +47,7 @@ cc_library(
         "iwminmax.h",
         "iw_time.h",
         "logical_expression.h",
+        "matcher.h",
         "minmaxspc.h",
         "misc.h",
         "msi_object.h",
@@ -192,6 +193,18 @@ cc_test  (
         "-lm",
         "-lz",
     ],
+)
+
+cc_test(
+    name = "matcher_test",
+    srcs = [
+        "matcher_test.cc",
+    ],
+    deps = [
+        ":iwmisc",
+        "//Foundational/iwstring:iwstring",
+        "@googletest//:gtest_main",
+    ]
 )
 
 cc_test  (

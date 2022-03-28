@@ -283,7 +283,9 @@ Substructure_Atom_Specifier::_adjust_ring_sizes(const List_of_Ring_Sizes & ring_
     return 1;
   }
 
-  _ring_size.add_non_duplicated_elements(ring_sizes_perceived);
+  for (int r : ring_sizes_perceived) {
+    _ring_size.add_if_not_already_present(r);
+  }
 
   return 1;
 }
@@ -329,14 +331,13 @@ Substructure_Atom_Specifier::min_ncon() const
   if (_ncon.min(tmp))       // an explicit min value is known
     return tmp;
 
-  iwmin<int> rc(0);
+  int minval = 0;  // initialised to keep the compiler quiet.
+  if (_ncon.min_explicit_value(minval)) {
+    return minval;
+  }
 
-  for (int i = 0; i < _ncon.number_elements(); i++)
-    rc.extra(_ncon[i]);
-
-  return rc.minval();
+  return 0;
 }
-
 
 int
 Substructure_Atom_Specifier::min_nbonds() const
@@ -550,8 +551,9 @@ Substructure_Atom_Specifier::update_aromaticity(aromaticity_type_t arom)
   this function.
 */
 
-static int
-match_ring_sizes(const Min_Max_Specifier<int> & ring_sizes_in_query,
+template <typename M>
+int
+match_ring_sizes(const M & ring_sizes_in_query,
                  const List_of_Ring_Sizes * ring_sizes_in_molecule,
                  const char * comment)
 {
@@ -1245,7 +1247,7 @@ Substructure_Atom_Specifier::determine_ring_or_non_ring (int & result) const
     return 1;
   }
 
-  if (_nrings.empty())    // must just be a max value specified
+  if (_nrings.number_elements() == 0)    // must just be a max value specified
     return 0;
 
 // There are multiple values for nrings. If they are all > 0, then ok.
@@ -1343,9 +1345,15 @@ Substructure_Atom_Specifier::check_internal_consistency (int connections) const
 int
 Substructure_Atom_Specifier::ring_sizes_specified (resizable_array<int> & ring_sizes) const
 {
-  ring_sizes.add_non_duplicated_elements(_aromatic_ring_size);
+  resizable_array<int> values = _aromatic_ring_size.ValuesMatched();
+  for (int r : values) {
+    ring_sizes.add_if_not_already_present(r);
+  }
 
-  ring_sizes.add_non_duplicated_elements(_aliphatic_ring_size);
+  values = _aliphatic_ring_size.ValuesMatched();
+  for (int r : values) {
+    ring_sizes.add_if_not_already_present(r);
+  }
 
   return ring_sizes.number_elements();
 }
@@ -2027,8 +2035,30 @@ ValidRingSizes(const Min_Max_Specifier<int>& ring_sizes) {
   return 1;
 }
 
+int
+ValidRingSizes(const iwmatcher::Matcher<int>& ring_sizes) {
+  if (! ring_sizes.is_set()) {
+    return 1;
+  }
+
+  int value;
+  if (ring_sizes.min(value) && value < 3) {
+    return 0;
+  }
+  if (ring_sizes.max(value) && value < 3) {
+    return 0;
+  }
+
+  return ! ring_sizes.AnyValue([](int rsize) {
+    return rsize < 3;
+  });
+}
+
+// M will be either Min_Max_Specifier<int> or iwmatcher::Matcher<int>
+// Really does nothing...
+template <typename M>
 bool
-ValidRingBondCount(const Min_Max_Specifier<int>& ring_bond_count) {
+ValidRingBondCount(const M& ring_bond_count) {
   if (! ring_bond_count.is_set()) {
     return true;
   }
@@ -2118,10 +2148,11 @@ SmartsFetchNumeric(const char * string, int & value,
 // Parse `input` as an RDKit smarts range specification.
 // max_chars is the max number of characters to be considered.
 // {3-} {-4} {3-4}
+template <typename M>
 int
 SmartsParseRange(const char * input,
                  int max_chars,
-                 Min_Max_Specifier<int>& result) {
+                 M& result) {
   assert (*input == open_brace);
   std::string to_parse;
   for (int i = 0; i < max_chars; ++i) {
@@ -2207,8 +2238,54 @@ SmartsNumericQualifier(const char * input,
 
   return rc;
 }
+int
+SmartsNumericQualifier(const char * input,
+                       int max_chars,
+                       iwmatcher::Matcher<int>& result) {
+
+  if (*input == '<' || *input == '>') {
+    int value;
+    int ltgt;
+    int chars_consumed = substructure_spec::SmartsFetchNumeric(input, value, ltgt);
+    if (ltgt < 0) {
+      result.set_max(value - 1);
+    } else if (ltgt > 0) {
+      result.set_min(value + 1);
+    } else {
+      result.add(value);
+    }
+    return chars_consumed;
+  }
+
+  if (*input == open_brace) {
+    return SmartsParseRange(input, max_chars, result);
+  }
+
+  // Input might be a number.
+
+  int value = 0;
+  int rc = 0;
+  for (int i = 0; i < max_chars; ++i) {
+    if (! isdigit(input[i])) {
+      break;
+    }
+    value = value * 10 + input[i] - '0';
+    ++rc;
+  }
+
+  // No number detected.
+  if (rc == 0) {
+    return 0;
+  }
+
+  result.add(value);
+
+  return rc;
+}
 
 }  // namespace substructure_spec
+
+//template int substructure_spec::SmartsNumericQualifier(char const*, int, Min_Max_Specifier<int>&);
 
 //#define DEBUG_GET_ATOMIC_NUMBER_OR_SYMBOL
 

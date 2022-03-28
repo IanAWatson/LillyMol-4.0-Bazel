@@ -848,40 +848,44 @@ message SingleSubstructureQuery {
   repeated int32 net_formal_charge = 89;
   optional int32 min_net_formal_charge = 90;
   optional int32 max_net_formal_charge = 91;
+  // The most common use case is looking for molecules that have
+  // any net formal charge, so make that easy.
+  // If set, will match if there is any formal charge.
+  optional bool any_net_formal_charge = 92;
 
   // Once the matches are made, only accept if, across all
   // embeddings, this fraction of the atoms in the target
   // is satisfied.
-  optional float min_fraction_atoms_matched = 92;
-  optional float max_fraction_atoms_matched = 93;
+  optional float min_fraction_atoms_matched = 93;
+  optional float max_fraction_atoms_matched = 94;
 
-  repeated SubstructureEnvironment environment = 94;
-  repeated SubstructureEnvironment environment_no_match = 95;
+  repeated SubstructureEnvironment environment = 95;
+  repeated SubstructureEnvironment environment_no_match = 96;
 
   // By default the atoms in an environment only match unmatched
   // atoms. That can be changed.
-  optional bool environment_must_match_unmatched_atoms = 96;
+  optional bool environment_must_match_unmatched_atoms = 97;
 
   // If specified in the query, will be passed to all
   // environments.
-  optional bool env_matches_can_share_attachment_points = 97;
+  optional bool env_matches_can_share_attachment_points = 98;
 
-  repeated SubstructureRingSpecification ring_specifier = 98;
-  repeated Operator ring_specification_logexp = 99;
+  repeated SubstructureRingSpecification ring_specifier = 99;
+  repeated Operator ring_specification_logexp = 100;
 
-  repeated SubstructureRingSystemSpecification ring_system_specifier = 100;
-  repeated Operator ring_system_specifier_logexp = 101;
+  repeated SubstructureRingSystemSpecification ring_system_specifier = 101;
+  repeated Operator ring_system_specifier_logexp = 102;
 
   // Among the matched atoms, what elements must be present.
-  repeated ElementsNeeded element_hits_needed = 102;
+  repeated ElementsNeeded element_hits_needed = 103;
 
   // Only search the molecule if elements_needed is satisfied.
-  repeated ElementsNeeded elements_needed = 103;
+  repeated ElementsNeeded elements_needed = 104;
 
   // Only search the molecule if aromatic_atoms is satisfied.
-  repeated uint32 aromatic_atoms = 104;
-  optional uint32 min_aromatic_atoms = 105;
-  optional uint32 max_aromatic_atoms = 106;
+  repeated uint32 aromatic_atoms = 105;
+  optional uint32 min_aromatic_atoms = 106;
+  optional uint32 max_aromatic_atoms = 107;
 
   // As embeddings are found, discard those that are duplicates
   // of embeddings already found.

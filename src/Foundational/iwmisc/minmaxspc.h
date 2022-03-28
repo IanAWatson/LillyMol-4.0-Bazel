@@ -69,6 +69,9 @@ class Min_Max_Specifier : public iwarchive<T>
 
     Min_Max_Specifier<T> & operator=(const Min_Max_Specifier<T> &);
     bool operator==(const Min_Max_Specifier<T>& rhs) const;
+
+    // within the iwarchive, return the smallest value if present.
+    int min_explicit_value(T& v) const;
 };
 
 template <typename T>  std::ostream &
@@ -424,6 +427,22 @@ Min_Max_Specifier<T>::adjust_to_accommodate(const T v)
 
   _match_any = 0;
 
+  return 1;
+}
+
+template <typename T>
+int
+Min_Max_Specifier<T>::min_explicit_value(T & v) const {
+  if (_number_elements == 0) {
+    return 0;
+  }
+
+  T result = _things[0];
+  for (int i = 1; i < _number_elements; ++i) {
+    if (_things[i] < result) {
+      result = _things[i];
+    }
+  }
   return 1;
 }
 
