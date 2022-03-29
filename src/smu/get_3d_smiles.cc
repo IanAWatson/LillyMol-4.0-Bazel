@@ -144,6 +144,17 @@ AddGeometry(const Geometry& geometry,
   return 1;
 }
 
+std::optional<Molecule>
+GetStartingBondTopology(const google::protobuf::RepeatedPtrField<BondTopology>& bond_topologies) {
+  for (const BondTopology& bt : bond_topologies) {
+    if (bt.is_starting_topology()) {
+      return MoleculeFromBondTopology(bt);
+    }
+  }
+
+  return std::nullopt;
+}
+
 void
 Usage(int rc) {
   exit(rc);
@@ -239,10 +250,12 @@ Get3DSmiles(const Conformer& conformer,
     return 1;
   }
 
-  std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(conformer.bond_topologies(0));
+  std::optional<Molecule> maybe_mol = GetStartingBondTopology(conformer.bond_topologies());
+
+//std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(conformer.bond_topologies(0));
   if (! maybe_mol) {
     options.no_molecule_generated++;
-    return 0;
+    return 1;
   }
 
   if (conformer.optimized_geometry().atom_positions().size() == 0) {

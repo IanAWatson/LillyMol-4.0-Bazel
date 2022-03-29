@@ -31,6 +31,18 @@ cc_proto_library(
 )
 
 cc_binary(
+    name = "chirality",
+    srcs = [
+        "chirality.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "bond_score",
     srcs = [
         "bond_score.cc",
