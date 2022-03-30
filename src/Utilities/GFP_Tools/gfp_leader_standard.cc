@@ -3,21 +3,33 @@
 */
 
 #include <stdlib.h>
-#include <limits>
 #include <iostream>
-
-using std::cout;
+#include <limits>
+#include <memory>
 
 #include <omp.h>
 
+#include "google/protobuf/text_format.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/data_source/tfdatarecord.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 #include "Foundational/iwmisc/report_progress.h"
+
+#include "Utilities/GFP_Tools/nearneighbors.pb.h"
 
 #include "gfp_standard.h"
 #include "smiles_id_dist.h"
 #include "sparse_collection.h"
+
+using std::cerr;
+using std::endl;
+using std::cout;
+
+using iw_tf_data_record::TFDataWriter;
 
 const char * prog_name = nullptr;
 
@@ -73,6 +85,7 @@ usage(int rc)
   cerr << " -p <n>         process <n> leaders at once (max 2 for now)\n";
   cerr << " -h <n>         maximum number of OMP threads to use\n";
   cerr << " -r <n>         report progress every <n> clusters formed\n";
+  cerr << " -Y ...         output as proto <ascii,bin>\n";
   cerr << " -v             verbose output\n";
 
   exit(rc);
@@ -382,10 +395,38 @@ allocate_pool(int s)
 
   return 1;
 }
+
+int
+WriteTextProto(NearNeighbors::Neighbors& proto,
+               IWString_and_File_Descriptor& output) {
+  google::protobuf::TextFormat::Printer printer;
+  printer.SetSingleLineMode(true);
+  std::string destination;
+  printer.PrintToString(proto, &destination);
+  output << destination << '\n';
+#ifdef OLD
+  using google::protobuf::io::ZeroCopyOutputStream;
+  using google::protobuf::io::FileOutputStream;
+  std::unique_ptr<ZeroCopyOutputStream> zero_copy_output(new FileOutputStream(output.fd()));
+  if (! google::protobuf::TextFormat::Print(proto, zero_copy_output.get(), true)) {
+    std::cerr << "WriteProtoAsText:cannot write\n";
+    return 0;
+  }
+#endif
+
+  return 1;
+}
+
+int
+WriteBinaryProto(NearNeighbors::Neighbors& proto,
+                 TFDataWriter& writer) {
+  return writer.WriteSerializedProto(proto);
+}
+
 static int
 gfp_leader_standard(int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "vt:A:s:p:r:h:n:");
+  Command_Line cl(argc, argv, "vt:A:s:p:r:h:n:Y:");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -445,6 +486,23 @@ gfp_leader_standard(int argc, char ** argv)
     {
       cerr << "Cannot initialise report progress option (-r)\n";
       usage(2);
+    }
+  }
+
+  int write_ascii_protos = 0;
+  int write_binary_protos = 0;
+  IWString proto_fname;
+
+  if (cl.option_present('Y')) {
+    IWString y;
+    for (int i = 0; cl.value('Y', y, i); ++i) {
+      if (y == "ascii") {
+        write_ascii_protos = 1;
+      } else if (y == "bin") {
+        write_binary_protos = 1;
+      } else {
+        proto_fname = y;
+      }
     }
   }
 
@@ -545,10 +603,31 @@ gfp_leader_standard(int argc, char ** argv)
   if (verbose)
     cerr << "Clustered " << pool_size << " fingerprints into " << clusters_formed << " clusters\n";
 
+  std::unique_ptr<IWString_and_File_Descriptor> ascii_proto_output;
+  std::unique_ptr<TFDataWriter> binary_proto_output;
+  if (write_ascii_protos) {
+    ascii_proto_output = std::make_unique<IWString_and_File_Descriptor>();
+    if (! ascii_proto_output->open(proto_fname)) {
+      cerr << "Cannot open file for ascii proto output " << proto_fname << "\n";
+      return 1;
+    }
+  } else if (write_binary_protos) {
+    binary_proto_output = std::make_unique<TFDataWriter>();
+    if (! binary_proto_output->Open(proto_fname)) {
+      cerr << "Cannot open file for binary proto output " << proto_fname << "\n";
+      return 1;
+    }
+  }
+
   int start = 0;
   for (int c = 1; c <= clusters_formed; c++)
   {
     int items_in_cluster = 0;
+
+    std::unique_ptr<NearNeighbors::Neighbors> proto;
+    if (write_ascii_protos || write_binary_protos) {
+      proto.reset(new NearNeighbors::Neighbors());
+    }
 
     for (int j = start; j < pool_size; j++)
     {
@@ -561,16 +640,24 @@ gfp_leader_standard(int argc, char ** argv)
       items_in_cluster++;
     }
 
-    cout << smiles_tag << leader_item[start].smiles() << ">\n";
-    cout << identifier_tag << leader_item[start].id() << ">\n";
-    cout << "CLUSTER<" << (c-1) << ">\n";
-    cout << "CSIZE<" << items_in_cluster << ">\n";
+    if (proto) {
+      proto->set_id(leader_item[start].id().AsString());
+      proto->set_smiles(leader_item[start].smiles().AsString());
+      proto->set_cluster_number(c - 1);
+    } else {
+      cout << smiles_tag << leader_item[start].smiles() << ">\n";
+      cout << identifier_tag << leader_item[start].id() << ">\n";
+      cout << "CLUSTER<" << (c-1) << ">\n";
+      cout << "CSIZE<" << items_in_cluster << ">\n";
+    }
 
     start++;
 
     if (start == pool_size)
     {
-      cout << "|\n";
+      if (! proto) {
+        cout << "|\n";
+      }
       break;
     }
 
@@ -579,12 +666,25 @@ gfp_leader_standard(int argc, char ** argv)
       if (c != selected[j])
         continue;
 
-      cout << smiles_tag << leader_item[j].smiles() << ">\n";
-      cout << identifier_tag << leader_item[j].id() << ">\n";
-      cout << distance_tag << distances[j] << ">\n";
+      if (proto) {
+        NearNeighbors::Neighbor * n = proto->add_neighbor();
+        n->set_id(leader_item[j].id().AsString());
+        n->set_smiles(leader_item[j].smiles().AsString());
+        n->set_distance(distances[j]);
+      } else {
+        cout << smiles_tag << leader_item[j].smiles() << ">\n";
+        cout << identifier_tag << leader_item[j].id() << ">\n";
+        cout << distance_tag << distances[j] << ">\n";
+      }
     }
 
-    cout << "|\n";
+    if (ascii_proto_output) {
+      WriteTextProto(*proto, *ascii_proto_output);
+    } else if (binary_proto_output) {
+        WriteBinaryProto(*proto, *binary_proto_output);
+    } else {
+      cout << "|\n";
+    }
   }
 
   return 0;

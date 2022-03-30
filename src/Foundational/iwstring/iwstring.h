@@ -999,6 +999,10 @@ operator << (std::ostream & os, const const_IWSubstring & s)
   return os.write (s.rawchars (), s.length ());
 }
 
+namespace iwstring {
+std::string AsString(const IWString& s);
+}
+
 /*
   By default, the flush operator resizes the IWString object down to 0.
   If we want it to keep its allocated storage, pass flush() this arg

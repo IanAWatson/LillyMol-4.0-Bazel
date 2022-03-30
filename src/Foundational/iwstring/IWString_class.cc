@@ -5349,3 +5349,14 @@ const_IWSubstring::AsString() const {
   std::copy_n(_data, _nchars, copy);
   return std::string(copy, _nchars);
 }
+
+namespace iwstring {
+std::string
+AsString(const IWString& s) {
+  if (s.empty()) {
+    return std::string();
+  }
+  std::string result(s.data(), s.length());
+  return result;
+}
+}  // namespace iwstring

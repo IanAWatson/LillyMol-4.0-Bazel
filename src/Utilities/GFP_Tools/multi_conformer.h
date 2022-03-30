@@ -3,6 +3,7 @@
 
 #include "gfp.h"
 #include "fixed_size_counted_fingerprint.h"
+#include "sparsefp.h"
 
 template <typename T>
 class
@@ -50,6 +51,8 @@ class Multiconformer_Sparse : public Multiconformer_Base<Sparse_Fingerprint>
 };
 
 #ifdef MULTICONFORMER_IMPLEMENTATION
+
+#include <iostream>
 
 template <typename T>
 Multiconformer_Base<T>::Multiconformer_Base()
@@ -120,7 +123,7 @@ Multiconformer_Base<T>::average_tanimoto(const Multiconformer_Base<T> & rhs) con
     for (int j = 0; j < rhs._n; j++)
     {
       double tmp = _fp[i].tanimoto(rhs._fp[j]);
-      cerr << " i = " << i << " j = " << j << " value " << tmp << endl;
+      std::cerr << " i = " << i << " j = " << j << " value " << tmp << '\n';
       rc += tmp;
     }
   }

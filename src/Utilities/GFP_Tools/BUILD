@@ -26,6 +26,20 @@ cc_proto_library(
     ],
 )
 
+proto_library(
+    name = "nearneighbors",
+    srcs = [
+      "nearneighbors.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "nearneighbors_cc_proto",
+    deps = [
+        "nearneighbors",
+    ],
+)
+
 cc_binary(
     name = "descriptor_file_to_01_fingerprints",
     srcs = [
@@ -85,6 +99,8 @@ cc_binary(
     deps = [
         ":gfp",
         ":gfp_standard",
+        ":nearneighbors_cc_proto",
+        "//Foundational/data_source:iwtfdata_record",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],

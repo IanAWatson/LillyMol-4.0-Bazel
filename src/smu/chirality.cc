@@ -22,13 +22,23 @@ struct JobOptions {
 
   int bond_topology_ids_read = 0;
 
+  // Initialised from the command line. Only process the fates
+  // in this list.
   resizable_array<int> fates_processed;
 
+  // The number of BondTopologies for which we discern
+  // no 3D chirality.
   int no_chirality_discerned = 0;
 
+  // Accumulators for various statistics about the input.
+  // Number of conformers per BondTopology id
   extending_resizable_array<int> number_conformers;
   Accumulator_Int<int> acc_number_conformers;
-  extending_resizable_array<int> chiral_centre_count;
+  // The number of chiral centres identified by is_actually_chiral,
+  // which is not the number that are identified by 3d.
+  extending_resizable_array<int> chiral_centre_2d_count;
+  extending_resizable_array<int> chiral_centre_3d_count;
+
   extending_resizable_array<int> chiral_variants;
 
   public:
@@ -73,9 +83,14 @@ JobOptions::Report(std::ostream& output) const {
       cerr << number_conformers[i] << " bond topology's had " << i << " conformers\n";
     }
   }
-  for (int i = 0; i < chiral_centre_count.number_elements(); ++i) {
-    if (chiral_centre_count[i]) {
-      cerr << chiral_centre_count[i] << " bond topology's had " << i << " chiral centres\n";
+  for (int i = 0; i < chiral_centre_2d_count.number_elements(); ++i) {
+    if (chiral_centre_2d_count[i]) {
+      cerr << chiral_centre_2d_count[i] << " bond topology's had " << i << " 2d chiral centres\n";
+    }
+  }
+  for (int i = 0; i < chiral_centre_3d_count.number_elements(); ++i) {
+    if (chiral_centre_3d_count[i]) {
+      cerr << chiral_centre_3d_count[i] << " bond topology's had " << i << " 3d chiral centres\n";
     }
   }
   for (int i = 0; i < chiral_variants.number_elements(); ++i) {
@@ -167,7 +182,7 @@ Chirality(resizable_array_p<Molecule>& btids,
     }
   }
 
-  options.chiral_centre_count[chiral_centres_found]++;
+  options.chiral_centre_2d_count[chiral_centres_found]++;
 
 #ifdef DEBUG_CHIRALITY
   cerr << "Found " << chiral_centres_found << " chiral centres\n";
@@ -179,12 +194,15 @@ Chirality(resizable_array_p<Molecule>& btids,
   IW_STL_Hash_Map_int smiles_count;
 
   int chirality_not_discerned = 0;
+  int chiral_centers_discerned = 0;
   for (Molecule* m : btids) {
     m->discern_chirality_from_3d_structure();
     if (m->chiral_centres() == 0) {
       ++chirality_not_discerned;
       continue;
     }
+    chiral_centers_discerned = m->chiral_centres();
+
     const IWString& s = m->unique_smiles();
     auto iter = smiles_count.find(s);
     if (iter == smiles_count.end()) {
@@ -195,6 +213,7 @@ Chirality(resizable_array_p<Molecule>& btids,
   }
 
   options.chiral_variants[smiles_count.size()]++;
+  options.chiral_centre_3d_count[chiral_centers_discerned]++;
 
 #ifdef DEBUG_CHIRALITY
   cerr << "After enumeration have " << smiles_count.size() << " different smiles\n";

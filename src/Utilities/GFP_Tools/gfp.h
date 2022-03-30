@@ -2,23 +2,23 @@
 #define IWGFP_H
 
 #include <sys/types.h>
+#include <iostream>
 
 #include "Foundational/cmdline/cmdline.h"
-#include "Foundational/iwstring/iwstring.h"
 #include "Foundational/iwmisc/set_or_unset.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwstring/iwstring.h"
 
 #include "dyfp.h"
-#include "sparsefp.h"
 #include "multi_conformer.h"
+#include "sparsefp.h"
 
 class iwstring_data_source;
-class Tversky;
+class IW_TDT;
 class Set_of_Sparse_Fingerprint_Collection_Profile;
+class Tversky;
 
 typedef float iwproperty_t;
-
-class IW_TDT;
 
 
 /*
@@ -461,7 +461,7 @@ Window_Specification<F>::build (Command_Line & cl,
       int window;
       if (! w.numeric_value(window) || window < 0 || window > 100)
       {
-        cerr << "The '-" << flag << " R:' option must be followed by a whole percentage\n";
+        std::cerr << "The '-" << flag << " R:' option must be followed by a whole percentage\n";
         return 0;
       }
 
@@ -472,22 +472,22 @@ Window_Specification<F>::build (Command_Line & cl,
       w.remove_leading_chars(11);
       if (! w.numeric_value(minxtra) || minxtra < 0)
       {
-        cerr << "Invalid min extra atoms 'A:minextra=" << w << "'\n";
+        std::cerr << "Invalid min extra atoms 'A:minextra=" << w << "'\n";
         return 0;
       }
       if (verbose)
-        cerr << "Will only compare molecules with at least " << minxtra << " extra atoms\n";
+        std::cerr << "Will only compare molecules with at least " << minxtra << " extra atoms\n";
     }
     else if (w.starts_with("A:maxextra="))
     {
       w.remove_leading_chars(11);
       if (! w.numeric_value(maxxtra) || maxxtra < 0)
       {
-        cerr << "Invalid max extra atoms 'A:maxextra=" << w << "'\n";
+        std::cerr << "Invalid max extra atoms 'A:maxextra=" << w << "'\n";
         return 0;
       }
       if (verbose)
-        cerr << "Will only compare molecules with at most " << maxxtra << " extra atoms\n";
+        std::cerr << "Will only compare molecules with at most " << maxxtra << " extra atoms\n";
     }
     else if (w.starts_with("A:"))
     {
@@ -495,7 +495,7 @@ Window_Specification<F>::build (Command_Line & cl,
       int window;
       if (! w.numeric_value(window) || window < 0 || window > 100)
       {
-        cerr << "The '-w A:' option must be followed by a whole percentage\n";
+        std::cerr << "The '-w A:' option must be followed by a whole percentage\n";
         return 0;
       }
 
@@ -508,23 +508,23 @@ Window_Specification<F>::build (Command_Line & cl,
 
       if (! w.numeric_value(window) || window < 0)
       {
-        cerr << "The '-W a:' option must be followed by a valid number\n";
+        std::cerr << "The '-W a:' option must be followed by a valid number\n";
         return 0;
       }
 
       if (verbose)
-        cerr << "Aromatic atom count window set to " << window << endl;
+        std::cerr << "Aromatic atom count window set to " << window << '\n';
       
       _set_aromatic_atom_count_window(window, verbose);
     }
     else if ("help" == w)
     {
-      cerr << endl;
+      std::cerr << '\n';
       return 0;
     }
     else
     {
-      cerr << "Unrecognised window specification (-" << flag << ") qualifier '" << w << "'\n";
+      std::cerr << "Unrecognised window specification (-" << flag << ") qualifier '" << w << "'\n";
       return 0;
     }
 
@@ -532,12 +532,12 @@ Window_Specification<F>::build (Command_Line & cl,
     {
       if (_atom_count_window_present)
       {
-        cerr << "Sorry, cannot have a percentage based atom count window as well as minextra/maxextra\n";
+        std::cerr << "Sorry, cannot have a percentage based atom count window as well as minextra/maxextra\n";
         return 0;
       }
       if (maxxtra >= 0 && minxtra >= 0 && minxtra > maxxtra)
       {
-        cerr << "Inconsistent values for max extra atoms " << maxxtra << " and min extr atoms " << minxtra << endl;
+        std::cerr << "Inconsistent values for max extra atoms " << maxxtra << " and min extr atoms " << minxtra << '\n';
         return 0;
       }
 
@@ -567,7 +567,7 @@ Window_Specification<F>::_set_atom_count_window (const int w,
     _upper_atom_count_cutoff[i] = i + delta;
 
     if (verbose > 1)
-      cerr << "Molecules with " << i << " atoms compared with " << _lower_atom_count_cutoff[i] << " to " << _upper_atom_count_cutoff[i] << " atoms\n";
+      std::cerr << "Molecules with " << i << " atoms compared with " << _lower_atom_count_cutoff[i] << " to " << _upper_atom_count_cutoff[i] << " atoms\n";
   }
 
   _atom_count_window_present = 1;
@@ -586,7 +586,7 @@ Window_Specification<F>::can_be_compared (const F & fp1,
     int na2 = fp2.natoms();
 
 #ifdef DEBUG_CAN_BE_COMPARED
-    cerr << "Can we compare '" << fp1.id() << " " << na1 << " (" << lower_atom_count_cutoff[na1] << ',' << upper_atom_count_cutoff[na1] << ") and '" << fp2.id() << " " << na2 << endl; //" (" << lower_atom_count_cutoff[na2] << ',' << upper_atom_count_cutoff[na2] << ")\n";
+    std::cerr << "Can we compare '" << fp1.id() << " " << na1 << " (" << lower_atom_count_cutoff[na1] << ',' << upper_atom_count_cutoff[na1] << ") and '" << fp2.id() << " " << na2 << '\n'; //" (" << lower_atom_count_cutoff[na2] << ',' << upper_atom_count_cutoff[na2] << ")\n";
 #endif
 
     if (na2 < _lower_atom_count_cutoff[na1])
@@ -602,7 +602,7 @@ Window_Specification<F>::can_be_compared (const F & fp1,
     int nr2 = fp2.nrings();
 
 #ifdef DEBUG_CAN_BE_COMPARED
-    cerr << "Rings?? " << nr1 << " (" << lower_ring_count_cutoff[nr1] << ',' << upper_ring_count_cutoff[nr1] << ") and " << nr2 << " (" << lower_ring_count_cutoff[nr2] << ',' << upper_ring_count_cutoff[nr2] << ")\n";
+    std::cerr << "Rings?? " << nr1 << " (" << lower_ring_count_cutoff[nr1] << ',' << upper_ring_count_cutoff[nr1] << ") and " << nr2 << " (" << lower_ring_count_cutoff[nr2] << ',' << upper_ring_count_cutoff[nr2] << ")\n";
 #endif
     if (nr2 < _lower_ring_count_cutoff[nr1])
       return 0;
@@ -624,7 +624,7 @@ Window_Specification<F>::can_be_compared (const F & fp1,
   }
 
 #ifdef DEBUG_CAN_BE_COMPARED
-  cerr << "Yes, can be compared\n";
+  std::cerr << "Yes, can be compared\n";
 #endif
 
   return 1;      // these fingerprints can be compared
@@ -691,7 +691,7 @@ Window_Specification<F>::_set_ring_count_window (const int w, const int verbose)
     _upper_ring_count_cutoff[i] = i + delta;
 
     if (verbose > 1)
-      cerr << "Molecules with " << i << " rings compared with " << _lower_ring_count_cutoff[i] << " to " << _upper_ring_count_cutoff[i] << " rings\n";
+      std::cerr << "Molecules with " << i << " rings compared with " << _lower_ring_count_cutoff[i] << " to " << _upper_ring_count_cutoff[i] << " rings\n";
   }
 
   _ring_count_window_present = 1;
