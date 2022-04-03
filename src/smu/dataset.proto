@@ -140,6 +140,15 @@ message BondTopology {
   //
   // Note that only bonds between heavy atoms are used in computing this.
   float geometry_score = 9;
+
+  // A measure of the extent to which the observed bond lengths differ
+  // from reference values.
+  //
+  // Reference bond lengths are read from an external source (which could
+  // be SMU). For each bond in the molecule, the distance is compared with
+  // that reference value and an absolute difference computed. The mean
+  // of this value is stored.
+  float deviation_from_reference = 10;
 }
 
 // When doing topology from geometry matching, the results are returned

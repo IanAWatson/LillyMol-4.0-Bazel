@@ -20,26 +20,6 @@ namespace get_nmr {
 
 using std::cerr;
 
-struct JobOptions {
-  int verbose = 0;
-
-  int items_read = 0;
-
-  // The number of Conformers that pass the inclusion tests.
-  int results_obtained = 0;
-
-  int nprocess = std::numeric_limits<int>::max();
-
-  Report_Progress report_progress;
-  
-  std::unordered_set<int> btid_to_fetch;
-};
-
-void
-Usage(int rc) {
-  exit(rc);
-}
-
 int
 ToAtomicNumber(const BondTopology::AtomType atype) {
   switch (atype) {
@@ -69,17 +49,124 @@ ToAtomicNumber(const BondTopology::AtomType atype) {
   return -1;
 }
 
+struct JobOptions {
+  int verbose = 0;
+
+  int items_read = 0;
+
+  // The number of Conformers that pass the inclusion tests.
+  int results_obtained = 0;
+
+  int nprocess = std::numeric_limits<int>::max();
+
+  // We can ignore N-F and O-F bonds if we wish.
+  // For two atomic numbers, set the value MAX(z1,z1) + z2
+  // in this array.
+  extending_resizable_array<int> ignored;
+  // We need a fast means of checking whether or not an
+  // atomic number is set in the `ignored` array.
+  extending_resizable_array<int> need_to_check;
+
+  Report_Progress report_progress;
+  
+  std::unordered_set<int> btid_to_fetch;
+
+  public:
+
+    int BuildIgnoreDirective(const const_IWSubstring& s);
+
+    int Ignore(int z1, int z2);
+
+    int Ignore(const BondTopology& bt, int a1, int z1);
+};
+
 int
-WriteIfExtremeValue(const Conformer& conformer,
+AtomPairHash(int z1, int z2) {
+  if (z1 < z2) {
+    return 10 * z2 + z1;
+  }
+  return 10 * z1 + z2;
+}
+
+int
+JobOptions::BuildIgnoreDirective(const const_IWSubstring& s) {
+  const_IWSubstring s1, s2;
+  if (! s.split(s1, '-', s2) || s1.empty() || s2.empty()) {
+    cerr << "JobOptions::BuildIgnoreDirective:invalid form '" << s << "'\n";
+    return 0;
+  }
+  int z1, z2;
+  if (! s1.numeric_value(z1) || z1 <= 0 ||
+      ! s2.numeric_value(z2) || z2 <= 0 || z2 == z1) {
+    cerr << "JobOptions::BuildIgnoreDirective:invald atomic numbers '" << s << "'\n";
+    return 0;
+  }
+
+  ignored[AtomPairHash(z1, z2)] = 1;
+  need_to_check[z1] = 1;
+  need_to_check[z2] = 1;
+
+  return 1;
+}
+
+int
+JobOptions::Ignore(int z1, int z2) {
+  return ignored[AtomPairHash(z1, z2)];
+}
+
+int
+JobOptions::Ignore(const BondTopology& bt, int a1, int z1) {
+  if (! need_to_check[z1]) {
+    return 0;
+  }
+
+  for (const BondTopology::Bond& bond : bt.bonds()) {
+    int a = bond.atom_a();
+    int b = bond.atom_b();
+
+    if (a == a1) {
+      int z2 = ToAtomicNumber(bt.atoms(b));
+      if (Ignore(z1, z2)) {
+        return 1;
+      }
+    } else if (b == a1) {
+      int z2 = ToAtomicNumber(bt.atoms(a));
+      if (Ignore(z1, z2)) {
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+void
+Usage(int rc) {
+  cerr << " -G <fname>      file containing BondTopology ids to process\n";
+  cerr << " -S <fname>      file name stem for distributions\n";
+  cerr << " -O <fname>      file name for outlier values\n";
+  cerr << " -I <a-b>        ignore atoms involved in a-b bonds\n";
+  cerr << " -r <n>          report progress every <n> Conformers\n";
+  cerr << " -v              verbose output\n";
+  exit(rc);
+}
+
+int
+WriteIfExtremeValue(JobOptions& options,
+                    const Conformer& conformer,
                     const std::vector<std::pair<int, int>> & quantiles,
                     IWString_and_File_Descriptor& output) {
-  const BondTopology& bt0 = conformer.bond_topologies(0);
+  const int startingbt = smu::IndexOfStartingBTid(conformer.bond_topologies());
+  const BondTopology& bt0 = conformer.bond_topologies(startingbt);
   const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
   const int matoms = bt0.atoms().size();
   resizable_array<int> outlier_atoms;
   resizable_array<int> outlier_values;
   for (int i = 0; i < matoms; ++i) {
     const int atomic_number = ToAtomicNumber(bt0.atoms(i));
+    if (options.Ignore(bt0, i, atomic_number)) {
+      continue;
+    }
     const int shielding = static_cast<int>(nmr[i]);
     if (shielding < quantiles[atomic_number].first) {
     } else if (shielding > quantiles[atomic_number].second) {
@@ -274,9 +361,10 @@ ReadBtids(const char * fname,
 
   return ReadBtids(input, btid_to_fetch);
 }
+
 int
 GetNMR(int argc, char ** argv) {
-  Command_Line cl(argc, argv, "vr:O:S:G:");
+  Command_Line cl(argc, argv, "vr:O:S:G:I:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -297,6 +385,16 @@ GetNMR(int argc, char ** argv) {
     }
   }
 
+  if (cl.option_present('I')) {
+    const_IWSubstring token;
+    for (int i = 0; cl.value('I', token, i); ++i) {
+      if (! options.BuildIgnoreDirective(token)) {
+        cerr << "Invalid ignore directive '" << token << "'\n";
+        return 0;
+      }
+    }
+  }
+
   if (cl.option_present('G')) {
     const char * fname = cl.option_value('G');
     if (! ReadBtids(fname, options.btid_to_fetch)) {
@@ -305,6 +403,8 @@ GetNMR(int argc, char ** argv) {
     }
   }
 
+  // First scan the input data and for each BondTopology get the lowest
+  // energy Conformer.
   std::unordered_map<int, Conformer> low_energy;
 
   for (const char * fname : cl) {
@@ -321,15 +421,19 @@ GetNMR(int argc, char ** argv) {
   std::vector<std::unordered_map<int, int>> shielding(10);
 
   for (const auto& [btid, conformer] : low_energy) {
-    output << conformer.bond_topologies(0).smiles() << sep 
+    int startingbt = smu::IndexOfStartingBTid(conformer.bond_topologies());
+    output << conformer.bond_topologies(startingbt).smiles() << sep 
            << conformer.conformer_id() << sep
            << conformer.properties().single_point_energy_atomic_b5().value() << sep
            << conformer.fate() << sep
            << conformer.bond_topologies().size() << '\n';
-    const BondTopology& bt0 = conformer.bond_topologies(0);
+    const BondTopology& bt0 = conformer.bond_topologies(startingbt);
     const int natoms = bt0.atoms().size();
     for (int i = 0; i < natoms; ++i) {
       const int atomic_number = ToAtomicNumber(bt0.atoms(i));
+      if (options.Ignore(bt0, i, atomic_number)) {
+        continue;
+      }
       double s = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values(i);
       int j = static_cast<int>(s);
       shielding[atomic_number][j] += 1;
@@ -412,7 +516,7 @@ GetNMR(int argc, char ** argv) {
     }
 
     for (const auto& [btid, conformer] : low_energy) {
-      WriteIfExtremeValue(conformer, quantiles, stream_for_outliers);
+      WriteIfExtremeValue(options, conformer, quantiles, stream_for_outliers);
     }
   }
 

@@ -60,6 +60,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "get_atomic_property",
+    srcs = [
+        "get_atomic_property.cc",
+    ],
+    deps = [
+        ":support",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "get_bond_length_distribution",
     srcs = [
          "get_bond_length_distribution.cc",

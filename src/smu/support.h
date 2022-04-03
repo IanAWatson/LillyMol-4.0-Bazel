@@ -16,5 +16,9 @@ std::optional<int> AtomTypeToAtomicNumber(BondTopology::AtomType atype);
 
 double DistanceBetweenAtoms(const Geometry& geom, int a1, int a2);
 
+// Return the index of the BondTopology in `btids` that is the
+// starting topology.
+int IndexOfStartingBTid(const google::protobuf::RepeatedPtrField<BondTopology>& btids);
+
 }  // namespace smu
 #endif // SMU_SUPPORT_H

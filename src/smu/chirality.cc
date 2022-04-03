@@ -254,12 +254,12 @@ Chirality(data_source_and_type<Molecule>& input,
 
   Molecule * m;
   while (( m = input.next_molecule()) != nullptr) {
-    Preprocess(*m);
     options.molecules_read++;
     if (! options.OkToProcess(*m)) {
       delete m;
       continue;
     }
+    Preprocess(*m);
     IWString btid = GetBondTopologyId(m->name());
     if (btid == current_btid) {
       btids << m;

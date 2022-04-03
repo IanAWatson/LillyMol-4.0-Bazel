@@ -12,6 +12,7 @@
 namespace get_3d_smiles {
 
 using std::cerr;
+
 struct JobOptions {
   int verbose = 0;
   // A list of the FATE values to process.
