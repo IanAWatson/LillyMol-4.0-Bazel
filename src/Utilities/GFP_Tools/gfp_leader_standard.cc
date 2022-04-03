@@ -642,8 +642,8 @@ gfp_leader_standard(int argc, char ** argv)
 
     if (proto) {
       proto->set_id(leader_item[start].id().AsString());
-      proto->set_smiles(leader_item[start].smiles().AsString());
-      proto->set_cluster_number(c - 1);
+      proto->set_smi(leader_item[start].smiles().AsString());
+      proto->set_cnum(c - 1);
     } else {
       cout << smiles_tag << leader_item[start].smiles() << ">\n";
       cout << identifier_tag << leader_item[start].id() << ">\n";
@@ -669,8 +669,8 @@ gfp_leader_standard(int argc, char ** argv)
       if (proto) {
         NearNeighbors::Neighbor * n = proto->add_neighbor();
         n->set_id(leader_item[j].id().AsString());
-        n->set_smiles(leader_item[j].smiles().AsString());
-        n->set_distance(distances[j]);
+        n->set_smi(leader_item[j].smiles().AsString());
+        n->set_d(distances[j]);
       } else {
         cout << smiles_tag << leader_item[j].smiles() << ">\n";
         cout << identifier_tag << leader_item[j].id() << ">\n";
