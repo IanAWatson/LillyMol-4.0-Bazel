@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package NearNeighbors;
+
+// Note that all feature names are deliberately short, in order
+// to make Text_format forms acceptable.
+message Neighbor {
+  string id = 1;
+  string smi = 2;
+  float d = 3;
+}
+
+message Neighbors {
+  string id = 1;
+  string smi = 2;
+
+  //The neighbors.
+  repeated Neighbor neighbor = 3;
+
+  // Some tools report a cluster number.
+  int32 cnum = 4;
+}
