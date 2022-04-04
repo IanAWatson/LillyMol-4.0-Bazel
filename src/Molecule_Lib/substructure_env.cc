@@ -124,11 +124,11 @@ Substructure_Environment::assign_unique_atom_numbers (int & id)
 }
 
 int
-Substructure_Environment::attributes_specified ()
+Substructure_Environment::count_attributes_specified ()
 {
   int rc = 0;
   for (int i = 0; i < _number_elements; i++)
-    rc += _things[i]->attributes_specified();
+    rc += _things[i]->count_attributes_specified();
 
   return rc;
 }

@@ -274,23 +274,23 @@ Substructure_Atom::has_ring_closure_bond_to(const Substructure_Atom * a) const
 }
 
 int
-Substructure_Atom::attributes_specified() 
+Substructure_Atom::count_attributes_specified() 
 {
-  int rc = Substructure_Atom_Specifier::attributes_specified();
+  int rc = Substructure_Atom_Specifier::count_attributes_specified();
 
   for (auto* c : _components)
   {
-    rc += c->attributes_specified();
+    rc += c->count_attributes_specified();
   }
 
   for (auto* c : _children)
   {
-    rc += c->attributes_specified();
+    rc += c->count_attributes_specified();
   }
 
   for (auto* e : _environment)
   {
-    rc += e->attributes_specified();
+    rc += e->count_attributes_specified();
   }
 
   return rc;
@@ -953,22 +953,24 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
   assert (nullptr == _current_hold_atom);
   assert (0 == already_matched[target.atom_number()]);
 
-  int m = Substructure_Atom_Specifier::matches(target);
+  if (_attributes_specified > 0) {
+    int m = Substructure_Atom_Specifier::matches(target);
 
 #ifdef DEBUG_ATOM_MATCHES
-  cerr << "Matching atom with " << _components.number_elements() << " components, underlying specifier match " << m << " match or rej " << _match_as_match_or_rejection << endl;
+    cerr << "Matching atom with " << _components.number_elements() << " components, underlying specifier match " << m << " match or rej " << _match_as_match_or_rejection << endl;
 #endif
   
-  if (m && 0 == _match_as_match_or_rejection)    // matches, but we are a rejection criterion
-  {
-    return 0;
+    if (m && 0 == _match_as_match_or_rejection)    // matches, but we are a rejection criterion
+    {
+      return 0;
+    }
+
+    if (0 == m && 0 != _match_as_match_or_rejection)    // no match, but we must match
+      return 0;
+
+    if (0 == m)
+      return ! _match_as_match_or_rejection;
   }
-
-  if (0 == m && 0 != _match_as_match_or_rejection)    // no match, but we must match
-    return 0;
-
-  if (0 == m)
-    return ! _match_as_match_or_rejection;
 
 #ifdef DEBUG_ATOM_MATCHES
   cerr << "Query atom " << _unique_id << " and " << target.atom_number() <<
@@ -1968,7 +1970,7 @@ Substructure_Atom::smarts (IWString & s) const
     s.append_number (_atomic_number[i]);
   }
 
-  int top_level_attributes = attributes_specified ();
+  int top_level_attributes = count_attributes_specified ();
   int nc = _components.number_elements ();
 
   s += ']';

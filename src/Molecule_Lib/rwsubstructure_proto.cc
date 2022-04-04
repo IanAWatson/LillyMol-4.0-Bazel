@@ -424,7 +424,7 @@ Substructure_Atom_Specifier::construct_from_proto(const SubstructureSearch::Subs
   if (proto.has_atom_type())
     _atom_type = proto.atom_type();
  
-  (void) attributes_specified();
+  (void) count_attributes_specified();
 
   assert (ok());
 

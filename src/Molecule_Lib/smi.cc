@@ -2889,7 +2889,7 @@ Substructure_Atom::parse_smarts_specifier(const const_IWSubstring & smarts,
 
   int rc = _parse_smarts_specifier(mysmarts, pst, atoms_in_previous_disconnected_sections, ring_status);
 
-  _attributes_specified = attributes_specified();
+  _attributes_specified = count_attributes_specified();
 
   ok_recursive();
 

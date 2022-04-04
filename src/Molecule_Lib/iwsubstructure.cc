@@ -551,17 +551,17 @@ Single_Substructure_Query::_compute_attribute_counts()
 
   for (Substructure_Atom* r : _root_atoms)
   {
-    rc += r->attributes_specified();
+    rc += r->count_attributes_specified();
   }
 
   for (Substructure_Environment * e : _environment)
   {
-    rc += e->attributes_specified();
+    rc += e->count_attributes_specified();
   }
 
   for (Substructure_Environment* e : _environment_rejections)
   {
-    rc += e->attributes_specified();
+    rc += e->count_attributes_specified();
   }
 
   return rc;

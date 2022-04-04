@@ -2663,4 +2663,18 @@ TEST_F(TestSubstructure, TestGlobalIDRingSysNoMatch) {
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
   EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
 }
+
+TEST_F(TestSubstructure, TestAndWithTwoZeros) {
+  ASSERT_TRUE(_query.create_from_smarts("0[<23C]&&0[>23C]"));
+
+  _smiles = "[22C]";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+  _smiles = "[24C]";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+  _smiles = "[23C]";
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), 1);
+}
 }  // namespace

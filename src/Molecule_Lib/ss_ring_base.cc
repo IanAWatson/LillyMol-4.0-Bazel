@@ -113,7 +113,7 @@ Substructure_Ring_Base::_environment_matches(Molecule_to_Match & target,
                                              int * already_matched)
 {
 #ifdef DEBUG_ENVIRONMENT_SEARCH
-  cerr << "Start environment match, root atom has " << root_atom.attributes_specified() << " attributes specified\n";
+  cerr << "Start environment match, root atom has " << root_atom.count_attributes_specified() << " attributes specified\n";
 #endif
 
   Query_Atoms_Matched qam;    // scope here just for efficiency
@@ -489,7 +489,7 @@ Substructure_Ring_Base::_construct_environment(const const_IWSubstring & renv)
       return 0;
     }
 
-    a->attributes_specified();    // needed to initialise some things
+    a->count_attributes_specified();    // needed to initialise some things
 
     _environment_numerical_requirement.add(mms);
     _environment_atom.add(a);

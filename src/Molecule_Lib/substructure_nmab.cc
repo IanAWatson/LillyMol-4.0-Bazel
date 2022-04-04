@@ -880,7 +880,7 @@ int NMAB_Operator::Build(const NMAB_Token& token)
     return 0;
   }
 
-  _query->attributes_specified();  // Ensure calculated.
+  _query->count_attributes_specified();  // Ensure calculated.
 
   return 1;
 }

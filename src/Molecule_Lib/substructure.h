@@ -647,7 +647,11 @@ class Substructure_Atom_Specifier
 
     int smarts (IWString &) const;
 
-    int attributes_specified ();
+    // Non const method that will count everthing and set _attributes_specified.
+    int count_attributes_specified ();
+    int attributes_specified() const {
+      return _attributes_specified;
+    }
 
     int spinach_match_specified () const { return _match_spinach_only >= 0;}
     int spinach_match_value () const { return _match_spinach_only;}
@@ -1045,7 +1049,11 @@ class Substructure_Atom : public Substructure_Atom_Specifier
     void adjust_initial_atom_numbers (const int * xref);     // subset of molecule has been used, need to adjust initial atom numbers
 
     void assign_unique_atom_numbers (int &);
-    int  attributes_specified ();
+    // Non const method that counts values and sets _attributes_specified.
+    int  count_attributes_specified ();
+    int  attributes_specified() const {
+      return _attributes_specified;
+    }
     int  unique_id () const { return _unique_id;}
     int  initial_atom_number () const { return _initial_atom_number;}
 
@@ -1363,7 +1371,7 @@ class Substructure_Environment : public resizable_array_p<Substructure_Atom>
     int or_id  () const { return _or_id;}
 
     void assign_unique_atom_numbers (int &);
-    int  attributes_specified ();
+    int  count_attributes_specified ();
 
     void set_environments_can_share_attachment_points (int s) { _environments_can_share_attachment_points = s;}
 

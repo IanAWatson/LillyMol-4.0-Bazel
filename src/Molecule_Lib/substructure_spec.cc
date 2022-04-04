@@ -3105,7 +3105,7 @@ Substructure_Atom_Specifier::construct_from_smiles_token(const const_IWSubstring
 
   _add_element(e);
 
-  _attributes_specified++;
+//_attributes_specified++;
     
   return nchars;
 }
@@ -3331,7 +3331,7 @@ Substructure_Atom_Specifier::smarts (IWstring & s) const
 */
 
 int
-Substructure_Atom_Specifier::attributes_specified()
+Substructure_Atom_Specifier::count_attributes_specified()
 {
   int rc = 0;
   if (_element_unique_id.number_elements())
@@ -3395,6 +3395,8 @@ Substructure_Atom_Specifier::attributes_specified()
 
 //#define DEBUG_ATTRIBUTES_SPECIFIED
 #ifdef DEBUG_ATTRIBUTES_SPECIFIED
+  cerr << "After counting everything " << rc << '\n';
+
   if (_element_unique_id.number_elements()) {
     cerr << "ele unique_id is specified \n";
   }
