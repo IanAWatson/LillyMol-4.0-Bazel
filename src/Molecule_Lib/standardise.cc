@@ -728,7 +728,8 @@ Chemical_Standardisation::_do_remove_hydrogens(Molecule & m)
     if (a->is_isotope())
       continue;
 
-    if (a->ncon() > 0)     // need to check for chiral centre involvement
+    // need to check for chiral centre involvement
+    if (a->ncon() > 0 && m.chiral_centres() > 0)
     {
       const atom_number_t j = a->other(i, 0);
 //    cerr << "Bonded to " << j << " type " << m.smarts_equivalent_for_atom(j) << endl;
