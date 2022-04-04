@@ -67,6 +67,10 @@ struct Options {
   double minval = - std::numeric_limits<double>::max();
   double maxval = std::numeric_limits<double>::max();
 
+  // If set, write a molecule that has isotopic values for every
+  // atom
+  int isotope_on_each_atom = 0;
+
   IWString_and_File_Descriptor stream_for_extrema;
 
   char output_separator = ' ';
@@ -95,7 +99,7 @@ struct Options {
 
     // If `value` is outside the range of [minval,maxval] write it
     // to stream_for_extrema.
-    int WriteExtremeValue(Molecule& m, double value);
+    int WriteExtremeValue(Molecule& m, int query_number, double value);
 
     int Report(std::ostream& output) const;
 };
@@ -188,6 +192,13 @@ Options::Build(Command_Line& cl) {
     if (! cl.option_present('X')) {
       cerr << "Must also specify stream for extreme values (-X)\n";
       return 0;
+    }
+  }
+
+  if (cl.option_present('e')) {
+    isotope_on_each_atom = 1;
+    if (verbose) {
+      cerr << "Will write an isotopically labelled molecule with all values\n";
     }
   }
 
@@ -331,9 +342,12 @@ Options::Extra(Molecule& m,
 
 int
 Options::WriteExtremeValue(Molecule& m,
+                           int query_number,
                            double value) {
   constexpr char kSep = ' ';
-  stream_for_extrema << m.smiles() << kSep << m.name() << kSep << static_cast<float>(value) << '\n';
+  stream_for_extrema << m.smiles() << kSep << m.name()
+                     << kSep << static_cast<float>(value)
+                     << kSep << query_number << '\n';
   stream_for_extrema.write_if_buffer_holds_more_than(8192);
   return 1;
 }
@@ -439,9 +453,7 @@ WriteDiscretizedCounts(const resizable_array<T>& data,
   const int n = data.number_elements();
   T minval = data[0];
   T maxval = data.back();
-  if (verbose) {
-    cerr << "Discretizing " << n << " values btw " << minval << " and " << maxval << '\n';
-  }
+  //cerr << "Discretizing " << n << " values btw " << minval << " and " << maxval << '\n';
   for (int i = 0; i < n; ++i) {
     int ndx = static_cast<int>((data[i] - minval) / (maxval - minval) * kNbuckets);
     ++count[ndx];
@@ -482,6 +494,10 @@ Usage(int rc) {
   cerr << " -s <smarts>   query specification as smarts\n";
   cerr << " -I <a-b>      ignore atoms involved in a-b bonds\n";
   cerr << " -S <stem>     write raw data for each query to file(s) starting with <stem>\n";
+  cerr << " -x <minval>   define the min value for reporting extrema (-Z)\n";
+  cerr << " -X <maxval>   define the max value for reporting extrema (-Z)\n";
+  cerr << " -e            write a molecule with each atom isotopically labelled with the value to -Z file\n";
+  cerr << " -Z <fname>    write molecules that have a value outside [min,max] to <fname>\n";
   cerr << " -r <rpt>      report progress every <rpt> items processed\n";
   cerr << " -v            verbose output\n";
   ::exit(rc);
@@ -497,6 +513,43 @@ GetValue(const Conformer& conformer, int atom_number) {
   return nmr[atom_number];
 }
 
+int
+PlaceIsotopeOnEachAtom(Options& options,
+                  const Conformer& conformer,
+                  Molecule& m,
+                  IWString_and_File_Descriptor& output) {
+  constexpr char kSep = ' ';
+  const int matoms = m.natoms();
+  resizable_array<float> values;
+  values.reserve(matoms);
+  for (int i = 0; i < matoms; ++i) {
+    if (m.atomic_number(i) == 1) {
+      continue;
+    }
+
+    std::optional<double> maybe_value = GetValue(conformer, i);
+    if (! maybe_value) {
+      continue;
+    }
+    values << static_cast<float>(*maybe_value);
+    if (*maybe_value < 0) {
+      m.set_isotope(i, static_cast<int>(- *maybe_value));
+    } else {
+      m.set_isotope(i, static_cast<int>(*maybe_value));
+    }
+  }
+
+  output << m.smiles() <<
+         kSep << m.name();
+  for (float v : values) {
+    output << kSep << v;
+  }
+  output << '\n';
+  output.write_if_buffer_holds_more_than(8192);
+
+  return 1;
+}
+
 // Do substructure searches over `m`.
 int
 GetAtomicProperty(Options& options,
@@ -508,13 +561,13 @@ GetAtomicProperty(Options& options,
   options.molecules_searched++;
 
   const int nq = options.queries.number_elements();
-  for (int i = 0; i < nq; ++i) {
+  for (int qnum = 0; qnum < nq; ++qnum) {
     Substructure_Results sresults;
-    const int nhits = options.queries[i]->substructure_search(target, sresults);
+    const int nhits = options.queries[qnum]->substructure_search(target, sresults);
     if (nhits == 0) {
       continue;
     }
-    options.hits_to_query[i]++;
+    options.hits_to_query[qnum]++;
     m.transform_to_non_isotopic_form();
     std::optional<double> value_to_write;
 
@@ -527,11 +580,11 @@ GetAtomicProperty(Options& options,
       if (value_to_write == std::nullopt) {
         value_to_write = *maybe_value;
       }
-      options.Extra(m, e->item(0), i, *maybe_value);
+      options.Extra(m, e->item(0), qnum, *maybe_value);
     }
 
     if (m.number_isotopic_atoms() > 0 && value_to_write != std::nullopt) {
-      options.WriteExtremeValue(m, *value_to_write);
+      options.WriteExtremeValue(m, qnum, *value_to_write);
     }
   }
 
@@ -576,6 +629,10 @@ GetAtomicProperty(Options& options,
     return 1;
   }
   SetName(conformer.conformer_id(), *maybe_mol);
+
+  if (options.isotope_on_each_atom) {
+    return PlaceIsotopeOnEachAtom(options, conformer, *maybe_mol, output);
+  }
 
   return GetAtomicProperty(options, conformer, *maybe_mol, output);
 }
@@ -627,7 +684,7 @@ GetAtomicProperty(Options& options,
 
 int
 GetAtomicProperty(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vq:s:A:r:S:I:z:Z:X:");
+  Command_Line cl(argc, argv, "vq:s:A:r:S:I:z:Z:X:e");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
