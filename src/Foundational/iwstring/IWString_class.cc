@@ -5350,6 +5350,22 @@ const_IWSubstring::AsString() const {
   return std::string(copy, _nchars);
 }
 
+bool
+IWString::operator== (const std::string& rhs) const {
+  if (size() != rhs.size()) {
+    return false;
+  }
+  return ::strncmp(_things, rhs.data(), _number_elements);
+}
+
+bool
+const_IWSubstring::operator== (const std::string& rhs) const {
+  if (static_cast<unsigned int>(_nchars) != rhs.size()) {
+    return false;
+  }
+  return ::strncmp(_data, rhs.data(), _nchars);
+}
+
 namespace iwstring {
 std::string
 AsString(const IWString& s) {
