@@ -117,6 +117,22 @@ cc_binary(
     ],
 )
 
+
+cc_binary(
+    name = "get_smiles_bt",
+    srcs = [
+        "get_smiles_bt.cc",
+    ],
+    deps = [
+        ":support",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
+         "//Molecule_Lib:iwmolecule",
+         "//Molecule_Lib:moleculeio",
+    ],
+)
+
 cc_binary(
     name = "smu",
     srcs = [
