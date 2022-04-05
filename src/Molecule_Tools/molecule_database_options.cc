@@ -48,7 +48,6 @@ int StoreStructureTypeInformation(const LLYMol::MoleculeDatabaseOptions& options
     return 1;  // New is same as current, no need to store.
   }
 
-
   std::string serialized;
   options.SerializeToString(&serialized);
   leveldb::Slice value(serialized);
@@ -61,7 +60,8 @@ int StoreStructureTypeInformation(const LLYMol::MoleculeDatabaseOptions& options
   return 0;
 }
 
-std::optional<LLYMol::MoleculeDatabaseOptions> OptionsFromCmdline(Command_Line& cl, int verbose) {
+std::optional<LLYMol::MoleculeDatabaseOptions>
+  OptionsFromCmdline(Command_Line& cl, int verbose) {
   LLYMol::MoleculeDatabaseOptions to_be_returned;
 
   if (cl.option_present('l')) {
@@ -74,6 +74,18 @@ std::optional<LLYMol::MoleculeDatabaseOptions> OptionsFromCmdline(Command_Line& 
     to_be_returned.set_include_chirality(false);
     if (verbose)
       cerr << "WIll exclude chirality\n";
+  }
+
+  if (cl.option_present('Q')) {
+    const IWString q = cl.string_value('Q');
+    if (q == "usmi") {
+      to_be_returned.set_unique_smiles(true);
+    } else if (q == "uksmi") {
+    } else {
+      to_be_returned.set_unique_kekule_smiles(true);
+      cerr << "Unrecognised -Q qualifier '" << q << "'\n";
+      return std::nullopt;
+    }
   }
 
   if (!cl.option_present('G')) {

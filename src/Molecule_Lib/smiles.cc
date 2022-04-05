@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <algorithm>
 #include <memory>
 #include <random>
 #include <algorithm>
@@ -2500,6 +2501,59 @@ Molecule::UniqueKekuleSmiles() {
 
   return _unique_smiles(_fragment_information, _smiles_information, _symmetry_class_and_canonical_rank, nullptr);
 }
+
+#ifdef WHEN_I_HAVE_RENUMBER_ATOMS
+const IWString&
+Molecule::UniqueKekuleSmiles() {
+  if (! contains_aromatic_atoms()) {
+    return unique_smiles();
+  }
+
+  int * canonical_order = new int[_number_elements]; std::unique_ptr<int[]> free_canonical_order(canonical_order);
+  canonical_ranks(canonical_order);
+  for (int i = 0; i < _number_elements; ++i) {
+    canonical_order[i] = canonical_order[i] - 1;
+  }
+  renumber_atoms(canonical_order);
+  compute_aromaticity();
+
+  // Rename the canonical_order, since it now has a different use.
+  int * is_aromatic = canonical_order;
+  std::fill_n(is_aromatic, _number_elements, 0);
+
+  // The canonical_order array is re-used to hold the aromatic atoms.
+  resizable_array_p<Bond> double_bonds_destroyed;
+  for (const Bond * b : _bond_list) {
+    if (b->is_single_bond() || b->is_triple_bond()) {
+      continue;
+    }
+    if (! b->is_aromatic()) {
+      continue;
+    }
+    is_aromatic[b->a1()] = 1;
+    is_aromatic[b->a2()] = 1;
+
+    Bond * copybond = new Bond(*b);
+    double_bonds_destroyed << copybond;
+  }
+
+  for (const Bond * b : double_bonds_destroyed) {
+    set_bond_type_between_atoms(b->a1(), b->a2(), SINGLE_BOND);
+  }
+
+  // Add something to allow any value Kekule form on input.
+  if (find_kekule_form(is_aromatic)) {
+    return unique_smiles();
+  }
+
+  cerr << "Molecule::UniqueKekuleSmiles:cannot find kekule form\n";
+  for (const Bond * b : double_bonds_destroyed) {
+    set_bond_type_between_atoms(b->a1(), b->a2(), DOUBLE_BOND);
+  }
+
+  return unique_smiles();
+}
+#endif
 
 /*
   In processing a fused system, it has been discerned that some rings

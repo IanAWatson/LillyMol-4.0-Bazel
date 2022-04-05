@@ -1,19 +1,155 @@
 #include <iomanip>
+#include <iostream>
 #include <memory>
+#include <string>
 
 #include "leveldb/db.h"
+
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/report_progress.h"
-#include "Molecule_Lib/istream_and_type.h"
+
 #include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/mol2graph_proto.h"
 #include "Molecule_Lib/standardise.h"
-#include "Molecule_Lib/molecule.h"
 
 #include "Molecule_Tools/molecule_database_options.pb.h"
 #include "Molecule_Tools/molecule_database_options.h"
 
 namespace molecule_database {
+
+using std::cerr;
+
+void Usage(int rc) {
+  exit(rc);
+}
+
+struct Options {
+  int verbose = 0;
+
+  int molecules_read = 0;
+  int molecules_stored = 0;
+  int appended_to_existing = 0;
+
+  LLYMol::MoleculeDatabaseOptions database_structure_options;
+
+  // By default, leveldb's Put method overwrites what is present.
+  // We might want to concatenate all identifiers.
+  bool append_to_existing_entries = false;
+
+  // Maybe this should be an option.
+  const char * kSpacer = ":";
+               
+  // If appending to existing data, we first need to lookup every
+  // new item. Some ReadOptions to control that lookup.
+  leveldb::ReadOptions read_options;
+  // And write options to control writing.
+  leveldb::WriteOptions write_options;
+
+  Report_Progress report_progress;
+
+  Chemical_Standardisation chemical_standardisation;
+
+  // For efficiency, we store a Mol2Graph class at file scope,
+  // so it can be re-used for each molecule.
+  Mol2Graph mol2graph;
+
+  // The database we are loading.
+  std::unique_ptr<leveldb::DB> database;
+
+  public:
+    int Build (Command_Line& cl);
+  
+    int Report(std::ostream& output) const;
+
+    int DoStore(const IWString& smiles, const IWString& name);
+
+    int AppendToExistingData(const IWString& smiles, const IWString& name);
+
+    int BuildSmiDb(const IWString& smiles, const IWString& name);
+
+    int BuildSmiDb(Molecule& m);
+
+    int BuildSmiDb(data_source_and_type<Molecule>& input);
+
+    int BuildSmiDb(const char * fname,
+               FileType input_type);
+};
+
+int
+Options::Build(Command_Line& cl) {
+  verbose = cl.option_count('v');
+
+  if (cl.option_present('r')) {
+    if (! report_progress.initialise(cl, 'r', verbose)) {
+      cerr << "Cannot initialize progress reporting\n";
+      return 1;
+    }
+  }
+
+  if (cl.option_present('g')) {
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
+    {
+      cerr << "Cannot initialise chemical standardisation\n";
+      Usage(6);
+    }
+  }
+
+  std::optional<LLYMol::MoleculeDatabaseOptions> maybe_options = molecule_database::OptionsFromCmdline(cl, verbose);
+  if (! maybe_options.has_value()) {
+    cerr << "Cannot initialize common storage options\n";
+    return 1;
+  }
+
+  database_structure_options = *maybe_options;
+
+  // Set file scope mol2graph if needed.
+  if (maybe_options->mol2graph().active()) {
+    mol2graph = Mol2GraphFromProto(maybe_options->mol2graph());
+  }
+
+  if (cl.option_present('a')) {
+    append_to_existing_entries = true;
+    if (verbose)
+      cerr << "Will append new data to old\n";
+  }
+
+  if (! cl.option_present('d')) {
+    cerr << "Options::Build: must specify database via the -d option\n";
+    return 0;
+  }
+
+  const std::string dbname = cl.std_string_value('d');
+
+  leveldb::Options leveldb_options;
+  leveldb_options.create_if_missing = true;
+
+  leveldb::DB *db;
+  const leveldb::Status status = leveldb::DB::Open(leveldb_options, dbname, &db);
+  if (!status.ok()) {
+    cerr << "Options::Build:cannot open " << std::quoted(dbname) << " " << status.ToString() << "\n";
+    return 0;
+  }
+
+  database.reset(db);
+
+  if (! molecule_database::StoreStructureTypeInformation(database_structure_options, write_options, database.get())) {
+    cerr << "Cannot store structure specification\n";
+    return 1;
+  }
+
+  return 1;
+}
+
+int
+Options::Report(std::ostream& output) const {
+  output << "Read " << molecules_read << " molecules, stored " << molecules_stored << '\n';
+  if (append_to_existing_entries) {
+    output << appended_to_existing << " items appended to existing keys\n";
+  }
+  return 1;
+}
 
 int verbose = 0;
 
@@ -43,13 +179,8 @@ Chemical_Standardisation chemical_standardisation;
 // so it can be re-used for each molecule.
 Mol2Graph mol2graph;
 
-void usage(int rc) {
-  exit(rc);
-}
-
-int DoStore(const IWString& smiles, const IWString& name,
-               const leveldb::WriteOptions& write_options,
-               leveldb::DB* database) {
+int
+Options::DoStore(const IWString& smiles, const IWString& name) {
   leveldb::Slice key(smiles.data(), smiles.length());
   leveldb::Slice value(name.data(), name.length());
 
@@ -58,65 +189,68 @@ int DoStore(const IWString& smiles, const IWString& name,
     molecules_stored++;
     return 1;
   }
-  cerr << "Did not store " << status.ToString() << "\n";
+
+  cerr << "Options::DoStore:Did not store " << status.ToString() << "\n";
 
   return 0;
 }
 
-int AppendToExistingData(const IWString& smiles, const IWString& name,
-               const leveldb::WriteOptions& write_options,
-               leveldb::DB* database) {
+int
+Options::AppendToExistingData(const IWString& smiles, const IWString& name) {
   leveldb::Slice key(smiles.data(), smiles.length());
 
   std::string value;
   const leveldb::Status status = database->Get(read_options, key, &value);
   if (!status.ok()) {
-    return DoStore(smiles, name, write_options, database);
+    return DoStore(smiles, name);
   }
 
   IWString new_value(value);
   new_value.append_with_spacer(name, kSpacer);
   appended_to_existing++;
-  return DoStore(smiles, new_value, write_options, database);
+  return DoStore(smiles, new_value);
 }
 
-int BuildSmiDb(const IWString& smiles, const IWString& name,
-               const leveldb::WriteOptions& write_options,
-               leveldb::DB* database) {
+int
+Options::BuildSmiDb(const IWString& smiles, const IWString& name) {
   if (append_to_existing_entries) {
-    return AppendToExistingData(smiles, name, write_options, database);
+    return AppendToExistingData(smiles, name);
   }
 
-  return DoStore(smiles, name, write_options, database);
+  return DoStore(smiles, name);
 }
 
-int BuildSmiDb(Molecule& m,
-               const LLYMol::MoleculeDatabaseOptions& options,
-               const leveldb::WriteOptions& write_options,
-               leveldb::DB* database) {
-  molecule_database::Preprocess(m, options, chemical_standardisation);
+int
+Options::BuildSmiDb(Molecule& m) {
+  molecule_database::Preprocess(m, database_structure_options, chemical_standardisation);
 
-  if (! options.mol2graph().active()) {
-    return BuildSmiDb(m.unique_smiles(), m.name(), write_options, database);
+  if (mol2graph.active()) {
+    // TOTO(ianiwatson@gmail.com) Implement graph processing...
+    cerr << "Implement graph storage sometime\n";
+    return 0;
   }
 
+  if (database_structure_options.unique_smiles()) {
+    return BuildSmiDb(m.unique_smiles(), m.name());
+  }
 
-  // TOTO(ianiwatson@gmail.com) Implement graph processing...
+  if (database_structure_options.unique_kekule_smiles()) {
+    return BuildSmiDb(m.UniqueKekuleSmiles(), m.name());
+  }
 
-  return 1;
+  cerr << "Not sure what to store\n";
+  return 0;
 }
 
-int BuildSmiDb(data_source_and_type<Molecule>& input,
-               const LLYMol::MoleculeDatabaseOptions& options,
-               const leveldb::WriteOptions& write_options,
-               leveldb::DB* database) {
+int
+Options::BuildSmiDb(data_source_and_type<Molecule>& input) {
   Molecule * m;
   while (nullptr != (m = input.next_molecule())) {
     std::unique_ptr<Molecule> free_m(m);
     molecules_read++;
     report_progress.report("", "\n", std::cerr);
-    if (! BuildSmiDb(*m, options, write_options, database)) {
-      cerr << "Fatal error processing '" << m->name() << "'\n";
+    if (! BuildSmiDb(*m)) {
+      cerr << "Options::BuildSmiDb:fatal error processing '" << m->name() << "'\n";
       return 0;
     }
   }
@@ -124,11 +258,9 @@ int BuildSmiDb(data_source_and_type<Molecule>& input,
   return 1;
 }
 
-int BuildSmiDb(const char * fname,
-               FileType input_type,
-               const LLYMol::MoleculeDatabaseOptions& options,
-               const leveldb::WriteOptions& write_options,
-               leveldb::DB* database) {
+int
+Options::BuildSmiDb(const char * fname,
+               FileType input_type) {
   if (FILE_TYPE_INVALID == input_type)
   {
     input_type = discern_file_type_from_name(fname);
@@ -143,17 +275,21 @@ int BuildSmiDb(const char * fname,
     return 0;
   }
 
-  return BuildSmiDb(input, options, write_options, database);
+  return BuildSmiDb(input);
 }
 
 int BuildSmiDb(int argc, char ** argv) {
-  Command_Line cl(argc, argv, "vA:g:clGi:d:r:a");
+  Command_Line cl(argc, argv, "vA:g:clGi:d:r:aQ:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
-    usage(1);
+    Usage(1);
   }
 
-  verbose = cl.option_count('v');
+  Options options;
+  if (! options.Build(cl)) {
+    cerr << "Cannot initialise options\n";
+    Usage(1);
+  }
 
   if (cl.option_present('A')) {
     if (! process_standard_aromaticity_options(cl, verbose, 'A')) {
@@ -162,71 +298,13 @@ int BuildSmiDb(int argc, char ** argv) {
     }
   }
 
-  if (cl.option_present('r')) {
-    if (! report_progress.initialise(cl, 'r', verbose)) {
-      cerr << "Cannot initialize progress reporting\n";
-      return 1;
-    }
-  }
-
-  if (cl.option_present('g')) {
-    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
-    {
-      cerr << "Cannot initialise chemical standardisation\n";
-      usage(6);
-    }
-  }
-
-  std::optional<LLYMol::MoleculeDatabaseOptions> options = molecule_database::OptionsFromCmdline(cl, verbose);
-  if (! options.has_value()) {
-    cerr << "Cannot initialize common storage options\n";
-    return 1;
-  }
-
-  // Set file scope mol2graph if needed.
-  if (options.value().mol2graph().active()) {
-    mol2graph = Mol2GraphFromProto(options.value().mol2graph());
-  }
-
-  if (! cl.option_present('d')) {
-    cerr << "Must specify name of database via the -d option\n";
-    usage(1);
-  }
-
-  if (cl.option_present('a')) {
-    append_to_existing_entries = true;
-    if (verbose)
-      cerr << "Will append new data to old\n";
-  }
-
-  const std::string dbname = cl.std_string_value('d');
-
-  leveldb::Options leveldb_options;
-  leveldb_options.create_if_missing = true;
-
-  leveldb::DB *database;
-  const leveldb::Status status = leveldb::DB::Open(leveldb_options, dbname,  &database);
-  if (!status.ok()) {
-    cerr << "Cannot open " << std::quoted(dbname) << " " << status.ToString() << "\n";
-    return 1;
-  }
-  std::unique_ptr<leveldb::DB> free_database(database);
-
-  leveldb::WriteOptions write_options;
-
-  if (! molecule_database::StoreStructureTypeInformation(options.value(), write_options, database)) {
-    cerr << "Cannot store structure specification\n";
-    return 1;
-  }
-
-
   FileType input_type = FILE_TYPE_INVALID;
   if (cl.option_present('i'))
   {
     if (! process_input_type(cl, input_type))
     {
       cerr << "Cannot determine input type\n";
-      usage(6);
+      Usage(6);
     }
   }
 
@@ -248,17 +326,14 @@ int BuildSmiDb(int argc, char ** argv) {
 
   for (int i = 0; i < cl.number_elements(); ++i) {
     const char * fname = cl[i];
-    if (! BuildSmiDb(fname, input_type, options.value(), write_options, database)) {
+    if (! options.BuildSmiDb(fname, input_type)) {
       cerr << "Fatal error processing " << std::quoted(fname) << "\n";
       return i + 1;
     }
   }
 
   if (verbose) {
-    cerr << "Read " << molecules_read << " molecules, stored " << molecules_stored << '\n';
-    if (append_to_existing_entries) {
-      cerr << appended_to_existing << " items appended to existing keys\n";
-    }
+    options.Report(cerr);
   }
 
 

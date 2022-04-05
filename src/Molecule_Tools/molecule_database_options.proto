@@ -21,4 +21,7 @@ message MoleculeDatabaseOptions {
 
   // By default the unique smiles is used.
   bool unique_smiles = 5;
+
+  // Maybe make this an enum.
+  bool unique_kekule_smiles = 6;
 }
