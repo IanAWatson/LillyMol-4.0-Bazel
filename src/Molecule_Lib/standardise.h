@@ -304,6 +304,7 @@ class IWStandard_Current_Molecule
 #define CS_PYRAZOLONE "pirazolone"
 #define CS_AMINO_THIAZOLE "aminothazole"
 #define CS_KETO_ENOL "keto_enol"
+#define CS_NOHMOVE "nohmove"
 
 
 /*
@@ -477,6 +478,7 @@ class Chemical_Standardisation
 
     int  _do_transform_implicit_hydrogen_known_errors (Molecule & m, IWStandard_Current_Molecule & current_molecule_data);
 
+    int _activate_nohmove_transformations();
 
     int  _process (Molecule &);
     int  _process (Molecule &, IWStandard_Current_Molecule & current_molecule_data);

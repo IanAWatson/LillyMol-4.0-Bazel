@@ -4,8 +4,6 @@
 
 #include <iostream>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 #define IWQSORT_FO_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
@@ -17,59 +15,62 @@ using std::endl;
 #include "Foundational/iwmisc/report_progress.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 
-#include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/path.h"
-#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/path.h"
 #include "Molecule_Lib/rotbond_common.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
 
+using std::cerr;
+using std::endl;
+
 static int verbose = 0;
 
+// Lazy global variable. Should fix sometime..
 static int nproperties = 0;
 
-static int * comparison_criterion = nullptr;
-static int * direction = nullptr;
+enum class Comparison {
+  kNatoms,
+  kNrings,
+  kAmw,
+  kNfrag,
+  kNchiral,
+  kNhetero,
+  kAromaticAtoms,
+  kAromaticRings,
+  kLargestRingSize,
+  kLargestRingSystemSize,
+  kColumnOfName,
+  kRotatableBonds,
+  kAtomsInLargestRingSystem,
+  kAtomsInCounterion,
+  kAtomsInCounterionMP,
+  kAMWInCounterion,
+  kAMWInCounterionMP,
+  kAtomsInLargestFragment,
+  kAmwNoH,
+  kSDFTag,
+  kNumberIsotopicAtoms,
+  kIsotopeValue,
+  kSubstructureSearch,
+  kUnsaturation,
+  kIsotopeQuery,
+  kAtomsInFirstFragment,
+  kAMWInLargestFragment,
+  kRingAtoms,
+  kAtomicNumberTotal,
+  kAnyCharge,
+  kSmallestRingSize,
+  kSumAtomicNumber,
+  kSP3,
+  kNbonds
+};
 
-#define CMP_NATOMS 0
-#define CMP_NRINGS 1
-#define CMP_AMW 2
-#define CMP_NFRAG 3
-#define CMP_NCHIRAL 4
-#define CMP_NHETERO 5
-#define CMP_AROMATIC_ATOMS 6
-#define CMP_AROMATIC_RINGS 7
-#define CMP_LARGEST_RING_SIZE 8
-#define CMP_LARGEST_RING_SYSTEM_SIZE 9
-#define CMP_COLUMN_OF_NAME 10
-#define CMP_ROTATBLE_BONDS 11
-#define CMP_ATOMS_IN_LARGEST_RING_SYSTEM 12
-#define CMP_ATOMS_IN_COUNTERION 13
-#define CMP_ATOMS_IN_COUNTERION_MP 14
-#define CMP_AMW_IN_COUNTERION 15
-#define CMP_AMW_IN_COUNTERION_MP 16
-#define CMP_ATOMS_IN_LARGEST_FRAGMENT 17
-#define CMP_AMW_IN_LARGEST_FRAGMENT 17
-#define CMP_AMW_NOH 18
-#define CMP_SDF_TAG 19
-#define CMP_NUMBER_ISOTOPIC_ATOMS 20
-#define CMP_SUBSTRUCTURE_SEARCH 21
-#define CMP_UNSATURATION 22
-#define CMP_ATOMS_IN_FIRST_FRAGMENT 23
-#define CMP_RING_ATOMS 24
-#define CMP_ANY_CHARGE 25
-#define CMP_SMALLEST_RING_SIZE 26
-#define CMP_ATOMIC_NUMBER_TOTAL 27
-#define CMP_SP3 27
-#define CMP_NBONDS 28
-
-static extending_resizable_array<int> comparison_column;
 
 static atomic_mass_t amw_hydrogen = static_cast<atomic_mass_t>(1.00794);
-
-static IWString * comparison_tag = nullptr;
 
 static int presumed_atoms_in_counterion_if_no_counterion = 0;
 
@@ -93,6 +94,10 @@ static int treat_queries_as_a_single_group = 0;
 
 static int * property_number_to_query_number = nullptr;
 
+// If sorting by an isotopic value, we need a query to define the
+// atom.
+static Substructure_Query isotope_query;
+
 /*
   When writing molecules in chunks, we can set a minimum molecules
   per file we'd like to see.
@@ -112,7 +117,7 @@ static void
 usage(int rc)
 {
   cerr << "Sorts a structure file by various criteria\n";
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "  -a             sort by number of atoms\n";
 //cerr << "  -r             sort by number of rings\n";
 //cerr << "  -f             sort by number of fragments\n";
@@ -125,7 +130,7 @@ usage(int rc)
 //cerr << "  -S             sort by rings in largest fused ring system\n";
 //cerr << "  -b             sort by rotatable bonds\n";
 //cerr << "  -e             atoms in largest ring system\n";
-//cerr << endl;
+//cerr << '\n';
   cerr << "  -k <key(s)>    sort specification(s)\n";
   cerr << "                 a preceeding negative sign indicates reverse order for that property\n";
   cerr << "                 'a' 'natoms' number of atoms\n";
@@ -150,6 +155,7 @@ usage(int rc)
   cerr << "                     'amwcm=<x>' amw in counterions, missing assigned <x>\n";
   cerr << "                     'col=nn' numeric contents of column <nn> of the name\n";
   cerr << "                     'niso' number of isotopic atoms\n";
+  cerr << "                     'iso=qry' isotopic value on first matched atom\n";
   cerr << "                     'rngat' number of ring atoms\n";
   cerr << "                     'Z' sum of atomic numbers in the molecule\n";
   cerr << "                     'sp3' number of sp3 atoms\n";
@@ -190,7 +196,13 @@ class File_Record
     void set_nlines (int n) { _nlines = n;}
     int nlines() const { return _nlines;}
 
-    int initialise (Molecule &, off_t, IW_STL_Hash_Map_int *);
+    int Initialise (Molecule &, off_t,
+                   const int nproperties,
+                   const Comparison* comparison_criterion,
+                   const IWString* comparison_tag,
+                   extending_resizable_array<int>& comparison_column,
+                   const int * direction,
+                   IW_STL_Hash_Map_int *);
 
     int compare (const File_Record &) const;
 
@@ -756,6 +768,28 @@ perform_substructure_search(Molecule & m, int property_number)
 }
 
 static int
+IsotopeOnMatchedAtom(Molecule& m, Substructure_Query& query) {
+  Substructure_Results sresults;
+  int nhits = query.substructure_search(m, sresults);
+  if (nhits == 0) {
+    return -1;
+  }
+
+  // Open question about what should be returned. Since this
+  // is what I needed when I implemented this, it is max.
+  int highest_isotope = 0;
+  for (int i = 0; i < nhits; ++i) {
+    const Set_of_Atoms * e = sresults.embedding(i);
+    const atom_number_t a = e->item(0);
+    if (m.isotope(a) > highest_isotope) {
+      highest_isotope = m.isotope(a);
+    }
+  }
+
+  return highest_isotope;
+}
+
+static int
 count_usaturation(Molecule & m)
 {
   m.compute_aromaticity_if_needed();
@@ -779,8 +813,13 @@ count_usaturation(Molecule & m)
 }
 
 int 
-File_Record::initialise(Molecule & m,
+File_Record::Initialise(Molecule & m,
                         const off_t o,
+                        const int nproperties,
+                        const Comparison* comparison_criterion,
+                        const IWString* comparison_tag,
+                        extending_resizable_array<int>& comparison_column,
+                        const int * direction,
                         IW_STL_Hash_Map_int * string_to_ndx)
 {
   _offset = o;
@@ -791,73 +830,104 @@ File_Record::initialise(Molecule & m,
 
   for (int i = 0; i < nproperties; i++)
   {
-    if (CMP_NATOMS == comparison_criterion[i])
-      _property[i] = static_cast<float>(m.natoms());
-    else if (CMP_NRINGS == comparison_criterion[i])
-      _property[i] = static_cast<float>(m.nrings());
-    else if (CMP_AMW == comparison_criterion[i])
-      _property[i] = static_cast<float>(compute_molecular_weight(m));
-    else if (CMP_AMW_NOH == comparison_criterion[i])
-      _property[i] = compute_amw_no_h(m);
-    else if (CMP_NFRAG == comparison_criterion[i])
-      _property[i] = static_cast<float>(m.number_fragments());
-    else if (CMP_NCHIRAL == comparison_criterion[i])
-      _property[i] = static_cast<float>(m.chiral_centres());
-    else if (CMP_NHETERO == comparison_criterion[i])
-      _property[i] = static_cast<float>(m.natoms() - m.natoms(6));
-    else if (CMP_AROMATIC_ATOMS == comparison_criterion[i])
-      _property[i] = static_cast<float>(compute_aromatic_atoms(m));
-    else if (CMP_AROMATIC_RINGS == comparison_criterion[i])
-      _property[i] = static_cast<float>(compute_aromatic_rings(m));
-    else if (CMP_LARGEST_RING_SIZE == comparison_criterion[i])
-      _property[i] = static_cast<float>(compute_largest_ring_size(m));
-    else if (CMP_LARGEST_RING_SYSTEM_SIZE == comparison_criterion[i])
-      _property[i] = static_cast<float>(compute_largest_ring_system_size(m));
-    else if (CMP_COLUMN_OF_NAME == comparison_criterion[i])
-      _property[i] = static_cast<float>(fetch_contents_of_column(m, comparison_column[i], string_to_ndx[i]));
-    else if (CMP_ROTATBLE_BONDS == comparison_criterion[i])
-      _property[i] = compute_rotatable_bonds(m);
-    else if (CMP_ATOMS_IN_LARGEST_RING_SYSTEM == comparison_criterion[i])
-      _property[i] = compute_atoms_in_largest_ring_system(m);
-    else if (CMP_ATOMS_IN_COUNTERION_MP == comparison_criterion[i])
-      _property[i] = common_compute_atoms_in_counterions(m, presumed_atoms_in_counterion_if_no_counterion);
-    else if (CMP_AMW_IN_COUNTERION_MP == comparison_criterion[i])
-      _property[i] = common_compute_amw_in_counterions(m, presumed_amw_in_counterion_if_no_counterion);
-    else if (CMP_ATOMS_IN_LARGEST_FRAGMENT == comparison_criterion[i])
-      _property[i] = compute_atoms_in_largest_fragment(m);
-    else if (CMP_ATOMS_IN_FIRST_FRAGMENT == comparison_criterion[i])
-      _property[i] = compute_atoms_in_first_fragment(m);
-    else if (CMP_AMW_IN_LARGEST_FRAGMENT == comparison_criterion[i])
-      _property[i] = compute_amw_in_largest_fragment(m);
-    else if (CMP_NUMBER_ISOTOPIC_ATOMS == comparison_criterion[i])
-      _property[i] = m.number_isotopic_atoms();
-    else if (CMP_SUBSTRUCTURE_SEARCH == comparison_criterion[i])
-      _property[i] = perform_substructure_search(m, i);
-    else if (CMP_UNSATURATION == comparison_criterion[i])
-      _property[i] = count_usaturation(m);
-    else if (CMP_SDF_TAG == comparison_criterion[i])
-    {
-      if (! fetch_sdf_tag_data(m, comparison_tag[i], _property[i], string_to_ndx[i]))
+    switch (comparison_criterion[i]) {
+      case Comparison::kNatoms:
+        _property[i] = static_cast<float>(m.natoms());
+        break;
+      case Comparison::kNrings:
+        _property[i] = static_cast<float>(m.nrings());
+        break;
+      case Comparison::kAmw:
+        _property[i] = static_cast<float>(compute_molecular_weight(m));
+        break;
+      case Comparison::kAmwNoH:
+        _property[i] = compute_amw_no_h(m);
+        break;
+      case Comparison::kNfrag:
+        _property[i] = static_cast<float>(m.number_fragments());
+        break;
+      case Comparison::kNchiral:
+        _property[i] = static_cast<float>(m.chiral_centres());
+        break;
+      case Comparison::kNhetero:
+        _property[i] = static_cast<float>(m.natoms() - m.natoms(6));
+        break;
+      case Comparison::kAromaticAtoms:
+        _property[i] = static_cast<float>(compute_aromatic_atoms(m));
+        break;
+      case Comparison::kAromaticRings:
+        _property[i] = static_cast<float>(compute_aromatic_rings(m));
+        break;
+      case Comparison::kLargestRingSize:
+        _property[i] = static_cast<float>(compute_largest_ring_size(m));
+        break;
+      case Comparison::kLargestRingSystemSize:
+        _property[i] = static_cast<float>(compute_largest_ring_system_size(m));
+        break;
+      case Comparison::kColumnOfName:
+        _property[i] = static_cast<float>(fetch_contents_of_column(m, comparison_column[i], string_to_ndx[i]));
+        break;
+      case Comparison::kRotatableBonds:
+        _property[i] = compute_rotatable_bonds(m);
+        break;
+      case Comparison::kAtomsInLargestRingSystem:
+        _property[i] = compute_atoms_in_largest_ring_system(m);
+        break;
+      case Comparison::kAtomsInCounterionMP:
+        _property[i] = common_compute_atoms_in_counterions(m, presumed_atoms_in_counterion_if_no_counterion);
+        break;
+      case Comparison::kAMWInCounterionMP:
+        _property[i] = common_compute_amw_in_counterions(m, presumed_amw_in_counterion_if_no_counterion);
+        break;
+      case Comparison::kAtomsInLargestFragment:
+        _property[i] = compute_atoms_in_largest_fragment(m);
+        break;
+      case Comparison::kAtomsInFirstFragment:
+        _property[i] = compute_atoms_in_first_fragment(m);
+        break;
+      case Comparison::kAMWInLargestFragment:
+        _property[i] = compute_amw_in_largest_fragment(m);
+        break;
+      case Comparison::kNumberIsotopicAtoms:
+        _property[i] = m.number_isotopic_atoms();
+        break;
+      case Comparison::kSubstructureSearch:
+        _property[i] = perform_substructure_search(m, i);
+        break;
+      case Comparison::kUnsaturation:
+        _property[i] = count_usaturation(m);
+        break;
+      case Comparison::kIsotopeQuery:
+        _property[i] = IsotopeOnMatchedAtom(m, isotope_query);
+        break;
+      case Comparison::kSDFTag: {
+        if (! fetch_sdf_tag_data(m, comparison_tag[i], _property[i], string_to_ndx[i]))
+          return 0;
+        break;
+      }
+      case Comparison::kRingAtoms:
+        _property[i] = compute_ring_atoms(m);
+        break;
+      case Comparison::kAtomicNumberTotal:
+        _property[i] = compute_total_atomic_number(m);
+        break;
+      case Comparison::kSP3:
+        _property[i] = compute_sp3(m);
+        break;
+      case Comparison::kNbonds:
+        _property[i] = compute_nbonds(m);
+        break;
+      case Comparison::kAnyCharge:
+        _property[i] = m.number_formally_charged_atoms();
+        break;
+      case Comparison::kSmallestRingSize:
+        _property[i] = smallest_ring_size(m);
+        break;
+      default:
+      {
+        cerr << "Unrecognised property '" << static_cast<int>(comparison_criterion[i]) << '\n';
         return 0;
-    }
-    else if (CMP_RING_ATOMS == comparison_criterion[i])
-      _property[i] = compute_ring_atoms(m);
-    else if (CMP_ATOMIC_NUMBER_TOTAL == comparison_criterion[i])
-      _property[i] = compute_total_atomic_number(m);
-    else if (CMP_SP3 == comparison_criterion[i])
-      _property[i] = compute_sp3(m);
-    else if (CMP_NBONDS == comparison_criterion[i])
-      _property[i] = compute_nbonds(m);
-    else if (CMP_ANY_CHARGE == comparison_criterion[i])
-      _property[i] = m.number_formally_charged_atoms();
-    else if (CMP_SMALLEST_RING_SIZE == comparison_criterion[i])
-      _property[i] = smallest_ring_size(m);
-    else if (CMP_SMALLEST_RING_SIZE == comparison_criterion[i])
-      _property[i] = smallest_ring_size(m);
-    else
-    {
-      cerr << "Unrecognised property '" << comparison_criterion[i] << endl;
-      return 0;
+      }
     }
 
     if (-1 == direction[i])
@@ -868,7 +938,7 @@ File_Record::initialise(Molecule & m,
 #ifdef ECHO_COMPUTED_PROPERTIES
   for (int i = 0; i < nproperties; i++)
   {
-    cerr << " i = " << i << " property " << _property[i] << endl;
+    cerr << " i = " << i << " property " << _property[i] << '\n';
   }
 #endif
 
@@ -880,7 +950,7 @@ File_Record::compare(const File_Record & rhs) const
 {
   for (int i = 0; i < nproperties; i++)
   {
-//  cerr << " i = " << i << " comparing " << _property[i] << " with " << rhs._property[i] << endl;
+//  cerr << " i = " << i << " comparing " << _property[i] << " with " << rhs._property[i] << '\n';
     if (_property[i] < rhs._property[i])
       return 1;
     else if (_property[i] > rhs._property[i])
@@ -899,7 +969,7 @@ File_Record::echo(iwstring_data_source & input,
 //cerr << "Seeking to " << _offset << ", will write " << _nlines << " lines\n";
   if (! input.seekg(_offset))
   {
-    cerr << "File_Record::echo: cannot seek to " << _offset << endl;
+    cerr << "File_Record::echo: cannot seek to " << _offset << '\n';
     return 0;
   }
 
@@ -947,7 +1017,7 @@ identify_next_group(const resizable_array<File_Record *> & records,
                      int & istart,
                      int & istop)
 {
-//cerr << "identify_next_group:on entry istart " << istart << " istop " << istop << ", min_size_hint " << min_size_hint << endl;
+//cerr << "identify_next_group:on entry istart " << istart << " istop " << istop << ", min_size_hint " << min_size_hint << '\n';
   const auto number_molecules = records.number_elements();
 
   if (istop >= number_molecules)
@@ -971,7 +1041,7 @@ identify_next_group(const resizable_array<File_Record *> & records,
 
 //  We are at a discontinuity
 
-//  cerr << "At sorting discontinuity istart " << istart << " istop " << istop << endl;
+//  cerr << "At sorting discontinuity istart " << istart << " istop " << istop << '\n';
 
     if (istop - istart < min_size_hint)   // not enough to write
       ;
@@ -1009,7 +1079,7 @@ echo_set_of_molecules(const resizable_array<File_Record *> & records,
   {
     if (! records[i]->echo(input, output))
     {
-      cerr << "Cannot write item " << i << endl;
+      cerr << "Cannot write item " << i << '\n';
       return 0;
     }
 
@@ -1050,7 +1120,7 @@ identify_next_equi_atom_group(const resizable_array<File_Record *> & records,
                               int atoms_per_chunk,
                               unsigned int & atoms)
 {
-//cerr << "identify_next_group:on entry istart " << istart << " istop " << istop << ", min_size_hint " << min_size_hint << endl;
+//cerr << "identify_next_group:on entry istart " << istart << " istop " << istop << ", min_size_hint " << min_size_hint << '\n';
 
   const auto number_molecules = records.number_elements();
 
@@ -1109,7 +1179,7 @@ do_equal_atom_count_chunked_output(const resizable_array<File_Record *> & molecu
   while (identify_next_equi_atom_group(molecules, istart, istop, atoms_per_chunk, atoms))
   {
     if (verbose)
-      cerr << "Writing from " << istart << " to " << istop << endl;
+      cerr << "Writing from " << istart << " to " << istop << '\n';
 
     if (! write_group(molecules, istart, istop, input, stem_for_output_files, ndx))
       return 0;
@@ -1132,7 +1202,7 @@ do_chunked_output(const resizable_array<File_Record *> & molecules,
   while (identify_next_group(molecules, istart, istop))
   {
     if (verbose)
-      cerr << "Writing from " << istart << " to " << istop << endl;
+      cerr << "Writing from " << istart << " to " << istop << '\n';
 
     if (! write_group(molecules, istart, istop, input, stem_for_output_files, ndx))
       return 0;
@@ -1159,7 +1229,8 @@ preprocess(Molecule & m)
 }
 
 static int
-fetch_queries(const_IWSubstring & q)
+fetch_queries(const_IWSubstring & q,
+              resizable_array_p<Substructure_Query> & queries)
 {
   if (! process_cmdline_token(' ', q, queries, verbose))
   {
@@ -1171,11 +1242,13 @@ fetch_queries(const_IWSubstring & q)
 }
 
 static int
-fetch_smarts(const const_IWSubstring & s)
+fetch_smarts(const const_IWSubstring & s,
+             resizable_array_p<Substructure_Query> & queries)
 {
   Substructure_Query * q = new Substructure_Query;
   if (! q->create_from_smarts(s))
   {
+    delete q;
     cerr << "Invalid smarts '" << s << "'\n";
     return 0;
   }
@@ -1200,43 +1273,35 @@ msort (int argc, char ** argv)
 {
   Command_Line cl(argc, argv, "vA:E:i:mfcarhonjRSbzZk:dylg:D:e:qM:s:");
 
-  if (cl.unrecognised_options_encountered())
-  {
+  if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
     usage(1);
   }
 
   verbose = cl.option_count('v');
 
-  if (cl.option_present('A'))
-  {
-    if (! process_standard_aromaticity_options(cl, verbose))
-    {
+  if (cl.option_present('A')) {
+    if (! process_standard_aromaticity_options(cl, verbose)) {
       cerr << "Cannot process standard aromaticity options\n";
       usage(4);
     }
   }
 
-  if (cl.option_present('E'))
-  {
-    if (! process_elements(cl))
-    {
+  if (cl.option_present('E')) {
+    if (! process_elements(cl)) {
       cerr << "Cannot initialise elements (-E option)\n";
       usage(3);
     }
   }
 
-  if (cl.option_present('g'))
-  {
-    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
-    {
+  if (cl.option_present('g')) {
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g')) {
       cerr << "Cannot process chemical standardisation options (-g)\n";
       usage(32);
     }
   }
 
-  if (cl.option_present('l'))
-  {
+  if (cl.option_present('l')) {
     reduce_to_largest_fragment = 1;
 
     if (verbose)
@@ -1244,23 +1309,20 @@ msort (int argc, char ** argv)
   }
 
   FileType input_type = FILE_TYPE_INVALID;
-  if (cl.option_present('i'))
-  {
-    if (! process_input_type(cl, input_type))
-    {
+  if (cl.option_present('i')) {
+    if (! process_input_type(cl, input_type)) {
       cerr << "Cannot determine input type\n";
       usage(6);
     }
   }
-  else if (! all_files_recognised_by_suffix(cl))
+  else if (! all_files_recognised_by_suffix(cl)) {
     return 4;
+  }
 
-  if (cl.option_present('M'))
-  {
+  if (cl.option_present('M')) {
     const_IWSubstring m;
 
-    for (int i = 0; cl.value('M', m, i); i++)
-    {
+    for (int i = 0; cl.value('M', m, i); i++) {
       if (m.starts_with("ea="))
       {
         if (! cl.option_present('D'))
@@ -1311,22 +1373,25 @@ msort (int argc, char ** argv)
     }
   }
 
-  if (0 == cl.number_elements())
-  {
+  if (cl.empty()) {
     cerr << "Insufficient arguments\n";
     usage(2);
   }
 
-  if (cl.number_elements() > 1)
-  {
+  if (cl.number_elements() > 1) {
     cerr << "Sorry, don't know how to do multiple files\n";
     return 8;
   }
 
-  comparison_criterion = new int[100];     // definite overestimate
-  direction = new int[100];
+  // For each comparison..
+  std::unique_ptr<Comparison[]> comparison_criterion = std::make_unique<Comparison[]>(100);
+  std::unique_ptr<int[]> direction = std::make_unique<int[]>(100);
+  // If any of the comparisons involve a tag in an sdf file, this will be allocated.
+  std::unique_ptr<IWString[]> comparison_tag;
 
   int number_query_specifications = 0;
+
+  extending_resizable_array<int> comparison_column;
 
   if (cl.option_present('k'))
   {
@@ -1338,7 +1403,7 @@ msort (int argc, char ** argv)
 
     int nk = cl.option_count('k');
 
-    comparison_tag = new IWString[nk];
+    comparison_tag.reset(new IWString[nk]);
     property_number_to_query_number = new_int(nk, -1);
 
     const_IWSubstring k;
@@ -1366,53 +1431,53 @@ msort (int argc, char ** argv)
         }
   
         if ('a' == token || token.starts_with("atom") || "natoms" == token)
-          comparison_criterion[nproperties] = CMP_NATOMS;
+          comparison_criterion[nproperties] = Comparison::kNatoms;
         else if ('r' == token || token.starts_with("nring"))
-          comparison_criterion[nproperties] = CMP_NRINGS;
+          comparison_criterion[nproperties] = Comparison::kNrings;
         else if ('w' == token || "amw" == token)
-          comparison_criterion[nproperties] = CMP_AMW;
+          comparison_criterion[nproperties] = Comparison::kAmw;
         else if ("amwnH" == token)
-          comparison_criterion[nproperties] = CMP_AMW_NOH;
+          comparison_criterion[nproperties] = Comparison::kAmwNoH;
         else if ('f' == token || "nfrag" == token)
-          comparison_criterion[nproperties] = CMP_NFRAG;
+          comparison_criterion[nproperties] = Comparison::kNfrag;
         else if ('c' == token || "nchiral" == token)
-          comparison_criterion[nproperties] = CMP_NCHIRAL;
+          comparison_criterion[nproperties] = Comparison::kNchiral;
         else if ('h' == token || "hetero" == token)
-          comparison_criterion[nproperties] = CMP_NHETERO;
+          comparison_criterion[nproperties] = Comparison::kNhetero;
         else if ('j' == token || "aroma" == token)
-          comparison_criterion[nproperties] = CMP_AROMATIC_ATOMS;
+          comparison_criterion[nproperties] = Comparison::kAromaticAtoms;
         else if ('k' == token || "aromr" == token)
-          comparison_criterion[nproperties] = CMP_AROMATIC_RINGS;
+          comparison_criterion[nproperties] = Comparison::kAromaticRings;
         else if ('R' == token || "lgrsz" == token)
-          comparison_criterion[nproperties] = CMP_LARGEST_RING_SIZE;
+          comparison_criterion[nproperties] = Comparison::kLargestRingSize;
         else if ('S' == token || "lgrss" == token)
-          comparison_criterion[nproperties] = CMP_LARGEST_RING_SYSTEM_SIZE;
+          comparison_criterion[nproperties] = Comparison::kLargestRingSystemSize;
         else if ("alrss" == token)
-          comparison_criterion[nproperties] = CMP_ATOMS_IN_LARGEST_RING_SYSTEM;
+          comparison_criterion[nproperties] = Comparison::kAtomsInLargestRingSystem;
         else if ("asr" == token)
-          comparison_criterion[nproperties] = CMP_SMALLEST_RING_SIZE;
+          comparison_criterion[nproperties] = Comparison::kSmallestRingSize;
         else if ('b' == token || "rotbond" == token)
-          comparison_criterion[nproperties] = CMP_ROTATBLE_BONDS;
+          comparison_criterion[nproperties] = Comparison::kRotatableBonds;
         else if ("ailf" == token)
-          comparison_criterion[nproperties] = CMP_ATOMS_IN_LARGEST_FRAGMENT;
+          comparison_criterion[nproperties] = Comparison::kAtomsInLargestFragment;
         else if ("aiff" == token)
-          comparison_criterion[nproperties] = CMP_ATOMS_IN_FIRST_FRAGMENT;
+          comparison_criterion[nproperties] = Comparison::kAtomsInFirstFragment;
         else if ("unsat" == token)
-          comparison_criterion[nproperties] = CMP_UNSATURATION;
+          comparison_criterion[nproperties] = Comparison::kUnsaturation;
         else if ("amwlf" == token)
-          comparison_criterion[nproperties] = CMP_AMW_IN_LARGEST_FRAGMENT;
+          comparison_criterion[nproperties] = Comparison::kAMWInLargestFragment;
         else if ("niso" == token)
-          comparison_criterion[nproperties] = CMP_NUMBER_ISOTOPIC_ATOMS;
+          comparison_criterion[nproperties] = Comparison::kNumberIsotopicAtoms;
         else if ("rngat" == token)
-          comparison_criterion[nproperties] = CMP_RING_ATOMS;
+          comparison_criterion[nproperties] = Comparison::kRingAtoms;
         else if ("Z" == token)
-          comparison_criterion[nproperties] = CMP_ATOMIC_NUMBER_TOTAL;
+          comparison_criterion[nproperties] = Comparison::kAtomicNumberTotal;
         else if ("sp3" == token)
-          comparison_criterion[nproperties] = CMP_SP3;
+          comparison_criterion[nproperties] = Comparison::kSP3;
         else if ("nbonds" == token)
-          comparison_criterion[nproperties] = CMP_NBONDS;
+          comparison_criterion[nproperties] = Comparison::kNbonds;
         else if ("charge" == token)
-          comparison_criterion[nproperties] = CMP_ANY_CHARGE;
+          comparison_criterion[nproperties] = Comparison::kAnyCharge;
         else if (token.starts_with("qry="))
         {
           if (queries.number_elements())
@@ -1421,24 +1486,24 @@ msort (int argc, char ** argv)
             return 4;
           }
           token.remove_leading_chars(4);
-          if (! fetch_queries(token))
+          if (! fetch_queries(token, queries))
           {
             cerr << "Invalid query specification(s) '" << token << "'\n";
             return 4;
           }
-          comparison_criterion[nproperties] = CMP_SUBSTRUCTURE_SEARCH;
+          comparison_criterion[nproperties] = Comparison::kSubstructureSearch;
           property_number_to_query_number[nproperties] = number_query_specifications;
           number_query_specifications++;
         }
         else if (token.starts_with("smt="))
         {
           token.remove_leading_chars(4);
-          if (! fetch_smarts(token))
+          if (! fetch_smarts(token, queries))
           {
             cerr << "Invalid smarts '" << token << "'\n";
             return 4;
           }
-          comparison_criterion[nproperties] = CMP_SUBSTRUCTURE_SEARCH;
+          comparison_criterion[nproperties] = Comparison::kSubstructureSearch;
           property_number_to_query_number[nproperties] = number_query_specifications;
           number_query_specifications++;
         }
@@ -1450,7 +1515,7 @@ msort (int argc, char ** argv)
             cerr << "INvalid presumed atom count in missing counterion '" << token << "'\n";
             usage(4);
           }
-          comparison_criterion[nproperties] = CMP_ATOMS_IN_COUNTERION_MP;
+          comparison_criterion[nproperties] = Comparison::kAtomsInCounterionMP;
         }
         else if (token.starts_with("amwcm="))
         {
@@ -1460,7 +1525,15 @@ msort (int argc, char ** argv)
             cerr << "INvalid presumed AMW in missing counterion '" << token << "'\n";
             usage(5);
           }
-          comparison_criterion[nproperties] = CMP_AMW_IN_COUNTERION_MP;
+          comparison_criterion[nproperties] = Comparison::kAMWInCounterionMP;
+        }
+        else if (token.starts_with("iso=")) {
+          token.remove_leading_chars(4);
+          if (! isotope_query.create_from_smarts(token)) {
+            cerr << "Invalid isotope smarts '" << token << "'\n";
+            return 1;
+          }
+          comparison_criterion[nproperties] = Comparison::kIsotopeQuery;
         }
         else if (token.starts_with("col="))
         {
@@ -1472,13 +1545,13 @@ msort (int argc, char ** argv)
             return 4;
           }
 
-          comparison_criterion[nproperties] = CMP_COLUMN_OF_NAME;
+          comparison_criterion[nproperties] = Comparison::kColumnOfName;
           comparison_column[nproperties] = (col - 1);
         }
         else if (token.starts_with("sdf="))
         {
           token.remove_leading_chars(4);
-          comparison_criterion[nproperties] = CMP_SDF_TAG;
+          comparison_criterion[nproperties] = Comparison::kSDFTag;
           comparison_tag[nproperties] << "<" << token << '>';
           set_read_extra_text_info(1);
         }
@@ -1504,57 +1577,57 @@ msort (int argc, char ** argv)
       const_IWSubstring c = argv[i];
       if ("-a" == c)
       {
-        comparison_criterion[nproperties] = CMP_NATOMS;
+        comparison_criterion[nproperties] = Comparison::kNatoms;
         nproperties++;
       }
       else if ("-m" == c)
       {
-        comparison_criterion[nproperties] = CMP_AMW;
+        comparison_criterion[nproperties] = Comparison::kAmw;
         nproperties++;
       }
       else if ("-f" == c)
       {
-        comparison_criterion[nproperties] = CMP_NFRAG;
+        comparison_criterion[nproperties] = Comparison::kNfrag;
         nproperties++;
       }
       else if ("-c" == c)
       {
-        comparison_criterion[nproperties] = CMP_NCHIRAL;
+        comparison_criterion[nproperties] = Comparison::kNchiral;
         nproperties++;
       }
       else if ("-r" == c)
       {
-        comparison_criterion[nproperties] = CMP_NRINGS;
+        comparison_criterion[nproperties] = Comparison::kNrings;
         nproperties++;
       }
       else if ("-h" == c)
       {
-        comparison_criterion[nproperties] = CMP_NHETERO;
+        comparison_criterion[nproperties] = Comparison::kNhetero;
         nproperties++;
       }
       else if ("-j" == c)
       {
-        comparison_criterion[nproperties] = CMP_AROMATIC_ATOMS;
+        comparison_criterion[nproperties] = Comparison::kAromaticAtoms;
         nproperties++;
       }
       else if ("-n" == c)
       {
-        comparison_criterion[nproperties] = CMP_AROMATIC_RINGS;
+        comparison_criterion[nproperties] = Comparison::kAromaticRings;
         nproperties++;
       }
       else if ("-R" == c)
       {
-        comparison_criterion[nproperties] = CMP_LARGEST_RING_SIZE;
+        comparison_criterion[nproperties] = Comparison::kLargestRingSize;
         nproperties++;
       }
       else if ("-S" == c)
       {
-        comparison_criterion[nproperties] = CMP_LARGEST_RING_SYSTEM_SIZE;
+        comparison_criterion[nproperties] = Comparison::kLargestRingSystemSize;
         nproperties++;
       }
       else if ("-b" == c)
       {
-        comparison_criterion[nproperties] = CMP_ROTATBLE_BONDS;
+        comparison_criterion[nproperties] = Comparison::kRotatableBonds;
         nproperties++;
       }
       else if (c.starts_with("col="))
@@ -1567,47 +1640,41 @@ msort (int argc, char ** argv)
           return 4;
         }
 
-        comparison_criterion[nproperties] = CMP_COLUMN_OF_NAME;
+        comparison_criterion[nproperties] = Comparison::kColumnOfName;
         comparison_column[nproperties] = (col - 1);
         nproperties++;
       }
     }
   }
 
-  if (0 == nproperties)
-  {
+  if (nproperties == 0) {
     cerr << "Must specify one or more sort criteria\n";
     usage(3);
   }
 
-  if (splits_to_contain_equal_total_atoms > 0 && CMP_NATOMS != comparison_criterion[0])
-  {
+  if (splits_to_contain_equal_total_atoms > 0 &&
+      Comparison::kNatoms != comparison_criterion[0]) {
     cerr << "When doing equal atom splits, the first comparison property must be number of atoms\n";
     return 3;
   }
 
-  if (cl.option_present('e') && ! cl.option_present('D'))
-  {
+  if (cl.option_present('e') && ! cl.option_present('D')) {
     cerr << "The -e option only makes sense with the -D option\n";
     usage(3);
   }
 
-  if (number_query_specifications > queries.number_elements())   // don't think this could even happen
-  {
+  if (number_query_specifications > queries.number_elements()) {  // don't think this could even happen
     cerr << "Specified " << number_query_specifications << " queries, but only " << queries.number_elements() << " queries, impossible\n";
     return 7;
   }
 
-  if (cl.option_present('y'))
-  {
-    if (0 == number_query_specifications)
-    {
+  if (cl.option_present('y')) {
+    if (0 == number_query_specifications) {
       cerr << "No query specifications entered, -y doesn't make sense\n";
       usage(5);
     }
 
-    if (number_query_specifications > 1)  // cannot do this
-    {
+    if (number_query_specifications > 1) {  // cannot do this
       cerr << "Sorry, don't know how to do -y with more than 1 query specification\n";
       usage(4);
     }
@@ -1618,12 +1685,9 @@ msort (int argc, char ** argv)
       cerr << "Will treat " << queries.number_elements() << " queries as a group\n";
   }
 
-  if (queries.number_elements() == number_query_specifications)  // good
-    ;
-  else if (treat_queries_as_a_single_group)   // > 1 queries but just one query_specification
-    ;
-  else
-  {
+  if (queries.number_elements() == number_query_specifications) {  // good
+  } else if (treat_queries_as_a_single_group)  { // > 1 queries but just one query_specification
+  } else {
     cerr << "Entered " << number_query_specifications << " query specifications, and " << queries.number_elements() << " queries, must treat as a group\n";
     cerr << "Did you mean to use the -y option also?\n";
     usage(4);
@@ -1632,20 +1696,17 @@ msort (int argc, char ** argv)
   if (verbose)
     cerr << "Defined " << nproperties << " sort criteria\n";
 
-  for (int i = 0; i < queries.number_elements(); i++)
-  {
-    queries[i]->set_find_unique_embeddings_only(1);
+  for (Substructure_Query * q : queries) {
+    q->set_find_unique_embeddings_only(1);
   }
 
-  if (0 == input_type)
-  {
+  if (input_type == FILE_TYPE_INVALID) {
     input_type = discern_file_type_from_name(cl[0]);
   }
 
   data_source_and_type<Molecule> input(input_type, cl[0]);
 
-  if (! input.good())
-  {
+  if (! input.good()) {
     cerr << "Cannot open input file '" << cl[0] << "'\n";
     return 4;
   }
@@ -1653,21 +1714,17 @@ msort (int argc, char ** argv)
   File_Record * records = nullptr;
   int items_in_file = 0;
 
-  if (cl.option_present('s'))
-  {
+  if (cl.option_present('s')) {
     if (! cl.value('s', items_in_file) || items_in_file < 2)
     {
       cerr << "The -s option (records in input) must be a whole +ve number\n";
       usage(2);
     }
 
-  }
-  else
-  {
+  } else {
     items_in_file = input.records_remaining();
 
-    if (0 == items_in_file)
-    {
+    if (0 == items_in_file) {
       cerr << "No structures in input\n";
       return 2;
     }
@@ -1675,15 +1732,14 @@ msort (int argc, char ** argv)
 
   IW_STL_Hash_Map_int * string_to_ndx = new IW_STL_Hash_Map_int[nproperties];std::unique_ptr<IW_STL_Hash_Map_int[]> free_string_to_ndx(string_to_ndx);
 
-  records = new File_Record[items_in_file];
+  records = new File_Record[items_in_file]; std::unique_ptr<File_Record[]> free_records(records);
 
   off_t offset = static_cast<off_t>(0);
   int lines_read = 0;
   int molecules = 0;
 
   Molecule * m;
-  while (nullptr != (m = input.next_molecule()))
-  {
+  while (nullptr != (m = input.next_molecule())) {
     std::unique_ptr<Molecule> free_m(m);
 
     preprocess(*m);
@@ -1691,8 +1747,11 @@ msort (int argc, char ** argv)
     if (splits_to_contain_equal_total_atoms)
       total_atom_count += m->natoms();
 
-    if (! records[molecules].initialise(*m, offset, string_to_ndx))
-    {
+    if (! records[molecules].Initialise(*m, offset, nproperties,
+                                        comparison_criterion.get(),
+                                        comparison_tag.get(),
+                                        comparison_column,
+                                        direction.get(), string_to_ndx)) {
       cerr << "Fatal error processing '" << m->name() << "'\n";
       return 4;
     }
@@ -1721,8 +1780,7 @@ msort (int argc, char ** argv)
   resizable_array<File_Record *> frp(molecules);
 #endif
 
-  for (auto i = 0; i < molecules; ++i)
-  {
+  for (auto i = 0; i < molecules; ++i) {
     frp.add(records + i);
 #ifdef MSORT_USE_ARRAY
 //  frp[i] = records + i;
@@ -1744,14 +1802,11 @@ msort (int argc, char ** argv)
   if (verbose)
     cerr << "Sort complete\n";
 
-  if (cl.option_present('D'))
-  {
+  if (cl.option_present('D')) {
     IWString stem_for_output_files = cl.option_value('D');
 
-    if (cl.option_present('e'))
-    {
-      if (! cl.value('e', min_size_hint) || min_size_hint < 1)
-      {
+    if (cl.option_present('e')) {
+      if (! cl.value('e', min_size_hint) || min_size_hint < 1) {
         cerr << "The minimum chunk size hint (-e) must be a value +ve integer\n";
         usage(3);
       }
@@ -1764,13 +1819,10 @@ msort (int argc, char ** argv)
       do_equal_atom_count_chunked_output(frp, input, stem_for_output_files);
     else
       do_chunked_output(frp, input, stem_for_output_files);
-  }
-  else
-  {
+  } else {
     IWString_and_File_Descriptor output(1);
 
-    if (! echo_set_of_molecules(frp, 0, molecules, input, output))
-    {
+    if (! echo_set_of_molecules(frp, 0, molecules, input, output)) {
       cerr << "Could not write\n";
       return 3;
     }

@@ -620,6 +620,9 @@ Chemical_Standardisation::Activate(const IWString& directive,
   {
     _transform_enol_to_keto.activate();
   }
+  else if (CS_NOHMOVE == tmp) {
+    _activate_nohmove_transformations();
+  }
   else
   {
     cerr << "Chemical_Standardisation::Activate:unrecognized directive '" << directive << "'\n";
@@ -628,6 +631,18 @@ Chemical_Standardisation::Activate(const IWString& directive,
 
   if (!negation)
     _active++;
+
+  return 1;
+}
+
+int
+Chemical_Standardisation::_activate_nohmove_transformations() {
+  _transform_nplus_ominus.activate();    // no need to do nitro, as they are a subset
+  _transform_n_charge_sep.activate();
+  _transform_splus_cminus.activate();
+  _transform_ominus.activate();
+  _transform_nminus.activate();
+  _transform_covalent_metals.activate();
 
   return 1;
 }
@@ -963,7 +978,7 @@ Chemical_Standardisation::_do_transform_nplus_ominus (Molecule & m,
 */
 
 int
-Chemical_Standardisation::_do_transform_ominus (Molecule & m,
+Chemical_Standardisation::_do_transform_ominus(Molecule & m,
                              IWStandard_Current_Molecule & current_molecule_data)
 {
   const atomic_number_t * z = current_molecule_data.atomic_number();
