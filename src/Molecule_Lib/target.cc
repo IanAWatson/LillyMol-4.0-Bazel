@@ -495,8 +495,11 @@ Target_Atom::formal_charge()
 int
 Target_Atom::_compute_ncon2()
 {
-  _ncon2 = ncon();   // also forces computation of _ncon
+  if (_ncon2 != TARGET_ATOM_NOT_COMPUTED) {
+    return _ncon2;
+  }
 
+  _ncon2 = ncon();
   for (int i = 0; i < _ncon; i++)
   {
     Target_Atom * a = other(i).other();   // Bond_and_Target_Atom->other()
@@ -985,22 +988,6 @@ Target_Atom::establish_aromatic_bonds()
 
   return;
 }
-
-/*void
-Target_Atom::establish_aromatic_bonds(int matoms,
-                                      const int * in_fixed_kekule_ring)
-{
-  if (_ncon && nullptr == _other)
-    _allocate_other();
-
-  cerr << "Atom " << _my_atom_number << " establish_aromatic_bonds, ncon " << _ncon << endl;
-  for (int i = 0; i < _ncon; i++)
-  {
-    _other[i].establish_aromatic_bonds(matoms, _my_atom_number, in_fixed_kekule_ring);
-  }
-
-  return;
-}*/
 
 Bond_and_Target_Atom::Bond_and_Target_Atom()
 {

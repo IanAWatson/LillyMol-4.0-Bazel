@@ -88,6 +88,11 @@ class FixedBitVector {
     // Shorten by folding itself `nfold` times.
     int Fold(int nfold);
 
+    // Construct from array forms.
+    // Returns the number of bits set.
+    template <typename T> int ConstructFromArray(const T* array, int array_size);
+    template <typename T> int ConstructFromArray(const T* array, int array_size, int set_value);
+
     // Build from '123456789abcdef'.
     // If not a multiple of 64 bits, silently zero pads to the
     // next word.
@@ -107,6 +112,10 @@ class FixedBitVector {
     // Build from '0 0 1 1 1 0 0 0'
     // Argument `sep` can be used to use a different separator.
     int ConstructFromAscii01RepresentationWithSpaces(const const_IWSubstring& ascii, char sep=' ');
+
+    // For each bit set, set the corresponding entry in `array` to `set_value`.
+    // Returns the number of bits set.
+    template <typename T> int Scatter(T * array, T set_value) const;
 
     // Return a string with bits set as `t`, unset as `f` and with
     // `sep` (of not null) between characters.

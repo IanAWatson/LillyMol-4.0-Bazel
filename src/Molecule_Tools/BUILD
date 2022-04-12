@@ -1,5 +1,20 @@
 
 proto_library(
+    name = "embedded_fragment_proto",
+    srcs = [
+        "embedded_fragment.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "embedded_fragment_cc_proto",
+    deps = [
+        ":embedded_fragment_proto",
+    ],
+)
+
+
+proto_library(
     name = "molecule_database_options_proto",
     srcs = [
         "molecule_database_options.proto",
@@ -200,6 +215,7 @@ cc_binary(
         "generate_atom_separations.cc",
     ],
     deps = [
+        ":embedded_fragment_cc_proto",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iwmisc:iwmisc",
         "//Molecule_Lib:iwmolecule",

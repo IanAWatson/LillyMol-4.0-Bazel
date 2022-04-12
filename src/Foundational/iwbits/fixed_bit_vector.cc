@@ -182,7 +182,7 @@ FixedBitVector::FixedBitVector(FixedBitVector&& rhs) {
 
 int
 FixedBitVector::DebugPrint(std::ostream& output) const {
-  output << "FixedBitVector:_nwords " << _nwords;
+  output << "FixedBitVector:_nwords " << _nwords << ' ';
   PrintOn(output);
   output << '\n';
   return output.good();
@@ -798,5 +798,55 @@ FixedBitVector::BuildFromContiguousStorage(const void * source, int nw) {
 
   return (uint64_t*) (ptr + nw);
 }
+
+template <typename T>
+int
+FixedBitVector::ConstructFromArray(const T* array, int array_size) {
+  resize(array_size);
+  int rc = 0;
+  for (int i = 0; i < array_size; ++i) {
+    if (array[i] != 0) {
+      set_bit(i);
+      ++rc;
+    }
+  }
+
+  return rc;
+}
+
+template int FixedBitVector::ConstructFromArray(const int *, int);
+
+template <typename T>
+int
+FixedBitVector::ConstructFromArray(const T* array, int array_size, int set_value) {
+  resize(array_size);
+  int rc = 0;
+  for (int i = 0; i < array_size; ++i) {
+    if (array[i] == set_value) {
+      set_bit(i);
+      ++rc;
+    }
+  }
+
+  return rc;
+}
+
+template int FixedBitVector::ConstructFromArray(const int *, int, int);
+
+template <typename T>
+int
+FixedBitVector::Scatter(T * array, T set_value) const {
+  int rc = 0;
+  for (int i = 0; i < _nbits; ++i) {
+    if (is_set(i)) {
+      array[i] = set_value;
+      ++rc;
+    }
+  }
+
+  return rc;
+}
+
+template int FixedBitVector::Scatter(int * array, int set_value) const;
 
 }  // namespace fixed_bit_vector

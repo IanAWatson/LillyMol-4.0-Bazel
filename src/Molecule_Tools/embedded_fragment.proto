@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package embedded_fragment;
+
+message EmbeddedFragment {
+  // the isotopically labelled smiles.
+  string smiles = 1;
+  // The first exemplar molecule
+  string exemplar = 2;
+  // The number of molecules that contain this
+  uint32 number_exemplars = 3;
+
+  // The interatomic distances implied by the isotopes
+  // If there are two isotopes, there will be 1 distance.
+  // If there are three isotopes, there will be 3 distances.
+  // If there are four isotopes, there will be 6 distances.
+  // n * (n - 1) / 2
+  // by convention this list is sorted.
+  repeated uint32 distance = 4;
+}

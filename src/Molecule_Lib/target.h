@@ -262,9 +262,7 @@ class Molecule_to_Match
 
     IW_Bits_Base * _fingerprint;
 
-
 //  private functions
-
 
     int _determine_ring_counts ();
 
