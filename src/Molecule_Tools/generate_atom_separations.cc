@@ -15,6 +15,7 @@
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/target.h"
@@ -132,10 +133,20 @@ struct Job {
 
   int molecules_too_small = 0;
 
+  // For each number of breakages, the number of fragments generated - before filtering.
+  extending_resizable_array<int> fragments_generated;
+  // The number of fragments written - per number of broken bonds.
+  extending_resizable_array<int> fragments_written;
+
   // If specified, only break this kind of bond.
   resizable_array_p<Substructure_Query> break_only;
   // If specified, prevent these bonds from breaking.
   resizable_array_p<Substructure_Query> do_not_break;
+
+  // After subsets are generated, we can get rid of those not
+  // matching one of these queries.
+  resizable_array_p<Substructure_Query> fragments_must_have;
+  int fragments_discarded_for_no_query_match = 0;
 
   // We can impose a limit on the distance between broken bonds
   int max_bond_separation = std::numeric_limits<int>::max();
@@ -192,6 +203,10 @@ struct Job {
     // Return whether or not `distance` is consistent with max_bond_separation.
     int OkBondSeparation(int distance);
 
+    void AnotherFragment(int nbreak) {
+      ++fragments_generated[nbreak];
+    }
+
     int OkAtomicNumber(int z) const {
       return hasher.OkAtomicNumber(z);
     }
@@ -205,6 +220,8 @@ struct Job {
     uint32_t HashValue(int z1, int z2, int z3, int d12, int d13, int d23) const {
       return hasher.Value(z1, z2, z3, d12, d12, d23);
     }
+
+    int MatchesMustHaveQuery(Molecule& m);
 
     int WriteLinkers() const;
 
@@ -279,6 +296,27 @@ Job::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('K')) {
+    if (! process_queries(cl, break_only, verbose, 'K')) {
+      cerr << "Cannot read break only queries (-K)\n";
+      return 0;
+    }
+  }
+
+  if (cl.option_present('k')) {
+    if (! process_queries(cl, do_not_break, verbose, 'k')) {
+      cerr << "Cannot read break only queries (-k)\n";
+      return 0;
+    }
+  }
+
+  if (cl.option_present('m')) {
+    if (! process_queries(cl, fragments_must_have, verbose, 'm')) {
+      cerr << "Cannot read fragments must have queries (-m)\n";
+      return 0;
+    }
+  }
+
   if (cl.option_present('Y')) {
     const_IWSubstring y;
     for (int i = 0; cl.value('y', y, i); ++i) {
@@ -317,6 +355,12 @@ Job::Initialise(Command_Line& cl) {
 int
 Job::Report(std::ostream& output) const {
   output << "Read " << molecules_read << " molecules\n";
+  if (fragments_must_have.size() > 0) {
+    output << fragments_discarded_for_no_query_match <<
+             " fragments discarded for not matching " <<
+             fragments_must_have.size() << " queries\n";
+  }
+
   for (int i = 0; i < breakable_bonds.number_elements(); ++i) {
     if (breakable_bonds[i]) {
       output << breakable_bonds[i] << " molecules had " << i << " breakable bonds\n";
@@ -328,6 +372,13 @@ Job::Report(std::ostream& output) const {
     output << molecules_with_too_many_breakable_bonds << " molecules had more than " <<
               skip_if_too_many_breakable_bonds << " breakable bonds\n";
   }
+
+  for (int i = 0; i < fragments_generated.number_elements(); ++i) {
+    if (fragments_generated[i] > 0) {
+      output << fragments_generated[i] << " fragments from " << i << " breakages\n";
+    }
+  }
+
   return output.good();
 }
 
@@ -407,6 +458,7 @@ Job::IdentifyBreakableBonds(Molecule& m, int * breakable) {
   if (! break_amide_bonds) {
     TurnOffAmideBonds(m, breakable);
   }
+
   if (break_only.empty() && do_not_break.empty()) {
     std::fill_n(breakable, nedges, 1);
     return nedges;
@@ -455,6 +507,21 @@ Job::OkBondSeparation(int distance) {
   }
 
   ++bond_separation_too_long;
+  return 0;
+}
+
+int
+Job::MatchesMustHaveQuery(Molecule& m) {
+  Molecule_to_Match target(&m);
+  for (Substructure_Query * q : fragments_must_have) {
+    Substructure_Results sresults;
+    const int nhits = q->substructure_search(target, sresults);
+    if (nhits) {
+      return 1;
+    }
+  }
+
+  ++fragments_discarded_for_no_query_match;
   return 0;
 }
 
@@ -980,8 +1047,8 @@ MoleculeData::FormPair(Job& options,
 #ifdef DEBUG_FORM_PAIR
   cerr << "Setting isotopes on atoms " << a12 << " and " << a21 << '\n';
 #endif
-  m.set_isotope(a12, 1);
-  m.set_isotope(a21, 1);
+  m.set_isotope(a12, m.atomic_number(a11));
+  m.set_isotope(a21, m.atomic_number(a22));
   std::fill_n(_in_subset.get(), m.natoms(), 0);
   atoms_between.Scatter(_in_subset.get(), 1);
 #ifdef DEBUG_FORM_PAIR
@@ -995,6 +1062,10 @@ MoleculeData::FormPair(Job& options,
   m.create_subset(subset, _in_subset.get(), 1);
   m.set_isotope(a12, 0);
   m.set_isotope(a21, 0);
+  options.AnotherFragment(2);
+  if (! options.MatchesMustHaveQuery(subset)) {
+    return 0;
+  }
 #ifdef DEBUG_FORM_PAIR
   cerr << subset.smiles() << '\n';
 #endif
@@ -1060,9 +1131,9 @@ MoleculeData::FormTriple(Job& options,
     return 0;
   }
 
-  m.set_isotope(a12, 1);
-  m.set_isotope(a22, 1);
-  m.set_isotope(a32, 1);
+  m.set_isotope(a12, m.atomic_number(a11));
+  m.set_isotope(a22, m.atomic_number(a21));
+  m.set_isotope(a32, m.atomic_number(a31));
   std::fill_n(_in_subset.get(), m.natoms(), 0);
   atoms_between.Scatter(_in_subset.get(), 1);
 #ifdef DEBUG_FORM_TRIPLE
@@ -1077,6 +1148,10 @@ MoleculeData::FormTriple(Job& options,
   m.set_isotope(a12, 0);
   m.set_isotope(a22, 0);
   m.set_isotope(a32, 0);
+  options.AnotherFragment(3);
+  if (! options.MatchesMustHaveQuery(subset)) {
+    return 0;
+  }
 #ifdef DEBUG_FORM_TRIPLE
   cerr << subset.smiles() << '\n';
 #endif
@@ -1283,12 +1358,26 @@ GenerateDatabase(Job& options,
 
 void
 Usage(int rc) {
+  cerr << "Generate fragments by breaking one or more bonds\n";
+  cerr << " -B <nbonds>  skip any molecules with more than <nbonds> breakable bonds\n";
+  cerr << " -D <nbonds>  maximum bond separation to consider\n";
+  cerr << " -f <natoms>  minimum fragment size\n";
+  cerr << " -F <natoms>  maximum fragment size\n";
+  cerr << " -k <query>   queries specifying bonds to NOT break\n";
+  cerr << " -K <query>   queries specifying the only bonds to break\n";
+  cerr << " -m <query>   queries that must match in the fragments produced\n";
+  cerr << " -S <stem>    file name stem for output files\n";
+  cerr << " -Y ...       misc options, entery '-Y help' for info\n";
+  cerr << " -c           remove chirality\n";
+  cerr << " -l           strip to largest fragment\n";
+  cerr << " -v           verbose output\n";
+
   ::exit(rc);
 }
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vcf:F:E:A:i:g:lB:S:D:Y:");
+  Command_Line cl(argc, argv, "vcf:F:E:A:i:g:lB:S:D:Y:k:K:m:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
