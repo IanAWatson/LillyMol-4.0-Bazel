@@ -19,9 +19,10 @@
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/target.h"
 
+#include "Molecule_Tools/atom_separations.h"
 #include "Molecule_Tools/embedded_fragment.pb.h"
 
-namespace separated_atoms_match {
+namespace separated_atoms {
 
 constexpr int kDefaultBitVector = 64;
 
@@ -30,98 +31,20 @@ using fixed_bit_vector::FixedBitVector;
 using std::cerr;
 
 using embedded_fragment::EmbeddedFragment;
-
-// We need to hash atom type - distance combinations. This
-// class generates hash functions for those.
-class Hasher {
-  private:
-    int _atomic_number_to_index[HIGHEST_ATOMIC_NUMBER + 1];
-  public:
-    Hasher();
-
-    uint32_t Value(int z1, int z2, int distance) const;
-    uint32_t Value(int z1, int z2, int z3, int d12, int d13, int d23) const;
-
-    int OkAtomicNumber(int z) const {
-      return _atomic_number_to_index[z] > 0;
-    }
-
-    // When writing files, it is convenient to have element
-    // names, rather than numbers.
-    // Given a 2 bond hash, convert to <element1><distance><element2>
-    IWString TwoHashToString(uint32_t) const;
-};
-
-Hasher::Hasher() {
-  std::fill_n(_atomic_number_to_index, HIGHEST_ATOMIC_NUMBER + 1, -1);
-  _atomic_number_to_index[6] = 1;
-  _atomic_number_to_index[7] = 2;
-  _atomic_number_to_index[8] = 3;
-  _atomic_number_to_index[15] = 4;
-  _atomic_number_to_index[16] = 5;
-}
-
-// Return a hash function for atomic numbers `z1` and `z2` separated
-// by `distance` bonds.
-// In the case of a pair of atomic numbers, we form a 4 digit number
-// where the first digit is the lowest atomic number, the middle 2
-// are the distance, and the last one is the highest atomic number
-uint32_t
-Hasher::Value(int z1, int z2, int distance) const {
-  if (_atomic_number_to_index[z1] < 0 ||
-      _atomic_number_to_index[z2] < 0) {
-    cerr << "Hasher::Value:invalid atomic number " << z1 << " " << z2 << '\n';
-    return 0;
-  }
-
-  if (z1 > z2) {
-    std::swap(z1, z2);
-  }
-
-  return _atomic_number_to_index[z1] * 1000 + distance * 10 + _atomic_number_to_index[z2];
-}
-
-// For a triple, we first sort the arguments to a canonical order.
-uint32_t
-Hasher::Value(int z1, int z2, int z3, int d12, int d13, int d23) const {
-  if (z1 > z2) {
-    std::swap(z1, z2);
-    std::swap(d13, d23);
-  }
-
-  if (z2 > z3) {
-    std::swap(z2, z3);
-    std::swap(d12, d13);
-  }
-
-  if (z1 > z2) {
-    std::swap(z1, z2);
-    std::swap(d13, d23);
-  }
-
-  // Use base 40 to encode the distances, 40^3 = 64, so atoms start with 100k
-  uint32_t rc = 100000 * 100 * z1 +
-                100000 * 10 * z2 +
-                100000 * z3 +
-                40 * 40 * d12 +
-                40 * d13 +
-                d23;
-  return rc;
-}
-
 // For each arrangement of join points, we have a number of possibilities.
 class SetOfLinkers {
   private:
     IW_STL_Hash_Map<IWString, EmbeddedFragment> _usmi_to_frag;
   public:
-    int Extra(Molecule& m, const IWString& mname, int distance);
-    int Extra(Molecule& m, const IWString& mname, int d12, int d13, int d23);
+    int Extra(Molecule& parent, Molecule& m, const IWString& mname, int distance);
+    int Extra(Molecule& parent, Molecule& m, const IWString& mname, int d12, int d13, int d23);
 
     int Write(IWString_and_File_Descriptor& output) const;
 };
 
 int
-SetOfLinkers::Extra(Molecule& m,
+SetOfLinkers::Extra(Molecule& parent,
+                    Molecule& m,
                     const IWString& mname,
                     int distance) {
   const IWString& usmi = m.unique_smiles();
@@ -136,6 +59,7 @@ SetOfLinkers::Extra(Molecule& m,
   fragment.set_smiles(usmi.data(), usmi.length());
   fragment.set_exemplar(mname.data(), mname.length());
   fragment.set_number_exemplars(1);
+  fragment.set_exemplar_smiles(parent.unique_smiles().data(), parent.unique_smiles().length());
   fragment.mutable_distance()->Add(distance);
   _usmi_to_frag.emplace(usmi, std::move(fragment));
 
@@ -143,7 +67,7 @@ SetOfLinkers::Extra(Molecule& m,
 }
 
 int
-SetOfLinkers::Extra(Molecule& m,
+SetOfLinkers::Extra(Molecule& parent, Molecule& m,
                     const IWString& mname,
                     int d12, int d13, int d23) {
   const IWString& usmi = m.unique_smiles();
@@ -158,6 +82,7 @@ SetOfLinkers::Extra(Molecule& m,
   fragment.set_smiles(usmi.data(), usmi.length());
   fragment.set_exemplar(mname.data(), mname.length());
   fragment.set_number_exemplars(1);
+  fragment.set_exemplar_smiles(parent.unique_smiles().data(), parent.unique_smiles().length());
   fragment.mutable_distance()->Add(d12);
   fragment.mutable_distance()->Add(d13);
   fragment.mutable_distance()->Add(d23);
@@ -170,6 +95,9 @@ int
 SetOfLinkers::Write(IWString_and_File_Descriptor& output) const {
   constexpr char kSep = ' ';
   for (const auto& [usmi, proto] : _usmi_to_frag) {
+    output << proto.exemplar_smiles() << '\n';
+    output << proto.smiles() << '\n';
+#ifdef PRD_VERSION
     output << proto.smiles() << kSep <<
               proto.exemplar() << kSep <<
               proto.number_exemplars();
@@ -177,6 +105,7 @@ SetOfLinkers::Write(IWString_and_File_Descriptor& output) const {
       output << kSep << d;
     }
     output << '\n';
+#endif
     output.write_if_buffer_holds_more_than(8192);
   }
   return 1;
@@ -192,6 +121,10 @@ struct Job {
   int remove_chirality = 0;
 
   FileType input_type = FILE_TYPE_INVALID;
+
+  int break_amide_bonds = 1;
+
+  // By default, we only break bonds where 
 
   resizable_array<int> bond_separations;
 
@@ -346,6 +279,19 @@ Job::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('Y')) {
+    const_IWSubstring y;
+    for (int i = 0; cl.value('y', y, i); ++i) {
+      if (y == "nbamide") {
+        break_amide_bonds = 0;
+      } else if (y == "help") {
+      } else {
+        cerr << "Job::Initialise:unrecognised -Y directive '" << y << "'\n";
+        return 0;
+      }
+    }
+  }
+
   if (! cl.option_present('S')) {
     cerr << "Must specify output file name stem via the -S option\n";
     return 0;
@@ -454,10 +400,13 @@ SetMatchedAtoms(resizable_array_p<Substructure_Query>& queries,
 
   return rc;
 }
-
 int
 Job::IdentifyBreakableBonds(Molecule& m, int * breakable) {
   const int nedges = m.nedges();
+
+  if (! break_amide_bonds) {
+    TurnOffAmideBonds(m, breakable);
+  }
   if (break_only.empty() && do_not_break.empty()) {
     std::fill_n(breakable, nedges, 1);
     return nedges;
@@ -512,6 +461,10 @@ Job::OkBondSeparation(int distance) {
 int
 Job::WriteLinkers() const {
   for (auto & [hash, linkers] : fragments1) {
+    WriteLinkers(hash, linkers);
+  }
+
+  for (auto & [hash, linkers] : fragments2) {
     WriteLinkers(hash, linkers);
   }
 
@@ -786,17 +739,67 @@ BondSlicingInformation::IdentifyAtoms(const BondSlicingInformation& o2,
                         FixedBitVector& atoms_between) const {
   IdentifyAtoms(o2, a11, a12, a21, a22, atoms_between);
 
-  cerr << "Atoms between are ";
+#ifdef DEBUG_IDENTIFY_ATOMS_3
+  cerr << "atoms";
+  cerr << " a11 " << a11 << " a12 " << a12 << " a21 " << a21 << " a22 " << a22 << '\n';
+  cerr << "Atoms between are\n";
   atoms_between.DebugPrint(cerr);
-  if (atoms_between.BitsInCommon(o3._from_a2) == 0) {
+  cerr << " o3 involves atoms " << o3._a1 << " and " << o3._a2 << '\n';
+  o3._from_a1.DebugPrint(cerr);
+  o3._from_a2.DebugPrint(cerr);
+#endif
+  // If o3 is external to the atoms_between that will form a
+  // multi fragment subset. Not of interest.
+  const int c1 = atoms_between.BitsInCommon(o3._from_a1);
+#ifdef DEBUG_IDENTIFY_ATOMS_3
+  cerr << "c1 " << c1 << " c2 " << atoms_between.BitsInCommon(o3._from_a2) << '\n';
+#endif
+  if (c1 == 0) {
+    return 0;
+  }
+  const int c2 = atoms_between.BitsInCommon(o3._from_a2);
+  if (c2 == 0) {
+    return 0;
+  }
+  // We need to figure out if o3._a1 or o3._a2 points into the common
+  // area defined by o1 and o2.
+  // Get a pointer to the outside of the (o1,o2) region.
+  const FixedBitVector* fp;
+  if (a12 == _a1) {
+    fp = &_from_a2;
+  } else {
+    fp = &_from_a1;
+  }
+
+#ifdef DEBUG_IDENTIFY_ATOMS_3
+  cerr << "Bic externa; " << fp->BitsInCommon(o3._from_a1) << " a2 " << fp->BitsInCommon(o3._from_a2) << '\n';
+#endif
+  if (fp->BitsInCommon(o3._from_a1) == 0) {
+    a31 = o3._a1;
+    a32 = o3._a2;
+    atoms_between.iwand(o3._from_a2);
+  } else {
     a31 = o3._a2;
     a32 = o3._a1;
     atoms_between.iwand(o3._from_a1);
-  } else if (atoms_between.BitsInCommon(o3._from_a1) == 0) {
+  }
+
+  return 1;
+
+  // If no reduction in atoms is available, do not process.
+  if (c1 + c2 == atoms_between.nset()) {
+    return 0;
+  }
+  if (c1 < c2) {
+    a31 = o3._a2;
+    a32 = o3._a1;
+    atoms_between.iwand(o3._from_a1);
+  } else if (c1 > c2) {
     a31 = o3._a1;
     a32 = o3._a2;
     atoms_between.iwand(o3._from_a2);
   } else {  // In the middle, not valid here.
+    cerr << "How can this happen?\n";
     return 0;
   }
 
@@ -821,8 +824,8 @@ class MoleculeData {
     // Across all the items in `_bond_slicing` how many are active?
     int NumberBreakableBonds(const Molecule& m) const;
 
-    int FormPairs(Job& options, Molecule& m);
-    int FormTriples(Job& options,  Molecule& m);
+    int FormPairs(Job& options, Molecule& m, const int * bond_symmetry);
+    int FormTriples(Job& options, Molecule& m, const int * bond_symmetry);
 };
 
 MoleculeData::MoleculeData() {
@@ -875,10 +878,14 @@ MoleculeData::Initialise(const Job& options, Molecule& m,
 
 int
 MoleculeData::FormPairs(Job& options,
-                        Molecule& m) {
+                        Molecule& m,
+                        const int * bond_symmetry) {
   const int nedges = m.nedges();
   int rc = 0;
   for (int i = 0; i < nedges; ++i) {
+    if (bond_symmetry[i] == 0) {
+      continue;
+    }
     if (! _bond_slicing[i].Active()) {
       continue;
     }
@@ -896,10 +903,14 @@ MoleculeData::FormPairs(Job& options,
 
 int
 MoleculeData::FormTriples(Job& options,
-                          Molecule& m) {
+                          Molecule& m,
+                          const int * bond_symmetry) {
   const int nedges = m.nedges();
   int rc = 0;
   for (int i = 0; i < nedges; ++i) {
+    if (bond_symmetry[i] == 0) {
+      continue;
+    }
     if (! _bond_slicing[i].Active()) {
       continue;
     }
@@ -911,7 +922,9 @@ MoleculeData::FormTriples(Job& options,
         if (! _bond_slicing[k].Active()) {
           continue;
         }
+#ifdef DEBUG_FORM_TRIPLE
         cerr << "Forming triple " << i << j << k << '\n';
+#endif
         FormTriple(options, m, i, j, k);
         ++rc;
       }
@@ -995,7 +1008,7 @@ MoleculeData::FormPair(Job& options,
     iter = ins;
   }
 
-  iter->second.Extra(subset, m.name(), distance);
+  iter->second.Extra(m, subset, m.name(), distance);
 
   return 1;
 }
@@ -1012,27 +1025,37 @@ MoleculeData::FormTriple(Job& options,
   if (b1.IsAdjacent(b2) || b1.IsAdjacent(b3) || b2.IsAdjacent(b3)) {
     return 0;
   }
+#ifdef DEBUG_FORM_TRIPLE
   cerr << "None are adjacent\n";
+#endif
   if (SeparatedByOneBond(m, b1, b2) ||
       SeparatedByOneBond(m, b1, b3) ||
       SeparatedByOneBond(m, b2, b3)) {
     return 0;
   }
+#ifdef DEBUG_FORM_TRIPLE
   cerr << "Well separated\n";
+#endif
 
   atom_number_t a11, a12, a21, a22, a31, a32;
   FixedBitVector atoms_between;
   if (! b1.IdentifyAtoms(b2, b3, a11, a12, a21, a22, a31, a32, atoms_between)) {
     return 0;
   }
+#ifdef DEBUG_FORM_TRIPLE
   cerr << "Identified atoms\n";
+  cerr << "a11 " << a11 << " a12 " << a12 << " a21 " << a21 << " a22 " << a22 << " a31 " << a31 << " a32 " << a32 << '\n';
+  atoms_between.DebugPrint(cerr);
+#endif
 
   if (!options.OkBondSeparation(m.bonds_between(a12, a22)) ||
       !options.OkBondSeparation(m.bonds_between(a12, a32)) ||
       !options.OkBondSeparation(m.bonds_between(a22, a32))) {
     return 0;
   }
-  cerr << "Bond separation OK\n";
+#ifdef DEBUG_FORM_TRIPLE
+  cerr << "Bond separation OK, OkSize " << options.OkSize(atoms_between) << '\n';
+#endif
   if (! options.OkSize(atoms_between)) {
     return 0;
   }
@@ -1042,7 +1065,7 @@ MoleculeData::FormTriple(Job& options,
   m.set_isotope(a32, 1);
   std::fill_n(_in_subset.get(), m.natoms(), 0);
   atoms_between.Scatter(_in_subset.get(), 1);
-#ifdef DEBUG_FORM_PAIR
+#ifdef DEBUG_FORM_TRIPLE
   for (int i = 0; i < m.natoms(); ++i) {
     if (_in_subset[i]) {
       cerr << i << ' ' << m.smarts_equivalent_for_atom(i) << " in subset\n";
@@ -1054,7 +1077,7 @@ MoleculeData::FormTriple(Job& options,
   m.set_isotope(a12, 0);
   m.set_isotope(a22, 0);
   m.set_isotope(a32, 0);
-#ifdef DEBUG_FORM_PAIR
+#ifdef DEBUG_FORM_TRIPLE
   cerr << subset.smiles() << '\n';
 #endif
 
@@ -1066,13 +1089,16 @@ MoleculeData::FormTriple(Job& options,
                                     m.atomic_number(a32),
                                     d12, d13, d23);
 
+#ifdef DEBUG_FORM_TRIPLE
+  cerr << "Hash value " << hash << '\n';
+#endif
   auto iter = options.fragments2.find(hash);
   if (iter == options.fragments2.end()) {
     auto [ins, notused] = options.fragments2.emplace(hash, SetOfLinkers());
     iter = ins;
   }
 
-  iter->second.Extra(subset, m.name(), d12, d13, d23);
+  iter->second.Extra(m, subset, m.name(), d12, d13, d23);
 
   return 1;
 }
@@ -1196,14 +1222,16 @@ GenerateDatabase(Job& options,
     return 1;
   }
 
-  if (! mdata.FormPairs(options, m)) {
+  std::unique_ptr<int[]> bond_symmetry = BondSymmetry(m);
+
+  if (! mdata.FormPairs(options, m, bond_symmetry.get())) {
     if (options.verbose > 1) {
       cerr << "No pairs in " << m.smiles() << ' ' << m.name() << '\n';
     }
     return 1;
   }
 
-  if (! mdata.FormTriples(options, m)) {
+  if (! mdata.FormTriples(options, m, bond_symmetry.get())) {
     if (options.verbose > 1) {
       cerr << "No triples in " << m.smiles() << ' ' << m.name() << '\n';
     }
@@ -1260,7 +1288,7 @@ Usage(int rc) {
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vcf:F:E:A:i:g:lB:S:D:");
+  Command_Line cl(argc, argv, "vcf:F:E:A:i:g:lB:S:D:Y:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
@@ -1306,11 +1334,11 @@ Main(int argc, char** argv) {
   return 0;
 }
 
-}  // namespace separated_atoms_match
+}  // namespace separated_atoms
 
 int
 main(int argc, char** argv) {
-  int rc = separated_atoms_match::Main(argc, argv);
+  int rc = separated_atoms::Main(argc, argv);
 
   return rc;
 }

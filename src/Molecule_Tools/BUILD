@@ -215,6 +215,7 @@ cc_binary(
         "generate_atom_separations.cc",
     ],
     deps = [
+        ":atom_separations",
         ":embedded_fragment_cc_proto",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iwmisc:iwmisc",
@@ -1150,6 +1151,21 @@ cc_binary(
 )
 
 cc_library(
+    name = "atom_separations",
+    srcs = [
+        "atom_separations.cc",
+    ],
+    hdrs = [
+        "atom_separations.h",
+    ],
+    deps = [
+        "//Foundational/iwstring:iwstring",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_library(
     name = "demerit",
     srcs = [
         "demerit.cc",
@@ -1341,6 +1357,18 @@ cc_library(
     ],
     linkopts = [
         "-lz"
+    ],
+)
+
+cc_test(
+    name = "atom_separation_test",
+    srcs = [
+        "atom_separation_test.cc",
+    ],
+    deps = [
+        ":atom_separations",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
     ],
 )
 

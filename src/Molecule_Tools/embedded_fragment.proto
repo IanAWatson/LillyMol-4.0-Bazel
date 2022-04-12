@@ -17,4 +17,6 @@ message EmbeddedFragment {
   // n * (n - 1) / 2
   // by convention this list is sorted.
   repeated uint32 distance = 4;
+
+  string exemplar_smiles = 5;
 }
