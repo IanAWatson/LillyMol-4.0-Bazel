@@ -8,7 +8,7 @@ message EmbeddedFragment {
   // The first exemplar molecule
   string exemplar = 2;
   // The number of molecules that contain this
-  uint32 number_exemplars = 3;
+  uint32 count = 3;
 
   // The interatomic distances implied by the isotopes
   // If there are two isotopes, there will be 1 distance.
@@ -16,7 +16,8 @@ message EmbeddedFragment {
   // If there are four isotopes, there will be 6 distances.
   // n * (n - 1) / 2
   // by convention this list is sorted.
-  repeated uint32 distance = 4;
+  repeated uint32 dist = 4;
 
+  // This may be omitted to save space.
   string exemplar_smiles = 5;
 }

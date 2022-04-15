@@ -6,6 +6,9 @@
 #include <memory>
 #include <unordered_map>
 
+#include "google/protobuf/text_format.h"
+#include "leveldb/db.h"
+
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwbits/fixed_bit_vector.h"
@@ -37,56 +40,64 @@ class SetOfLinkers {
   private:
     IW_STL_Hash_Map<IWString, EmbeddedFragment> _usmi_to_frag;
   public:
-    int Extra(Molecule& parent, Molecule& m, const IWString& mname, int distance);
-    int Extra(Molecule& parent, Molecule& m, const IWString& mname, int d12, int d13, int d23);
+    // Notify of an additional two bond breakage fragment.
+    int Extra(Molecule& parent, Molecule& m, int distance);
+    // Notify of an additional three bond breakage fragment.
+    int Extra(int store_exemplar_smiles, Molecule& parent, Molecule& m, const int d12, int d13, int d23);
 
-    int Write(IWString_and_File_Descriptor& output) const;
+    int Write(int store_exemplar_smiles, IWString_and_File_Descriptor& output) const;
+
+    int WriteTextProtos(IWString& output) const;
 };
 
 int
-SetOfLinkers::Extra(Molecule& parent,
+SetOfLinkers::Extra(int store_exemplar_smiles,
+                    Molecule& parent,
                     Molecule& m,
-                    const IWString& mname,
                     int distance) {
   const IWString& usmi = m.unique_smiles();
 
   auto iter = _usmi_to_frag.find(usmi);
   if (iter != _usmi_to_frag.end()) {
-    iter->second.set_number_exemplars(iter->second.number_exemplars() + 1);
+    iter->second.set_count(iter->second.count() + 1);
     return 1;
   }
 
   EmbeddedFragment fragment;
   fragment.set_smiles(usmi.data(), usmi.length());
-  fragment.set_exemplar(mname.data(), mname.length());
-  fragment.set_number_exemplars(1);
-  fragment.set_exemplar_smiles(parent.unique_smiles().data(), parent.unique_smiles().length());
-  fragment.mutable_distance()->Add(distance);
+  fragment.set_exemplar(parent.name().data(), parent.name().length());
+  fragment.set_count(1);
+  if (store_exemplar_smiles) {
+    fragment.set_exemplar_smiles(parent.unique_smiles().data(), parent.unique_smiles().length());
+  }
+  fragment.mutable_dist()->Add(distance);
   _usmi_to_frag.emplace(usmi, std::move(fragment));
 
   return 1;
 }
 
 int
-SetOfLinkers::Extra(Molecule& parent, Molecule& m,
-                    const IWString& mname,
+SetOfLinkers::Extra(int store_exemplar_smiles,
+                    Molecule& parent, Molecule& m,
                     int d12, int d13, int d23) {
   const IWString& usmi = m.unique_smiles();
 
   auto iter = _usmi_to_frag.find(usmi);
   if (iter != _usmi_to_frag.end()) {
-    iter->second.set_number_exemplars(iter->second.number_exemplars() + 1);
+    iter->second.set_count(iter->second.count() + 1);
     return 1;
   }
 
   EmbeddedFragment fragment;
   fragment.set_smiles(usmi.data(), usmi.length());
-  fragment.set_exemplar(mname.data(), mname.length());
-  fragment.set_number_exemplars(1);
-  fragment.set_exemplar_smiles(parent.unique_smiles().data(), parent.unique_smiles().length());
-  fragment.mutable_distance()->Add(d12);
-  fragment.mutable_distance()->Add(d13);
-  fragment.mutable_distance()->Add(d23);
+  fragment.set_exemplar(parent.name().data(), parent.name().length());
+  fragment.set_count(1);
+  if (store_exemplar_smiles) {
+    fragment.set_exemplar_smiles(parent.unique_smiles().data(), parent.unique_smiles().length());
+  }
+  fragment.mutable_dist()->Add(d12);
+  fragment.mutable_dist()->Add(d13);
+  fragment.mutable_dist()->Add(d23);
   _usmi_to_frag.emplace(usmi, std::move(fragment));
 
   return 1;
@@ -96,18 +107,34 @@ int
 SetOfLinkers::Write(IWString_and_File_Descriptor& output) const {
   constexpr char kSep = ' ';
   for (const auto& [usmi, proto] : _usmi_to_frag) {
-    output << proto.exemplar_smiles() << '\n';
+    output << proto.exemplar_smiles() << kSep << proto.exemplar() << '\n';
     output << proto.smiles() << '\n';
 #ifdef PRD_VERSION
     output << proto.smiles() << kSep <<
               proto.exemplar() << kSep <<
-              proto.number_exemplars();
+              proto.count();
     for (uint32_t d : proto.distance()) {
       output << kSep << d;
     }
     output << '\n';
 #endif
     output.write_if_buffer_holds_more_than(8192);
+  }
+  return 1;
+}
+
+int
+SetOfLinkers::WriteTextProtos(IWString& output) const {
+
+  output.resize(100 * _usmi_to_frag.size());  // Just a guess.
+
+  google::protobuf::TextFormat::Printer printer;
+  printer.SetSingleLineMode(true);
+  std::string buffer;
+  for (const auto& [usmi, proto] : _usmi_to_frag) {
+    printer.PrintToString(proto, &buffer);
+    output << buffer;
+    output << '\n';
   }
   return 1;
 }
@@ -124,6 +151,8 @@ struct Job {
   FileType input_type = FILE_TYPE_INVALID;
 
   int break_amide_bonds = 1;
+
+  int fragments_must_have_ring = 0;
 
   // By default, we only break bonds where 
 
@@ -170,19 +199,31 @@ struct Job {
 
   // A mapping from hash value to fragments found.
   // The suffix is for the number of bond breaks.
-  std::unordered_map<uint32_t, SetOfLinkers> fragments1;
-  std::unordered_map<uint32_t, SetOfLinkers> fragments2;
+  std::unordered_map<uint32_t, SetOfLinkers> fragments;
+  std::unordered_map<uint32_t, SetOfLinkers> fragments3;
 
   // File name stem for output files.
   IWString stem;
 
+  // If writing to a leveldb database.
+  IWString database_name;
+  std::unique_ptr<leveldb::DB> database;
+
   Hasher hasher;
+
+  // By default, we do not store the full exemplar smiles
+  // in the database - just to save space.
+  int store_exemplar_smiles = 0;
 
   // private functions.
     int WriteLinkers(uint32_t hash,
                      const SetOfLinkers& linkers) const;
+    int WriteLinkersDb(uint32_t hash,
+                       const SetOfLinkers& linkers) const;
 
     int IdentifyBreakableBonds(Molecule& m, int * breakable);
+
+    int OpenLevelDb();
 
   public:
     int Initialise(Command_Line& cl);
@@ -322,6 +363,8 @@ Job::Initialise(Command_Line& cl) {
     for (int i = 0; cl.value('y', y, i); ++i) {
       if (y == "nbamide") {
         break_amide_bonds = 0;
+      } else if (y == "fring") {
+        fragments_must_have_ring = 1;
       } else if (y == "help") {
       } else {
         cerr << "Job::Initialise:unrecognised -Y directive '" << y << "'\n";
@@ -330,15 +373,25 @@ Job::Initialise(Command_Line& cl) {
     }
   }
 
-  if (! cl.option_present('S')) {
+  if (cl.option_present('S')) {
+    cl.value('S', stem);
+    if (verbose) {
+      cerr << "Results written to file stem '" << stem << "'\n";
+    }
+  } else if (cl.option_present('d')) {
+    cl.value('d', database_name);
+    if (! OpenLevelDb()) {
+      cerr << "Job::Initialise:cannot open database " << database_name << '\n';
+      return 0;
+    }
+    if (verbose) {
+      cerr << "Results written to database '" << database_name << "'\n";
+    }
+  } else {
     cerr << "Must specify output file name stem via the -S option\n";
     return 0;
   }
 
-  cl.value('S', stem);
-  if (verbose) {
-    cerr << "Results written to file stem '" << stem << "'\n";
-  }
 
   if (1 == cl.number_elements() && 0 == strcmp("-", cl[0])) { // reading a pipe, assume smiles
     input_type = FILE_TYPE_SMI;
@@ -349,6 +402,24 @@ Job::Initialise(Command_Line& cl) {
     return 0;
   }
 
+  return 1;
+}
+
+int
+Job::OpenLevelDb() {
+  const std::string dbname = database_name.AsString();
+
+  leveldb::Options leveldb_options;
+  leveldb_options.create_if_missing = true;
+
+  leveldb::DB *db;
+  const leveldb::Status status = leveldb::DB::Open(leveldb_options, dbname, &db);
+  if (!status.ok()) {
+    cerr << "Job::OpenLevelDb:cannot open " << std::quoted(dbname) << " " << status.ToString() << "\n";
+    return 0;
+  }
+
+  database.reset(db);
   return 1;
 }
 
@@ -527,11 +598,11 @@ Job::MatchesMustHaveQuery(Molecule& m) {
 
 int
 Job::WriteLinkers() const {
-  for (auto & [hash, linkers] : fragments1) {
+  for (auto & [hash, linkers] : fragments) {
     WriteLinkers(hash, linkers);
   }
 
-  for (auto & [hash, linkers] : fragments2) {
+  for (auto & [hash, linkers] : fragments3) {
     WriteLinkers(hash, linkers);
   }
 
@@ -541,6 +612,10 @@ Job::WriteLinkers() const {
 int
 Job::WriteLinkers(uint32_t hash,
                   const SetOfLinkers& linkers) const {
+  if (database) {
+    return WriteLinkersDb(hash, linkers);
+  }
+
   IWString fname;
   fname << stem << '.' << hash << ".txt";
   IWString_and_File_Descriptor output;
@@ -552,39 +627,32 @@ Job::WriteLinkers(uint32_t hash,
   return linkers.Write(output);
 }
 
-
-// For each chain bond attached to an atom, there will be one of these.
-// What this means is that the bond from the owning atom to `atom` contains
-// all the atoms that are set in `atoms_attached`
-class AttachedAtom {
-  private:
-    atom_number_t _atom;
-    FixedBitVector _atoms_attached;
-  public:
-    int Initialise(Molecule& m, atom_number_t zatom, atom_number_t nbr, int * storage);
-};
-
 int
-AttachedAtom::Initialise(Molecule& m,
-                         atom_number_t zatom,
-                         atom_number_t nbr,
-                         int * storage) {
-  _atom = zatom;
+Job::WriteLinkersDb(uint32_t hash,
+                    const SetOfLinkers& linkers) const {
+  IWString buffer;
+  linkers.WriteTextProtos(buffer);
 
-  int c1 = m.identify_side_of_bond(storage, zatom, 1, nbr);
-  // This should not happen since we should only be processing
-  // non ring bonds.
-  if (c1 == 0) {
-    return 0;
+  leveldb::Slice key(reinterpret_cast<const char *>(&hash), sizeof(hash));
+  leveldb::Slice value(buffer.data(), buffer.length());
+
+  leveldb::WriteOptions write_options;
+
+  const leveldb::Status status = database->Put(write_options, key, value);
+  if (status.ok()) {
+    return 1;
   }
 
-  return _atoms_attached.ConstructFromArray(storage, m.natoms());
+  cerr << "Options::DoStore:Did not store " << status.ToString() << "\n";
+
+  return 0;
 }
 
 // Each breakable bond has info about the atoms on either side of
 // the atoms in the bond.
 class BondSlicingInformation {
   private:
+    // The atoms that define the bond.
     atom_number_t _a1;
     atom_number_t _a2;
     // The number of atoms associdated with the _a1 side of the bond.
@@ -612,7 +680,7 @@ class BondSlicingInformation {
     int IsAdjacent(const BondSlicingInformation& rhs) const;
 
     // Identify the atoms that are arranged as
-    // a11-a12 ... a21-a22
+    // a11-a12 ... a22-a21
     int IdentifyAtoms(const BondSlicingInformation& rhs,
                         atom_number_t& a11,
                         atom_number_t& a12,
@@ -852,31 +920,14 @@ BondSlicingInformation::IdentifyAtoms(const BondSlicingInformation& o2,
   }
 
   return 1;
-
-  // If no reduction in atoms is available, do not process.
-  if (c1 + c2 == atoms_between.nset()) {
-    return 0;
-  }
-  if (c1 < c2) {
-    a31 = o3._a2;
-    a32 = o3._a1;
-    atoms_between.iwand(o3._from_a1);
-  } else if (c1 > c2) {
-    a31 = o3._a1;
-    a32 = o3._a2;
-    atoms_between.iwand(o3._from_a2);
-  } else {  // In the middle, not valid here.
-    cerr << "How can this happen?\n";
-    return 0;
-  }
-
-  return 1;
 }
 
 class MoleculeData {
   private:
+    // One per Bond in the molecule.
     BondSlicingInformation* _bond_slicing;
 
+    // Used for constructing subsets.
     std::unique_ptr<int[]> _in_subset;
   // private functions
 
@@ -896,6 +947,7 @@ class MoleculeData {
 };
 
 MoleculeData::MoleculeData() {
+  _bond_slicing = nullptr;
 }
 
 MoleculeData::~MoleculeData() {
@@ -1014,6 +1066,9 @@ MoleculeData::NumberBreakableBonds(const Molecule& m) const {
   return rc;
 }
 
+//#define DEBUG_FORM_PAIR
+
+// Form a two break fragment by breaking bonds `ndx1` and `ndx2` in `m`.
 int
 MoleculeData::FormPair(Job& options,
                        Molecule& m,
@@ -1021,7 +1076,9 @@ MoleculeData::FormPair(Job& options,
                        int ndx2) {
   const BondSlicingInformation& b1 = _bond_slicing[ndx1];
   const BondSlicingInformation& b2 = _bond_slicing[ndx2];
-  //cerr << "bonds " << *m.bondi(ndx1) << " and " << *m.bondi(ndx2) << " adjacent " << b1.IsAdjacent(b2) << '\n';
+#ifdef DEBUG_FORM_PAIR
+  cerr << "bonds " << *m.bondi(ndx1) << " and " << *m.bondi(ndx2) << " adjacent " << b1.IsAdjacent(b2) << '\n';
+#endif
   if (b1.IsAdjacent(b2)) {
     return 0;
   }
@@ -1035,11 +1092,18 @@ MoleculeData::FormPair(Job& options,
   if (! b1.IdentifyAtoms(b2, a11, a12, a21, a22, atoms_between)) {
     return 0;
   }
+#ifdef DEBUG_FORM_PAIR
+  cerr << "Atoms are " << a11 << ' ' << a12 << ' ' << a21 << ' ' << a22 << '\n';
+  atoms_between.DebugPrint(cerr);
+#endif
   if (! options.OkSize(atoms_between)) {
     return 0;
   }
 
   const int distance = m.bonds_between(a12, a21);
+#ifdef DEBUG_FORM_PAIR
+  cerr << "Attachment points separated by " << distance << " bonds, ok? " << options.OkBondSeparation(distance) << '\n';
+#endif
   if (! options.OkBondSeparation(distance)) {
     return 0;
   }
@@ -1048,7 +1112,7 @@ MoleculeData::FormPair(Job& options,
   cerr << "Setting isotopes on atoms " << a12 << " and " << a21 << '\n';
 #endif
   m.set_isotope(a12, m.atomic_number(a11));
-  m.set_isotope(a21, m.atomic_number(a22));
+  m.set_isotope(a22, m.atomic_number(a21));
   std::fill_n(_in_subset.get(), m.natoms(), 0);
   atoms_between.Scatter(_in_subset.get(), 1);
 #ifdef DEBUG_FORM_PAIR
@@ -1061,7 +1125,7 @@ MoleculeData::FormPair(Job& options,
   Molecule subset;
   m.create_subset(subset, _in_subset.get(), 1);
   m.set_isotope(a12, 0);
-  m.set_isotope(a21, 0);
+  m.set_isotope(a22, 0);
   options.AnotherFragment(2);
   if (! options.MatchesMustHaveQuery(subset)) {
     return 0;
@@ -1073,13 +1137,13 @@ MoleculeData::FormPair(Job& options,
   uint32_t hash = options.HashValue(m.atomic_number(a12),
                                     m.atomic_number(a22),
                                     distance);
-  auto iter = options.fragments1.find(hash);
-  if (iter == options.fragments1.end()) {
-    auto [ins, notused] = options.fragments1.emplace(hash, SetOfLinkers());
+  auto iter = options.fragments.find(hash);
+  if (iter == options.fragments.end()) {
+    auto [ins, notused] = options.fragments.emplace(hash, SetOfLinkers());
     iter = ins;
   }
 
-  iter->second.Extra(m, subset, m.name(), distance);
+  iter->second.Extra(options.store_exemplar_smiles, m, subset, distance);
 
   return 1;
 }
@@ -1167,13 +1231,13 @@ MoleculeData::FormTriple(Job& options,
 #ifdef DEBUG_FORM_TRIPLE
   cerr << "Hash value " << hash << '\n';
 #endif
-  auto iter = options.fragments2.find(hash);
-  if (iter == options.fragments2.end()) {
-    auto [ins, notused] = options.fragments2.emplace(hash, SetOfLinkers());
+  auto iter = options.fragments3.find(hash);
+  if (iter == options.fragments3.end()) {
+    auto [ins, notused] = options.fragments3.emplace(hash, SetOfLinkers());
     iter = ins;
   }
 
-  iter->second.Extra(m, subset, m.name(), d12, d13, d23);
+  iter->second.Extra(options.store_exemplar_smiles, m, subset, d12, d13, d23);
 
   return 1;
 }
@@ -1320,7 +1384,7 @@ int
 GenerateDatabase(Job& options,
                  data_source_and_type<Molecule>& input,
                  IWString_and_File_Descriptor& output) {
-  Molecule * m;
+  Molecule* m;
   while ((m = input.next_molecule()) != nullptr) {
     std::unique_ptr<Molecule> free_m(m);
     ++options.molecules_read;
@@ -1377,7 +1441,7 @@ Usage(int rc) {
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vcf:F:E:A:i:g:lB:S:D:Y:k:K:m:");
+  Command_Line cl(argc, argv, "vcf:F:E:A:i:g:lB:d:S:D:Y:k:K:m:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";

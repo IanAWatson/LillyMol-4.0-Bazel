@@ -210,7 +210,24 @@ cc_binary(
 )
 
 cc_binary(
-    name = "separated_atoms_match",
+    name = "fragment_replacement",
+    srcs = [
+        "fragment_replacement.cc",
+    ],
+    deps = [
+        ":atom_separations",
+        ":embedded_fragment_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "@com_google_protobuf//:protobuf",
+        "@leveldb//:leveldb",
+    ],
+)
+
+cc_binary(
+    name = "generate_atom_separations",
     srcs = [
         "generate_atom_separations.cc",
     ],
@@ -221,6 +238,7 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
+        "@leveldb//:leveldb",
     ],
 )
 
