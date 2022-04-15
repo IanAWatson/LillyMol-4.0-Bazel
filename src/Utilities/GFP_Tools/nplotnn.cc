@@ -7,19 +7,22 @@
 #include <random>
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
-#include "Foundational/iwstring/iw_stl_hash_set.h"
-#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
-#include "Foundational/accumulator/accumulator.h"
 #include "Foundational/histogram/iwhistogram.h"
 #include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwstring/iw_stl_hash_set.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/smiles.h"
 
 #include "smiles_id_dist.h"
 #include "distance_scaling.h"
 
-#include "Molecule_Lib/molecule.h"
-#include "Molecule_Lib/smiles.h"
+using std::cerr;
+using std::endl;
 
 static IWString identifier_tag("PCN<");
 
@@ -163,6 +166,7 @@ usage(int rc)
   cerr << " -H <fname>       write the nearest neighbour histogram to <fname>\n";
   cerr << " -h               discard neighbours with zero distance and same ID as target\n";
   cerr << " -M <fname>       smiles file to be used for filling missing smiles\n";
+  cerr << " -Z <bin,ascii,tf> input is proto form\n";
   cerr << " -v               verbose output\n";
 
   exit (rc);
@@ -1304,6 +1308,32 @@ process_neighbour_list_record(const IWString & id_of_target,
   return 1;
 }
 
+
+// If directives are in place for subsetting the neighbour list, do that.
+// Wow, all kinds of interesting things about which of these operations should be done
+// first. Do thresholding first and then resize, or should it be done the other way round?
+
+void
+MaybeSubsetNeighourList(resizable_array_p<Smiles_ID_Dist_UID>& neighbours) {
+
+//if (lower_distance_threshold >= 0.0 || upper_distance_threshold >= 0.0)
+//  filter_to_thresholds (neighbours);
+
+  if (neighbours_per_structure > 0 &&
+      neighbours_per_structure < neighbours.number_elements())
+  {
+    if (choose_neighbours_at_random)
+      random_subset(neighbours, neighbours_per_structure);
+    else if (biased_subset)
+      do_biased_subset(neighbours, neighbours_per_structure);
+    else
+      neighbours.resize(neighbours_per_structure);
+  }
+
+  if (check_distance_ordering)
+    do_check_distance_ordering(neighbours);
+}
+
 static int
 process_molecule(iwstring_data_source & input,
                  int & fatal,
@@ -1352,24 +1382,7 @@ process_molecule(iwstring_data_source & input,
     }
   }
 
-// Wow, all kinds of interesting things about which of these operations should be done
-// first. Do thresholding first and then resize, or should it be done the other way round?
-
-//if (lower_distance_threshold >= 0.0 || upper_distance_threshold >= 0.0)
-//  filter_to_thresholds (neighbours);
-
-  if (neighbours_per_structure > 0 && neighbours_per_structure < neighbours.number_elements())
-  {
-    if (choose_neighbours_at_random)
-      random_subset(neighbours, neighbours_per_structure);
-    else if (biased_subset)
-      do_biased_subset(neighbours, neighbours_per_structure);
-    else
-      neighbours.resize(neighbours_per_structure);
-  }
-
-  if (check_distance_ordering)
-    do_check_distance_ordering(neighbours);
+  MaybeSubsetNeighourList(neighbours);
 
   return process_molecule(smiles, id, neighbours, output);
 }
@@ -1797,7 +1810,7 @@ do_create_rfle_for_histogram_plot(const IWHistogram & nearest_neighbour_histogra
 static int
 plotnn (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "vn:t:T:xzD:pO:ru:sf:c:L:m:M:wY:j:X:H:hW:3");
+  Command_Line cl(argc, argv, "vn:t:T:xzD:pO:ru:sf:c:L:m:M:wY:j:X:H:hW:3Z:");
 
   if (cl.unrecognised_options_encountered())
   {
