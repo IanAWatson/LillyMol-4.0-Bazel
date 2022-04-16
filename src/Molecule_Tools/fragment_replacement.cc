@@ -35,8 +35,11 @@ void
 Usage(int rc) {
   cerr << "Uses a database built by generate_atom_separations to replace fragments\n";
   cerr << " -d <dbname>      name of previously generated database\n";
-  cerr << " -c           remove chirality\n";
-  cerr << " -l           strip to largest fragment\n";
+  cerr << " -s <smarts>      smarts for break points - specify multiple times\n";
+  cerr << " -F <query>       fragments must contain <query>\n";
+  cerr << " -P <query>       products  must contain <query>\n";
+  cerr << " -c               remove chirality\n";
+  cerr << " -l               strip to largest fragment\n";
   cerr << " -v               verbose output\n";
   ::exit(rc);
 }
@@ -71,7 +74,7 @@ struct Options {
 
     // We can require a minimum number of examplars for doing
     // a replacement.
-    uint32_t min_examplar_count = std::numeric_limits<uint32_t>::max();
+    uint32_t min_examplar_count = 0;
     int too_few_examplars = 0;
 
     // We can specify what the linker must look like - before it
@@ -184,6 +187,27 @@ Options::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('s')) {
+    const_IWSubstring s;
+    for (int i = 0; cl.value('s', s, i); ++i) {
+      std::unique_ptr<Substructure_Query> q = std::make_unique<Substructure_Query>();
+      if (! q->create_from_smarts(s)) {
+        cerr << "Options::Initialise:cannot parse smarts '" << s << "'\n";
+        return 0;
+      }
+      if (queries1.empty()) {
+        queries1 << q.release();
+      } else if (queries2.empty()) {
+        queries2 << q.release();
+      } else if (queries3.empty()) {
+        queries3 << q.release();
+      } else {
+        cerr << "Too many bond breaking queries (-s), cannot handle\n";
+        return 0;
+      }
+    }
+  }
+
   if (! cl.option_present('d')) {
     cerr << "Options::Initialise:must specify name of fragment database via the -d option\n";
     return 0;
@@ -212,14 +236,26 @@ Options::OpenLevelDb(IWString& database_name) {
   const std::string dbname = database_name.AsString();
 
   leveldb::Options leveldb_options;
-  leveldb_options.create_if_missing = true;
+  leveldb_options.create_if_missing = false;
 
-  leveldb::DB *db;
+  leveldb::DB* db;
   const leveldb::Status status = leveldb::DB::Open(leveldb_options, dbname, &db);
   if (!status.ok()) {
     cerr << "Options::OpenLevelDb:cannot open " << std::quoted(dbname) << " " << status.ToString() << "\n";
     return 0;
   }
+
+  leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+  cerr << "Check iteration" << it << '\n';
+  int items_in_db = 0;
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+//  cerr << it->key().ToString() << ": "  << it->value().ToString() << '\n';
+    ++items_in_db;
+  }
+  cerr << it->status().ToString() << '\n';
+  cerr << items_in_db << " items in database\n";
+  assert(it->status().ok());  // Check for any errors found during the scan
+  delete it;
 
   database.reset(db);
   return 1;
@@ -299,6 +335,7 @@ Options::IdentifyBondsToBreak(Molecule& m) {
       return std::nullopt;
     }
   }
+  cerr << "Result of substructure matching " << result << '\n';
 
   return result;
 }
@@ -323,6 +360,10 @@ Options::DoFragmentReplacement(Molecule& m,
   if (bonds_to_break->size() == 4) {
     DoFragmentReplacement2(m, *bonds_to_break, storage.get(), output);
   }
+  if (bonds_to_break->size() == 2) {
+    cerr << "Single frgament replacement not implemented\n";
+    return 0;
+  }
 
   return 1;
 }
@@ -330,12 +371,22 @@ Options::DoFragmentReplacement(Molecule& m,
 
 std::optional<std::string>
 Options::ReadDb(uint32_t hash) {
-  leveldb::Slice key(reinterpret_cast<const char*>(&hash), sizeof(hash));
+  const leveldb::Slice key = Key(hash);
+
+#ifdef ITERATE_DB_HERE
+  leveldb::Iterator* it = database->NewIterator(leveldb::ReadOptions());
+  cerr << "Check iteration" << it << '\n';
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+    cerr << it->key().ToString() << ": "  << it->value().ToString() << '\n';
+  }
+  assert(it->status().ok());  // Check for any errors found during the scan
+  delete it;
+#endif
 
   leveldb::ReadOptions read_options;
-
   std::string result;
   const leveldb::Status status = database->Get(read_options, key, &result);
+  cerr << "looked up " << hash << " status " << status.ok() << '\n';
   if (status.ok()) {
     return result;
   }
@@ -354,6 +405,7 @@ Options::DoFragmentReplacement2(Molecule& m,
 
   std::fill_n(tmp, matoms, 0);
   const int c1 = m.identify_side_of_bond(tmp, bonds_to_break[0], 1, bonds_to_break[1]);
+  cerr << "c1 " << c1 << '\n';
   if (c1 == 0) {  // Likely a ring.
     return 0;
   }
@@ -364,6 +416,7 @@ Options::DoFragmentReplacement2(Molecule& m,
 
   std::fill_n(tmp, matoms, 0);
   const int c2 = m.identify_side_of_bond(tmp, bonds_to_break[2], 1, bonds_to_break[3]);
+  cerr << "c2 " << c2 << '\n';
   if (c2 == 0) {  // Likely a ring.
     return 0;
   }
@@ -377,8 +430,8 @@ Options::DoFragmentReplacement2(Molecule& m,
   if (b0.BitsInCommon(b2) == 0) {
     a11 = bonds_to_break[0];
     a12 = bonds_to_break[1];
-    a21 = bonds_to_break[3];
-    a22 = bonds_to_break[2];
+    a21 = bonds_to_break[2];
+    a22 = bonds_to_break[3];
     atoms_between = b1;
     atoms_between.iwand(b3);
   } else if (b0.BitsInCommon(b3) == 0) {
@@ -395,7 +448,7 @@ Options::DoFragmentReplacement2(Molecule& m,
     a22 = bonds_to_break[3];
     atoms_between = b0;
     atoms_between.iwand(b3);
-  } else if (b2.BitsInCommon(b3) == 0) {
+  } else if (b1.BitsInCommon(b3) == 0) {
     a11 = bonds_to_break[1];
     a12 = bonds_to_break[0];
     a21 = bonds_to_break[3];
@@ -410,9 +463,11 @@ Options::DoFragmentReplacement2(Molecule& m,
   int d12 = m.bonds_between(a12, a22);
 
   uint32_t hash = hasher.Value(m.atomic_number(a12), m.atomic_number(a22), d12);
+  cerr << "Distance is " << d12 << " hash " << hash << '\n';
 
   std::optional<std::string> maybe_data = ReadDb(hash);
   if (! maybe_data) {
+    cerr << "No data for " << hash << '\n';
     return 0;
   }
 
@@ -423,6 +478,7 @@ Options::DoFragmentReplacement2(Molecule& m,
     embedded_fragment::EmbeddedFragment proto;
     google::protobuf::io::ArrayInputStream buffer(line.data(), line.length());
     google::protobuf::TextFormat::Parse(&buffer, &proto);
+    cerr << "Looking up based on " << line << '\n';
     DoReplacement(m, a11, a12, a21, a22, atoms_between, proto, tmp, output);
   }
 
@@ -496,13 +552,28 @@ Options::DoReplacement(Molecule& m,
   if (! OkExemplarCount(proto)) {
     return 0;
   }
+  cerr << "Exemplar count ok " << proto.count() << '\n';
+  cerr << "a11 " << a11 << " a12 " << a12 << " a21 " << a21 << " a22 " << a22 << '\n';
   Molecule mcopy(m);
   const int matoms = m.natoms();
   std::fill_n(storage, matoms, 0);
   atoms_between.Scatter(storage, 1);
+  Molecule m2(m);
+  for (int i = 0; i < matoms; ++i) {
+    m2.set_isotope(i, i);
+  }
+  cerr << "Starting mol " << m2.smiles() << '\n';
+
+  cerr << "Atoms between\n";
+  atoms_between.DebugPrint(cerr);
   int * xref = storage + matoms;
   EstablishXref(storage, matoms, xref);
-  mcopy.remove_many_atoms(storage);
+  mcopy.remove_atoms(storage);
+  for (int i = 0; i < matoms; ++i) {
+    cerr << i << " " << storage[i] << " xref " << xref[i] << '\n';
+  }
+  cerr << "After atom removal\n";
+  cerr << mcopy.smiles() << '\n';
 
   Molecule fragment;
   if (! fragment.build_from_smiles(proto.smiles())) {
@@ -510,6 +581,7 @@ Options::DoReplacement(Molecule& m,
     return 0;
   }
   if (! FragmentContainsRequiredSubstructure(fragment)) {
+    cerr << "Fragment does not contain required substructure\n";
     return 0;
   }
 
@@ -529,6 +601,7 @@ Options::DoReplacement(Molecule& m,
   // If there are constraints on atomic numbers, we may generate either 1 or 2.
 
   // Do the easy case first.
+  cerr << "match_atomic_numbers " << match_atomic_numbers << '\n';
   if (! match_atomic_numbers) {
     mcopy.add_bond(xref[a11], initial_mcopy_atoms + f1, SINGLE_BOND);
     mcopy.add_bond(xref[a21], initial_mcopy_atoms + f2, SINGLE_BOND);
@@ -576,11 +649,17 @@ MatchAnyQuery(Molecule& m,
 
 int
 Options::FragmentContainsRequiredSubstructure(Molecule& m) {
+  if (fragment_must_have.empty()) {
+    return 1;
+  }
   return MatchAnyQuery(m, fragment_must_have);
 }
 
 int
 Options::ProductContainsRequiredSubstructure(Molecule& m) {
+  if (product_must_have.empty()) {
+    return 1;
+  }
   return MatchAnyQuery(m, product_must_have);
 }
 
@@ -669,7 +748,7 @@ FragmentReplacement(Options& options,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:g:i:lcd:F:P:");
+  Command_Line cl(argc, argv, "vE:A:g:i:lcd:F:P:s:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -707,6 +786,10 @@ Main(int argc, char** argv) {
       cerr << "Fatal error processing '" << fname << "'\n";
       return 1;
     }
+  }
+
+  if (verbose) {
+    options.Report(cerr);
   }
 
   return 0;

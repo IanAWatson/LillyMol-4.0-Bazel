@@ -243,6 +243,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "generate_atom_separations_lmdb",
+    srcs = [
+        "generate_atom_separations_lmdb.cc",
+    ],
+    deps = [
+        ":atom_separations",
+        ":embedded_fragment_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "geometric_descriptors",
     srcs = [
         "geometric_descriptors.cc",

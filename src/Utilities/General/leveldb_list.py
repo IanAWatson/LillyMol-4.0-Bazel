@@ -21,6 +21,10 @@ def main(argv):
   db = plyvel.DB(argv[1], create_if_missing=False)
   for key, value in db:
     k = int.from_bytes(key, "little", signed=False)
+    if k == 1021:
+      print('Got 1021')
+    continue
+    print(f'{key} {len(key)} {k}')
     print(f"Key {k} value {value.decode()}")
 
 

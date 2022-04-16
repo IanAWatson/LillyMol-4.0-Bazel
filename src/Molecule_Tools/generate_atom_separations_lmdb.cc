@@ -1,13 +1,16 @@
 // Within a molecule, generate smarts corresponding to separated atoms.
 // This is a generalisation of ring_extraction/ring_replacement.
 
+#include <fcntl.h>
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
 
+#include "lmdb.h"
+
 #include "google/protobuf/text_format.h"
-#include "leveldb/db.h"
 
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
@@ -205,9 +208,11 @@ struct Job {
   // File name stem for output files.
   IWString stem;
 
-  // If writing to a leveldb database.
+  // If writing to a lmdb database.
   IWString database_name;
-  std::unique_ptr<leveldb::DB> database;
+  std::unique_ptr<MDB_env> mdb_env;
+  std::unique_ptr<MDB_txn> mdb_txn;
+  std::unique_ptr<MDB_dbi> mdb_dbi;
 
   Hasher hasher;
 
@@ -223,7 +228,7 @@ struct Job {
 
     int IdentifyBreakableBonds(Molecule& m, int * breakable);
 
-    int OpenLevelDb();
+    int OpenDatabase();
 
   public:
     ~Job();
@@ -384,7 +389,7 @@ Job::Initialise(Command_Line& cl) {
     }
   } else if (cl.option_present('d')) {
     cl.value('d', database_name);
-    if (! OpenLevelDb()) {
+    if (! OpenDatabase()) {
       cerr << "Job::Initialise:cannot open database " << database_name << '\n';
       return 0;
     }
@@ -410,20 +415,33 @@ Job::Initialise(Command_Line& cl) {
 }
 
 int
-Job::OpenLevelDb() {
-  const std::string dbname = database_name.AsString();
+Job::OpenDatabase() {
 
-  leveldb::Options leveldb_options;
-  leveldb_options.create_if_missing = true;
-
-  leveldb::DB *db;
-  const leveldb::Status status = leveldb::DB::Open(leveldb_options, dbname, &db);
-  if (!status.ok()) {
-    cerr << "Job::OpenLevelDb:cannot open " << std::quoted(dbname) << " " << status.ToString() << "\n";
+  MDB_env* env;
+  int status =  mdb_env_create(&env);
+  if (status != 0) {
+    cerr << "Job::OpenDatabase:cannot create environment, status " << status << '\n';
     return 0;
   }
 
-  database.reset(db);
+  mdb_env.reset(env);
+
+  unsigned int flags = 0;
+  mdb_mode_t mode = O_WRONLY | O_TRUNC | O_CREAT;
+
+  status = mdb_env_open(env, database_name.null_terminated_chars(), flags, mode);
+  if (status != 0) {
+    cerr << "Job::OpenDatabase:cannot open environment '" << database_name << "'\n";
+    return 0;
+  }
+
+  MDB_txn* txn;
+  status = mdb_txn_begin(env, NULL /*parent*/, flags, &txn);
+  if (status != 0) {
+    cerr << "Job::OpenDatabase:cannot begin transaction " << status << '\n';
+    return 0;
+  }
+
   return 1;
 }
 
@@ -616,7 +634,7 @@ Job::WriteLinkers() const {
 int
 Job::WriteLinkers(uint32_t hash,
                   const SetOfLinkers& linkers) const {
-  if (database) {
+  if (mdb_env) {
     return WriteLinkersDb(hash, linkers);
   }
 
@@ -637,22 +655,22 @@ Job::WriteLinkersDb(uint32_t hash,
   IWString buffer;
   linkers.WriteTextProtos(buffer);
 
-  //leveldb::Slice key(reinterpret_cast<const char *>(&hash), sizeof(hash));
-  leveldb::Slice key = Key(hash);
+  MDB_val key;
+  key.mv_data = &hash;
+  key.mv_size = sizeof(hash);
   cerr << "Storing " << hash << '\n';
-  leveldb::Slice value(buffer.data(), buffer.length());
 
-  leveldb::WriteOptions write_options;
-  //write_options.sync = true;
+  MDB_val value;
+  value.mv_data = buffer.data();
+  value.mv_size = buffer.length();
 
-  const leveldb::Status status = database->Put(write_options, key, value);
-  if (status.ok()) {
-    cerr << "Stored " << hash << '\n';
+  unsigned int flags = MDB_NOOVERWRITE;
+  int status = mdb_put(mdb_env.get(), mdb_dbi.get(), &key, &value, flags);
+  if (status == 0) {
     return 1;
   }
 
-  cerr << "Options::DoStore:Did not store " << status.ToString() << "\n";
-
+  cerr << "Options::DoStore:Did not store key " << hash << " status " << status << '\n';
   return 0;
 }
 
