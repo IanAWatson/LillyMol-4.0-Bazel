@@ -3153,20 +3153,25 @@ FileconvConfig::ParseOrganicSpecification(Command_Line& cl, char flag) {
   while (cl.value(flag, o, i++)) {
     if ("DEF" == o || "def" == o) {
       filter_for_disallowed_elements = 1;
+    } else if (o == "clear") {
+      allowed_elements.Clear();
+      filter_for_disallowed_elements = 1;
     } else if (o.starts_with("allow:")) {
       o.remove_leading_chars(6);
+      const_IWSubstring token;
+      for (int i = 0; o.nextword(token, i, ','); ++i) {
+        const Element* e = RecogniseAsElementOrAtomicNumber(token);
 
-      const Element* e = RecogniseAsElementOrAtomicNumber(o);
+        if (nullptr == e) {
+          cerr << "FileconvConfig::ParseOrganicSpecification:unrecognised element allow:'" << o << "'\n";
+          return 0;
+        }
 
-      if (nullptr == e) {
-        cerr << "Unrecognised element allow:'" << o << "'\n";
-        return 0;
+        allowed_elements.set_allow(e->atomic_number(), 1);
+
+        if (verbose)
+          cerr << "Atomic number " << e->atomic_number() << " allowed\n";
       }
-
-      allowed_elements.set_allow(e->atomic_number(), 1);
-
-      if (verbose)
-        cerr << "Atomic number " << e->atomic_number() << " allowed\n";
     } else if ("none" == o) {
       output_organic_only = 1;
       continue;
@@ -3177,28 +3182,29 @@ FileconvConfig::ParseOrganicSpecification(Command_Line& cl, char flag) {
     } else if ("help" == o) {
       cerr << "The -O option is troublesome due to it's long history and evolution\n";
       cerr << "Options can also be order dependent\n";
+      cerr << " -O clear       ALL elements marked as disallowed - nothing will be written\n";
       cerr << " -O def         reject if any of the non-OK non-organics are present\n";
-      cerr << " -O allow:El    temporarily allow El as an OK non-organic\n";
+      cerr << " -O allow:el1,el2 temporarily allow el1,el2 as an organic\n";
       cerr << " -O none        reject if any non-organic atoms present\n";
       cerr << " -O El          element El becomes fully organic for the course of the run\n";
       cerr << " -O nometal     exclude any molecule containing metal atoms\n";
       exit(1);
     } else {
-      Element_Matcher* e = new Element_Matcher;
-      if (!e->construct_from_string(o)) {
-        cerr << "Unrecognised -O qualifier '" << o << "'\n";
-        delete e;
-        return 0;
+      const_IWSubstring token;
+      for (int i = 0; o.nextword(token, i, ','); ++i) {
+        std::unique_ptr<Element_Matcher> e = std::make_unique<Element_Matcher>();
+        if (!e->construct_from_string(token)) {
+          cerr << "Unrecognised -O qualifier '" << o << "'\n";
+          return 0;
+        }
+
+        allowed_elements.set_allow(e->element()->atomic_number(), 1);
+
+        ok_non_organics.add(e.release());
+
+        if (verbose)
+          cerr << "ok_non_organics added '" << token << "'\n";
       }
-
-      ok_non_organics.add(e);
-
-      const Element* ele = e->element();
-      if (nullptr != ele)
-        allowed_elements.set_allow(ele->atomic_number(), 1);
-
-      if (verbose)
-        cerr << "ok_non_organics added '" << o << "'\n";
 
       output_organic_only = 1;
     }

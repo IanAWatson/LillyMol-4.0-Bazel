@@ -380,11 +380,13 @@ GFP_Standard::tanimoto_distance(const GFP_Standard& rhs, float must_be_closer_th
   int bic = popcount_2fp((const unsigned *) _iw, (const unsigned *)rhs._iw, 64);
   rc += iwmisc::Fraction<float>(bic, _nset_iw + rhs._nset_iw - bic);
 
+  rc = rc * 0.25;
+
   if (rc < similarity_needed) {
     return std::nullopt;
   }
 
-  return 1.0f - 0.25 * rc;
+  return 1.0f - rc;
 }
 
 int

@@ -17,7 +17,6 @@ class Allowed_Elements
 
   public:
     Allowed_Elements();
-//  Allowed_Elements();
 
     int build_from_command_line (Command_Line & c, char flag, int verbose);
 
@@ -29,6 +28,9 @@ class Allowed_Elements
     void exclude_metals();
 
     void reset_to_defaults();
+
+    // Set all elements to disallowed.
+    void Clear();
 };
 
 #endif

@@ -661,7 +661,7 @@ Job::WriteLinkersDb(uint32_t hash,
   cerr << "Storing " << hash << '\n';
 
   MDB_val value;
-  value.mv_data = buffer.data();
+  value.mv_data = const_cast<char *>(buffer.data());
   value.mv_size = buffer.length();
 
   unsigned int flags = MDB_NOOVERWRITE;

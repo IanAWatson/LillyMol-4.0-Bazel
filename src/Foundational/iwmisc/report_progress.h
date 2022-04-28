@@ -36,39 +36,61 @@ class Report_Progress_Template
 
     int set_report_every(T);
 
-    int report (const char * leading, const char * trailing, std::ostream &);
+      int report (const char * leading, const char * trailing, std::ostream &);
 
-    void initialise (const Report_Progress_Template<T> & rhs);
-};
+      template <typename S>
+      int Report(const S& leading, const S& trailing,
+                 std::ostream& output);
 
-typedef Report_Progress_Template<unsigned int> Report_Progress;
+      void initialise (const Report_Progress_Template<T> & rhs);
+  };
 
-#ifdef REPORT_PROGRESS_IMPLEMENTATION
+  typedef Report_Progress_Template<unsigned int> Report_Progress;
 
-#include <limits>
+  #ifdef REPORT_PROGRESS_IMPLEMENTATION
 
-#include "Foundational/cmdline/cmdline.h"
+  #include <limits>
 
-template <typename T>
-Report_Progress_Template<T>::Report_Progress_Template()
-{
-  _times_called = 0;
-  _report_every = 0;
-  _report_next = std::numeric_limits<T>::max();
-  _tzero = static_cast<time_t>(0);
-  _tprev = static_cast<time_t>(0);
+  #include "Foundational/cmdline/cmdline.h"
 
-  return;
-}
+  template <typename T>
+  Report_Progress_Template<T>::Report_Progress_Template()
+  {
+    _times_called = 0;
+    _report_every = 0;
+    _report_next = std::numeric_limits<T>::max();
+    _tzero = static_cast<time_t>(0);
+    _tprev = static_cast<time_t>(0);
 
-/*
-  Return 1 if it is time to report
-*/
+    return;
+  }
 
-template <typename T>
+  /*
+    Return 1 if it is time to report
+  */
+
+  template <typename T>
+  int
+  Report_Progress_Template<T>::operator()()
+  {
+    if (0 == _report_every)
+      return 0;
+
+    _times_called++;
+
+    if (_times_called <= _report_next)
+      return 0;
+
+    _report_next += _report_every;
+
+    return 1;
+  }
+
+template <typename T> template<typename S>
 int
-Report_Progress_Template<T>::operator()()
-{
+Report_Progress_Template<T>::Report(const S& leading,
+                                    const S& trailing,
+                                    std::ostream& output) {
   if (0 == _report_every)
     return 0;
 
@@ -78,6 +100,13 @@ Report_Progress_Template<T>::operator()()
     return 0;
 
   _report_next += _report_every;
+  output << leading << _times_called << trailing;
+
+  if (_tzero != 0) {
+    time_t tnow = time(NULL);
+    output << " t=" << (tnow - _tzero) << " (" << (tnow - _tprev) << ")";
+    _tprev = tnow;
+  }
 
   return 1;
 }

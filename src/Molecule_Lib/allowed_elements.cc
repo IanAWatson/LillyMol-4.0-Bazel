@@ -1,10 +1,15 @@
 #include <stdlib.h>
 
+#include <algorithm>
+#include <iostream>
+
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
 
 #include "molecule.h"
 #include "allowed_elements.h"
+
+using std::cerr;
 
 void
 Allowed_Elements::_default_values()
@@ -62,7 +67,7 @@ Allowed_Elements::build_from_command_line(Command_Line & cl,
 
     atomic_number_t z = o->atomic_number();
 
-//  cerr << "Processing element '" << e << "', z = " << z << endl;
+//  cerr << "Processing element '" << e << "', z = " << z << '\n';
 
     assert(z >= 0 && z <= HIGHEST_ATOMIC_NUMBER);
 
@@ -122,4 +127,9 @@ Allowed_Elements::exclude_metals() {
       _allowed_element[i] = 0;
     }
   }
+}
+
+void
+Allowed_Elements::Clear() {
+  std::fill_n(_allowed_element, HIGHEST_ATOMIC_NUMBER + 1, 0);
 }

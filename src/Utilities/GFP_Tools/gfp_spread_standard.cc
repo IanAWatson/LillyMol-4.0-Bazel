@@ -15,16 +15,17 @@
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
-#include "Foundational/iw_tdt/iw_tdt.h"
+#include "Foundational/iwmisc/iwdigits.h"
 #include "Foundational/iwmisc/numeric_data_from_file.h"
 #include "Foundational/iwmisc/report_progress.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+
 #include "gfp_standard.h"
 #include "smiles_id_dist.h"
 #include "sparse_collection.h"
 
 using std::cerr;
-using std::endl;
 
 const char* prog_name = nullptr;
 
@@ -60,6 +61,8 @@ static IWString mk_tag("FPMK<");
 static IWString mk2_tag("FPMK2<");
 static IWString iw_tag("FPIW<");
 
+static Fraction_as_String fraction_as_string;
+
 /*
   When we squeeze the pool, we must update the sdistance and nsn arrays, but
   we do not want to update the smiles and pcn arrays
@@ -68,38 +71,101 @@ static IWString iw_tag("FPIW<");
 
 class SSpread_Item : public GFP_Standard {
  private:
+  int _selected;
+
+  float _distance;
+
+  int _nearest_previously_selected;
+
   int _initial_ndx;
+
 
  public:
   SSpread_Item();
 
+  int selected() const {
+    return _selected;
+  }
+  void set_selected(int s) {
+    _selected = s;
+  }
+
+  float distance() const {
+    return _distance;
+  }
+
+  int nearest_previously_selected() const {
+    return _nearest_previously_selected;
+  }
+
+  void IsFirstSelected();
+
+  void SetDistance(SSpread_Item& sel) {
+    _distance = GFP_Standard::tanimoto_distance(sel);
+    _nearest_previously_selected = sel.initial_ndx();
+  }
+
   SSpread_Item& operator=(const SSpread_Item& rhs);
+  // In retrospect, there seems to be no advantage to having
+  // a move assignment operator.
+  SSpread_Item& operator=(SSpread_Item&& rhs);
 
   void
-  set_initial_ndx(int s)
-  {
+  set_initial_ndx(int s) {
     _initial_ndx = s;
   }
   int
-  initial_ndx() const
-  {
+  initial_ndx() const {
     return _initial_ndx;
   }
 
+  int SelectedOrZeroDistance() const;
+
+  int NofitySelected(const SSpread_Item& rhs) {
+    float d = GFP_Standard::tanimoto_distance(rhs);
+    if (d >= _distance) {
+      return 0;
+    }
+    _distance = d;
+    _nearest_previously_selected = rhs.initial_ndx();
+    return 1;
+  }
+
+  int NotifySelectedUseThreshold(const SSpread_Item& rhs) {
+    std::optional<float> d = GFP_Standard::tanimoto_distance(rhs, _distance);
+    if (! d) {
+      return 0;
+    }
+    _distance = *d;
+    _nearest_previously_selected = rhs.initial_ndx();
+    return 1;
+  }
+
+
   const IWString&
-  smiles(const IWString* smiles) const
-  {
+  smiles(const IWString* smiles) const {
     return smiles[_initial_ndx];
   }
   const IWString&
-  pcn(const IWString* pcn) const
-  {
+  pcn(const IWString* pcn) const {
     return pcn[_initial_ndx];
   }
+
+  int DebugPrint(std::ostream& output) const;
 };
+
+SSpread_Item::SSpread_Item() {
+  _selected = 0;
+  _distance = 1.0;
+  _initial_ndx = -1;
+  _nearest_previously_selected = -1;
+}
 
 SSpread_Item&
 SSpread_Item::operator=(const SSpread_Item& rhs) {
+  _selected = rhs._selected;
+  _distance = rhs._distance;
+  _nearest_previously_selected = rhs._nearest_previously_selected;
   _initial_ndx = rhs._initial_ndx;
   GFP_Standard* me = this;
   const GFP_Standard* other = &rhs;
@@ -107,6 +173,42 @@ SSpread_Item::operator=(const SSpread_Item& rhs) {
   return *this;
 }
 
+SSpread_Item&
+SSpread_Item::operator=(SSpread_Item&& rhs) {
+  _initial_ndx = rhs._initial_ndx;
+  _selected = rhs._selected;
+  _nearest_previously_selected = rhs._nearest_previously_selected;
+  _distance = rhs._distance;
+  GFP_Standard* me = this;
+  const GFP_Standard* other = &rhs;
+  *me = std::move(*other);
+  return *this;
+}
+
+void
+SSpread_Item::IsFirstSelected() {
+  _selected = 1;
+  _distance = 1.0f;
+  _nearest_previously_selected = -1;
+}
+
+int
+SSpread_Item::SelectedOrZeroDistance() const {
+  if (_selected || 0.0f == _distance) {
+    return 1;
+  }
+
+  return 0;
+}
+
+int
+SSpread_Item::DebugPrint(std::ostream& output) const {
+  output << "SSpread_Item:item " << _initial_ndx << " sel? " << _selected << 
+            " dist " << _distance << " nsn " << _nearest_previously_selected << '\n';
+  return 1;
+}
+
+// A struct to describe the results of the computation.
 struct Selected_Item {
   int _sel;
   int _nsn;
@@ -115,6 +217,7 @@ struct Selected_Item {
 
 static int pool_size = 0;
 
+// Each of these will be sized for the job.
 static SSpread_Item* fingerprints = nullptr;
 static IWString* smiles = nullptr;
 static IWString* pcn = nullptr;
@@ -124,11 +227,10 @@ static int* nearest_previously_selected = nullptr;
 static float* weight = nullptr;
 static Selected_Item* selected_item = nullptr;
 
-SSpread_Item::SSpread_Item() { _initial_ndx = -1; }
 static void
 usage(int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Spread implementation requiring MPR IW MK MK2\n";
   cerr << " -n <nsel>       number of items to select\n";
   cerr << " -A <fname>      file of previously selected fingerprints\n";
@@ -149,8 +251,7 @@ usage(int rc)
 }
 
 static int
-get_previously_computed_nearest_neighbour(
-                                 const IWString& id,
+get_previously_computed_nearest_neighbour(const IWString& id,
                                     const IW_STL_Hash_Map_float& previously_computed_distances,
                                     float& d)
 {
@@ -159,8 +260,7 @@ get_previously_computed_nearest_neighbour(
   if (f == previously_computed_distances.end())  // OK if no previously computed distance
     return 1;
 
-  d = (*f).second;
-
+  d = f->second;
   return 1;
 }
 
@@ -242,6 +342,7 @@ set_selected_item(Selected_Item& s, const int isel, const int nsn, const float d
 }
 
 
+#ifdef NO_LONGER_NEEDED
 // Item pool[selected] has been selected. Update the info into 's`.
 static void
 set_selected_item(SSpread_Item* pool,
@@ -255,6 +356,7 @@ set_selected_item(SSpread_Item* pool,
   }
   s._dist = distances[selected];
 }
+#endif
 
 template <typename F>
 int
@@ -279,7 +381,7 @@ mark_all_remaining_items_selected(F* pool,
     const int n = pool[nearest_previously_selected[i]].initial_ndx();
 
     // cerr << "Zero distance item i = " << i << " ndx " << pool[i].initial_ndx() << " prev " << n
-    // << " dist " << distances[i] << endl;
+    // << " dist " << distances[i] << '\n';
 
     set_selected_item(selected_item[ndx], pool[i].initial_ndx(), n, distances[i]);
     ndx++;
@@ -319,8 +421,9 @@ spread_with_weights(F* fingerprints,
       }
     }
   }
-  else
+  else {
     s = 0;
+  }
 
   if (!previously_selected_file_specified) {
     //#pragma omp parallel for schedule(dynamic,256)
@@ -337,7 +440,7 @@ spread_with_weights(F* fingerprints,
   }
 
   for (int items_selected = 0; items_selected < nsel; items_selected++) {
-    //  cerr << " s = " << s << endl;
+    //  cerr << " s = " << s << '\n';
     //  iw_write_array(spread_order, pool_size, "selected", cerr);
 
     set_selected_item(selected_item[items_selected],
@@ -381,7 +484,7 @@ spread_with_weights(F* fingerprints,
       }
     }
 
-    //  cerr << "Selected " << s << " dist " << distances[s] << endl;
+    //  cerr << "Selected " << s << " dist " << distances[s] << '\n';
 
     if (nexts_shared < 0)
       break;
@@ -395,6 +498,40 @@ spread_with_weights(F* fingerprints,
   return 1;
 }
 
+template <typename T>
+int
+do_squeeze(T * pool,
+           int& pool_size,
+           int next_selected) {
+  if (pool_size < 1000) {
+    return next_selected;
+  }
+
+  int ndx = 0;
+  int rc = -1;
+  for (int i = 0; i < pool_size; ++i) {
+    if (pool[i].selected()) {
+      continue;
+    }
+
+    if (i == next_selected) {
+      rc = ndx;
+    }
+
+    if (i == ndx) {
+      ++ndx;
+      continue;
+    }
+
+    pool[ndx] = pool[i];
+    ++ndx;
+  }
+  
+  pool_size = ndx;
+
+  return rc;
+}
+
 template <typename F>
 int
 do_squeeze(F* pool, int& pool_size,
@@ -404,20 +541,25 @@ do_squeeze(F* pool, int& pool_size,
   if (pool_size < 1000)
     return next_selected;
 
+  cerr << "Performing squeeze pool size " << pool_size << '\n';
   int rc = -1;
 
   int ndx = 0;
   for (int i = 0; i < pool_size; ++i) {
+    cerr << i << " selected[i] " << selected[i] << '\n';
+    if (selected[i]) {
+      cerr << " wtihin squeeze item " << i << " is selected\n";
+    }
     if (selected[i])
       continue;
 
-    if (i == ndx) {
-      ndx++;
-      continue;
-    }
-
     if (i == next_selected) {
       rc = ndx;
+    }
+
+    if (i == ndx) {  // No movement
+      ndx++;
+      continue;
     }
 
     pool[ndx] = pool[i];
@@ -429,8 +571,251 @@ do_squeeze(F* pool, int& pool_size,
   }
 
   pool_size = ndx;
+  cerr << " pool_size updated to " << pool_size << '\n';
 
   return rc;
+}
+
+template <typename T>
+int
+WriteSelectedBrief(const T* pool,
+                   int selected,
+                   IWString_and_File_Descriptor& output) {
+  const T& sel = pool[selected];
+  output << sel.smiles(smiles) << ' ' << sel.pcn(pcn) << ' ' << sel.distance() << '\n';
+  output.write_if_buffer_holds_more_than(4096);
+  return 1;
+}
+
+template <typename T>
+int
+WriteSelected(T* pool,
+              int selected,
+              IWString_and_File_Descriptor& output) {
+  if (brief_output)
+    return WriteSelectedBrief(pool, selected, output);
+
+  const T& sel = pool[selected];
+
+  output << smiles_tag << sel.smiles(smiles) << ">\n";
+  output << identifier_tag << sel.pcn(pcn) << ">\n";
+
+  if (sel.nearest_previously_selected() >= 0) {
+    int ndx = sel.nearest_previously_selected();
+    output << smiles_tag << smiles[ndx] << ">\n";
+    output << identifier_tag << pcn[ndx] << ">\n";
+    output << distance_tag << sel.distance() << ">\n";
+  } else {
+    output << smiles_tag << "*>\n";
+    output << identifier_tag << "*>\n";
+    output << distance_tag << "1>\n";
+  }
+
+  output << "|\n";
+
+  output.write_if_buffer_holds_more_than(4096);
+
+  return 1;
+}
+
+template <typename F>
+int
+spread4(F* pool, int& pool_size, 
+        IWString_and_File_Descriptor& output)
+{
+  int s;
+
+  if (choose_first_point_randomly) {
+    s = RandomPoolMember(pool_size);
+  } else if (previously_selected_file_specified) {
+    s = std::max_element(pool, pool + pool_size, [](const F& fp1, const F& fp2) {
+      return fp1.distance() > fp2.distance();
+    }) - pool;
+  } else {
+    s = 0;
+  }
+
+  for (int items_selected = 0; items_selected < nsel; items_selected++) {
+    WriteSelected(pool, s, output);
+    pool[s].set_selected(1);
+
+    // Variables shared between threads.
+    int nexts_shared = -1;
+    float dmax_shared = -1.0f;
+
+#pragma omp parallel shared(nexts_shared, dmax_shared)
+    {
+      float mydmax = -1.0f;
+      int mynexts = -1;
+
+//#pragma omp for schedule(dynamic, 1024) nowait
+#pragma omp for schedule(static) nowait
+      for (int i = 0; i < pool_size; i++) {
+        if (pool[i].SelectedOrZeroDistance()) {
+          continue;
+        }
+
+#define USE_THRESHOLD
+#ifdef USE_THRESHOLD
+        pool[i].NotifySelectedUseThreshold(pool[s]);
+#else
+        pool[i].NofitySelected(pool[s]);
+#endif
+        if (pool[i].distance() > mydmax) {
+          mydmax = pool[i].distance();
+          mynexts = i;
+        }
+      }
+
+#pragma omp critical
+      {
+        if (mydmax > dmax_shared) {
+          dmax_shared = mydmax;
+          nexts_shared = mynexts;
+        }
+      }
+    }
+
+#ifdef DEBUG_SPREAD4
+    cerr << "Selected " << s << " dist " << pool[s].distance() << " nexts_shared " << nexts_shared << '\n';
+#endif
+
+    if (nexts_shared < 0) {  // we are ignoring nsel, unlikely to be a problem...
+      cerr << "nexts_shared negative\n";
+      for (int i = 0; i < pool_size; ++i) {
+        if (! pool[i].selected()) {
+          WriteSelected(pool, i, output);
+        }
+      }
+      return items_selected;
+    }
+
+    s = nexts_shared;
+
+    if (dmax_shared < stop_once_distance_drops_below)
+      return items_selected;
+
+    if (report_progress.Report("", "", cerr))
+      cerr << "Selected " << items_selected << " fingerprints, dist " << dmax_shared << '\n';
+
+    if (next_squeeze == items_selected) {
+      cerr << "Before squeeze s " << s << " pool_size " << pool_size << '\n';
+      s = do_squeeze(pool, pool_size, s);
+      cerr << "After  squeeze s " << s << " pool_size " << pool_size << '\n';
+      next_squeeze += squeeze;
+    }
+  }
+
+  return nsel;
+}
+
+template <typename F>
+int
+spread3(F* pool, int& pool_size, Selected_Item* selected_item)
+{
+  int s;
+
+  // iw_write_array(distances, pool_size, "distances", cerr);
+
+  if (choose_first_point_randomly)
+    s = RandomPoolMember(pool_size);
+  else if (previously_selected_file_specified)
+    s = index_of_largest(pool_size, distances);
+  else
+    s = 0;
+
+  if (!previously_selected_file_specified) {
+#pragma omp parallel for schedule(dynamic, 256)
+    for (int i = 0; i < pool_size; i++) {
+      distances[i] = fingerprints[s].tanimoto_distance(fingerprints[i]);
+      nearest_previously_selected[i] = s;
+    }
+
+    distances[s] = 1.0f;
+    nearest_previously_selected[s] = -1;
+  }
+
+  //  iw_write_array(distances, pool_size, "initial distances", cerr);
+
+  for (int items_selected = 0; items_selected < nsel; items_selected++) {
+    //  cerr << " s = " << s << '\n';
+    //  iw_write_array(spread_order, pool_size, "selected", cerr);
+
+    set_selected_item(pool, s, nearest_previously_selected, distances, selected_item[items_selected]);
+
+    selected[s] = 1;
+
+    int nexts_shared = -1;
+    float dmax_shared = -1.0f;
+
+#pragma omp parallel shared(nexts_shared, dmax_shared)
+    {
+      float mydmax = -1.0f;
+      int mynexts = -1;
+
+#pragma omp for schedule(dynamic, 1024) nowait
+      for (int i = 0; i < pool_size; i++) {
+        if (selected[i] || 0.0f == distances[i])
+          continue;
+
+#ifdef USE_THRESHOLD
+        std::optional<float> d = pool[s].tanimoto_distance(pool[i], distances[i]);
+        if (! d) {
+          continue;
+        }
+        if (*d < distances[i]) {
+          distances[i] = *d;
+          nearest_previously_selected[i] = s;
+        }
+#else
+        float d = pool[s].tanimoto_distance(pool[i]);
+        if (d < distances[i]) {
+          distances[i] = d;
+          nearest_previously_selected[i] = s;
+        }
+#endif
+
+        if (distances[i] > mydmax) {
+          mydmax = distances[i];
+          mynexts = i;
+        }
+      }
+
+#pragma omp critical
+      {
+        if (mydmax > dmax_shared) {
+          dmax_shared = mydmax;
+          nexts_shared = mynexts;
+        }
+      }
+    }
+
+    cerr << "Selected " << s << " dist " << distances[s] << " nexts_shared " << nexts_shared << '\n';
+
+    if (nexts_shared < 0) {  // we are ignoring nsel, unlikely to be a problem...
+      //for (int i = 0; i < pool_size; ++i) {
+      //  cerr << i << " Selected " << selected[i] << " distance " << distances[i] << " nsn " << nearest_previously_selected[i] << '\n';
+      //}
+      return items_selected;
+    }
+
+    s = nexts_shared;
+
+    if (dmax_shared < stop_once_distance_drops_below)
+      return items_selected;
+
+    if (report_progress())
+      cerr << "Selected " << items_selected << " fingerprints, dist " << dmax_shared << '\n';
+
+    if (next_squeeze == items_selected) {
+      //cerr << "Before squeeze s " << s << " pool_size " << pool_size << '\n';
+      s = do_squeeze(pool, pool_size, s, selected, nearest_previously_selected, distances);
+      //cerr << "After  squeeze s " << s << " pool_size " << pool_size << '\n';
+      next_squeeze += squeeze;
+    }
+  }
+
+  return nsel;
 }
 
 template <typename F>
@@ -462,7 +847,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
   //  iw_write_array(distances, pool_size, "initial distances", cerr);
 
   for (int items_selected = 0; items_selected < nsel; items_selected++) {
-    //  cerr << " s = " << s << endl;
+    //  cerr << " s = " << s << '\n';
     //  iw_write_array(spread_order, pool_size, "selected", cerr);
 
     set_selected_item(pool, s, nearest_previously_selected, distances, selected_item[items_selected]);
@@ -506,7 +891,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
       }
     }
 
-    //  cerr << "Selected " << s << " dist " << distances[s] << endl;
+    //  cerr << "Selected " << s << " dist " << distances[s] << '\n';
 
     if (nexts_shared < 0)  // we are ignoring nsel, unlikely to be a problem...
     {
@@ -526,7 +911,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
       return items_selected;
 
     if (report_progress())
-      cerr << "Selected " << items_selected << " fingerprints, dist " << dmax_shared << endl;
+      cerr << "Selected " << items_selected << " fingerprints, dist " << dmax_shared << '\n';
 
     if (next_squeeze == items_selected) {
       s = do_squeeze(pool, pool_size, s, selected, nearest_previously_selected, distances);
@@ -554,7 +939,7 @@ spread()
   else
     s = 0;
 
-  // cerr << "Initial point is " << s << " distance " << distances[s] << endl;
+  // cerr << "Initial point is " << s << " distance " << distances[s] << '\n';
 
   if (!previously_selected_file_specified) {
 #pragma omp parallel for schedule(dynamic, 256)
@@ -570,7 +955,7 @@ spread()
   }
 
   for (int items_selected = 0; items_selected < nsel; items_selected++) {
-    //  cerr << " s = " << s << " distance " << distances[s] << endl;
+    //  cerr << " s = " << s << " distance " << distances[s] << '\n';
     //  iw_write_array(spread_order, pool_size, "selected", cerr);
 
     spread_order[items_selected] = s;
@@ -602,7 +987,7 @@ spread()
       }
     }
 
-    //  cerr << "Selected " << s << " dist " << distances[s] << endl;
+    //  cerr << "Selected " << s << " dist " << distances[s] << '\n';
 
     if (nexts < 0)
       break;
@@ -624,7 +1009,7 @@ assign_scaling_factors_from_token(const IWString* pcn,
                                   float* weight)
 {
   scaling_factor_column--;
-  cerr << "From column " << scaling_factor_column << endl;
+  cerr << "From column " << scaling_factor_column << '\n';
 
   for (int i = 0; i < pool_size; i++) {
     const_IWSubstring s;
@@ -1000,7 +1385,7 @@ gfp_spread_standard(int argc, char** argv)
         }
         if (verbose)
           cerr << "Previously computed near neighbour distances in column "
-               << previous_computed_distance_column << endl;
+               << previous_computed_distance_column << '\n';
 
         previous_computed_distance_column--;
         nset++;
@@ -1076,7 +1461,7 @@ gfp_spread_standard(int argc, char** argv)
 
   if (scaling_factor_column > 1) {
     if (!assign_scaling_factors_from_token(pcn, pool_size, scaling_factor_column, weight)) {
-      cerr << "Cannot extract scaling factors from column " << scaling_factor_column << endl;
+      cerr << "Cannot extract scaling factors from column " << scaling_factor_column << '\n';
       return 3;
     }
   }
@@ -1155,7 +1540,11 @@ gfp_spread_standard(int argc, char** argv)
     if (verbose)
       cerr << "Will squeeze selected items every " << squeeze << " items selected\n";
 
-    next_squeeze = squeeze;
+    if (squeeze == 0) {
+      next_squeeze = -1;
+    } else {
+      next_squeeze = squeeze;
+    }
   }
   else {
     squeeze = 1000;
@@ -1171,21 +1560,27 @@ gfp_spread_standard(int argc, char** argv)
 
     if (verbose)
       cerr << "Will stop selection once distance drops below " << stop_once_distance_drops_below
-           << endl;
+           << '\n';
   }
+
+  fraction_as_string.initialise(0.0, 1.0, 4);
+  fraction_as_string.set_leading_string("DIST<");
+  fraction_as_string.append_to_each_stored_string(">\n");
 
   IWString_and_File_Descriptor output(1);
 
+  cerr << "scaling_factor_specified " << scaling_factor_specified << '\n';
+  cerr.flush();
   if (scaling_factor_specified)
     spread_with_weights(fingerprints, pool_size, weight, selected_item);
   else
-    spread2(fingerprints, pool_size, selected_item);
+    spread4(fingerprints, pool_size, output);
 
 //#define DEBUG_SPREAD
 #ifdef DEBUG_SPREAD
   for (int i = 0; i < nsel; i++) {
     cerr << " i = " << i << " selected " << spread_order[i] << " dist "
-         << distances[spread_order[i]] << endl;
+         << distances[spread_order[i]] << '\n';
   }
 #endif
 
@@ -1198,6 +1593,8 @@ gfp_spread_standard(int argc, char** argv)
     if (verbose)
       cerr << "Brief output\n";
   }
+
+  return 0;
 
   if (brief_output) {
     for (int i = 0; i < nsel; ++i) {

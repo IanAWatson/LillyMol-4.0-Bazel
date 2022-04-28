@@ -183,6 +183,22 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_spread_standard_mpi",
+    srcs = [
+        "gfp_spread_standard_mpi.cc",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_standard",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iw_tdt:iw_tdt",
+    ],
+    linkopts = [
+        "-lmpi",
+    ],
+)
+
+cc_binary(
     name = "gfp_nearneighbours_single_file",
     srcs = [
         "gfp_nearneighbours_single_file.cc",

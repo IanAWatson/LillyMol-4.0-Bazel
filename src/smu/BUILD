@@ -117,6 +117,21 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "get_property",
+    srcs = [
+        "get_property.cc",
+    ],
+    deps = [
+        "dataset_cc_proto",
+        ":support",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
 
 cc_binary(
     name = "get_smiles_bt",
