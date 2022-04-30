@@ -255,6 +255,9 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
     ],
+    linkopts = [
+        "-llmdb",
+    ],
 )
 
 cc_binary(

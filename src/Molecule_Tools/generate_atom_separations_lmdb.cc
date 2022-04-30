@@ -210,9 +210,11 @@ struct Job {
 
   // If writing to a lmdb database.
   IWString database_name;
-  std::unique_ptr<MDB_env> mdb_env;
-  std::unique_ptr<MDB_txn> mdb_txn;
-  std::unique_ptr<MDB_dbi> mdb_dbi;
+  //std::unique_ptr<MDB_env> mdb_env;
+  MDB_env* mdb_env;
+  MDB_txn* mdb_txn;
+  MDB_dbi mdb_dbi;
+  size_t max_db_size = 10485760 * 100;
 
   Hasher hasher;
 
@@ -271,6 +273,8 @@ struct Job {
     int MatchesMustHaveQuery(Molecule& m);
 
     int WriteLinkers() const;
+
+    int CommitTransaction();
 
     int Report(std::ostream& output) const;
 };
@@ -417,28 +421,48 @@ Job::Initialise(Command_Line& cl) {
 int
 Job::OpenDatabase() {
 
-  MDB_env* env;
-  int status =  mdb_env_create(&env);
+  int status =  mdb_env_create(&mdb_env);
   if (status != 0) {
     cerr << "Job::OpenDatabase:cannot create environment, status " << status << '\n';
     return 0;
   }
 
-  mdb_env.reset(env);
-
-  unsigned int flags = 0;
-  mdb_mode_t mode = O_WRONLY | O_TRUNC | O_CREAT;
-
-  status = mdb_env_open(env, database_name.null_terminated_chars(), flags, mode);
+  status = mdb_env_set_mapsize(mdb_env, max_db_size);
   if (status != 0) {
-    cerr << "Job::OpenDatabase:cannot open environment '" << database_name << "'\n";
+    cerr << "Job::OpenDatabase:cannot set db max size to " << max_db_size << " " << status << '\n';
     return 0;
   }
 
-  MDB_txn* txn;
-  status = mdb_txn_begin(env, NULL /*parent*/, flags, &txn);
+  unsigned int flags = 0;
+  mdb_mode_t mode = O_RDWR | O_TRUNC | O_CREAT;
+  mode = 0664;
+
+  status = mdb_env_open(mdb_env, database_name.null_terminated_chars(), flags, mode);
+  if (status != 0) {
+    cerr << "Job::OpenDatabase:cannot open environment '" << database_name << " status " << status << '\n';
+    return 0;
+  }
+
+  status = mdb_txn_begin(mdb_env, NULL /*parent*/, flags, &mdb_txn);
   if (status != 0) {
     cerr << "Job::OpenDatabase:cannot begin transaction " << status << '\n';
+    return 0;
+  }
+
+  status = mdb_dbi_open(mdb_txn, NULL, MDB_CREATE, &mdb_dbi);
+  if (status != 0) {
+    cerr << "Job::OpenDatabase:mdb_dbi_open failed " << status << '\n';
+    return 0;
+  }
+
+  return 1;
+}
+
+int
+Job::CommitTransaction() {
+  auto status = mdb_txn_commit(mdb_txn);
+  if (status != 0) {
+    cerr << "Job::CommitTransaction:cannot commit transaction " << status << '\n';
     return 0;
   }
 
@@ -658,14 +682,13 @@ Job::WriteLinkersDb(uint32_t hash,
   MDB_val key;
   key.mv_data = &hash;
   key.mv_size = sizeof(hash);
-  cerr << "Storing " << hash << '\n';
 
   MDB_val value;
   value.mv_data = const_cast<char *>(buffer.data());
   value.mv_size = buffer.length();
 
   unsigned int flags = MDB_NOOVERWRITE;
-  int status = mdb_put(mdb_env.get(), mdb_dbi.get(), &key, &value, flags);
+  int status = mdb_put(mdb_txn, mdb_dbi, &key, &value, flags);
   if (status == 0) {
     return 1;
   }
@@ -1507,6 +1530,11 @@ Main(int argc, char** argv) {
 
   if (! job_options.WriteLinkers()) {
     cerr << "Cannot write linkers\n";
+    return 1;
+  }
+
+  if (! job_options.CommitTransaction()) {
+    cerr << "Cannot commit database transaction\n";
     return 1;
   }
 
