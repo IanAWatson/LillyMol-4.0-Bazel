@@ -228,11 +228,16 @@ cc_binary(
     ],
 )
 
+# Runs faster single threaded with no omp options specified.
 cc_binary(
     name = "gfp_lnearneighbours_standard",
     srcs = [
         "gfp_lnearneighbours_standard.cc",
         "fp_and_smiles.cc",
+    ],
+    copts = [
+#       "-fopenmp=libiomp5", llvm
+        "-fopenmp",
     ],
     deps = [
         ":gfp",
@@ -240,7 +245,8 @@ cc_binary(
         ":neighbour_list",
     ],
     linkopts = [
-        "-lz",
+#       "-L/usr/lib/llvm-11/lib/",  # clang
+        "-lgomp",
     ],
 )
 

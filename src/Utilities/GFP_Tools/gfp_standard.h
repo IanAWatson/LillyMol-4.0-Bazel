@@ -49,7 +49,9 @@ class GFP_Standard
     void tanimoto_distance_2 (const GFP_Standard & rhs, const GFP_Standard & rhs2, float *) const;
 
     // Only return a result if the value will be <= `must_be_closer_than`.
-    std::optional<float> tanimoto_distance(const GFP_Standard& rhs, float must_be_closer_than) const;
+    std::optional<float> tanimoto_distance_if_less(const GFP_Standard& rhs, float must_be_closer_than) const;
+    // Only return a result if the value will be >= `must_be_further_than`.
+    std::optional<float> tanimoto_distance_if_greater(const GFP_Standard& rhs, float must_be_further_than) const;
 };
 
 extern int can_be_compared (const GFP_Standard & fp1, const GFP_Standard & fp2);

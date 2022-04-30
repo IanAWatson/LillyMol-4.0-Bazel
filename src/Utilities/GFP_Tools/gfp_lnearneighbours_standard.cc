@@ -465,6 +465,7 @@ usage (int rc)
   cerr << " -m <number>      the minimum number of neighbours to find\n";
   cerr << " -r <number>      report progress every <number> fingerprints\n";
   cerr << " -h               discard neighbours with zero distance and the same ID as the target\n";
+  cerr << " -j <nthreads>    number of omp threads to use\n";
 //cerr << " -B <qualifier>   various other options, enter '-B help' for details\n";
 //cerr << " -V ...           Tversky specification, enter '-V help' for details\n";
   cerr << " -v               verbose output\n";
@@ -475,7 +476,7 @@ usage (int rc)
 static int
 nearneighbours (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "vn:p:t:T:r:V:hB:N:m:z");
+  Command_Line cl(argc, argv, "vn:p:t:T:r:V:hB:N:m:zj:");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -548,6 +549,16 @@ nearneighbours (int argc, char ** argv)
 
     if (verbose)
       cerr << "Will discard neighbours with zero distance and the same id as the target\n";
+  }
+
+  if (cl.option_present('j')) {
+    int j;
+    if (!cl.value('j', j) || j < 0) {
+      cerr << "The maximum number of threads to use (-j) must be a valid whole +ve number\n";
+      usage(2);
+    }
+
+    omp_set_num_threads(j);
   }
 
   if (cl.option_present('B'))

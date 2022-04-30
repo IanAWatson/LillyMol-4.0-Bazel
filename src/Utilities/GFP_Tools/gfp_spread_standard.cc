@@ -132,7 +132,7 @@ class SSpread_Item : public GFP_Standard {
   }
 
   int NotifySelectedUseThreshold(const SSpread_Item& rhs) {
-    std::optional<float> d = GFP_Standard::tanimoto_distance(rhs, _distance);
+    std::optional<float> d = GFP_Standard::tanimoto_distance_if_less(rhs, _distance);
     if (! d) {
       return 0;
     }
@@ -759,7 +759,7 @@ spread3(F* pool, int& pool_size, Selected_Item* selected_item)
           continue;
 
 #ifdef USE_THRESHOLD
-        std::optional<float> d = pool[s].tanimoto_distance(pool[i], distances[i]);
+        std::optional<float> d = pool[s].tanimoto_distance_if_less(pool[i], distances[i]);
         if (! d) {
           continue;
         }
@@ -867,7 +867,7 @@ spread2(F* pool, int& pool_size, Selected_Item* selected_item)
         if (selected[i] || 0.0f == distances[i])
           continue;
 
-        std::optional<float> d = pool[s].tanimoto_distance(pool[i], distances[i]);
+        std::optional<float> d = pool[s].tanimoto_distance_if_less(pool[i], distances[i]);
         if (! d) {
           continue;
         }

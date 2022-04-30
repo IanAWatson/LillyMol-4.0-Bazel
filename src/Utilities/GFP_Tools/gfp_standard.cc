@@ -343,7 +343,7 @@ GFP_Standard::tanimoto_distance_2(GFP_Standard const & fp1,
 }
 
 std::optional<float>
-GFP_Standard::tanimoto_distance(const GFP_Standard& rhs, float must_be_closer_than) const {
+GFP_Standard::tanimoto_distance_if_less(const GFP_Standard& rhs, float must_be_closer_than) const {
   // The calculations are done in similarity space, so convert one time.
   const float similarity_needed = 1.0 - must_be_closer_than;
 

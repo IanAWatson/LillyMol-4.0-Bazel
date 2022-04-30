@@ -4,8 +4,10 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <random>
+#include <tuple>
 
 #include <mpich/mpi.h>
 
@@ -37,7 +39,6 @@ Usage(int rc)
   cerr << " -s <size>       size of fingerprint file\n";
   cerr << " -t <dist>       stop selection once distance drops below <dist>\n";
   cerr << " -r <n>          report progress every <n> items selected\n";
-  cerr << " -q <n>          squeeze out already selected items evern <n> selections (def 1000)\n";
   cerr << " -b              brief output (smiles id dist)\n";
   cerr << " -v              verbose output\n";
 
@@ -124,7 +125,7 @@ class SSpread_Item : public GFP_Standard {
   }
 
   int NotifySelectedUseThreshold(const SSpread_Item& rhs) {
-    std::optional<float> d = GFP_Standard::tanimoto_distance(rhs, _distance);
+    std::optional<float> d = GFP_Standard::tanimoto_distance_if_less(rhs, _distance);
     if (! d) {
       return 0;
     }
@@ -210,15 +211,14 @@ struct NdxDist {
   int nearest_previously_selected = -1;
 };
 
+constexpr int kSizeNdxDist = 3;
+
 class Options {
   private:
     int _verbose;
     int _choose_first_point_randomly;
     int _nsel;
     float _stop_once_distance_drops_below;
-
-    int _squeeze = 0;
-    int _next_squeeze = 0;
 
     int _brief_output = 0;
 
@@ -227,8 +227,16 @@ class Options {
     int _pool_size;
     SSpread_Item* _pool;
 
+    int _world_size;
+    int _world_rank;
+
+    // Pointers to those members of _pool that are still active.
+    resizable_array<SSpread_Item*> _active;
+
     IWString* _smiles;
     IWString* _pcn;
+
+    std::ofstream _logfile;
 
     // Private functions;
 
@@ -236,10 +244,12 @@ class Options {
     int ReadPool(iwstring_data_source& input);
     int ReadFingerprints(iwstring_data_source& input);
     int WriteSelectedBrief( int selected, IWString_and_File_Descriptor& output);
-    int WriteSelected(int selected,
-                      const struct NdxDist& data,
+    int WriteSelected(const struct NdxDist& data,
                       IWString_and_File_Descriptor& output);
-    int DoSqueeze(int next_selected);
+
+    // Given _pool_size, _world_size and _world_rank, return the [being,end) range
+    // of _pool that are being processed by this worker.
+    std::tuple<int, int> PoolBoundaries() const;
 
   public:
     Options();
@@ -267,6 +277,16 @@ Options::Options() {
 
   _smiles = nullptr;
   _pcn = nullptr;
+
+  MPI_Comm_size(MPI_COMM_WORLD, &_world_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &_world_rank);
+
+  IWString fname;
+  fname << "LOG" << _world_rank << ".log";
+  _logfile.open(fname.null_terminated_chars(), std::ios::out);
+  if (! _logfile.good()) {
+    cerr << "Options::Options:cannot open '" << fname << "'\n";
+  }
 }
 
 Options::~Options() {
@@ -322,25 +342,6 @@ Options::Initialise(Command_Line& cl, int world_rank) {
            << '\n';
   }
 
-  if (cl.option_present('q')) {
-    if (!cl.value('q', _squeeze) || _squeeze < 0) {
-      cerr << "The squeeze every option (-q) must be a whole non negative number\n";
-      Usage(1);
-    }
-
-    if (_verbose)
-      cerr << "Will squeeze selected items every " << _squeeze << " items selected\n";
-
-    if (_squeeze == 0) {
-      _next_squeeze = -1;
-    } else {
-      _next_squeeze = _squeeze;
-    }
-  } else {
-    _squeeze = 1000;
-    _next_squeeze = 1000;
-  }
-
   if (cl.option_present('s')) {
     if (!cl.value('s', _pool_size) || _pool_size < 2) {
       cerr << "The pool size specification (-s) must be a whole +ve number\n";
@@ -383,38 +384,6 @@ RandomPoolMember(int pool_size)
 }
 
 int
-Options::DoSqueeze(int next_selected) {
-  if (_pool_size < 1000) {
-    return next_selected;
-  }
-
-  int ndx = 0;
-  int rc = -1;
-  for (int i = 0; i < _pool_size; ++i) {
-    if (_pool[i].selected()) {
-      continue;
-    }
-
-    if (i == next_selected) {
-      rc = ndx;
-    }
-
-    if (i == ndx) {
-      ++ndx;
-      continue;
-    }
-
-    _pool[ndx] = _pool[i];
-    ++ndx;
-  }
-  
-  _pool_size = ndx;
-  _next_squeeze += _squeeze;
-
-  return rc;
-}
-
-int
 Options::WriteSelectedBrief( int selected,
                    IWString_and_File_Descriptor& output) {
   const SSpread_Item& sel = _pool[selected];
@@ -424,9 +393,9 @@ Options::WriteSelectedBrief( int selected,
 }
 
 int
-Options::WriteSelected(int selected,
-              const struct NdxDist& data,
-              IWString_and_File_Descriptor& output) {
+Options::WriteSelected(const struct NdxDist& data,
+                       IWString_and_File_Descriptor& output) {
+  int selected = data.ndx;
   if (selected < 0) {
     return 1;
   }
@@ -456,6 +425,7 @@ Options::WriteSelected(int selected,
   return 1;
 }
 
+//#define DEBUG_MANAGER
 int
 Options::Spread(IWString_and_File_Descriptor& output) {
   int sel;
@@ -467,16 +437,18 @@ Options::Spread(IWString_and_File_Descriptor& output) {
   }
 
   constexpr int kManager = 0;
+  constexpr int kTag = 0;
 
-  int world_size;
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-  // Scope here for efficiency.
-  const int tag = 0;
   NdxDist data;
+  NdxDist sel_data;
+
+  data.ndx = sel;
+  data.distance = 1.0;
+  data.nearest_previously_selected = -1;
 
   for (int items_selected = 0; items_selected < _nsel; items_selected++) {
-    WriteSelected(sel, data, output);
+    WriteSelected(data, output);
+    int sel = data.ndx;
 #ifdef DEBUG_MANAGER
     cerr << "Manager broadcasgint selected item " << sel << '\n';
 #endif
@@ -492,23 +464,22 @@ Options::Spread(IWString_and_File_Descriptor& output) {
       break;
     }
 
-    float max_distance = -1.0f;
-    int nexts = -1;
-    for (int i = 1; i < world_size; ++i) {
-      if (auto rc = MPI_Recv(&data, 3, MPI_INT, i, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    float max_distance = -2.0f;  // Must be less than the default set in the worker.
+    for (int i = 1; i < _world_size; ++i) {
+      if (auto rc = MPI_Recv(&data, kSizeNdxDist, MPI_INT, i, kTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
           rc != MPI_SUCCESS) {
         cerr << "Options::Spread:Recv from " << i << " failed " << rc << '\n';
         return 0;
       }
+#ifdef DEBUG_MANAGER
+      cerr << "Worker " << i << " reports dist " << data.distance << '\n';
+#endif
       if (data.distance > max_distance) {
-        nexts = data.ndx;
+        sel_data = data;
         max_distance = data.distance;
       }
     }
-    sel = nexts;
-    if (items_selected == _next_squeeze) {
-      sel = DoSqueeze(sel);
-    }
+    data = sel_data;
   }
 
   return 1;
@@ -549,6 +520,22 @@ Options::ReadFingerprints(iwstring_data_source& input) {
   return ReadPool(input);
 }
 
+// THis is complicated by the fact that worker 0 does not
+// do work.
+std::tuple<int, int>
+Options::PoolBoundaries() const {
+  int workers = _world_size - 1;
+  int pstart = _pool_size * (_world_rank - 1) / workers;
+  int pstop;
+  if (_world_rank == _world_size - 1) {
+    pstop = _pool_size;
+  } else {
+    pstop = _pool_size * (_world_rank) / workers;
+  }
+
+  return std::make_tuple(pstart, pstop);
+}
+
 int
 Options::ReadPool(iwstring_data_source& input) {
   IW_TDT tdt;
@@ -558,9 +545,10 @@ Options::ReadPool(iwstring_data_source& input) {
   for (; tdt.next(input) && ndx < _pool_size; ndx++) {
     _pool[ndx].set_initial_ndx(ndx);
 
-    tdt.dataitem_value(smiles_tag, _smiles[ndx]);
-
-    tdt.dataitem_value(identifier_tag, _pcn[ndx]);
+    if (_world_rank == 0) {
+      tdt.dataitem_value(smiles_tag, _smiles[ndx]);
+      tdt.dataitem_value(identifier_tag, _pcn[ndx]);
+    }
 
     IW_General_Fingerprint gfp;
 
@@ -581,7 +569,6 @@ Options::ReadPool(iwstring_data_source& input) {
     _pool[ndx].build_mk2(gfp[2]);
   }
 
-
   for (int i = 0; i < ndx; ++i) {
     if (_pool[i].initial_ndx() != i) {
       cerr << "Initial index wrong\n";
@@ -595,16 +582,29 @@ Options::ReadPool(iwstring_data_source& input) {
 
   _pool_size = ndx;
 
+  cerr << "World size " << _world_size << " my rank " << _world_rank << '\n';
+  if (_world_rank > 0) {
+    const auto [pstart, pstop] = PoolBoundaries();
+    cerr << "Range between " << pstart << " and " << pstop << '\n';
+    _active.resize(pstop - pstart);
+    for (int i = pstart; i < pstop; ++i) {
+      _active << (_pool + i);
+    }
+  }
+
+
   return _pool_size;
 }
 
 int
 Options::AllocatePool() {
   _pool = new SSpread_Item[_pool_size];
-  _smiles = new IWString[_pool_size];
-  _pcn = new IWString[_pool_size];
+  if (_world_rank == 0) {
+    _smiles = new IWString[_pool_size];
+    _pcn = new IWString[_pool_size];
+  }
 
-  if (nullptr == _pool || nullptr == _smiles || nullptr == _pcn) {
+  if (nullptr == _pool) {
     cerr << "Yipes, could not allocate " << _pool_size << " fingerprints\n";
     return 0;
   }
@@ -612,16 +612,17 @@ Options::AllocatePool() {
   return 1;
 }
 
+//#define DEBUG_WORKER
 int
 Options::DoWorker() {
-
-  NdxDist data;  // scope here for efficiency.
   constexpr int kManager = 0;
 
+  NdxDist data;
   for (int number_selected = 0; ;++number_selected) {
-    int sel;
+    int sel = -1;
 #ifdef DEBUG_WORKER
-    cerr << "Worker waiting for identify of next sel\n";
+    _logfile << "Worker " << _world_rank << " waiting for identify of next sel\n";
+    _logfile.flush();
 #endif
     if (auto rc = MPI_Bcast(&sel, 1, MPI_INT, kManager, MPI_COMM_WORLD);
         rc != MPI_SUCCESS) {
@@ -629,47 +630,53 @@ Options::DoWorker() {
       return 0;
     }
 #ifdef DEBUG_WORKER
-    cerr << "Woroker got notice thta " << sel << " is selected\n";
+    _logfile << "Woroker " << _world_rank << " got notice thta " << sel << " is selected\n";
+    _logfile.flush();
 #endif
 
     if (sel < 0) {  // Signal from manager that we are done.
       break;
     }
 
+    // We own the selected item, remove it from _active.
+    if (sel == data.ndx || number_selected == 0) {
+      _active.remove_first(_pool + sel);
+    }
+
     SSpread_Item& selected = _pool[sel];
-    selected.set_selected(1);
+#ifdef DEBUG_WORKER
+    _logfile << "Workler " << _world_rank << " scanning " << _active.size() << " items\n";
+    _logfile.flush();
+#endif
 
     int next_sel = -1;
     float max_distance = -1.0f;
-    for (int i = 0; i < _pool_size; ++i) {
-      if (_pool[i].SelectedOrZeroDistance()) {
-        continue;
-      }
-
-      _pool[i].NotifySelectedUseThreshold(selected);
-      float d = _pool[i].distance();
+    for (SSpread_Item* fp : _active) {
+      fp->NotifySelectedUseThreshold(selected);
+      const float d = fp->distance();
       if (d > max_distance) {
         max_distance = d;
-        next_sel = i;
+        next_sel = fp->initial_ndx();
       }
     }
 
+#ifdef DEBUG_WORKER
+    _logfile << _world_rank << " max_distance " << max_distance << "\n";
+    _logfile.flush();
+#endif
     // Sending negative values back is OK, signals we are done.
     data.ndx = next_sel;
     data.distance = max_distance;
     data.nearest_previously_selected = _pool[next_sel].nearest_previously_selected();
 
 #ifdef DEBUG_WORKER
-    cerr << "Worker sending " << data.ndx << " as next sel, dist " << max_distance << '\n';
+    _logfile << "Worker " << _world_rank << " sending " << data.ndx << " as next sel, dist " << max_distance << '\n';
+    _logfile.flush();
 #endif
-    if (auto rc = MPI_Send(&data, 3, MPI_INT, kManager, 0, MPI_COMM_WORLD);
+    if (auto rc = MPI_Send(&data, kSizeNdxDist, MPI_INT, kManager, 0, MPI_COMM_WORLD);
         rc != MPI_SUCCESS) {
       cerr << "Options::DoWorker:cannot send data to manager " << rc << '\n';
       return 0;
-    }
-
-    if (number_selected >= _next_squeeze) {
-      sel = DoSqueeze(sel);  // update to `s` not needed, just to preserve api.
     }
   }
 
@@ -685,7 +692,7 @@ DoWorker(Options& options) {
 int
 GFPSpreadStandard(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "vA:s:r:n:bh:p:S:N:t:q:");
+  Command_Line cl(argc, argv, "vA:s:r:n:bh:p:S:N:t:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
