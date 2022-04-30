@@ -60,9 +60,6 @@ Fraction_as_String fraction_as_string;
 
 class SSpread_Item : public GFP_Standard {
  private:
-  // Whether or not this has been selected.
-  int _selected;
-
   // Closest distance to something previously selected.
   float _distance;
 
@@ -76,13 +73,6 @@ class SSpread_Item : public GFP_Standard {
  public:
   SSpread_Item();
 
-  int selected() const {
-    return _selected;
-  }
-  void set_selected(int s) {
-    _selected = s;
-  }
-
   float distance() const {
     return _distance;
   }
@@ -91,28 +81,17 @@ class SSpread_Item : public GFP_Standard {
     return _nearest_previously_selected;
   }
 
-  void IsFirstSelected();
-
-  void SetDistance(SSpread_Item& sel) {
-    _distance = GFP_Standard::tanimoto_distance(sel);
-    _nearest_previously_selected = sel.initial_ndx();
-  }
-
   SSpread_Item& operator=(const SSpread_Item& rhs);
   // In retrospect, there seems to be no advantage to having
   // a move assignment operator.
   SSpread_Item& operator=(SSpread_Item&& rhs);
 
-  void
-  set_initial_ndx(int s) {
+  void set_initial_ndx(int s) {
     _initial_ndx = s;
   }
-  int
-  initial_ndx() const {
+  int initial_ndx() const {
     return _initial_ndx;
   }
-
-  int SelectedOrZeroDistance() const;
 
   int NofitySelected(const SSpread_Item& rhs) {
     float d = GFP_Standard::tanimoto_distance(rhs);
@@ -134,7 +113,6 @@ class SSpread_Item : public GFP_Standard {
     return 1;
   }
 
-
   const IWString&
   smiles(const IWString* smiles) const {
     return smiles[_initial_ndx];
@@ -148,7 +126,6 @@ class SSpread_Item : public GFP_Standard {
 };
 
 SSpread_Item::SSpread_Item() {
-  _selected = 0;
   _distance = 1.0;
   _initial_ndx = -1;
   _nearest_previously_selected = -1;
@@ -156,7 +133,6 @@ SSpread_Item::SSpread_Item() {
 
 SSpread_Item&
 SSpread_Item::operator=(const SSpread_Item& rhs) {
-  _selected = rhs._selected;
   _distance = rhs._distance;
   _nearest_previously_selected = rhs._nearest_previously_selected;
   _initial_ndx = rhs._initial_ndx;
@@ -169,7 +145,6 @@ SSpread_Item::operator=(const SSpread_Item& rhs) {
 SSpread_Item&
 SSpread_Item::operator=(SSpread_Item&& rhs) {
   _initial_ndx = rhs._initial_ndx;
-  _selected = rhs._selected;
   _nearest_previously_selected = rhs._nearest_previously_selected;
   _distance = rhs._distance;
   GFP_Standard* me = this;
@@ -178,25 +153,10 @@ SSpread_Item::operator=(SSpread_Item&& rhs) {
   return *this;
 }
 
-void
-SSpread_Item::IsFirstSelected() {
-  _selected = 1;
-  _distance = 1.0f;
-  _nearest_previously_selected = -1;
-}
-
-int
-SSpread_Item::SelectedOrZeroDistance() const {
-  if (_selected || 0.0f == _distance) {
-    return 1;
-  }
-
-  return 0;
-}
 
 int
 SSpread_Item::DebugPrint(std::ostream& output) const {
-  output << "SSpread_Item:item " << _initial_ndx << " sel? " << _selected << 
+  output << "SSpread_Item:item " << _initial_ndx <<
             " dist " << _distance << " nsn " << _nearest_previously_selected << '\n';
   return 1;
 }
@@ -373,7 +333,6 @@ Options::Initialise(Command_Line& cl, int world_rank) {
   return 1;
 }
 
-
 int
 RandomPoolMember(int pool_size)
 {
@@ -426,6 +385,7 @@ Options::WriteSelected(const struct NdxDist& data,
 }
 
 //#define DEBUG_MANAGER
+// The manager process for max/min
 int
 Options::Spread(IWString_and_File_Descriptor& output) {
   int sel;
@@ -436,12 +396,14 @@ Options::Spread(IWString_and_File_Descriptor& output) {
     sel = 0;
   }
 
-  constexpr int kManager = 0;
-  constexpr int kTag = 0;
+  constexpr int kManager = 0;  // Manager is MPI rank 0
+  constexpr int kTag = 0;  // MPI related.
 
+  // Used to receive info from workers.
   NdxDist data;
   NdxDist sel_data;
 
+  // Load `data` with info about the first item selected.
   data.ndx = sel;
   data.distance = 1.0;
   data.nearest_previously_selected = -1;
@@ -460,10 +422,11 @@ Options::Spread(IWString_and_File_Descriptor& output) {
 #ifdef DEBUG_MANAGER
     cerr << "Broadcast sent\n";
 #endif
-    if (sel < 0) {
+    if (sel < 0) {  // Nothing to select, we are done.
       break;
     }
 
+    // Check each worker and determine the longest distance.
     float max_distance = -2.0f;  // Must be less than the default set in the worker.
     for (int i = 1; i < _world_size; ++i) {
       if (auto rc = MPI_Recv(&data, kSizeNdxDist, MPI_INT, i, kTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -520,7 +483,7 @@ Options::ReadFingerprints(iwstring_data_source& input) {
   return ReadPool(input);
 }
 
-// THis is complicated by the fact that worker 0 does not
+// This is complicated by the fact that worker 0 does not
 // do work.
 std::tuple<int, int>
 Options::PoolBoundaries() const {
@@ -583,6 +546,7 @@ Options::ReadPool(iwstring_data_source& input) {
   _pool_size = ndx;
 
   cerr << "World size " << _world_size << " my rank " << _world_rank << '\n';
+  // Only the workers need to determine their start and stop points within _pool.
   if (_world_rank > 0) {
     const auto [pstart, pstop] = PoolBoundaries();
     cerr << "Range between " << pstart << " and " << pstop << '\n';
@@ -592,13 +556,13 @@ Options::ReadPool(iwstring_data_source& input) {
     }
   }
 
-
   return _pool_size;
 }
 
 int
 Options::AllocatePool() {
   _pool = new SSpread_Item[_pool_size];
+  // ONly the manager needs to keep track of the smiles and id.
   if (_world_rank == 0) {
     _smiles = new IWString[_pool_size];
     _pcn = new IWString[_pool_size];
@@ -613,6 +577,7 @@ Options::AllocatePool() {
 }
 
 //#define DEBUG_WORKER
+// The worker runs an infinite loop until directed to stop.
 int
 Options::DoWorker() {
   constexpr int kManager = 0;
@@ -624,6 +589,7 @@ Options::DoWorker() {
     _logfile << "Worker " << _world_rank << " waiting for identify of next sel\n";
     _logfile.flush();
 #endif
+    // Workers receive the ID of the next selected item.
     if (auto rc = MPI_Bcast(&sel, 1, MPI_INT, kManager, MPI_COMM_WORLD);
         rc != MPI_SUCCESS) {
       cerr << "Options::DoWorker:cannot receive next selected " << rc << '\n';
@@ -638,7 +604,7 @@ Options::DoWorker() {
       break;
     }
 
-    // We own the selected item, remove it from _active.
+    // If we own the selected item, remove it from _active.
     if (sel == data.ndx || number_selected == 0) {
       _active.remove_first(_pool + sel);
     }
