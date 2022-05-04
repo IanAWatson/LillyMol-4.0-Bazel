@@ -4,16 +4,16 @@
 
 #include <iostream>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
 
+#include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
-#include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/standardise.h"
+
+using std::cerr;
 
 const char * prog_name = nullptr;
 
@@ -38,7 +38,7 @@ static IWString_and_File_Descriptor stream_for_rejected;
 static void
 usage (int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Filter molecules according to sp3 content\n";
   cerr << "  -c <number>   min number of Carbon     sp3 atoms\n";
   cerr << "  -x <number>   min number of non-Carbon sp3 atoms\n";
@@ -355,7 +355,7 @@ sp3_filter (int argc, char ** argv)
 
   if (verbose)
   {
-    cerr << "Read " << molecules_read << " molecules, wrote " << molecules_written << endl;
+    cerr << "Read " << molecules_read << " molecules, wrote " << molecules_written << '\n';
     cerr << rejected_for_too_few_carbon_sp3 << " rejected for too few sp3 Carbon atoms\n";
     cerr << rejected_for_too_few_non_carbon_sp3 << " rejected for too few non Carbon sp3 atoms\n";
   }
