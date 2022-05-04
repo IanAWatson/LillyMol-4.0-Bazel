@@ -409,7 +409,6 @@ Options::Spread(IWString_and_File_Descriptor& output) {
   data.nearest_previously_selected = -1;
 
   for (int items_selected = 0; items_selected < _nsel; items_selected++) {
-    WriteSelected(data, output);
     int sel = data.ndx;
 #ifdef DEBUG_MANAGER
     cerr << "Manager broadcasgint selected item " << sel << '\n';
@@ -422,6 +421,7 @@ Options::Spread(IWString_and_File_Descriptor& output) {
 #ifdef DEBUG_MANAGER
     cerr << "Broadcast sent\n";
 #endif
+    WriteSelected(data, output);
     if (sel < 0) {  // Nothing to select, we are done.
       break;
     }
