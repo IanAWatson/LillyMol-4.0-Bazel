@@ -120,6 +120,27 @@ cc_binary(
 )
 
 cc_binary(
+    name = "core_replacement",
+    srcs = [
+        "core_replacement.cc",
+    ],
+    deps = [
+        ":atom_separations",
+        ":core_replacement_lib",
+        ":embedded_fragment_cc_proto",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+    ],
+    linkopts = [
+        "-llmdb",
+    ],
+)
+
+cc_binary(
     name = "dbf",
     srcs = [
         "dbf.cc",
@@ -763,6 +784,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "ring_closure_enumeration",
+    srcs = [
+        "ring_closure_enumeration.cc",
+    ],
+    deps = [
+        ":ring_closure_enumeration_lib",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/cmdline:iwcmdline",
+        "@re2//:re2",
+    ],
+)
+
+cc_binary(
     name = "ring_trimming",
     srcs = [
         "ring_trimming.cc",
@@ -1202,6 +1237,20 @@ cc_library(
 )
 
 cc_library(
+    name = "core_replacement_lib",
+    srcs = [
+        "core_replacement_lib.cc",
+    ],
+    hdrs = [
+        "core_replacement_lib.h",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_library(
     name = "demerit",
     srcs = [
         "demerit.cc",
@@ -1347,6 +1396,20 @@ cc_library(
 )
 
 cc_library(
+    name = "ring_closure_enumeration_lib",
+    srcs = [
+        "ring_closure_enumeration_lib.cc",
+    ],
+    hdrs = [
+        "ring_closure_enumeration_lib.h",
+    ],
+    deps = [
+        "//Foundational/iwaray:iwaray",
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
     name = "ring_ext_rep",
     srcs = [
         "ring_ext_rep.cc",
@@ -1471,6 +1534,20 @@ cc_test(
     linkopts = [
         "-lz",
     ],
+)
+
+cc_test(
+    name = "ring_closure_enumeration_test",
+    srcs = [
+        "ring_closure_enumeration_test.cc",
+    ],
+    deps = [
+        ":ring_closure_enumeration_lib",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ],
+    timeout="short",
 )
 
 cc_test(
