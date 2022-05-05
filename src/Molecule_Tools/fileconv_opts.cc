@@ -274,6 +274,8 @@ FileconvConfig::DefaultValues() {
 
   molecule_to_fragments = 0;
 
+  atom_number_to_atom_map_number = 0;
+
   return;
 }
 
@@ -402,39 +404,38 @@ DisplayPDirectives(int rc) {
 
 void
 DisplayDashYOptions(std::ostream& os, char flag, int rc) {
-  os << " -" << flag << " nbvm          No Bad Valence Messages, or strange electron counts\n";
-  os << " -" << flag << " okbvi         during valence check, ok to have bad valence on isotopes\n";
-  os << " -" << flag << " appchg=xxxx   append 'xxxx' to the name of molecules that are changed\n";
-  os << " -" << flag << " pblen         print all bond lengths in the molecules\n";
-  os << " -" << flag << " pbang         print all bond angles in the molecules\n";
-  os << " -" << flag << " ptor          print all torsion angles in the molecules\n";
-  os << " -" << flag << " pmaxd         print the max interatomic distance in each molecule\n";
-  os << " -" << flag << " dbg           debug print each molecule\n";
-  os << " -" << flag << " namerx=<rx>   discard molecules unless the molecule name matches <rx>\n";
-  os << " -" << flag << " ftn           keep only the first token in molecule names\n";
-  os << " -" << flag << " nsubw=c       translate all whitespace in molecule names to 'c'\n";
-  os << " -" << flag << " chname=rx     change name to what is matched by <rx> (optional match)\n";
-  os << " -" << flag << " CHNAME=rx     change name to what is matched by <rx> (MUST match)\n";
-  os << " -" << flag << " tfirst=char   truncate name at first <char>\n";
-  os << " -" << flag << " tlast=char    truncate name at last <char>\n";
-  os << " -" << flag << " NPREPEND=s    prepend <s> to each name\n";
-  os << " -" << flag << " ntoken=n      the output name is word 'n' in the input name\n";
-  os << " -" << flag << " maxplen=<n>   discard molecules with max path length > <n>\n";
-  // os << " -" << flag << " B4F=<fname>   write frag stripped smiles before filtering to <fname>
+  IWString dash_flag;
+  dash_flag << " -" << flag << ' ';
+  os << dash_flag << "nbvm          No Bad Valence Messages, or strange electron counts\n";
+  os << dash_flag << "okbvi         during valence check, ok to have bad valence on isotopes\n";
+  os << dash_flag << "appchg=xxxx   append 'xxxx' to the name of molecules that are changed\n";
+  os << dash_flag << "pblen         print all bond lengths in the molecules\n";
+  os << dash_flag << "pbang         print all bond angles in the molecules\n";
+  os << dash_flag << "ptor          print all torsion angles in the molecules\n";
+  os << dash_flag << "pmaxd         print the max interatomic distance in each molecule\n";
+  os << dash_flag << "dbg           debug print each molecule\n";
+  os << dash_flag << "namerx=<rx>   discard molecules unless the molecule name matches <rx>\n";
+  os << dash_flag << "ftn           keep only the first token in molecule names\n";
+  os << dash_flag << "nsubw=c       translate all whitespace in molecule names to 'c'\n";
+  os << dash_flag << "chname=rx     change name to what is matched by <rx> (optional match)\n";
+  os << dash_flag << "CHNAME=rx     change name to what is matched by <rx> (MUST match)\n";
+  os << dash_flag << "tfirst=char   truncate name at first <char>\n";
+  os << dash_flag << "tlast=char    truncate name at last <char>\n";
+  os << dash_flag << "NPREPEND=s    prepend <s> to each name\n";
+  os << dash_flag << "ntoken=n      the output name is word 'n' in the input name\n";
+  os << dash_flag << "maxplen=<n>   discard molecules with max path length > <n>\n";
+  // os << dash_flag << "B4F=<fname>   write frag stripped smiles before filtering to <fname>
   // \n";
-  os << " -" << flag << " aclf          atom counts are for the largest fragment only\n";
-  os << " -" << flag
-     << " nhsqb         explicit hydrogen atoms in smiles written without square brackets\n";
-  os << " -" << flag
-     << " rmsqb         remove unnecessary square bracketed atoms  - Hcount is OK as specified\n";
-  os << " -" << flag
-     << " FHrmsqb       in atoms like [C] free the H count to what is computed. Square brackets "
-        "removed\n";
-  os << " -" << flag << " rmamap        remove atom map numbers\n";
-  os << " -" << flag
-     << " fixarom=smarts call find_kekule_form on the ring (system) matched by the first atom in "
-        "<smarts>\n";
-  os << " -" << flag << " help          this message\n";
+  os << dash_flag << "aclf          atom counts are for the largest fragment only\n";
+  os << dash_flag << "nhsqb         explicit hydrogen atoms in smiles written without square brackets\n";
+  os << dash_flag << "rmsqb         remove unnecessary square bracketed atoms  - Hcount is OK as specified\n";
+  os << dash_flag << "FHrmsqb       in atoms like [C] free the H count to what is computed. Square brackets removed\n";
+  os << dash_flag << "rmamap        remove atom map numbers\n";
+  os << dash_flag << "fixarom=smarts call find_kekule_form on the ring (system) matched by the first atom in <smarts>";
+  os << dash_flag << "iso2amap      convert isotopes to atom map numbers\n";
+  os << dash_flag << "amap2iso      convert atom map numbers to isotopes\n";
+  os << dash_flag << "num2amap      the atom map number will be the atom number\n";
+  os << dash_flag << "help          this message\n";
 
   exit(rc);
 }
@@ -1099,7 +1100,7 @@ int
 FileconvConfig::ConvertIsotopesToAtomMapNumbers(Molecule& m) {
   int rc = 0;
 
-  const int matoms = 0;
+  const int matoms = m.natoms();
 
   for (int i = 0; i < matoms; ++i) {
     const int iso = m.isotope(i);
@@ -1118,7 +1119,7 @@ int
 FileconvConfig::ConvertAtomMapNumbersToIsotopes(Molecule& m) {
   int rc = 0;
 
-  const int matoms = 0;
+  const int matoms = m.natoms();
 
   for (int i = 0; i < matoms; ++i) {
     const int amap = m.atom_map_number(i);
@@ -1131,6 +1132,16 @@ FileconvConfig::ConvertAtomMapNumbersToIsotopes(Molecule& m) {
   }
 
   return rc;
+}
+
+int
+FileconvConfig::AtomMapNumbersAreAtomNumbers(Molecule& m) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    m.set_atom_map_number(i, i);
+  }
+
+  return 1;
 }
 
 int
@@ -2528,6 +2539,10 @@ FileconvConfig::ApplyAllFiltersInner(Molecule& m,
   else if (convert_atom_map_numbers_to_isotopes)
     ConvertAtomMapNumbersToIsotopes(m);
 
+  if (atom_number_to_atom_map_number) {
+    AtomMapNumbersAreAtomNumbers(m);
+  }
+
   matoms = m.natoms();  // recompute, as it may have been changed by transformations
 
   if (compute_molecular_weight_for_each || lower_amw_cutoff >= 0.0 || upper_amw_cutoff >= 0.0) {
@@ -2638,7 +2653,7 @@ int
 do_convert_all_isotopes_to(Molecule& m, const int convert_all_isotopes_to)
 
 {
-  const int matoms = 0;
+  const int matoms = m.natoms();
 
   int rc = 0;
 
@@ -3586,6 +3601,11 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       convert_atom_map_numbers_to_isotopes = 1;
       if (verbose)
         cerr << "Will convert atom map numbers to isotopes\n";
+    } else if (y == "num2amap") {
+      atom_number_to_atom_map_number = 1;
+      if (verbose) {
+        cerr << "Will write atom numbers as atom map numbers\n";
+      }
     } else if ("help" == y) {
       DisplayDashYOptions(cerr, 'Y', 2);
     } else {

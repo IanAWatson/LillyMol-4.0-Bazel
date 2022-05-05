@@ -360,6 +360,8 @@ struct FileconvConfig {
 
   int molecule_to_fragments = 0;
 
+  int atom_number_to_atom_map_number = 0;
+
   // If set, the smiles of the molecule before any filters are applied
   // will be stored in the result.
   int return_smiles_before_filters = 0;
@@ -444,6 +446,7 @@ struct FileconvConfig {
   int RemoveIsotopes(Molecule& m);
   int ConvertIsotopesToAtomMapNumbers(Molecule& m);
   int ConvertAtomMapNumbersToIsotopes(Molecule& m);
+  int AtomMapNumbersAreAtomNumbers(Molecule& m);
   int MakeImplicitHydrogensExplicit(Molecule& m);
   int RemoveNonOrganicChirality(Molecule& m);
   void SortByFragmentSize(Molecule& m);
