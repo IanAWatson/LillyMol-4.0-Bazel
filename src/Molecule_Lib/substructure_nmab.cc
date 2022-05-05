@@ -1,7 +1,5 @@
 #include <iostream>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 /*
   Special processing for the no matched atoms between directive
@@ -14,6 +12,8 @@ using std::endl;
 #include "parse_smarts_tmp.h"
 #include "substructure.h"
 #include "target.h"
+
+using std::cerr;
 
 static void
 fill_matched_atoms_array(const Query_Atoms_Matched & matched_atoms,
@@ -55,7 +55,7 @@ no_matched_atom_path(const Atom ** atoms, atom_number_t destination,
   const Atom * a = atoms[my_atom];
 
 #ifdef DEBUG_NO_MATCHED_ATOM_PATH
-  cerr << "no_matched_atom_path continues with atom " << my_atom << " type " << a->atomic_symbol() << " ncon " << a->ncon() << " destination " << destination << endl;
+  cerr << "no_matched_atom_path continues with atom " << my_atom << " type " << a->atomic_symbol() << " ncon " << a->ncon() << " destination " << destination << '\n';
 #endif
 
   for (const Bond * b : *a)
@@ -106,7 +106,7 @@ Single_Substructure_Query::_nmab_satisfied(Molecule_to_Match& target, Query_Atom
     if (tmp[i])
       cerr << ' ' << i;
   }
-  cerr << endl;
+  cerr << '\n';
   cerr << "Checking " << _nmab.size() << " nmab conditions, _no_matched_atoms_between_exhaustive " << _no_matched_atoms_between_exhaustive << '\n';
 #endif
 
@@ -164,7 +164,7 @@ Single_Substructure_Query::_no_matched_atoms_between_satisfied(Query_Atoms_Match
     const atom_number_t a2 = matched_atoms[b->a2()]->current_hold_atom()->atom_number();
 
 #ifdef DEBUG_NO_MATCHED_ATOMS_BETWEEN_SATISFIED
-    cerr << "Testing constraint between matched atoms " << b->a1() << " and " << b->a2() << endl;
+    cerr << "Testing constraint between matched atoms " << b->a1() << " and " << b->a2() << '\n';
     cerr << "Corresponding to atoms " << a1 << " and " << a2 << " in the molecule\n";
 #endif
 
@@ -331,7 +331,7 @@ Single_Substructure_Query::_link_atom_satisfied(const Link_Atom & l,
 
     cerr << ' ' << a->current_hold_atom()->atom_number();
   }
-  cerr << endl;
+  cerr << '\n';
 #endif
 
   Molecule * m = matched_atoms[0]->current_hold_atom()->m();
@@ -348,9 +348,9 @@ Single_Substructure_Query::_link_atom_satisfied(const Link_Atom & l,
   int d = m->bonds_between(a1, a2) - 1;   // Apr 2004, change from bonds between to atoms between
 
 #ifdef DEBUG_LINK_ATOMS_SATISFIED
-  cerr << "Link atoms " << l.a1() << " and " << l.a2() << endl;
+  cerr << "Link atoms " << l.a1() << " and " << l.a2() << '\n';
 
-  cerr << "matched atoms " << a1 << " and " << a2 << " are " << d << " bonds apart, satisfies separation " << l.satisfies_separation(d) << endl;
+  cerr << "matched atoms " << a1 << " and " << a2 << " are " << d << " bonds apart, satisfies separation " << l.satisfies_separation(d) << '\n';
 #endif
 
   return l.satisfies_separation(d);
@@ -461,7 +461,7 @@ Link_Atom::initialise_from_mdl_record(const const_IWSubstring & buffer,
 
   _a2--;
 
-//cerr << "Link_Atom:initialised, between " << _a1 << " and " << _a2 << endl;
+//cerr << "Link_Atom:initialised, between " << _a1 << " and " << _a2 << '\n';
 
   return 1;
 }
@@ -486,7 +486,7 @@ Single_Substructure_Query::add_no_matched_atoms_between_initial_atom_numbers(int
   if (nullptr == a1 || nullptr == a2)
   {
     cerr << "Single_Substructure_Query::add_no_matched_atoms_between_initial_atom_numbers:no query atoms found\n";
-    cerr << "a1 = " << a1 << " or a2 = " << a2 << endl;
+    cerr << "a1 = " << a1 << " or a2 = " << a2 << '\n';
     return 0;
   }
 
@@ -519,7 +519,7 @@ Link_Atom::create_next_variant(MDL_Molecule & m, Link_Atom_Current_State & lacs)
 
 #ifdef DEBUG_CREATE_NEXT_VARIANT
   cerr << "Start with '" << m.smiles() << "'\n";
-  cerr << " adding bond " << lacs.lhs() << " and " << natoms << endl;
+  cerr << " adding bond " << lacs.lhs() << " and " << natoms << '\n';
 #endif
 
 // When nothing has been placed, there will be a gap between lhs and rhs.
@@ -536,7 +536,7 @@ Link_Atom::create_next_variant(MDL_Molecule & m, Link_Atom_Current_State & lacs)
   m.add_bond(natoms, lacs.rhs(), lacs.btype_for_molecule(), _bt, _bond_topology);
 
 #ifdef DEBUG_CREATE_NEXT_VARIANT
-  cerr << "create_next_variant created '" << m.smiles() << endl;
+  cerr << "create_next_variant created '" << m.smiles() << '\n';
 #endif
 
   lacs.add(natoms);
@@ -872,7 +872,7 @@ int NMAB_Operator::Build(const NMAB_Token& token)
 
   _query = std::make_unique<Substructure_Atom>();
 
-//cerr << "Building query from " << token.smarts() << endl;
+//cerr << "Building query from " << token.smarts() << '\n';
   IWString tmp;
   tmp << '[' << token.smarts() << ']';
   if (!_query->construct_from_smarts_token(tmp)) {
@@ -901,12 +901,12 @@ int
 NMAB_Operator::Matches(Molecule_to_Match& target, const Set_of_Atoms& unmatched_atoms)
 {
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << "NMAB_Operator::matches: query? " << (_query != nullptr) << endl;
+  cerr << "NMAB_Operator::matches: query? " << (_query != nullptr) << '\n';
   cerr << "Examing " << unmatched_atoms.size() << " unmatched atoms\n";
 #endif
 
   if (_query == nullptr) {  // No substructurre present, numbers are atom separations.
-//  cerr << "NO query _relational_matches " << _relational_matches(unmatched_atoms.number_elements()) << endl;
+//  cerr << "NO query _relational_matches " << _relational_matches(unmatched_atoms.number_elements()) << '\n';
     return _relational_matches(unmatched_atoms.number_elements());
   }
 
@@ -919,7 +919,7 @@ NMAB_Operator::Matches(Molecule_to_Match& target, const Set_of_Atoms& unmatched_
   int matches = 0;
   for (const atom_number_t a : unmatched_atoms) {
     const int tmp = _query->matches(target[a], already_matched);
-//  cerr << " At matched atom " << a << ' ' << target.molecule()->smarts_equivalent_for_atom(a) << " match is " << tmp << endl;
+//  cerr << " At matched atom " << a << ' ' << target.molecule()->smarts_equivalent_for_atom(a) << " match is " << tmp << '\n';
     if (! tmp && all_must_match)
       return 0;
     matches += tmp;
@@ -951,7 +951,7 @@ No_Matched_Atoms_Between::Matches(Molecule_to_Match& target,
   const atom_number_t a2 = matched_atoms[_a2]->current_hold_atom()->atom_number();
 
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << " matched atoms " <<  a1 << " " << m->smarts_equivalent_for_atom(a1) << " and " << a2 << " " << m->smarts_equivalent_for_atom(a2) << endl;
+  cerr << " matched atoms " <<  a1 << " " << m->smarts_equivalent_for_atom(a1) << " and " << a2 << " " << m->smarts_equivalent_for_atom(a2) << '\n';
 #endif
 
   // probably should check if a1 and a2 are ok atom numbers...
@@ -972,7 +972,7 @@ No_Matched_Atoms_Between::Matches(Molecule_to_Match& target,
     if (tmp[i])
       cerr << ' ' << i;
   }
-  cerr << endl;
+  cerr << '\n';
 #endif
 
   tmp[a2] = 0;   // temporary kludge
@@ -986,7 +986,7 @@ No_Matched_Atoms_Between::Matches(Molecule_to_Match& target,
   }
 
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << " unmatched_atoms " << unmatched_atoms << endl;
+  cerr << " unmatched_atoms " << unmatched_atoms << '\n';
   cerr << "Check " << _specs.number_elements() << " conditions\n";
 #endif
 
@@ -995,13 +995,13 @@ No_Matched_Atoms_Between::Matches(Molecule_to_Match& target,
 
   _logexp.reset();
   for (int i = 0; i < _specs.number_elements(); ++i) {
-    cerr << " test " << i << " needed " << _logexp.result_needed(i) << endl;
+    cerr << " test " << i << " needed " << _logexp.result_needed(i) << '\n';
     if (! _logexp.result_needed(i))
       continue;
     
     const int m = _specs[i]->Matches(target, unmatched_atoms);
 #ifdef DEBUG_NMAB_SATISFIED
-    cerr << "    condition " << i << " match " << m << endl;
+    cerr << "    condition " << i << " match " << m << '\n';
 #endif
     _logexp.set_result(i, m);
 
@@ -1027,7 +1027,7 @@ No_Matched_Atoms_Between::MatchesExhaustive(Molecule_to_Match& target,
   const atom_number_t a2 = matched_atoms[_a2]->current_hold_atom()->atom_number();
 
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << " MatchesExhaustive matched atoms " <<  a1 << " " << m->smarts_equivalent_for_atom(a1) << " and " << a2 << " " << m->smarts_equivalent_for_atom(a2) << endl;
+  cerr << " MatchesExhaustive matched atoms " <<  a1 << " " << m->smarts_equivalent_for_atom(a1) << " and " << a2 << " " << m->smarts_equivalent_for_atom(a2) << '\n';
 #endif
 
   // probably should check if a1 and a2 are ok atom numbers...
@@ -1054,7 +1054,7 @@ No_Matched_Atoms_Between::_matches_exhaustive(Molecule_to_Match& target,
   Molecule * m = target.molecule();
 
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << "_matches_exhaustive atom " << my_atom << " heading to " << destination << " current_distance " << current_distance << endl;
+  cerr << "_matches_exhaustive atom " << my_atom << " heading to " << destination << " current_distance " << current_distance << '\n';
 #endif
 
   for (const Bond * b : *m->atomi(my_atom)) {
@@ -1063,7 +1063,7 @@ No_Matched_Atoms_Between::_matches_exhaustive(Molecule_to_Match& target,
       continue;
 
 #ifdef DEBUG_NMAB_SATISFIED
-    cerr << "  to atom " << j << " dist " << m->bonds_between(j, destination) << " in path " << in_path[j] << endl;
+    cerr << "  to atom " << j << " dist " << m->bonds_between(j, destination) << " in path " << in_path[j] << '\n';
 #endif
 
     if (j == destination)
@@ -1110,21 +1110,21 @@ No_Matched_Atoms_Between::_is_a_match(Molecule_to_Match& target,
   }
 
 #ifdef DEBUG_NMAB_SATISFIED
-  cerr << " unmatched_atoms " << unmatched_atoms << endl;
+  cerr << " unmatched_atoms " << unmatched_atoms << '\n';
   cerr << "Check " << _specs.number_elements() << " conditions\n";
 #endif
 
   _logexp.reset();
   for (int i = 0; i < _specs.number_elements(); ++i) {
 #ifdef DEBUG_NMAB_SATISFIED
-    cerr << " test " << i << " needed " << _logexp.result_needed(i) << endl;
+    cerr << " test " << i << " needed " << _logexp.result_needed(i) << '\n';
 #endif
     if (! _logexp.result_needed(i))
       continue;
     
     const int m = _specs[i]->Matches(target, unmatched_atoms);
 #ifdef DEBUG_NMAB_SATISFIED
-    cerr << "    condition " << i << " match " << m << endl;
+    cerr << "    condition " << i << " match " << m << '\n';
 #endif
     _logexp.set_result(i, m);
 

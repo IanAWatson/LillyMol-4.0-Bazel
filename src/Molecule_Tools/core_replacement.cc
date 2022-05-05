@@ -4,10 +4,12 @@
 #include <fcntl.h>
 
 #include <iostream>
+#include <unordered_map>
 
 #include "lmdb.h"
 
 #include "google/protobuf/text_format.h"
+#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
@@ -23,18 +25,22 @@
 
 #include "Molecule_Tools/atom_separations.h"
 #include "Molecule_Tools/core_replacement_lib.h"
+#include "Molecule_Tools/embedded_fragment.pb.h"
 
 namespace separated_atoms {
 
 using std::cerr;
+using embedded_fragment::EmbeddedFragment;
 
 void
 Usage(int rc) {
 
   cerr << " -d <dbname>       database containing labelled cores (from generate_atom_separations)\n";
   cerr << " -q <qry>          queries that identify the break points\n";
-  cerr << " -s <smarts>       queries\n"; 
-  cerr << "                   the number of queries specified governs the number of bonds broken\n";
+  cerr << " -s <smarts>       smarts that identify the break points, [1].[1] or [1].[1].[1] for example\n"; 
+  cerr << " -F <qry>          fragment must contain queries\n";
+  cerr << " -f <smarts>       fragment must contain smarts\n";
+  cerr << " -p <number>       minumum support level for replacement fragments\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
   cerr << " -g ...            chemical standardisation\n";
@@ -60,6 +66,9 @@ class CoreReplacement {
     MDB_txn* mdb_txn;
     MDB_dbi mdb_dbi;
 
+    // We keep track of how many times we lookup keys.
+    std::unordered_map<uint32_t, int> _keys_looked_up;
+
     FileType _input_type;
 
     Chemical_Standardisation _chemical_standardisation;
@@ -70,6 +79,9 @@ class CoreReplacement {
     // The number of queries specified is the number of cut points.
     resizable_array_p<Substructure_Hit_Statistics> _queries;
 
+    // We can specify conditions on the fragments inserted
+    resizable_array_p<Substructure_Hit_Statistics> _fragment_must_contain;
+
     int _no_query_match;
     int _cannot_identify_core;
 
@@ -78,6 +90,11 @@ class CoreReplacement {
     int _write_molecules_not_matching_queries;
 
     int _no_db_match;
+
+    uint32_t _min_support_needed;
+
+    int _max_atoms_lost;
+    int _max_atoms_gained;
 
     separated_atoms::Hasher _hasher;
 
@@ -100,6 +117,7 @@ class CoreReplacement {
                  const int* to_be_removed,
                  IWString_and_File_Descriptor& output);
     int Process2(Molecule& m,
+                 const Set_of_Atoms& matched_atoms,
                  uint32_t hash,
                  const int* to_be_removed,
                  IWString_and_File_Descriptor& output);
@@ -107,6 +125,14 @@ class CoreReplacement {
                  const Set_of_Atoms& matched_atoms,
                  const int* to_be_removed,
                  IWString_and_File_Descriptor& output);
+    int DoReplacement2(Molecule& m,
+                       const Set_of_Atoms& matched_atoms,
+                       const embedded_fragment::EmbeddedFragment& fragment,
+                       const int * to_be_removed,
+                       IWString_and_File_Descriptor& output);
+    int MeetsSupportRequirement(const EmbeddedFragment& fragment);
+    int FragmentContainsNeededSubstructure(Molecule& m);
+    int OkAtomCount(int number_atoms_removed, const Molecule& fragment);
 
   public:
     CoreReplacement();
@@ -136,6 +162,7 @@ CoreReplacement::CoreReplacement() {
   _ignore_molecules_not_matching_queries = 0;
   _write_molecules_not_matching_queries = 0;
   _no_db_match = 0;
+  _min_support_needed = 0;
 
   mdb_env = nullptr;
   mdb_txn = nullptr;
@@ -226,15 +253,53 @@ CoreReplacement::Initialise(Command_Line& cl) {
     }
   }
 
-  _bonds_to_break = _queries.number_elements();
+  for (Substructure_Hit_Statistics* q : _queries) {
+    q->set_find_unique_embeddings_only(1);
+  }
+
+  if (cl.option_present('F')) {
+    if (! process_queries(cl, _fragment_must_contain, _verbose, 'F')) {
+      cerr << "CoreReplacement::Initialise:cannot read fragment must contain queries (-F)\n";
+      return 0;
+    }
+  }
 
   if (_verbose) {
-    cerr << "Definied " << _queries.size() << " queries\n";
+    cerr << "Definied " << _queries.size() << " break point queries\n";
   }
 
   if (_queries.empty()) {
     cerr << "CoreReplacement::Initialise:must specify one or more queries to replace via the -q and/or -s options\n";
     return 0;
+  }
+
+  if (cl.option_present('f')) {
+    const_IWSubstring smarts;
+    for (int i = 0; cl.value('f', smarts, i); ++i) {
+      std::unique_ptr<Substructure_Hit_Statistics> qry = std::make_unique<Substructure_Hit_Statistics>();
+      if (! qry->create_from_smarts(smarts)) {
+        cerr << "CoreReplacement::Initialise:cannot parse smarts '" << smarts << "'\n";
+        return 0;
+      }
+      _fragment_must_contain << qry.release();
+    }
+  }
+
+  // These queries should be executed as quickly as possible.
+  for (Substructure_Hit_Statistics* q : _fragment_must_contain) {
+    q->set_max_matches_to_find(1);
+    q->set_save_matched_atoms(0);
+  }
+
+  if (cl.option_present('p')) {
+    if (! cl.value('p', _min_support_needed) || _min_support_needed < 1) {
+      cerr << "CoreReplacement::Initialise:the support level (-p) must be positive\n";
+      return 0;
+    }
+
+    if (_verbose) {
+      cerr << "Will only use fragments seen " << _min_support_needed << " or more times\n";
+    }
   }
 
   if (cl.option_present('z')) {
@@ -295,10 +360,15 @@ CoreReplacement::Process(Molecule& m,
   for (Substructure_Hit_Statistics * q : _queries) {
     const int nhits = q->substructure_search(target, sresults);
     if (nhits == 0) {
-      cerr << "CoreReplacement::Process: no hits to " << q->comment() << " in " << m.smiles() << ' ' << m.name() << '\n';
-      return HandleNoQueryMatch(m, output);
+      continue;
     }
-    matched_atoms.add(sresults.embedding(0)->first());
+    matched_atoms = *sresults.embedding(0);
+    break;
+  }
+
+  if (matched_atoms.empty()) {
+    cerr << "CoreReplacement::Process: no query matches to " << m.smiles() << ' ' << m.name() << '\n';
+    return HandleNoQueryMatch(m, output);
   }
 
   return Process(m, matched_atoms, output);
@@ -317,6 +387,10 @@ CoreReplacement::Process(Molecule& m,
   std::unique_ptr<int[]> to_be_removed(new_int(matoms));
   if (! IdentifyAtomsToRemove(m, matched_atoms, to_be_removed.get())) {
     ++_cannot_identify_core;
+    cerr << "No core\n";
+    if (_verbose > 1) {
+      cerr << "CoreReplacement::Process:cannot identify core in " << m.smiles() << '\n';
+    }
     return 0;
   }
 
@@ -328,11 +402,12 @@ CoreReplacement::Process(Molecule& m,
                          const Set_of_Atoms& matched_atoms,
                          const int* to_be_removed,
                          IWString_and_File_Descriptor& output) {
-  if (_bonds_to_break == 2) {
+  cerr << " breaking " << _bonds_to_break << " bonds\n";
+  if (matched_atoms.size() == 2) {
     return Process2(m, matched_atoms, to_be_removed, output);
   }
 
-  if (_bonds_to_break == 3) {
+  if (matched_atoms.size() == 3) {
     return Process3(m, matched_atoms, to_be_removed, output);
   }
 
@@ -350,17 +425,20 @@ CoreReplacement::Process2(Molecule& m,
   atom_number_t a2 = matched_atoms[1];
   uint32_t hash = _hasher.Value(m.atomic_number(a1), m.atomic_number(a2), m.bonds_between(a1, a2));
 
-  return Process2(m, hash, to_be_removed, output);
+  return Process2(m, matched_atoms, hash, to_be_removed, output);
 }
 
 int
 CoreReplacement::Process2(Molecule& m,
+                          const Set_of_Atoms& matched_atoms,
                           uint32_t hash,
                           const int* to_be_removed,
                           IWString_and_File_Descriptor& output) {
   MDB_val key;
   key.mv_data = &hash;
   key.mv_size = sizeof(hash);
+
+  ++_keys_looked_up[hash];
 
   MDB_val value;
   cerr << "Looking up hash " << hash << '\n';
@@ -371,6 +449,59 @@ CoreReplacement::Process2(Molecule& m,
     return 1;
   }
 
+  int generated_this_molecule = 0;
+  const const_IWSubstring buffer(reinterpret_cast<const char*>(value.mv_data), value.mv_size);
+  const_IWSubstring line;
+  int nlines = 0;
+  for (int i = 0; buffer.nextword(line, i, '\n'); ++nlines) {
+    embedded_fragment::EmbeddedFragment fragment;
+    google::protobuf::io::ArrayInputStream zero_copy_array(line.data(), line.nchars());
+
+    if (!google::protobuf::TextFormat::Parse(&zero_copy_array, &fragment)) {
+      cerr << "CoreReplacement:Process2:cannot parse proto from db, key " << hash << '\n';
+      cerr << line << '\n';
+      return 0;
+    }
+
+    if (! DoReplacement2(m, matched_atoms, fragment, to_be_removed, output)) {
+      cerr << "CoreReplacement::Process2:failure\n";
+      return 0;
+    }
+    ++generated_this_molecule;
+  }
+  cerr << "Read " << nlines << " examples, size " << buffer.nchars() << '\n';
+
+  return 1;
+}
+
+int
+CoreReplacement::DoReplacement2(Molecule& m,
+                                const Set_of_Atoms& matched_atoms,
+                                const embedded_fragment::EmbeddedFragment& fragment,
+                                const int * to_be_removed,
+                                IWString_and_File_Descriptor& output) {
+  if (! MeetsSupportRequirement(fragment)) {
+    return 1;
+  }
+
+  Molecule frag;
+  if (! frag.build_from_smiles(fragment.smiles())) {
+    cerr << "CoreReplacement::DoReplacement2:cannot parse " << fragment.smiles() << '\n';
+    return 1;
+  }
+
+  if (! FragmentContainsNeededSubstructure(frag)) {
+    return 1;
+  }
+
+  const int matoms = m.natoms();
+  int number_atoms_removed = std::count(to_be_removed, to_be_removed + matoms, 2);
+  if (! OkAtomCount(number_atoms_removed, frag)) {
+    return 0;
+  }
+
+  Molecule mcopy(m);
+  mcopy.add_molecule(&frag);
 
   return 1;
 }
@@ -381,6 +512,27 @@ CoreReplacement::Process3(Molecule& m,
                           const int* to_be_removed,
                           IWString_and_File_Descriptor& output) {
   assert(matched_atoms.size() == 3);
+  return 1;
+}
+
+int
+CoreReplacement::FragmentContainsNeededSubstructure(Molecule& m) {
+  if (_fragment_must_contain.empty()) {
+    return 1;
+  }
+
+  Molecule_to_Match target(&m);
+  for (Substructure_Hit_Statistics* q : _fragment_must_contain) {
+    if (q->substructure_search(target)) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int
+CoreReplacement::OkAtomCount(int number_atoms_removed, const Molecule& fragment) {
   return 1;
 }
 
@@ -399,6 +551,14 @@ CoreReplacement::HandleNoQueryMatch(Molecule& m,
   }
 
   return 0;
+}
+
+int
+CoreReplacement::MeetsSupportRequirement(const EmbeddedFragment& fragment) {
+  if (fragment.count() < _min_support_needed) {
+    return 0;
+  }
+  return 1;
 }
 
 int
@@ -461,7 +621,7 @@ ReplaceCore(CoreReplacement& core_replacement,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcd:q:s:z:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcd:q:s:z:F:f:p:x:X:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
