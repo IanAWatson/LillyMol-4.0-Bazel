@@ -19,6 +19,13 @@ Set_of_Atoms::Set_of_Atoms(const Set_of_Atoms & rhs) : resizable_array<atom_numb
 //resizable_array<atom_number_t>::operator =(rhs);
 }
 
+Set_of_Atoms::Set_of_Atoms(std::initializer_list<atom_number_t> l) {
+  this->resize(l.size());
+  for (auto x : l) {
+    this->add(x);
+  }
+}
+
 int
 Set_of_Atoms::write(std::ostream & os) const
 {

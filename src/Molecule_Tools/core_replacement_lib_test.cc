@@ -64,4 +64,13 @@ TEST_F(TestIdentifyCoreAtoms, Bad1) {
   EXPECT_EQ(separated_atoms::IdentifyAtomsToRemove(_m, *_sresults.embedding(0), _interior.get()), 0);
 }
 
+TEST_F(TestIdentifyCoreAtoms, Test2) {
+  ASSERT_TRUE(_m.build_from_smiles("CC1CC1C"));
+  Set_of_Atoms matched_atoms {1,3};
+  _interior.reset(new_int(_m.natoms()));
+  EXPECT_EQ(separated_atoms::IdentifyAtomsToRemove(_m, matched_atoms, _interior.get()), 1);
+  _got.assign(_interior.get(), _interior.get() + _m.natoms());
+  EXPECT_THAT(_got, testing::ElementsAreArray({0, 1, 2, 1, 0}));
+}
+
 }  // namespace
