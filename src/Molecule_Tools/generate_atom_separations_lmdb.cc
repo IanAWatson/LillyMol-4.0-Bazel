@@ -210,11 +210,10 @@ struct Job {
 
   // If writing to a lmdb database.
   IWString database_name;
-  //std::unique_ptr<MDB_env> mdb_env;
   MDB_env* mdb_env;
   MDB_txn* mdb_txn;
   MDB_dbi mdb_dbi;
-  size_t max_db_size = 10485760 * 100;
+  size_t max_db_size = 10485760 * 1000;
 
   Hasher hasher;
 

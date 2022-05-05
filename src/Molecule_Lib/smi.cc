@@ -550,6 +550,8 @@ Smiles_Ring_Status::encounter(int ring_number, atom_number_t a,
 {
   assert(ring_number >= 0);
 
+  static bond_type_t single_or_aromatic = (SINGLE_BOND | AROMATIC_BOND);
+
   if (ring_number >= _number_elements)     // definitely a new ring.
   {
     extend(2 * ring_number + 1, INVALID_ATOM_NUMBER);
@@ -568,7 +570,7 @@ Smiles_Ring_Status::encounter(int ring_number, atom_number_t a,
     if (NOT_A_BOND == _bt[ring_number])    // was not set during ring opening, use what just came in
     {
       if (NOT_A_BOND == bt)
-        _bt[ring_number] = SINGLE_BOND | AROMATIC_BOND;
+        _bt[ring_number] = single_or_aromatic;
       else 
         _bt[ring_number] = bt;
     }
@@ -596,10 +598,14 @@ Smiles_Ring_Status::encounter(int ring_number, atom_number_t a,
 // directionality because the closing will look down from the opposite
 // direction
 
-  if (bt & SMI_DIRECTIONAL_UP)
+  static bond_type_t any_directionality = (SMI_DIRECTIONAL_UP | SMI_DIRECTIONAL_DOWN);
+
+  if ((bt & any_directionality) == 0) {  // no directionality.
+  } else if (bt & SMI_DIRECTIONAL_UP) {
     bt = (bt ^ SMI_DIRECTIONAL_UP) | SMI_DIRECTIONAL_DOWN;
-  else if (bt & SMI_DIRECTIONAL_DOWN)
+  } else if (bt & SMI_DIRECTIONAL_DOWN) {
     bt = (bt ^ SMI_DIRECTIONAL_DOWN) | SMI_DIRECTIONAL_UP;
+  }
 
   _things[ring_number] = a;
   _bt[ring_number] = bt;

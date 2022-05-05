@@ -1472,6 +1472,19 @@ cc_test(
 )
 
 cc_test(
+    name = "core_replacement_lib_test",
+    srcs = [
+        "core_replacement_lib_test.cc",
+    ],
+    deps = [
+        ":core_replacement_lib",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:iwmolecule"
+    ],
+)
+
+cc_test(
     name = "extended_pi_test",
     srcs = [
         "extended_pi_test.cc",
