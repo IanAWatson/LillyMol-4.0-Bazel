@@ -10,6 +10,7 @@
 #include "google/protobuf/text_format.h"
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
@@ -21,6 +22,7 @@
 #include "Molecule_Lib/target.h"
 
 #include "Molecule_Tools/atom_separations.h"
+#include "Molecule_Tools/core_replacement_lib.h"
 
 namespace separated_atoms {
 
@@ -32,7 +34,7 @@ Usage(int rc) {
   cerr << " -d <dbname>       database containing labelled cores (from generate_atom_separations)\n";
   cerr << " -q <qry>          queries that identify the break points\n";
   cerr << " -s <smarts>       queries\n"; 
-  cerr << " -w <number>       number of bonds to break\n";
+  cerr << "                   the number of queries specified governs the number of bonds broken\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
   cerr << " -g ...            chemical standardisation\n";
@@ -63,10 +65,9 @@ class CoreReplacement {
     Chemical_Standardisation _chemical_standardisation;
 
     // One or more queries for identifying the core.
-    // In order to be processed, the first query to match
-    // must report 2 or more matches.
-    // The number of matches is the connectivity of the
-    // fragment to be replaced.
+    // The intent is that molecules come with isotopic labels
+    // and so these queries will be very simple.
+    // The number of queries specified is the number of cut points.
     resizable_array_p<Substructure_Hit_Statistics> _queries;
 
     int _no_query_match;
@@ -76,6 +77,10 @@ class CoreReplacement {
     int _ignore_molecules_not_matching_queries;
     int _write_molecules_not_matching_queries;
 
+    int _no_db_match;
+
+    separated_atoms::Hasher _hasher;
+
   // Private functions
 
     int OpenDatabase();
@@ -83,6 +88,25 @@ class CoreReplacement {
     int Process(Molecule& m,
         const Set_of_Atoms& matched_atoms,
         IWString_and_File_Descriptor& output);
+    int Process(Molecule& m,
+                const int* to_be_removed,
+                IWString_and_File_Descriptor& output);
+    int Process(Molecule& m,
+                const Set_of_Atoms& matched_atoms,
+                const int* to_be_removed,
+                IWString_and_File_Descriptor& output);
+    int Process2(Molecule& m,
+                 const Set_of_Atoms& matched_atoms,
+                 const int* to_be_removed,
+                 IWString_and_File_Descriptor& output);
+    int Process2(Molecule& m,
+                 uint32_t hash,
+                 const int* to_be_removed,
+                 IWString_and_File_Descriptor& output);
+    int Process3(Molecule& m,
+                 const Set_of_Atoms& matched_atoms,
+                 const int* to_be_removed,
+                 IWString_and_File_Descriptor& output);
 
   public:
     CoreReplacement();
@@ -111,6 +135,7 @@ CoreReplacement::CoreReplacement() {
   _cannot_identify_core = 0;
   _ignore_molecules_not_matching_queries = 0;
   _write_molecules_not_matching_queries = 0;
+  _no_db_match = 0;
 
   mdb_env = nullptr;
   mdb_txn = nullptr;
@@ -121,17 +146,29 @@ int
 CoreReplacement::OpenDatabase() {
   int status =  mdb_env_create(&mdb_env);
   if (status != 0) {
-    cerr << "Job::OpenDatabase:cannot create environment, status " << status << '\n';
+    cerr << "CoreReplacement::OpenDatabase:cannot create environment, status " << status << '\n';
     return 0;
   }
 
 
-  unsigned int flags = 0;
-  mdb_mode_t mode = O_RDONLY;
+  unsigned int flags = MDB_RDONLY;
+  mdb_mode_t mode = O_RDONLY | MDB_NOLOCK;
 
   status = mdb_env_open(mdb_env, _database_name.null_terminated_chars(), flags, mode);
   if (status != 0) {
     cerr << "CoreReplacement::OpenDatabase:cannot open environment '" << _database_name << " status " << status << '\n';
+    return 0;
+  }
+
+  if (auto status = mdb_txn_begin(mdb_env, NULL /*parent*/, flags, &mdb_txn);
+      status != 0) {
+    cerr << "CoreReplacement::OpenDatabase:cannot begin transaction " << status << '\n';
+    return 0;
+  }
+
+  if (auto status = mdb_dbi_open(mdb_txn, NULL, 0, &mdb_dbi);
+      status != 0) {
+    cerr << "CoreReplacement::OpenDatabase:mdb_dbi_open failed " << status << '\n';
     return 0;
   }
 
@@ -180,7 +217,7 @@ CoreReplacement::Initialise(Command_Line& cl) {
   if (cl.option_present('s')) {
     const_IWSubstring smarts;
     for (int i = 0; cl.value('s', smarts, i); ++i) {
-      std::unique_ptr<Substructure_Hit_Statistics> qry;
+      std::unique_ptr<Substructure_Hit_Statistics> qry = std::make_unique<Substructure_Hit_Statistics>();
       if (! qry->create_from_smarts(smarts)) {
         cerr << "CoreReplacement::Initialise:cannot parse smarts '" << smarts << "'\n";
         return 0;
@@ -188,6 +225,8 @@ CoreReplacement::Initialise(Command_Line& cl) {
       _queries << qry.release();
     }
   }
+
+  _bonds_to_break = _queries.number_elements();
 
   if (_verbose) {
     cerr << "Definied " << _queries.size() << " queries\n";
@@ -209,18 +248,6 @@ CoreReplacement::Initialise(Command_Line& cl) {
         cerr << "Unrecognised -z qualifier '" << z << "'\n";
         return 0;
       }
-    }
-  }
-
-  if (! cl.option_present('w')) {
-    cerr << "Must specify number of bonds to break via the -w option\n";
-    return 0;
-  } else {  
-    if (! cl.value('w', _bonds_to_break) || _bonds_to_break < 2) {
-      cerr << "The number of bonds to break must be at least 2\n";
-    }
-    if (_verbose) {
-      cerr << "Will break  " << _bonds_to_break << " bonds\n";
     }
   }
 
@@ -264,29 +291,17 @@ CoreReplacement::Process(Molecule& m,
                          IWString_and_File_Descriptor& output) {
   Molecule_to_Match target(&m);
   Substructure_Results sresults;
-  const Set_of_Atoms * matched_atoms = nullptr;
+  Set_of_Atoms matched_atoms;
   for (Substructure_Hit_Statistics * q : _queries) {
     const int nhits = q->substructure_search(target, sresults);
     if (nhits == 0) {
-      continue;
+      cerr << "CoreReplacement::Process: no hits to " << q->comment() << " in " << m.smiles() << ' ' << m.name() << '\n';
+      return HandleNoQueryMatch(m, output);
     }
-
-    for (const Set_of_Atoms * e : sresults.embeddings()) {
-      if (e->number_elements() == _bonds_to_break) {
-        matched_atoms = e;
-        break;
-      }
-    }
-    if (matched_atoms != nullptr) {
-      break;
-    }
+    matched_atoms.add(sresults.embedding(0)->first());
   }
 
-  if (matched_atoms == nullptr) {
-    return HandleNoQueryMatch(m, output);
-  }
-
-  return Process(m, *e, output);
+  return Process(m, matched_atoms, output);
 }
 
 // The matched atoms define atoms that are retained.
@@ -298,13 +313,74 @@ CoreReplacement::Process(Molecule& m,
         IWString_and_File_Descriptor& output) {
   assert(matched_atoms.number_elements() == _bonds_to_break);
 
-  const int * matoms = m.natoms();
+  const int matoms = m.natoms();
   std::unique_ptr<int[]> to_be_removed(new_int(matoms));
-  if (! IdentifyAtomsToRemove(m, matched_atoms, to_be_removed.get()) {
+  if (! IdentifyAtomsToRemove(m, matched_atoms, to_be_removed.get())) {
     ++_cannot_identify_core;
     return 0;
   }
 
+  return Process(m, matched_atoms, to_be_removed.get(), output);
+}
+
+int
+CoreReplacement::Process(Molecule& m,
+                         const Set_of_Atoms& matched_atoms,
+                         const int* to_be_removed,
+                         IWString_and_File_Descriptor& output) {
+  if (_bonds_to_break == 2) {
+    return Process2(m, matched_atoms, to_be_removed, output);
+  }
+
+  if (_bonds_to_break == 3) {
+    return Process3(m, matched_atoms, to_be_removed, output);
+  }
+
+  cerr << "CoreReplacement::Process:do not know how to handle " << _bonds_to_break << " bonds broken\n";
+  return 0;
+}
+
+int
+CoreReplacement::Process2(Molecule& m,
+                         const Set_of_Atoms& matched_atoms,
+                          const int* to_be_removed,
+                          IWString_and_File_Descriptor& output) {
+  assert(matched_atoms.size() == 2);
+  atom_number_t a1 = matched_atoms[0];
+  atom_number_t a2 = matched_atoms[1];
+  uint32_t hash = _hasher.Value(m.atomic_number(a1), m.atomic_number(a2), m.bonds_between(a1, a2));
+
+  return Process2(m, hash, to_be_removed, output);
+}
+
+int
+CoreReplacement::Process2(Molecule& m,
+                          uint32_t hash,
+                          const int* to_be_removed,
+                          IWString_and_File_Descriptor& output) {
+  MDB_val key;
+  key.mv_data = &hash;
+  key.mv_size = sizeof(hash);
+
+  MDB_val value;
+  cerr << "Looking up hash " << hash << '\n';
+  if (int rc = mdb_get(mdb_txn, mdb_dbi, &key, &value);
+      rc != 0) {
+    ++_no_db_match;
+    cerr << "Not in db\n";
+    return 1;
+  }
+
+
+  return 1;
+}
+
+int
+CoreReplacement::Process3(Molecule& m,
+                         const Set_of_Atoms& matched_atoms,
+                          const int* to_be_removed,
+                          IWString_and_File_Descriptor& output) {
+  assert(matched_atoms.size() == 3);
   return 1;
 }
 
@@ -385,7 +461,7 @@ ReplaceCore(CoreReplacement& core_replacement,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcd:q:s:w:z:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcd:q:s:z:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

@@ -92,7 +92,7 @@ IdentifyFrontierAtom(Molecule& m,
   return frontier;
 }
 
-#define DEBUG_IDENTIFY_ATOMS_TO_REMOVE
+//#define DEBUG_IDENTIFY_ATOMS_TO_REMOVE
 
 // Identify the atoms that are 'inside' the region defined by
 // the atoms in `matched_atoms`.
@@ -106,14 +106,20 @@ IdentifyAtomsToRemove(Molecule& m,
   matched_atoms.set_vector(to_be_removed, 1);   // will later be reset.
   Set_of_Atoms frontier;
   for (atom_number_t ma1 : matched_atoms) {
+#ifdef DEBUG_IDENTIFY_ATOMS_TO_REMOVE
     cerr << "Find frontier from atom " << ma1 << '\n';
+#endif
     atom_number_t f = IdentifyFrontierAtom(m, ma1, matched_atoms, to_be_removed);
     if (f == INVALID_ATOM_NUMBER) {
+#ifdef DEBUG_IDENTIFY_ATOMS_TO_REMOVE
       cerr << "No frontier atom from " << ma1 << '\n';
+#endif
       return 0;
     }
     frontier.add_if_not_already_present(f);
+#ifdef DEBUG_IDENTIFY_ATOMS_TO_REMOVE
     cerr << "Atom " << f << " is frontier from " << ma1 << '\n';
+#endif
   }
 
 #ifdef DEBUG_IDENTIFY_ATOMS_TO_REMOVE

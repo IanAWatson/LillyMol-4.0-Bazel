@@ -73,4 +73,11 @@ TEST_F(TestIdentifyCoreAtoms, Test2) {
   EXPECT_THAT(_got, testing::ElementsAreArray({0, 1, 2, 1, 0}));
 }
 
+TEST_F(TestIdentifyCoreAtoms, Bad2) {
+  ASSERT_TRUE(_m.build_from_smiles("C1CCCCCCCC1"));
+  Set_of_Atoms matched_atoms {0,4};
+  _interior.reset(new_int(_m.natoms()));
+  EXPECT_EQ(separated_atoms::IdentifyAtomsToRemove(_m, matched_atoms, _interior.get()), 0);
+}
+
 }  // namespace
