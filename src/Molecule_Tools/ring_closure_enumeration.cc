@@ -26,6 +26,13 @@ void
 Usage(int rc) {
 
   cerr << " -r <bond>         specify bond making. <component>:<isotope><bond><ring>, eg 0:3=99\n";
+  cerr << " -c <natoms>       discard products having fewer than <natoms> atoms\n";
+  cerr << " -C <natoms>       discard products having more  than <natoms> atoms\n";
+  cerr << " -q <query>        only retain products that contain <query>\n";
+  cerr << " -s <smarts>       only retain products that contain <smarts>\n";
+  cerr << " -B ...            bypass calculations after certain stages\n";
+  cerr << " -B smiles         bypass calculations after forming the smiles (but before interpreting as mol)\n";
+  cerr << " -B molecule       bypass calculations after interpreting the smiles (before writing)\n";
   cerr << " -x                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
   cerr << " -v                verbose output\n";
@@ -59,6 +66,9 @@ class Enumeration {
 
     int _molecules_formed;
     int _molecules_written;
+
+    int _stop_after_smiles_formation;
+    int _stop_after_smiles_interpretation;
 
   // Private functions
 
@@ -101,6 +111,9 @@ Enumeration::Enumeration() {
   _component_separator = " + ";
   _min_natoms = 0;
   _max_natoms = std::numeric_limits<int>::max();
+
+  _stop_after_smiles_formation = 0;
+  _stop_after_smiles_interpretation = 0;
 
   _molecules_formed = 0;
   _molecules_written = 0;
@@ -188,6 +201,23 @@ Enumeration::Initialise(Command_Line& cl) {
         return 0;
       }
       _must_contain << qry.release();
+    }
+  }
+
+  if (cl.option_present('B')) {
+    const_IWSubstring b = cl.string_value('B');
+    if (b == "smiles") {
+      _stop_after_smiles_formation = 1;
+      if (_verbose) {
+        cerr << "Will bypass calculations after smiles formation\n";
+      }
+    } else if (b == "molecule") {
+      _stop_after_smiles_interpretation = 1;
+      if (_verbose) {
+        cerr << "Will bypass calculations after smiles interpretation\n";
+      }
+    } else {
+      cerr << "Unrecognised calculation bypass qualifier '" << b << "'\n";
     }
   }
 
@@ -350,15 +380,19 @@ Enumeration::Enumerate2(IWString_and_File_Descriptor& output) {
       const IWString* smi2 = _reagents[1].smiles()[j];
       IWString smiles;
       smiles << *smi1 << *smi2;
+      if (_stop_after_smiles_formation) {
+        continue;
+      }
       Molecule m;
       if (! m.build_from_smiles(smiles)) {
         cerr << "Enumeration::Enumerate2:cannot parse " << smiles << '\n';
         return 0;
       }
-      if (m.smiles().length() < 1000) {
+      SetName(m, name1, _reagents[1].MolName(j));
+
+      if (_stop_after_smiles_interpretation) {
         continue;
       }
-      SetName(m, name1, _reagents[1].MolName(j));
 
       MaybeWrite(m, output);
       ++rc;
@@ -463,7 +497,7 @@ RingClosureEnumeration(Enumeration& enumeration,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcr:c:C:xq:s:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcr:c:C:xq:s:B:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
