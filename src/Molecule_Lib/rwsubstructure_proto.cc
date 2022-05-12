@@ -776,7 +776,7 @@ int
 Substructure_Environment::_process_attachment_bonds(const SubstructureSearch::EnvironmentAttachment& proto,
                                              extending_resizable_array<Substructure_Atom *> & completed)
 {
-  if (0 == proto.attachment_point_size() || 0 == proto.bond_size())
+  if (0 == proto.attachment_point_size() || 0 == proto.btype_size())
   {
     cerr << "Substructure_Environment::_process_attachment_bonds:must have both attachment and bond attributes\n";
     cerr << proto.ShortDebugString() << endl;
@@ -795,7 +795,7 @@ Substructure_Environment::_process_attachment_bonds(const SubstructureSearch::En
     }
   }
 
-  const bond_type_t btype = BondTypeFromSSBond(proto.bond());
+  const bond_type_t btype = BondTypeFromSSBond(proto.btype());
 
   _bond.set_bond_type(btype);
 
@@ -1702,6 +1702,27 @@ Single_Substructure_Query::_construct_environment_from_proto(
   return 1;
 }
 
+int
+Single_Substructure_Query::_construct_matched_atoms_match(
+    const google::protobuf::RepeatedPtrField<SubstructureSearch::MatchedAtomMatch>& matched_atoms_match) {
+  for (const auto & mam : matched_atoms_match) {
+
+    std::unique_ptr<MatchedAtomMatch> m = std::make_unique<MatchedAtomMatch>();
+    if (! m->ConstructFromProto(mam)) {
+      cerr << "Single_Substructure_Query::_construct_matched_atoms_match:invalid " << mam.ShortDebugString() << '\n';
+      return 0;
+    }
+    if (mam.has_logexp()) {
+      AddOperator(mam.logexp(), _matched_atom_match_operator);
+    } else if (_matched_atom_match.size() > 0) {
+      AddOperator(SubstructureSearch::SS_AND, _matched_atom_match_operator);
+    }
+    _matched_atom_match << m.release();
+  }
+
+  return 1;
+}
+
 #ifdef PROBABLY_DUP
 int
 Substructure_Environment::_add_possible_parent (atom_number_t possible_parent,
@@ -2476,6 +2497,13 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
         return 0;
       }
       _separated_atoms.add(s.release());
+    }
+  }
+
+  if (!proto.matched_atom_must_be().empty()) {
+    if (! _construct_matched_atoms_match(proto.matched_atom_must_be())) {
+      cerr << "Single_Substructure_Query::_construct_from_proto:invalid matched_atom_must_be\n";
+      return 0;
     }
   }
 
@@ -3306,5 +3334,65 @@ SeparatedAtoms::BuildProto(SubstructureSearch::SeparatedAtoms& proto) const {
   proto.set_a1(_a1);
   proto.set_a2(_a2);
   SetProtoValues(_separation, "bonds_between", proto);
+  return 1;
+}
+
+int
+MatchedAtomMatch::ConstructFromProto(const SubstructureSearch::MatchedAtomMatch& proto) {
+  if (proto.atom_size() == 0) {
+    cerr << "MatchedAtomMatch::ConstructFromProto:no atom " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  if (proto.smarts_size() == 0) {
+    cerr << "MatchedAtomMatch::ConstructFromProto:no smarts " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  for (int atom : proto.atom()) {
+    _atoms << atom;
+  }
+
+  for (const std::string smarts : proto.smarts()) {
+    if (smarts.empty()) {
+      cerr << "MatchedAtomMatch::ConstructFromProto:skipping empty smarts\n";
+      continue;
+    }
+    bool match_as_match;
+    const_IWSubstring s;
+    if (smarts[0] == '!') {
+      match_as_match = false;
+      s = smarts;
+      s += 1;
+    } else {
+      match_as_match = true;
+      s = smarts;
+    }
+
+    std::unique_ptr<Single_Substructure_Query> a = std::make_unique<Single_Substructure_Query>();
+    if (! a->create_from_smarts(s)) {
+      cerr << "MatchedAtomMatch::ConstructFromProto:invalid smarts '" << smarts << "'\n";
+      cerr << proto.ShortDebugString() << '\n';
+      return 0;
+    }
+
+    if (match_as_match) {
+      _positive_matches << a.release();
+    } else {
+      _negative_matches << a.release();
+    }
+  }
+
+  return 1;
+}
+
+int
+MatchedAtomMatch::BuildProto(SubstructureSearch::MatchedAtomMatch& proto) const {
+  for (int atom : _atoms) {
+    proto.add_atom(atom);
+  }
+
+  cerr << "MatchedAtomMatch::BuildProto:cannot emit queries\n";
+
   return 1;
 }

@@ -1,8 +1,7 @@
-#include <iostream>
+#include <algorithm>
 #include <iomanip>
+#include <iostream>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 #include "Foundational/iwmisc/misc.h"
 
@@ -11,6 +10,9 @@ using std::endl;
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
+
+using std::cerr;
+using std::endl;
 
 #define SUBSTRUCTURE_MAGIC_NUMBER -1010
 
@@ -1543,6 +1545,10 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
   cerr << "_got_embedding: match OK before environment\n";
 #endif
 
+  if (! _matched_atoms_match_also_matched(matched_atoms, target_molecule)) {
+    return 0;
+  }
+
   _matches_before_checking_environment++;
 
   if (! _query_environment_also_matched(matched_atoms, target_molecule.natoms()))
@@ -1760,6 +1766,24 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
   cerr << "Single_Substructure_Query::_find_embedding: returning rc = " << rc << endl;
 #endif
 
+  return rc;
+}
+
+int
+Single_Substructure_Query::find_embedding(Molecule_to_Match & target_molecule,
+                                     Target_Atom & a,
+                                     Query_Atoms_Matched & matched_atoms,
+                                     int * already_matched,
+                                     Substructure_Atom * root_atom,
+                                     Substructure_Results & results) {
+  if (_need_to_compute_aromaticity < 0) {    // first time this query has been invoked
+    _one_time_initialisations();
+  }
+
+  int save_iroot = _iroot;
+  _iroot = 0;
+  int rc = _find_embedding(target_molecule, a, matched_atoms, already_matched, root_atom, results);
+  _iroot = save_iroot;
   return rc;
 }
 
@@ -2327,6 +2351,42 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
   return rc;
 }
 
+// The first time a query is invoked, some initialisations are needed.
+int
+Single_Substructure_Query::_one_time_initialisations()
+{
+  _examine_bond_specifications();
+
+  _compute_attribute_counts();
+  min_atoms_in_query();
+  if (_max_atoms_in_query <= 0)
+    assign_unique_numbers();    // these are sequential, 0-
+
+  _determine_if_ring_ids_are_present();
+
+  _determine_if_spinach_specifications_are_present();
+
+  _determine_if_symmetry_groups_present();
+
+  _determine_if_fused_system_ids_are_present();
+
+  _determine_if_unmatched_atom_counts_are_present();
+
+  _determine_if_atom_type_groups_are_present();
+
+  if (_respect_initial_atom_numbering)
+  {
+    for (int i = 0; i < _root_atoms.number_elements(); i++)
+    {
+      int tmp = _root_atoms[i]->highest_initial_atom_number();
+      if (tmp > _highest_initial_atom_number)
+        _highest_initial_atom_number = tmp;
+    }
+  }
+
+  return 1;
+}
+
 /*
   The return code from substructure search is complicated by the _hits_needed object,
   and especially when there is just a min_hits_needed specified.
@@ -2357,36 +2417,8 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
   if (matoms < _min_atoms_in_query)
     return 0;     
 
-  if (_need_to_compute_aromaticity < 0)    // first time this query has been invoked
-  {
-    _examine_bond_specifications();
-
-    _compute_attribute_counts();
-    min_atoms_in_query();
-    if (_max_atoms_in_query <= 0)
-      assign_unique_numbers();    // these are sequential, 0-
-
-    _determine_if_ring_ids_are_present();
-
-    _determine_if_spinach_specifications_are_present();
-
-    _determine_if_symmetry_groups_present();
-
-    _determine_if_fused_system_ids_are_present();
-
-    _determine_if_unmatched_atom_counts_are_present();
-
-    _determine_if_atom_type_groups_are_present();
-
-    if (_respect_initial_atom_numbering)
-    {
-      for (int i = 0; i < _root_atoms.number_elements(); i++)
-      {
-        int tmp = _root_atoms[i]->highest_initial_atom_number();
-        if (tmp > _highest_initial_atom_number)
-          _highest_initial_atom_number = tmp;
-      }
-    }
+  if (_need_to_compute_aromaticity < 0) {    // first time this query has been invoked
+    _one_time_initialisations();
   }
 
 // If 2 == aromatic_bonds_lose_kekule_identity(), we need a temporary array
@@ -3096,4 +3128,101 @@ SeparatedAtoms::Matches(Molecule& m,
   atom_number_t a2 = embedding[_a2];
   // cerr << "Matched atoms are " << a1 << " and " << a2 << " betw " << m.bonds_between(a1, a2) << endl;
   return _separation.matches(m.bonds_between(a1, a2));
+}
+
+MatchedAtomMatch::MatchedAtomMatch() {
+  _unique_id = -1;
+}
+
+int
+Single_Substructure_Query::_matched_atoms_match_also_matched(Query_Atoms_Matched & matched_query_atoms, 
+                Molecule_to_Match& target) {
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+  cerr << "Single_Substructure_Query::_matched_atoms_match_also_matched:checking " << _matched_atom_match.size() << " MatchedAtomMatch\n";
+  if (_matched_atom_match.empty()) {
+    return 1;
+  }
+#endif
+
+  std::unique_ptr<int[]> already_matched(new_int(target.molecule()->natoms()));
+
+  for (MatchedAtomMatch* mam : _matched_atom_match) {
+    if (! mam->Matches(matched_query_atoms, target, already_matched.get())) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+//#define DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+
+int
+MatchedAtomMatch::Matches(Query_Atoms_Matched& matched_query_atoms,
+                        Molecule_to_Match& target,
+                        int * already_matched) {
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+  cerr << "MatchedAtomMatch::Matches: " << _atoms.size() << " atoms " << _positive_matches.size() << " positive amd " << _negative_matches.size() << " negative matches\n";
+#endif
+  const int matoms = target.natoms();
+
+  Query_Atoms_Matched matched_atoms;
+  Substructure_Results sresults;
+
+  for (int atom : _atoms) {
+    if (! matched_query_atoms.ok_index(atom)) {
+      cerr << "MatchedAtomMatch::Matches:invalid atom number " << atom << " embedding has " << matched_query_atoms.size() << " items\n";
+      return 0;
+    }
+    const Substructure_Atom* matched_atom = matched_query_atoms[atom];
+    Target_Atom& target_atom = target[matched_atom->atom_number_matched()];
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+    cerr << "Target atom tpe " << target_atom.atomic_number() << '\n';
+#endif
+
+    if (_positive_matches.size() > 0) {
+      bool got_match = false;
+      for (Single_Substructure_Query* q : _positive_matches) {
+        std::fill_n(already_matched, matoms, 0);
+        Substructure_Atom* root = const_cast<Substructure_Atom*>(q->root_atom(0));
+        if (! root->matches(target_atom, already_matched)) {
+          continue;
+        }
+        if (q->find_embedding(target, target_atom, matched_atoms,
+                              already_matched, root, sresults)) {
+          got_match = true;
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+          cerr << "MatchedAtomMatch::Matches:got positive match\n";
+#endif
+          break;
+        }
+      }
+      if (! got_match) {
+        return 0;
+      }
+    }
+
+    for (Single_Substructure_Query* q : _negative_matches) {
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+      cerr << "Trying negative match\n";
+#endif
+      std::fill_n(already_matched, matoms, 0);
+      Substructure_Atom* root = const_cast<Substructure_Atom*>(q->root_atom(0));
+      if (! root->matches(target_atom, already_matched)) {
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+        cerr << "MatchedAtomMatch::Matches:No match to root atom\n";
+#endif
+        continue;
+      }
+      if (q->find_embedding(target, target_atom, matched_atoms,
+                            already_matched, root, sresults)) {
+#ifdef DEBUG_MATCHED_ATOMS_MATCH_ALSO_MATCHED
+        cerr << "MatchedAtomMatch:Matches:got negative match\n";
+#endif
+        return 0;
+      }
+    }
+  }
+
+  return 1;
 }

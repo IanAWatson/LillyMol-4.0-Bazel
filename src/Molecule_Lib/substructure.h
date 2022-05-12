@@ -1185,10 +1185,10 @@ class Substructure_Atom : public Substructure_Atom_Specifier
 
     int adjust_ring_specifications (int, const List_of_Ring_Sizes &);
 
-    int write_msi (std::ostream &, int &, const const_IWSubstring &, int = 0);
-    int write_proto (std::ostream &, int &, const const_IWSubstring &, int = 0);
+    int write_msi(std::ostream &, int &, const const_IWSubstring &, int = 0);
+    int write_proto(std::ostream &, int &, const const_IWSubstring &, int = 0);
 
-    int matches (Target_Atom &, const int *);
+    int matches(Target_Atom & target, const int * already_matched);
 
 //  Once the atom is embedded, we can check whether or not any chirality is OK
 
@@ -1394,6 +1394,43 @@ class Substructure_Environment : public resizable_array_p<Substructure_Atom>
     int matches (int *, int *);
 
     int print_environment_matches (std::ostream &) const;
+};
+
+class Single_Substructure_Query;
+
+class MatchedAtomMatch
+{
+  private:
+    int _unique_id;
+
+    // The matched atom numbers that we must match
+    resizable_array<int> _atoms;
+
+    // Queries derived from the 'smarts' directive in the proto are
+    // divided into positive and netagive matches, depending on whether
+    // the smarts starts with ! or not.
+
+    // If any of the _positive_matches queries matches, that is a match.
+    resizable_array_p<Single_Substructure_Query> _positive_matches;
+    // If any of the _negative_matches queries matches, that is a non match.
+    resizable_array_p<Single_Substructure_Query> _negative_matches;
+
+  public:
+    MatchedAtomMatch();
+
+    void set_id(int s) {
+      _unique_id = s;
+    }
+    int id() const {
+      return _unique_id;
+    }
+
+    int ConstructFromProto(const SubstructureSearch::MatchedAtomMatch& proto);
+    int BuildProto(SubstructureSearch::MatchedAtomMatch& proto) const;
+
+    int Matches(Query_Atoms_Matched& matched_query_atoms,
+                Molecule_to_Match& target,
+                int* already_matched);
 };
 
 /*
@@ -2494,6 +2531,10 @@ class Single_Substructure_Query
     // Aug 2021. Bond separation between individual matched atoms.
     resizable_array_p<SeparatedAtoms> _separated_atoms;
 
+    // May 2022. MatchedAtomMatch, as an alternative to recursive smarts.
+    resizable_array_p<MatchedAtomMatch> _matched_atom_match;
+    IW_Logical_Expression _matched_atom_match_operator;
+
 //  private functions
 
     void _default_values();
@@ -2547,6 +2588,7 @@ class Single_Substructure_Query
     void _determine_if_symmetry_groups_present();
     void _determine_if_unmatched_atom_counts_are_present();
     void _determine_if_atom_type_groups_are_present();
+    int _one_time_initialisations();
 
     int _match_elements_needed(Molecule_to_Match & target_molecule) const;
 
@@ -2610,9 +2652,11 @@ class Single_Substructure_Query
                                extending_resizable_array<Substructure_Atom *> &,
                                resizable_array_p<Substructure_Environment> & env);
     int _construct_environment_from_proto(
-    const google::protobuf::RepeatedPtrField<SubstructureSearch::SubstructureEnvironment>& env,
-    extending_resizable_array<Substructure_Atom *> & completed,
-    resizable_array_p<Substructure_Environment> & destination);
+        const google::protobuf::RepeatedPtrField<SubstructureSearch::SubstructureEnvironment>& env,
+        extending_resizable_array<Substructure_Atom *> & completed,
+        resizable_array_p<Substructure_Environment> & destination);
+    int _construct_matched_atoms_match(
+        const google::protobuf::RepeatedPtrField<SubstructureSearch::MatchedAtomMatch>& matched_atoms_match);
     int _parse_smarts_specifier(const const_IWSubstring & smarts);
     int _create_from_molecule(MDL_Molecule & m, Molecule_to_Query_Specifications & mqs, const int * include_these_atoms = NULL);
     int _build_element_hits_needed(const MDL_Molecule & m, const Molecule_to_Query_Specifications & mqs, const int * include_these_atoms);
@@ -2684,6 +2728,8 @@ class Single_Substructure_Query
                         int * env_already_done);
     int _query_environment_also_matched(const int atoms_in_target_molecule, int * previously_matched_atoms,
                         int * env_already_done);
+    int _matched_atoms_match_also_matched(Query_Atoms_Matched & matched_query_atoms, 
+                Molecule_to_Match& target);
     int _query_environment_also_matched(Query_Atoms_Matched &, int atoms_in_target_molecule);
 
   public:
@@ -2842,6 +2888,19 @@ class Single_Substructure_Query
     int query_atom_with_isotope(int) const;   // first query atom that specifies a given isotope
 
     template <typename T> int any_query_atom(T) const;
+
+    // THis is a public interface to a private function.
+    // If you have a Substructure_Atom and you want to start
+    // a substructure search with `root_atom` matched to 'a',
+    // this can do that.
+    // Implemented this to support the MatchedAtomMatch functionality
+    // where we have Substructure_Atom's as the query form.
+    int find_embedding(Molecule_to_Match & target_molecule,
+                                     Target_Atom & a,
+                                     Query_Atoms_Matched & matched_atoms,
+                                     int * already_matched,
+                                     Substructure_Atom * root_atom,
+                                     Substructure_Results & results);
 };
 
 /*
@@ -3002,7 +3061,6 @@ class Substructure_Query : public resizable_array_p<Single_Substructure_Query>
 
     template <typename T> int any_query_atom(T) const;
     template <typename T> void each_query_atom(T) const;
-
 };
 
 

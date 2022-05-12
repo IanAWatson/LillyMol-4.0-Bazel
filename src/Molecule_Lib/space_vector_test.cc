@@ -29,7 +29,7 @@ TYPED_TEST(TestSpaceVector, TestSetGet) {
 TYPED_TEST(TestSpaceVector, TestGetArray) {
   Space_Vector<TypeParam> v;
   v.setxyz(1.0, 2.0, 0.0);
-  std::unique_ptr<double> values = std::make_unique<double>(3);
+  std::unique_ptr<double[]> values = std::make_unique<double[]>(3);
   v.getxyz(values.get());
   EXPECT_EQ(values.get()[0], 1.0);
   EXPECT_EQ(values.get()[1], 2.0);

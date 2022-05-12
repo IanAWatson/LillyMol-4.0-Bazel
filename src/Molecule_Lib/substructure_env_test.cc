@@ -93,7 +93,7 @@ TEST_F(TestSubstructureEnv, TestEnvAttachmentPoint)
         smarts: "F"
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -121,8 +121,8 @@ TEST_F(TestSubstructureEnv, TestEnvAttachmentPointMultipleBonds)
         smarts: "N"
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
-          bond: SS_DOUBLE_BOND
+          btype: SS_SINGLE_BOND
+          btype: SS_DOUBLE_BOND
         }
       }
     }
@@ -372,7 +372,7 @@ TEST_F(TestSubstructureEnv, TestHitsNeededMultipleSites)
         hits_needed: 2
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -402,7 +402,7 @@ TEST_F(TestSubstructureEnv, TestHitsNeededMultipleSitesCorrect)
         hits_needed: 2
         attachment {
           attachment_point: [0, 2]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -433,7 +433,7 @@ TEST_F(TestSubstructureEnv, TestHitsNeededMultipleSitesCorrectEnv)
         hits_needed: 2
         attachment {
           attachment_point: [0, 2]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -463,7 +463,7 @@ TEST_F(TestSubstructureEnv, TestNoOtherSubstituentsAllowed)
         hits_needed: 1
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -492,7 +492,7 @@ TEST_F(TestSubstructureEnv, TestNoOtherSubstituentsAllowedEnvMatchesOK)
         smarts: "N"
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -523,7 +523,7 @@ TEST_F(TestSubstructureEnv, TestHydrogenOnlyH)
         hits_needed: 1
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -553,7 +553,7 @@ TEST_F(TestSubstructureEnv, TestHydrogenNotHydrogen)
         hits_needed: 1
         attachment {
           attachment_point: 0
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -584,7 +584,7 @@ TEST_F(TestSubstructureEnv, Testmax_env_matches_per_anchor)
         hits_needed: 2
         attachment {
           attachment_point: [0, 2]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -613,14 +613,14 @@ TEST_F(TestSubstructureEnv, TestMultipleAnd)
         smarts: "F"
         attachment {
           attachment_point: [0, 2]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
       environment {
         and_id: 1
         attachment {
           attachment_point: 1
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
         query_atom {
           id: 3
@@ -656,14 +656,14 @@ TEST_F(TestSubstructureEnv, TestMultipleOr)
         smarts: "F"
         attachment {
           attachment_point: [0, 1, 2, 3]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
       environment {
         or_id: 1
         attachment {
           attachment_point: [0, 1, 2, 3, 4, 5]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
         query_atom {
           id: 6
@@ -706,7 +706,7 @@ TEST_F(TestSubstructureEnv, TestRejection)
         smarts: "F"
         attachment {
           attachment_point: [0, 1, 2, 3, 4, 5]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -741,7 +741,7 @@ TEST_F(TestSubstructureEnv, TestNumericEnv1) {
         smarts: ">1F"
         attachment {
           attachment_point: [0, 1, 2, 3, 4, 5]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }
@@ -776,7 +776,7 @@ TEST_F(TestSubstructureEnv, TestNumericEnv2) {
         smarts: "{-2}F"
         attachment {
           attachment_point: [0, 1, 2, 3, 4, 5]
-          bond: SS_SINGLE_BOND
+          btype: SS_SINGLE_BOND
         }
       }
     }

@@ -626,6 +626,19 @@ cc_test(
     ]
 )
 
+
+cc_test(
+    name = "substructure_mam_test",
+    srcs = ["substructure_mam_test.cc"],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        ":substructure_cc_proto",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "substructure_sepma_test",
     srcs = ["substructure_sepma_test.cc"],

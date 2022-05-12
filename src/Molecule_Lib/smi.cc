@@ -2895,7 +2895,9 @@ Substructure_Atom::parse_smarts_specifier(const const_IWSubstring & smarts,
 
   int rc = _parse_smarts_specifier(mysmarts, pst, atoms_in_previous_disconnected_sections, ring_status);
 
-  _attributes_specified = count_attributes_specified();
+  _attributes_specified =  Substructure_Atom_Specifier::count_attributes_specified();
+
+  count_attributes_specified();  // Recursively initialise all atoms.
 
   ok_recursive();
 

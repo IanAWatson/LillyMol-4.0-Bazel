@@ -127,7 +127,7 @@ message EnvironmentAttachment {
   // Scheme 1.
   repeated uint32 attachment_point = 1;
 
-  repeated BondType bond = 2;
+  repeated BondType btype = 2;
 
   // Scheme 2.
   optional string substructure_bond = 3;
@@ -618,6 +618,28 @@ message SubstructureEnvironment {
   optional uint32 max_env_matches_per_anchor = 18;
 }
 
+// Environments work if there is just one attachment point, but I
+// ran into a case where what needed to be excluded involved two
+// different connections to the matched nitrogen atom, N(~O)~[NH1]
+// This could have been done with multiple environments combined
+// with a logical operator, but that seems too complex.
+// The assumption is that the first atom in the smarts
+// matches a matched atom from the main query.
+message MatchedAtomMatch {
+  // The matched atom number. required.
+  // If repeated, ALL such atoms must match. Should allow or conditions...
+  repeated int32 atom = 1;
+
+  // Smarts that must match at that atom.
+  // First query atom must match the matched atom.
+  repeated string smarts = 2;
+
+  // Many of these can be combined in a logical expression.
+  // The default will be AND.
+  // Not currently implemented.
+  optional Operator logexp = 3;
+}
+
 // Specifications for pairs of matched atoms.
 message SeparatedAtoms {
   // A pair of matched atoms
@@ -870,6 +892,11 @@ message SingleSubstructureQuery {
   // environments.
   optional bool env_matches_can_share_attachment_points = 98;
 
+  // Specific requirements or restrictions on a particular matched atom.
+  // These can all be done via recursive smarts, but the intent is to
+  // lessen the need for complex recursive smarts.
+  repeated MatchedAtomMatch matched_atom_must_be = 122;
+
   repeated SubstructureRingSpecification ring_specifier = 99;
   repeated Operator ring_specification_logexp = 100;
 
@@ -920,6 +947,8 @@ message SingleSubstructureQuery {
 
   // Bond separation between matched atoms.
   repeated SeparatedAtoms separated_atoms = 121;
+
+  // Next to assign 123
 }
 
 // A SubstructureQuery is merely a collection of individual
