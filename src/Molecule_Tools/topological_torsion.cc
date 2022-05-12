@@ -398,7 +398,7 @@ TopologicalTorsion(Molecule& m,
     return TopologicalTorsionInner(m, atom_type, include_atom, options);
   }
 
-  std::unique_ptr<int> my_include(new_int(natoms, 1));
+  std::unique_ptr<int[]> my_include(new_int(natoms, 1));
 
   return TopologicalTorsionInner(m, atom_type, my_include.get(), options);
 }
