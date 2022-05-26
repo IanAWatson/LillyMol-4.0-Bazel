@@ -146,7 +146,7 @@ class Substructure_Chiral_Centre
 // We can also specify what kinds of atoms are (not) found in the 
 // ... atoms. This is specified with single atom smarts.
 // {[c]}   every one of the atoms must be an aromatic carbon.
-// {0[c]}  none one of the atoms can be an aromatic carbon.
+// {0[c]}  none of the atoms can be an aromatic carbon.
 // {>0[c]} there must be at least one atom that is an aromatic carbon.
 // {1[c]}  there must be exactly one atom that is an aromatic carbon.
 // {2[c]}  there must be exactly two atoms that are aromatic carbon.
