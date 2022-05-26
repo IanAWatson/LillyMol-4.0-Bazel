@@ -692,16 +692,18 @@ spread4(F* pool, int& pool_size,
 
     s = nexts_shared;
 
-    if (dmax_shared < stop_once_distance_drops_below)
+    if (dmax_shared < stop_once_distance_drops_below) {
       return items_selected;
+    }
 
-    if (report_progress.Report("", "", cerr))
+    if (report_progress.Report("", "", cerr)) {
       cerr << "Selected " << items_selected << " fingerprints, dist " << dmax_shared << '\n';
+    }
 
     if (next_squeeze == items_selected) {
-      cerr << "Before squeeze s " << s << " pool_size " << pool_size << '\n';
+      //cerr << "Before squeeze s " << s << " pool_size " << pool_size << '\n';
       s = do_squeeze(pool, pool_size, s);
-      cerr << "After  squeeze s " << s << " pool_size " << pool_size << '\n';
+      //cerr << "After  squeeze s " << s << " pool_size " << pool_size << '\n';
       next_squeeze += squeeze;
     }
   }
