@@ -2509,7 +2509,7 @@ MACCSKeys::_key33 (const Molecule & m,
 */
 
 int
-MACCSKeys::_key34 (Molecule & m,
+MACCSKeys::_key34(Molecule & m,
        const MK_Molecular_Properties & mpr) const
 {
   const atomic_number_t * z = mpr.z();
@@ -2548,7 +2548,7 @@ MACCSKeys::_key34 (Molecule & m,
 */
 
 int
-MACCSKeys::_key34 (Molecule & m,
+MACCSKeys::_key34(Molecule & m,
        const MK_Molecular_Properties & mpr) const
 {
   const atomic_number_t * z = mpr.z();
@@ -2562,7 +2562,10 @@ MACCSKeys::_key34 (Molecule & m,
 
   for (int i = 0; i < matoms; ++i)
   {
-    if (6 == z[i] && 1 == ncon[i])
+    if (ncon[i] != 1) {
+      continue;
+    }
+    if (6 == z[i])
       ;
     else if (9 == z[i])
       ;
