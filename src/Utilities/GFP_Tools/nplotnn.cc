@@ -22,7 +22,6 @@
 #include "distance_scaling.h"
 
 using std::cerr;
-using std::endl;
 
 static IWString identifier_tag("PCN<");
 
@@ -137,8 +136,8 @@ template class resizable_array_base<Smiles_ID_Dist_UID *>;
 static void
 usage(int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
-  cerr << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
+  cerr << '\n';
 
   cerr << "Processes the output from gfp_nearneighbours and produces a smiles file\n";
   cerr << " -n <number>      number of neighbours per structure to display\n";
@@ -432,7 +431,7 @@ write_neighbour_list(const resizable_array_p<Smiles_ID_Dist_UID> & neighbours,
     output.write_if_buffer_holds_more_than(32768);
   }
 
-//cerr << "Printed " << n << " neighbours, pad = " << pad_neighbour_list << " per = " << neighbours_per_structure << endl;
+//cerr << "Printed " << n << " neighbours, pad = " << pad_neighbour_list << " per = " << neighbours_per_structure << '\n';
 
   if (pad_neighbour_list && n < neighbours_per_structure)
   {
@@ -613,7 +612,7 @@ do_check_distance_ordering(const resizable_array_p<Smiles_ID_Dist_UID> & neighbo
     if (d < dprev)
     {
       cerr << "do_check_distance_ordering:out of order neighbours\n";
-      cerr << "parent " << neighbours[0]->id() << " nbr " << i << " dprev " << dprev << " d " << d << endl;
+      cerr << "parent " << neighbours[0]->id() << " nbr " << i << " dprev " << dprev << " d " << d << '\n';
       rc = 0;
     }
 
@@ -705,15 +704,15 @@ process_molecule(const IWString & smiles,
 {
   molecules_processed++;
 
-  int nn = neighbours.number_elements();
+  const int number_neighbours = neighbours.number_elements();
 
-  neighbour_statistics.extra(nn);
-  neighbour_count[nn]++;
+  neighbour_statistics.extra(number_neighbours);
+  neighbour_count[number_neighbours]++;
 
   if (verbose > 1)
-    cerr << id << " has " << nn << " neighbours\n";
+    cerr << id << " has " << number_neighbours << " neighbours\n";
 
-  if (nn > 0)
+  if (number_neighbours > 0)
   {
     nearest_neighbour_stats.extra(neighbours[0]->distance());
 
@@ -721,7 +720,7 @@ process_molecule(const IWString & smiles,
     {
       if (place_all_distances_in_nn_histogram)
       {
-        for (int i = 0; i < nn; i++)
+        for (int i = 0; i < number_neighbours; i++)
         {
           nearest_neighbour_histogram.extra(neighbours[i]->distance());
         }
@@ -733,28 +732,32 @@ process_molecule(const IWString & smiles,
     furthest_neighbour_stats.extra(neighbours.last_item()->distance());
   }
 
-  if (three_column_output)
+  if (three_column_output) {
     return do_three_column_output(id, neighbours, output);
+  }
 
   if (tabular_with_smiles) {
     return do_tabular_with_smiles(smiles, id, neighbours, output);
   }
 
-  if (number_needed_within_distance >= 0 && ! passes_number_needed_within_distance(neighbours))
+  if (number_needed_within_distance >= 0 && ! passes_number_needed_within_distance(neighbours)) {
     return write_targets_not_written_if_requested(smiles, id, stream_for_targets_not_written);
+  }
 
-  if (mandatory_neighbour_count >= 0 && nn != mandatory_neighbour_count)
+  if (mandatory_neighbour_count >= 0 && number_neighbours != mandatory_neighbour_count) {
     return 1;
+  }
 
-  if (0 == nn && ! write_molecules_with_no_neighbours)
+  if (0 == number_neighbours && ! write_molecules_with_no_neighbours) {
     return write_targets_not_written_if_requested(smiles, id, stream_for_targets_not_written);
+  }
 
-  if (tabular_output || tabular_output_nearest_neighbour_only)
-  {
+  if (tabular_output || tabular_output_nearest_neighbour_only) {
     append_first_token_of_name(id, output);
 
-    if (collect_statistics)
+    if (collect_statistics) {
       write_statistics_for_neighbour_list(neighbours, output);
+    }
 
     output << '\n';
 
@@ -763,18 +766,20 @@ process_molecule(const IWString & smiles,
     return 1;
   }
 
-  if (print_target_molecules)
-  {
-    if (smiles_tag.length())
+  if (print_target_molecules) {
+    if (smiles_tag.length()) {
       output << smiles << output_separator;
+    }
 
     output << id;
 
-    if (collect_statistics)
+    if (collect_statistics) {
       write_statistics_for_neighbour_list(neighbours, output);
+    }
 
-    if (append_to_target_record.length())
+    if (append_to_target_record.length()) {
       output << output_separator << append_to_target_record;
+    }
 
     output << neighbour_separator;
 
@@ -785,8 +790,9 @@ process_molecule(const IWString & smiles,
 
 //cerr << "After write_neighbour_list '" << output << "'\n";
 
-  if (! neighbour_separator.contains('\n'))
+  if (! neighbour_separator.contains('\n')) {
     output << '\n';
+  }
 
   return rc;
 }
@@ -824,8 +830,7 @@ is_duplicate(const IWString_STL_Hash_Set & identifiers_encountered,
              const IWString & id)
 {
 //cerr << "Checking duplicate? '" << id << "'\n";
-  if (identifiers_encountered.contains(id))
-  {
+  if (identifiers_encountered.contains(id)) {
     duplicate_neighbours_suppressed++;
     return 1;
   }
@@ -839,20 +844,21 @@ static int
 identifiers_the_same(const IWString & id1,
                      const IWString & id2)
 {
-  if (id1 == id2)
+  if (id1 == id2) {
     return 1;
+  }
 
   const_IWSubstring s1(id1);
   const_IWSubstring s2(id2);
 
-  if (ignore_leading_zeros_in_identifiers)
-  {
+  if (ignore_leading_zeros_in_identifiers) {
     s1.remove_leading_chars('0');
     s2.remove_leading_chars('0');
   }
 
-  if (s1 == s2)
+  if (s1 == s2) {
     return 1;
+  }
 
   s1.truncate_at_first(' ');    // this is kind of dangerous, but will be OK almost all the time
   s2.truncate_at_first(' ');
@@ -900,8 +906,9 @@ create_neighbour_item(const IWString & id_of_target,
                       float distance,
                       float scale)
 {
-  if (neighbour_is_suppressed(id_of_target, id, neighbours, distance))
+  if (neighbour_is_suppressed(id_of_target, id, neighbours, distance)) {
     return;
+  }
 
   IWString usmi;      // may not get set, but needs to be scoped here
 
@@ -919,7 +926,7 @@ create_neighbour_item(const IWString & id_of_target,
     if (! m.build_from_smiles(smiles))
     {
       cerr << "Yipes, cannot parse smiles '" << smiles << "'\n";
-      throw Fatal_Error (__FILE__, __LINE__);
+      throw Fatal_Error(__FILE__, __LINE__);
     }
 
     usmi = m.unique_smiles();
@@ -1014,7 +1021,7 @@ fetch_missing_smiles(const IWString & id,
 {
   IW_STL_Hash_Map_String::const_iterator f = missing_smiles.find(id);
 
-//cerr << "Fetching smiles for '" << id << "' " << (f == missing_smiles.end()) << endl;
+//cerr << "Fetching smiles for '" << id << "' " << (f == missing_smiles.end()) << '\n';
 
   if (f != missing_smiles.end())
   {
@@ -1116,7 +1123,7 @@ get_next_id(iwstring_data_source & input,
 
   if (0 == id.length())
   {
-    cerr << "Blank ID on line " << input.lines_read() << endl;
+    cerr << "Blank ID on line " << input.lines_read() << '\n';
     id << "line " << input.lines_read();
     fatal = 1;
     return 0;
@@ -1154,7 +1161,7 @@ get_smiles_and_id(iwstring_data_source & input,
     {
       if (id.length())
       {
-        cerr << "Duplicate '" << identifier_tag << "' items, line " << input.lines_read() << endl;
+        cerr << "Duplicate '" << identifier_tag << "' items, line " << input.lines_read() << '\n';
         return 0;
       }
 
@@ -1166,7 +1173,7 @@ get_smiles_and_id(iwstring_data_source & input,
 
       if (0 == id.length())
       {
-        cerr << "Blank ID on line " << input.lines_read() << endl;
+        cerr << "Blank ID on line " << input.lines_read() << '\n';
         id << "line " << input.lines_read();
       }
 
@@ -1236,7 +1243,7 @@ process_neighbour_list_record(const IWString & id_of_target,
 //#define DEBUG_NLR
 #ifdef DEBUG_NLR
   cerr << "Processing '" << buffer << "'\n";
-  cerr << "smiles '" << smiles << "' id '" << id << "' dist " << distance << endl;
+  cerr << "smiles '" << smiles << "' id '" << id << "' dist " << distance << '\n';
 #endif
 
   if (smiles_tag.length() && buffer.starts_with(smiles_tag))
@@ -1251,7 +1258,7 @@ process_neighbour_list_record(const IWString & id_of_target,
 
     if (0 == id.length())
     {
-      cerr << "Blank ID on line " << record_number << endl;
+      cerr << "Blank ID on line " << record_number << '\n';
       id << "HUH, line " << record_number;
     }
 
@@ -1377,7 +1384,7 @@ process_molecule(iwstring_data_source & input,
     if (! process_neighbour_list_record(id, neighbours, nsmiles, nid, distance, buffer, scale, input.lines_read()))
     {
       cerr << "Invalid neighbour list record, line '" << input.lines_read() << "'\n";
-      cerr << buffer << endl;
+      cerr << buffer << '\n';
       return 0;
     }
   }
@@ -1418,7 +1425,7 @@ process_molecule_gfp_leader(iwstring_data_source & input,
     if (! process_neighbour_list_record(id, neighbours, nsmiles, nid, distance, buffer, scale, input.lines_read()))
     {
       cerr << "Invalid neighbour list record, line '" << input.lines_read() << "'\n";
-      cerr << buffer << endl;
+      cerr << buffer << '\n';
       return 0;
     }
   }
@@ -1599,7 +1606,7 @@ write_normalised_histogram(const IWHistogram & nearest_neighbour_histogram,
 
     float y = static_cast<float>(raw_counts[i]) / float_max_count;
 
-    stream_for_nearest_neighbour_histogram << d << output_separator << y << endl;
+    stream_for_nearest_neighbour_histogram << d << output_separator << y << '\n';
   }
 
   return 1;
@@ -1631,7 +1638,7 @@ do_create_julia_file_for_histogram_plot(const IWHistogram & nearest_neighbour_hi
   }
 
   if (verbose)
-    cerr << "Last non zero distance " << (last_non_zero * 0.01) << endl;
+    cerr << "Last non zero distance " << (last_non_zero * 0.01) << '\n';
 
   IWString stem = fname;
   assert (stem.ends_with(".r"));
@@ -1727,7 +1734,7 @@ do_create_rfle_for_histogram_plot(const IWHistogram & nearest_neighbour_histogra
   }
 
   if (verbose)
-    cerr << "Last non zero distance " << (last_non_zero * 0.01) << endl;
+    cerr << "Last non zero distance " << (last_non_zero * 0.01) << '\n';
 
   IWString stem = fname;
   assert (stem.ends_with(".r"));
@@ -2093,7 +2100,7 @@ plotnn (int argc, char ** argv)
     }
 
     if (verbose)
-      cerr << "Output precision " << output_precision << endl;
+      cerr << "Output precision " << output_precision << '\n';
   }
 
   if (cl.option_present('L'))
@@ -2173,7 +2180,7 @@ plotnn (int argc, char ** argv)
           usage(5);
         }
         if (verbose)
-          cerr << "Target identifier in column " << target_column_to_write << endl;
+          cerr << "Target identifier in column " << target_column_to_write << '\n';
 
         target_column_to_write--;
       }
@@ -2192,7 +2199,7 @@ plotnn (int argc, char ** argv)
 
           neighbour_columns_to_write.add_if_not_already_present(c - 1);
           if (verbose)
-            cerr << "Will write neighbour name token " << c << endl;
+            cerr << "Will write neighbour name token " << c << '\n';
         }
       }
       else if (x.starts_with("minextra="))
@@ -2320,7 +2327,7 @@ plotnn (int argc, char ** argv)
         }
 
         if (verbose)
-          cerr << "Neighbour list initially sized to " << initial_nbr_list_size << endl;
+          cerr << "Neighbour list initially sized to " << initial_nbr_list_size << '\n';
       }
       else if ("table" == x)
       {
@@ -2426,7 +2433,7 @@ plotnn (int argc, char ** argv)
         }
 
         if (verbose)
-          cerr << "Will censor distances shorter than " << censor_distances_shorter_than << endl;
+          cerr << "Will censor distances shorter than " << censor_distances_shorter_than << '\n';
       }
       else if (x.starts_with("mnc="))
       {
@@ -2594,24 +2601,24 @@ plotnn (int argc, char ** argv)
     cerr << "Molecules had between " << neighbour_statistics.minval() << " and " << neighbour_statistics.maxval() << " neighbours";
     if (neighbour_statistics.n() > 1 && neighbour_statistics.minval() < neighbour_statistics.maxval())
       cerr << " ave " << neighbour_statistics.average();
-    cerr << endl;
+    cerr << '\n';
 
     cerr << "distances between " << distance_stats.minval() << " and " << distance_stats.maxval();
     if (distance_stats.n() > 1)
       cerr << " ave " << distance_stats.average();
-    cerr << endl;
+    cerr << '\n';
 
     cerr << "Nearest distances between " << nearest_neighbour_stats.minval() << " and " << nearest_neighbour_stats.maxval();
     if (nearest_neighbour_stats.n() > 1)
       cerr << " ave " << nearest_neighbour_stats.average();
-    cerr << endl;
+    cerr << '\n';
 
     cerr << zero_distance_neighbours << " exact matches\n";
 
     cerr << "Furthest distances between " << furthest_neighbour_stats.minval() << " and " << furthest_neighbour_stats.maxval();
     if (furthest_neighbour_stats.n() > 1)
       cerr << " ave " << furthest_neighbour_stats.average();
-    cerr << endl;
+    cerr << '\n';
 
     for (int i = 0; i < neighbour_count.number_elements(); i++)
     {
@@ -2642,7 +2649,7 @@ main (int argc, char ** argv)
   }
   catch ( const Fatal_Error & f)
   {
-    cerr << "Caught " << f << endl;
+    cerr << "Caught " << f << '\n';
   }
 
   return rc;

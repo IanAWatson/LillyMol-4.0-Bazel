@@ -333,6 +333,10 @@ struct FileconvConfig {
 
   int append_clnd_count_to_name = 0;
 
+  // We can filter out molecules that have a formal charge
+  // greater than a given value. Not yet implemented
+  int max_abs_formal_charge = 0;
+
   molecular_weight_t lower_amw_cutoff = -1.0;
   int molecules_below_amw_cutoff = 0;
   molecular_weight_t upper_amw_cutoff = -1.0;

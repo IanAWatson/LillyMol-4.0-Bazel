@@ -248,6 +248,8 @@ FileconvConfig::DefaultValues() {
 
   append_clnd_count_to_name = 0;
 
+  max_abs_formal_charge = 0;
+
   lower_amw_cutoff = -1.0;
   molecules_below_amw_cutoff = 0;
   upper_amw_cutoff = -1.0;
@@ -2197,7 +2199,6 @@ FileconvConfig::ExcludeForNonRealElements(const Molecule& m) {
 
 int
 FileconvConfig::ExcludeForAtomTypes(const Molecule& m) {
-  cerr << "exclude_for_atom_types\n";
   if (exclude_non_real_elements && output_organic_only)
     return ExcludeForNonOrganic(m);
 

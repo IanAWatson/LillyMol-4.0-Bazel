@@ -593,7 +593,6 @@ iwfp (iwstring_data_source & input,
   while (input.next_record(buffer))
   {
     output << buffer << '\n';
-
     output.write_if_buffer_holds_more_than(4096);
 
     if ("|" == buffer)

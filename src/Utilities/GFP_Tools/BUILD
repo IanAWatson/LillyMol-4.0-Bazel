@@ -326,6 +326,18 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_distance_filter_standard",
+    srcs = [
+        "gfp_distance_filter_standard.cc",
+    ],
+    deps = [
+        ":gfp_standard",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iw_tdt:iw_tdt",
+    ]
+)
+
+cc_binary(
     name = "gfp_distance_matrix",
     srcs = [
         "gfp_distance_matrix.cc",

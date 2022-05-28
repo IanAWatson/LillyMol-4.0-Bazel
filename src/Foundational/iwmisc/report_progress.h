@@ -36,13 +36,13 @@ class Report_Progress_Template
 
     int set_report_every(T);
 
-      int report (const char * leading, const char * trailing, std::ostream &);
+    int report (const char * leading, const char * trailing, std::ostream &);
 
-      template <typename S>
-      int Report(const S& leading, const S& trailing,
+    template <typename S>
+    int Report(const S& leading, const S& trailing,
                  std::ostream& output);
 
-      void initialise (const Report_Progress_Template<T> & rhs);
+    void initialise (const Report_Progress_Template<T> & rhs);
   };
 
   typedef Report_Progress_Template<unsigned int> Report_Progress;
