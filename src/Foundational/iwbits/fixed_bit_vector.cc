@@ -261,9 +261,44 @@ FixedBitVector::reset() {
   std::fill_n(_bits, _nwords, 0);
 }
 
+/*
+  Code from 
+ Written by Imran S. Haque (ihaque@cs.stanford.edu)
+*/
+
+static inline int
+popcount_2fp(const unsigned* bufA,const unsigned* bufB,const int nwords)
+{
+    int count = 0;
+    assert(nwords % 8 == 0);
+     
+#if defined(__x86_64__)
+    int nquads = nwords/2;
+    const uint64_t* a64 = (uint64_t*)bufA;
+    const uint64_t* b64 = (uint64_t*)bufB;
+    for (int i = 0; i < nquads; i += 4) {
+        count +=  _mm_popcnt_u64(a64[i]&b64[i])     + _mm_popcnt_u64(a64[i+1]&b64[i+1])
+                + _mm_popcnt_u64(a64[i+2]&b64[i+2]) + _mm_popcnt_u64(a64[i+3]&b64[i+3]);
+    }
+#else
+    const uint32_t * a32 = (const uint32_t *)bufA;
+    const uint32_t * b32 = (const uint32_t *)bufB;
+    for (int i = 0; i < nwords; i += 4)
+    {
+      count +=  _mm_popcnt_u32(a32[i]&b32[i])     + _mm_popcnt_u32(a32[i+1]&b32[i+1]) +
+                _mm_popcnt_u32(a32[i+2]&b32[i+2]) + _mm_popcnt_u32(a32[i+3]&b32[i+3]);
+    }
+#endif
+    return count;
+}
+
 // Could possibly be made more efficient with loop unrolling, see gfp_standard.cc
 int
 FixedBitVector::BitsInCommon(const FixedBitVector& rhs) const {
+  if (_nwords == 32) {
+    return popcount_2fp((const unsigned*) _bits, (const unsigned*)rhs._bits, _nwords);
+  }
+
   int rc = 0;
   for (int i = 0; i < _nwords; ++i) {
     rc +=  _mm_popcnt_u64(_bits[i] & rhs._bits[i]);

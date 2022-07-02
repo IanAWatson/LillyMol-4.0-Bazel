@@ -171,6 +171,7 @@ Options::Build(Command_Line& cl) {
       cerr << "Cannot initialise progress reporting\n";
       return 0;
     }
+    cerr << "report_progress.active " << report_progress.active() << '\n';
   }
 
   if (cl.option_present('S')) {
@@ -609,7 +610,9 @@ GetAtomicProperty(Options& options,
     return 1;
   }
 
-  options.report_progress();  // For some reason is not working.
+  if (options.report_progress()) {
+    cerr << "Processed " << options.conformers_read << " molecules\n";
+  }
 
   if (conformer.fate() != Conformer::FATE_SUCCESS) {
     return 1;
@@ -693,7 +696,7 @@ GetAtomicProperty(int argc, char** argv) {
   Options options;
   if (! options.Build(cl)) {
     cerr << "Cannot initialise options\n";
-    return 1;
+    Usage(1);
   }
 
   if (cl.empty()) {

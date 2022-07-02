@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
-#include <memory>
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 #include "Foundational/iwmisc/misc.h"
 
@@ -23,6 +23,9 @@
 #include "path.h"
 #include "molecule.h"
 #include "aromatic.h"
+
+using std::cerr;
+using std::endl;
 
 //DEBUG_SWITCH is used to print out debugging msgs
 #ifndef DEBUG_SWITCH

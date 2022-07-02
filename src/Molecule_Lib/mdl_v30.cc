@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <iostream>
 
 
 #define COMPILING_MDL_CC
@@ -11,6 +12,9 @@
 #include "mdl.h"
 #include "molecule.h"
 #include "readmdl.h"
+
+using std::cerr;
+using std::endl;
 
 int
 Molecule::_fill_empty_molecule_with_null_atoms(int na)

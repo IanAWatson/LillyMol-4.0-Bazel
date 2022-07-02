@@ -1,3 +1,4 @@
+#include <iostream>
 #include <limits>
 
 #include "Foundational/iwmisc/misc.h"
@@ -5,6 +6,9 @@
 #include "atom_pair_fingerprint.h"
 
 namespace atom_pair_fingerprint {
+
+using std::cerr;
+using std::endl;
 
 using std::tie;
 

@@ -102,9 +102,6 @@ template <typename T> std::ostream & operator << (std::ostream &, const Space_Ve
 
 #include <algorithm>
 
-using std::cerr;
-using std::endl;
-
 #include "Foundational/iwstring/iwstring.h"
 
 template <typename T>
@@ -120,7 +117,7 @@ template <typename T>
 Space_Vector<T>::Space_Vector()
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "In default constructor " << this << endl;
+  std::cerr << "In default constructor " << this << '\n';
 #endif
 
   _default_values();
@@ -130,7 +127,7 @@ template <typename T>
 Space_Vector<T>::Space_Vector(T x, T y, T z)
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "Individual value constructor " << this << endl;
+  std::cerr << "Individual value constructor " << this << '\n';
 #endif
 
   _x = x;
@@ -144,7 +141,7 @@ template <typename T>
 Space_Vector<T>::Space_Vector(const Space_Vector<T> & rhs)
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "In copy constructor " << this << " rhs is " << rhs << endl;
+  std::cerr << "In copy constructor " << this << " rhs is " << rhs << '\n';
 #endif
 
   _x = rhs._x;
@@ -158,7 +155,7 @@ template <typename T>
 Space_Vector<T>::~Space_Vector()
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "descructor called for " << this << endl;
+  std::cerr << "descructor called for " << this << '\n';
 #endif
 
 //_default_values();   no reason to reset these
@@ -169,7 +166,7 @@ Space_Vector<T> &
 Space_Vector<T>::operator = (const Space_Vector<T> & rhs)
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "Assignment operator between " << this << " and " << &rhs << endl;
+  std::cerr << "Assignment operator between " << this << " and " << &rhs << '\n';
 #endif
 
   _x = rhs._x;
@@ -184,7 +181,7 @@ void
 Space_Vector<T>::normalise()
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "Normalising " << this << endl;
+  std::cerr << "Normalising " << this << '\n';
 #endif
 
   double mynorm = sqrt(static_cast<double>(_x) * static_cast<double>(_x) + static_cast<double>(_y) * static_cast<double>(_y) + static_cast<double>(_z) * static_cast<double>(_z));
@@ -452,12 +449,12 @@ Space_Vector<T>::angle_between_unit_vectors(const Space_Vector<T> & v1) const
     ;
   else if (fabs(tmp) < 1.00001)
   {
-//  cerr << "Space_Vector::angle_between_unit_vectors:numerical roundoff discarded " << (fabs(tmp) - 1.0) << endl;
+//  std::cerr << "Space_Vector::angle_between_unit_vectors:numerical roundoff discarded " << (fabs(tmp) - 1.0) << '\n';
     tmp = 1.0;
   }
   else
   {
-    cerr << "Space_Vector::angle_between_unit_vectors:vector might not be a unit vector, tmp = " << tmp << endl;
+    std::cerr << "Space_Vector::angle_between_unit_vectors:vector might not be a unit vector, tmp = " << tmp << '\n';
     abort();
   }
 
@@ -498,7 +495,7 @@ Space_Vector<T>::read(const const_IWSubstring & buffer, char separator)
 {
   if (buffer.nwords(separator) < 3)
   {
-    cerr << "vector::read: must have at least 3 tokens '" << buffer << "' has " << buffer.nwords(separator) << endl;
+    std::cerr << "vector::read: must have at least 3 tokens '" << buffer << "' has " << buffer.nwords(separator) << '\n';
     return 0;
   }
 
@@ -508,21 +505,21 @@ Space_Vector<T>::read(const const_IWSubstring & buffer, char separator)
   (void) buffer.nextword(token, i, separator);
   if (! token.numeric_value(_x))
   {
-    cerr << "vector::read: cannot parse first token as numeric\n";
+    std::cerr << "vector::read: cannot parse first token as numeric\n";
     return 0;
   }
 
   (void) buffer.nextword(token, i, separator);
   if (! token.numeric_value(_y))
   {
-    cerr << "vector::read: cannot parse second token as numeric\n";
+    std::cerr << "vector::read: cannot parse second token as numeric\n";
     return 0;
   }
 
   (void) buffer.nextword(token, i, separator);
   if (! token.numeric_value(_z))
   {
-    cerr << "vector::read: cannot parse third token as numeric\n";
+    std::cerr << "vector::read: cannot parse third token as numeric\n";
     return 0;
   }
 
@@ -559,7 +556,7 @@ Space_Vector<T>
 Space_Vector<T>::form_unit_vector(const Space_Vector<T> & rhs) const
 {
 #ifdef DEBUG_SPACE_VECTOR
-  cerr << "In form_unit_vector from " << this << " to " << &rhs << endl;
+  std::cerr << "In form_unit_vector from " << this << " to " << &rhs << '\n';
 #endif
 
   Space_Vector<T> rc(_x - rhs._x, _y - rhs._y, _z - rhs._z);

@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include <iostream>
+
 #if (__GNUC_MINOR__ == 95)
 #include <strstream>
 #else
@@ -12,6 +14,8 @@
 #include "molecule.h"
 #include "output.h"
 #include "smiles.h"
+
+using std::cerr;
 
 void
 Molecule_Output_Object::_default_values()
@@ -77,7 +81,7 @@ Molecule_Output_Object::debug_print(std::ostream& os) const
     {
       os << " " << suffix_for_file_type(_output_types[i]);
     }
-    os << endl;
+    os << '\n';
   }
 
   if (_name_token_for_fname >= 0)
@@ -190,7 +194,7 @@ Molecule_Output_Object::new_stem(const const_IWSubstring& nstem, int keep_suffix
 #ifdef DEBUG_NEW_STEM
   cerr << "Molecule_Output_Object::new_stem: setting stem to '" << nstem
        << "' molecules per file = " << _molecules_per_file
-       << " ntypes = " << _output_types.number_elements() << endl;
+       << " ntypes = " << _output_types.number_elements() << '\n';
 #endif
 
   if (_molecules_per_file)
@@ -331,7 +335,7 @@ Molecule_Output_Object::_open_new_stems(const const_IWSubstring& nstem, int keep
 
     if (! create_file_with_appropriate_name(nstem, tmp, output_type, keep_suffix))
     {
-      cerr << "Cannot process file type " << output_type << endl;
+      cerr << "Cannot process file type " << output_type << '\n';
       return 0;
     }
 
@@ -345,7 +349,7 @@ Molecule_Output_Object::_open_new_stems(const const_IWSubstring& nstem, int keep
       add(n);
 
 #ifdef DEBUG_NEW_STEM
-    cerr << "Opened file '" << tmp << endl;
+    cerr << "Opened file '" << tmp << '\n';
 #endif
   }
 
@@ -743,7 +747,7 @@ Molecule_Output_Object::add_output_type(FileType ot)
   const char* suffix = suffix_for_file_type(ot);
   if (nullptr == suffix)
   {
-    cerr << "Molecule_Output_Object::add_output_type: unrecognised type " << ot << endl;
+    cerr << "Molecule_Output_Object::add_output_type: unrecognised type " << ot << '\n';
     return 0;
   }
 
@@ -775,7 +779,7 @@ Molecule_Output_Object::would_use_name(const char* name) const
     FileType output_type = _output_types[i];
     if (! create_file_with_appropriate_name(name, tmp, output_type))
     {
-      cerr << "Cannot process file type " << output_type << endl;
+      cerr << "Cannot process file type " << output_type << '\n';
       return 0;
     }
 
@@ -804,7 +808,7 @@ Molecule_Output_Object::would_use_name(const const_IWSubstring& proposed_stem,
     FileType output_type = _output_types[i];
     if (! create_file_with_appropriate_name(proposed_stem, tmp, output_type))
     {
-      cerr << "Cannot process file type " << output_type << endl;
+      cerr << "Cannot process file type " << output_type << '\n';
       return 0;
     }
 
@@ -825,11 +829,10 @@ Molecule_Output_Object::would_overwrite_input_files(const Command_Line& cl,
     return 0;
   }
 
-  for (int i = 0; i < cl.number_elements(); i++)
-  {
-    const char* fname = cl[i];
-    if (would_use_name(proposed_stem, fname))
+  for (const char * fname : cl) {
+    if (would_use_name(proposed_stem, fname)) {
       return 1;
+    }
   }
 
   return 0;
@@ -844,6 +847,6 @@ Molecule_Output_Object::stream_for_type(int ftype) const
       return *(_things[i]);
   }
 
-  cerr << "Molecule_Output_Object::stream_for_type:no stream for type " << ftype << endl;
+  cerr << "Molecule_Output_Object::stream_for_type:no stream for type " << ftype << '\n';
   return std::cout;
 }

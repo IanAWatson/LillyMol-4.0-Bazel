@@ -1,9 +1,12 @@
-// Distance filter for gfp fingerprints
+// filter for gfp fingerprints
 
 #include <stdlib.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <memory>
 
 #include "re2/re2.h"
@@ -37,6 +40,10 @@ void Usage(int rc) {
   cerr << " -C 2             for each haystack member, identify the nearest needle\n";
   cerr << " -p <fname>       file containing fingerprints of the needles\n";
   cerr << " -a               find the closest match - not just the first within threshold\n";
+  cerr << " -G <tag>         specify guard fingerprint tag\n";
+  cerr << " -G thr=<dist>    the distance associated with the guard fingerprint\n";
+  cerr << " -w <diff>        only compare fp's where the atom count differs by <diff> or less\n";
+  cerr << " -n               create output for nnprocess rather than tabular\n";
   cerr << " -r <n>           report progress every <n> haystack members processed\n";
   cerr << " -X <fname>       write needles not matched to <fname>\n";
   cerr << " -v               verbose output\n";
@@ -45,6 +52,8 @@ void Usage(int rc) {
 
 class Options {
   private:
+    int _verbose;
+
     // We can do several different kinds of calculations.
     enum class CalculationType {
       // Identify needles that are within a given distance of any member of the haystack.
@@ -52,20 +61,36 @@ class Options {
       kIdentifyNeedlesNearHaystack,
 
       // For each member of the haystack, identify the nearest neighbour among _needles
+      // Things beyond _threshold are ignored.
       kFindNearestNeedleNeighbour,
     };
 
     CalculationType _calculation_type;
 
+    // The -t option.
     float _threshold;
-
-    int _verbose;
 
     GFP_Standard* _needles;
     int _number_needles;
 
+    int _atom_count_window;
+    int _calculations_bypassed_by_atom_count_window;
+
+    // If we have a guard fingerprint, the tag.
+    IWString _guard_fp_tag;
+    // And a FixedBitVector for each fingerprint in _needles.
+    // I thought of extending the GFP_Standard class, but this is likely
+    // more efficient.
+    IWDYFP* _guard_fp;
+
+    // And the distance associated with the guard fp
+    float _guard_fp_distance;
+
+    // We can assess the impact of the guard fingerprint.
+    int _calculations_attempted;
+    int _calculations_bypassed_by_guard;
+
     // GFP_Standard do not have a name field. Create one.
-    IWString* _name;
     Smiles_ID_Dist* _smiles_id_dist;
 
     // Once a needle has been identified as within range, we can optionally
@@ -75,11 +100,14 @@ class Options {
     // and can stop when that reaches zero.
     int _active_needles;
 
+    // this does not work. When looking for needles that are within range of a haystack
+    // item, it is written as soon as found with that initial distance. Not sure this
+    // is needed. It will result in no output till all the haystack has been searched.
     int _find_all_matches;
 
     Report_Progress _report_progress;
 
-    int _tdts_read;
+    uint32_t _tdts_read;
 
     // Of the calculations that return a value in range
     Accumulator<double> _distance;
@@ -92,23 +120,30 @@ class Options {
 
     int _tabular_output;
 
+    uint32_t _for_testing_stop;
+
     char _output_separator;
 
   // private functions
     int ReadNeedles(IWString& fname);
     int ReadNeedles(iwstring_data_source& input);
     int HandleWriteNonMatch(const IWString& id, const IW_TDT& tdt);
+    int CanBeCompared(const GFP_Standard& fp1, const GFP_Standard& fp2);
     int DoOutput(const IWString& smiles1, const IWString& id1,
          const IWString& smiles2, const IWString& id2,
          float distance,
          IWString_and_File_Descriptor& output);
 
+    int WithinRange(IWDYFP& g1, IWDYFP& g2);
+
     void UpdateDistanceStats(float distance);
     int IdentifyNeedlesNearHaystack(GFP_Standard& gfp,
+                 IWDYFP& guard_fp,
                  const IWString& id,
                  const IW_TDT& tdt,
                  IWString_and_File_Descriptor& output);
     int FindNearestNeedleNeighbour(GFP_Standard& gfp,
+                 IWDYFP& guard_fp,
                  const IWString& id,
                  const IW_TDT& tdt,
                  IWString_and_File_Descriptor& output);
@@ -122,7 +157,11 @@ class Options {
 
     int Process(const char * fname, IWString_and_File_Descriptor& output);
     int Process(iwstring_data_source& input, IWString_and_File_Descriptor& output);
+    int Process(const IW_General_Fingerprint& gfp,
+                const IW_TDT& tdt,
+                IWString_and_File_Descriptor& output);
     int Process(GFP_Standard& gfp,
+                IWDYFP& guard_fp,
                 const IWString& id,
                 const IW_TDT& tdt,
                 IWString_and_File_Descriptor& output);
@@ -137,9 +176,14 @@ Options::Options() {
 
   _verbose = 0;
   _needles = nullptr;
+  _guard_fp = nullptr;
   _already_written = nullptr;
   _active_needles = 0;
-  _name = nullptr;
+  _guard_fp_distance = 0.0f;
+  _calculations_attempted = 0;
+  _calculations_bypassed_by_guard = 0;
+  _atom_count_window = -1;
+  _calculations_bypassed_by_atom_count_window = 0;
   _smiles_id_dist = nullptr;
   _number_needles = 0;
   _tdts_read = 0;
@@ -149,17 +193,18 @@ Options::Options() {
   _exact_matches = 0;
   _output_separator = ' ';
   _calculation_type = CalculationType::kFindNearestNeedleNeighbour;
+  _for_testing_stop = std::numeric_limits<uint32_t>::max();
 }
 
 Options::~Options() {
   if (_needles != nullptr) {
     delete [] _needles;
   }
+  if (_guard_fp != nullptr) {
+    delete [] _guard_fp;
+  }
   if (_already_written != nullptr) {
     delete [] _already_written;
-  }
-  if (_name != nullptr) {
-    delete [] _name;
   }
   if (_smiles_id_dist != nullptr) {
     delete [] _smiles_id_dist;
@@ -198,6 +243,13 @@ Options::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('n')) {
+    _tabular_output = 0;
+    if (_verbose) {
+      cerr << "Will generate output for nnprocess\n";
+    }
+  }
+
   // If we are looking for nearest neighbours of each haystack fingerprint,
   // and there is no threshold, set it to 1.0.
   if (_calculation_type == CalculationType::kFindNearestNeedleNeighbour &&
@@ -205,11 +257,53 @@ Options::Initialise(Command_Line& cl) {
     _threshold = 1.0f;
   }
 
+  // Make sure to parse this before reading the needles.
+  if (cl.option_present('G')) {
+    const_IWSubstring g;
+    for (int i = 0; cl.value('G', g, i); ++i) {
+      if (g.starts_with("thr=")) {
+        g.remove_leading_chars(4);
+        if (! g.numeric_value(_guard_fp_distance) || _guard_fp_distance <= 0.0 ||
+            _guard_fp_distance > 1.0f) {
+          cerr << "Options::Initialise:invalid guard fingerprint distance '" << g << "'\n";
+          return 0;
+        }
+      } else {
+        _guard_fp_tag = g;
+      }
+    }
+
+    if (_guard_fp_tag.empty()) {
+      cerr << "Guard fingerprint tag not specified\n";
+      return 0;
+    }
+
+    if (_guard_fp_distance == 0.0f) {
+      cerr << "Guard fingerprint distance threshold not specified\n";
+      return 0;
+    }
+
+    if (_verbose) {
+      cerr << "Guard fingerprint in " << _guard_fp_tag << " distance " << _guard_fp_distance << '\n';
+    }
+  }
+
   if (cl.option_present('p')) {
     IWString fname = cl.string_value('p');
     if (! ReadNeedles(fname)) {
       cerr << "Cannot read needles from '" << fname << "'\n";
       return 0;
+    }
+  }
+
+  if (cl.option_present('w')) {
+    if (! cl.value('w', _atom_count_window) || _atom_count_window < 0) {
+      cerr << "The atom count window (-w) must be a whole +ve number\n";
+      return 0;
+    }
+
+    if (_verbose) {
+      cerr << "Will only compare fp's where the atom count differs by " << _atom_count_window << " or less\n";
     }
   }
 
@@ -235,6 +329,17 @@ Options::Initialise(Command_Line& cl) {
       return 0;
     }
     _output_separator = tmp[0];
+  }
+
+  if (cl.option_present('b')) {
+    if (! cl.value('b', _for_testing_stop) || _for_testing_stop == 0) {
+      cerr << "The for testing stop value (-b) must be a non zero whole number\n";
+      return 0;
+    }
+
+    if (_verbose) {
+      cerr << "Will stop processing after " << _for_testing_stop << " items read\n";
+    }
   }
 
   if (cl.option_present('X')) {
@@ -273,6 +378,12 @@ Options::ReadNeedles(IWString& fname) {
   _smiles_id_dist = new Smiles_ID_Dist[_number_needles];
   _active_needles = _number_needles;
 
+  cerr << "Guard tag " << _guard_fp_tag << '\n';
+  if (!_guard_fp_tag.empty()) {
+    _guard_fp = new IWDYFP[_number_needles];
+    cerr << "Allocated guard " << _number_needles << '\n';
+  }
+
   return ReadNeedles(input);
 }
 
@@ -288,10 +399,40 @@ int
 Build(const IW_General_Fingerprint& gfp,
       GFP_Standard& destination) {
   destination.build_molecular_properties(gfp.molecular_properties_integer());
-  destination.build_iw(gfp[0]);
-  destination.build_mk(gfp[1]);
-  destination.build_mk2(gfp[2]);
 
+  static int mk_ndx = -1;
+  static int mk2_ndx = -1;
+  static int iw_ndx = -1;
+  if (mk_ndx < 0) {
+    for (int i = 0; i < number_fingerprints(); ++i) {
+      const IWString& tag = fixed_fingerprint_tag(i);
+      if (tag.starts_with("FPMK2")) {
+        mk2_ndx = i;
+      } else if (tag.starts_with("FPMK")) {
+        mk_ndx = i;
+      } else if (tag.starts_with("FPIW")) {
+        iw_ndx = i;
+      }
+    }
+
+  }
+#ifdef DEBUG_BUILD
+  cerr << "FP 0 " << gfp[0].nbits() << '\n';
+  cerr << "FP 1 " << gfp[1].nbits() << '\n';
+  cerr << "FP 2 " << gfp[2].nbits() << '\n';
+  cerr << "FP 3 " << gfp[3].nbits() << '\n';
+#endif
+  destination.build_iw(gfp[iw_ndx]);
+  destination.build_mk(gfp[mk_ndx]);
+  destination.build_mk2(gfp[mk2_ndx]);
+
+  return 1;
+}
+
+int
+BuildGuardFp(const IW_General_Fingerprint& gfp,
+             IWDYFP& destination) {
+  destination = gfp[3];  // Hard coded for now...
   return 1;
 }
 
@@ -310,6 +451,11 @@ Options::ReadNeedles(iwstring_data_source& input) {
 
     if (! Build(gfp, _needles[ndx])) {
       cerr << "Options::ReadNeedles:cannot parse tdt\n";
+      cerr << tdt;
+      return 0;
+    }
+    if (!_guard_fp_tag.empty() && ! BuildGuardFp(gfp, _guard_fp[ndx])) {
+      cerr << "Cannot construct guard fingerprint\n";
       cerr << tdt;
       return 0;
     }
@@ -358,19 +504,39 @@ Options::Process(iwstring_data_source& input,
       return 0;
     }
 
-    GFP_Standard std_fp;
-    if (! Build(gfp, std_fp)) {
-      cerr << "Options::Process:invalid fingerprint\n";
+    if (! Process(gfp, tdt, output)) {
       return 0;
     }
 
-    if (! Process(std_fp, gfp.id(), tdt, output)) {
-      return 0;
+    if (_tdts_read >= _for_testing_stop) {
+      cerr << "Processing terminated via request at " << _tdts_read << '\n';
+      return 1;
     }
+  }
+  return 1;
+}
 
-    if (_report_progress()) {
-      ReportProgress(cerr);
-    }
+int
+Options::Process(const IW_General_Fingerprint& gfp,
+                 const IW_TDT& tdt,
+                 IWString_and_File_Descriptor& output) {
+  GFP_Standard std_fp;
+  if (! Build(gfp, std_fp)) {
+    cerr << "Options::Process:invalid fingerprint\n";
+    return 0;
+  }
+  IWDYFP guard_fp;
+  if (! _guard_fp_tag.empty() && ! BuildGuardFp(gfp, guard_fp)) {
+    cerr << "Cannot build guard fp\n";
+    return 0;
+  }
+
+  if (! Process(std_fp, guard_fp, gfp.id(), tdt, output)) {
+    return 0;
+  }
+
+  if (_report_progress()) {
+     ReportProgress(cerr);
   }
 
   return 1;
@@ -384,7 +550,7 @@ Options::ReportProgress(std::ostream& output) const {
       output << _active_needles << " of " << _number_needles << " active\n";
       break;
     case CalculationType::kFindNearestNeedleNeighbour:
-      output << _non_matches << " non matches\n";
+      output << _non_matches << " non matches " << iwmisc::Fraction<float>(_non_matches, static_cast<int>((_tdts_read - _non_matches))) << '\n';
       break;
     default:
       return 0;
@@ -409,16 +575,34 @@ Options::UpdateDistanceStats(float distance) {
 }
 
 int
+Options::CanBeCompared(const GFP_Standard& fp1,
+                       const GFP_Standard& fp2) {
+  if (_atom_count_window < 0) {
+    return 1;
+  }
+
+  int delta = std::abs(fp1.natoms() - fp2.natoms());
+  if (delta <= _atom_count_window) {
+    return 1;
+  }
+
+  ++_calculations_bypassed_by_atom_count_window;
+
+  return 0;
+}
+
+int
 Options::Process(GFP_Standard& gfp,
+                 IWDYFP& guard_fp,
                  const IWString& id,
                  const IW_TDT& tdt,
                  IWString_and_File_Descriptor& output) {
   switch (_calculation_type) {
     case CalculationType::kIdentifyNeedlesNearHaystack:
-      return IdentifyNeedlesNearHaystack(gfp, id, tdt, output);
+      return IdentifyNeedlesNearHaystack(gfp, guard_fp, id, tdt, output);
 
     case CalculationType::kFindNearestNeedleNeighbour:
-      return FindNearestNeedleNeighbour(gfp, id, tdt, output);
+      return FindNearestNeedleNeighbour(gfp, guard_fp, id, tdt, output);
 
     default:
       cerr << "What kind of calculation is being done\n";
@@ -451,10 +635,25 @@ Options::DoOutput(const IWString& smiles1, const IWString& id1,
   return 1;
 }
 
+int
+Options::WithinRange(IWDYFP& g1,
+                     IWDYFP& g2) {
+  float distance = 1.0f - g1.tanimoto(g2);
+  ++_calculations_attempted;
+  if (distance <= _guard_fp_distance) {
+    return 1;
+  }
+
+  ++_calculations_bypassed_by_guard;
+
+  return 0;
+}
+
 // Here we identify items in _needles that are close to a member of
 // the haystack, `gfp`.
 int
 Options::IdentifyNeedlesNearHaystack(GFP_Standard& gfp,
+                 IWDYFP& guard_fp,
                  const IWString& id,
                  const IW_TDT& tdt,
                  IWString_and_File_Descriptor& output) {
@@ -462,6 +661,15 @@ Options::IdentifyNeedlesNearHaystack(GFP_Standard& gfp,
     if (_already_written[i]) {
       continue;
     }
+
+#ifdef OPTIMIZATIONS_DO_NOT_WORK
+    if (! CanBeCompared(_needles[i], gfp)) {
+      continue;
+    }
+    if (_guard_fp_distance > 0.0f && ! WithinRange(_guard_fp[i], guard_fp)) {
+      continue;
+    }
+#endif
 
     std::optional<float> dist = gfp.tanimoto_distance_if_less(_needles[i], _threshold);
     if (! dist) {
@@ -487,6 +695,7 @@ Options::IdentifyNeedlesNearHaystack(GFP_Standard& gfp,
 // Identify the needle that is closest to `gfp`.
 int
 Options::FindNearestNeedleNeighbour(GFP_Standard& gfp,
+                 IWDYFP& guard_fp,
                  const IWString& id,
                  const IW_TDT& tdt,
                  IWString_and_File_Descriptor& output) {
@@ -494,6 +703,15 @@ Options::FindNearestNeedleNeighbour(GFP_Standard& gfp,
   int index_of_closest = -1;
 
   for (int i = 0; i < _number_needles; ++i) {
+#ifdef OPTIMIZATIONS_DO_NOT_WORK
+    if (! CanBeCompared(_needles[i], gfp)) {
+      continue;
+    }
+    if (_guard_fp_distance > 0.0f && ! WithinRange(_guard_fp[i], guard_fp)) {
+      continue;
+    }
+#endif
+
     float threshold = std::min(min_distance, _threshold);
     std::optional<float> dist = gfp.tanimoto_distance_if_less(_needles[i], threshold);
     if (! dist) {
@@ -551,6 +769,13 @@ Options::Report(std::ostream& output) const {
   output << _active_needles << " needles still active\n";
   output << _non_matches << " haystack items not matched\n";
   output << _exact_matches << " exact matches\n";
+  if (_atom_count_window >= 0) {
+    output << _calculations_bypassed_by_atom_count_window << " calculations bypassed by atom count window " << _atom_count_window << '\n';
+  }
+  if (! _guard_fp_tag.empty()) {
+    output << _calculations_bypassed_by_guard << " calculations bypassed by guard " << _guard_fp_tag << " thr " << _guard_fp_distance << '\n';
+    output << "Fraction bypassed " << iwmisc::Fraction<float>(_calculations_bypassed_by_guard, _calculations_attempted) << '\n';
+  }
   if (_distance.n() > 0) {
     output << "For items selected (threshold " << _threshold << ")\n";
     output << "Distances btw " << _distance.minval() << " and " << _distance.maxval() << " mean " << _distance.average() << '\n';
@@ -560,7 +785,7 @@ Options::Report(std::ostream& output) const {
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vC:p:r:t:X:ao:");
+  Command_Line cl(argc, argv, "vC:p:r:t:X:ao:w:G:b:n");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

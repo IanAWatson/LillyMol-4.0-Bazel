@@ -1,8 +1,11 @@
 #include <cctype>
+#include <iostream>
 
 #include "Foundational/iwstring/iwstring.h"
 
 #include "Molecule_Lib/smiles.h"
+
+using std::cerr;
 
 int
 count_atoms_in_smiles(const const_IWSubstring & smiles)
@@ -124,7 +127,7 @@ Smiles_Text::~Smiles_Text()
 int
 Smiles_Text::_error(const int pos, const char * msg)
 {
-  cerr << msg << endl;
+  cerr << msg << '\n';
   for (int i = 0; i <= pos; ++i)
   {
     cerr << _smiles[i];
@@ -206,7 +209,7 @@ SmilesSmarts_Component::debug_print(T & output) const
     output << "NOT SET";
   else
   {
-    cerr << "SmilesSmarts_Component::debug_print:unrecognised form " << _isa << endl;
+    cerr << "SmilesSmarts_Component::debug_print:unrecognised form " << _isa << '\n';
     return 0;
   }
 
@@ -702,7 +705,7 @@ static int verbose = 0;
 static void
 usage (int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "What does this programme do?\n";
   cerr << " -v             verbose output\n";
 
@@ -725,7 +728,7 @@ test_smiles_tokeniser_buffer(const const_IWSubstring & buffer,
 
   if (! stext.build(smiles.rawchars(), smiles.length(), is_smiles))
   {
-    cerr << "Invalid input " << buffer << endl;
+    cerr << "Invalid input " << buffer << '\n';
     return 0;
   }
 
@@ -756,7 +759,7 @@ test_smiles_tokeniser(iwstring_data_source & input,
     if (! test_smiles_tokeniser_buffer(buffer, is_smiles, output))
     {
       cerr << "Test failed\n";
-      cerr << buffer << endl;
+      cerr << buffer << '\n';
       return 0;
     }
   }

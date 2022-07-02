@@ -1,4 +1,7 @@
+#include <iostream>
+
 #include "Foundational/iwmisc/misc.h"
+
 #include "smiles.h"
 #include "iwrnm.h"
 #include "misc2.h"
@@ -6,6 +9,9 @@
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
 #include "tbb/scalable_allocator.h"
 #endif
+
+using std::cerr;
+using std::endl;
 
 static int FileScope_include_directionality_in_ring_closure_bonds = 0;
 

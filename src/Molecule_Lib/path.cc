@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <iostream>
+
 // define this symbol to get the private molecule functions below
 
 #define COMPILING_MOLECULER_CC
@@ -13,6 +15,9 @@
 
 #include "molecule.h"
 #include "path.h"
+
+using std::cerr;
+using std::endl;
 
 #define RING_FRAGMENT_MEMBERSHIP_UNKNOWN -8
 

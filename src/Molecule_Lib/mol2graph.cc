@@ -1,5 +1,6 @@
 // Functions relating to conversion from Molecule to Graph form.
 
+#include <iostream>
 #include <memory>
 
 
@@ -9,6 +10,9 @@
 
 #include "chiral_centre.h"
 #include "molecule.h"
+
+using std::cerr;
+using std::endl;
 
 static int exclude_triple_bonds_from_graph_reduction = 0;
 

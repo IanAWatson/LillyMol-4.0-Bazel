@@ -1,11 +1,15 @@
 #include <stdlib.h>
 #include <assert.h>
 //#include <ctype.h>
+#include <iostream>
 
 #include "Foundational/cmdline/cmdline.h"
 
 #include "molecule.h"
 #include "numass.h"
+
+using std::cerr;
+using std::endl;
 
 Number_Assigner::Number_Assigner()
 {

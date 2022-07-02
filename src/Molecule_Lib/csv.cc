@@ -1,8 +1,12 @@
 // I/O to smiles CSV form.
+#include <iostream>
 
 #include "istream_and_type.h"
 #include "molecule.h"
 #include "rwmolecule.h"
+
+using std::cerr;
+using std::endl;
 
 static char csv_separator = ',';
 

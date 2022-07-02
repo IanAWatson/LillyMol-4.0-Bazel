@@ -1,5 +1,6 @@
 #ifndef IW_ISTREAM_AND_TYPE
 #define IW_ISTREAM_AND_TYPE
+#include <iostream>
 
 #include "Foundational/data_source/iwstring_data_source.h"
 
@@ -102,7 +103,7 @@ data_source_and_type<T>::_default_values(FileType input_type)
     ;
   else if (! valid_file_type(input_type))
   {
-    cerr << "data_source_and_type::_default_values: unknown file type " << input_type << endl;
+    std::cerr << "data_source_and_type::_default_values: unknown file type " << input_type << '\n';
     return 0;
   }
 
@@ -129,7 +130,7 @@ data_source_and_type<T>::_file_opened_ok (const IWString & fname)
 {
   if (! good())
   {
-    cerr << "data_source_and_type::data_source_and_type: cannot open '" << fname << "' for input\n";
+    std::cerr << "data_source_and_type::data_source_and_type: cannot open '" << fname << "' for input\n";
     return 0;
   }
 
@@ -146,7 +147,7 @@ data_source_and_type<T>::_file_opened_ok (const IWString & fname)
   {
     if (! iwstring_data_source::seekg (seek_to_from_command_line()))
     {
-      cerr << "data_source_and_type::_file_opened_ok: cannot seek to " << seek_to_from_command_line() << endl;
+      std::cerr << "data_source_and_type::_file_opened_ok: cannot seek to " << seek_to_from_command_line() << '\n';
     }
   }
 
@@ -163,7 +164,7 @@ data_source_and_type<T>::data_source_and_type(FileType input_type,
     input_type = discern_file_type_from_name(fname);
     if (0 == input_type)
     {
-      cerr << "Data_Source_and_Type:: cannot discern input type '" << fname << "'\n";
+      std::cerr << "Data_Source_and_Type:: cannot discern input type '" << fname << "'\n";
       return;
     }
   }
@@ -202,7 +203,7 @@ data_source_and_type<T>::data_source_and_type (const IWString & fname)
   FileType tmp;
   if (FILE_TYPE_INVALID == (tmp = discern_file_type_from_name (fname)))
   {
-    cerr << "Data_source_and_type::constructor: cannot determine file type '" << fname << "'\n";
+    std::cerr << "Data_source_and_type::constructor: cannot determine file type '" << fname << "'\n";
     return;
   }
 
@@ -232,10 +233,10 @@ data_source_and_type<T>::~data_source_and_type()
 {
 
   if (_verbose)
-    cerr << "Read " << _molecules_read << " molecules from '" << _fname << "'\n";
+    std::cerr << "Read " << _molecules_read << " molecules from '" << _fname << "'\n";
 
   if (_connection_table_errors_encountered)
-    cerr << "data_source_and_type:: " << _connection_table_errors_encountered << " connection table errors encountered\n";
+    std::cerr << "data_source_and_type:: " << _connection_table_errors_encountered << " connection table errors encountered\n";
 
   return;
 }
@@ -259,20 +260,20 @@ data_source_and_type<T>::do_open(const char * fname,
     input_type = discern_file_type_from_name(fname);
     if (input_type <= 0)
     {
-      cerr << "data_source_and_type::do_open:cannot discern input type from '" << fname << "'\n";
+      std::cerr << "data_source_and_type::do_open:cannot discern input type from '" << fname << "'\n";
       return 0;
     }
     _input_type = input_type;
   }
   else
   {
-    cerr << "data_source_and_type::do_open:invalid file type " << input_type << endl;
+    std::cerr << "data_source_and_type::do_open:invalid file type " << input_type << '\n';
     return 0;
   }
 
   if (! iwstring_data_source::open(fname))
   {
-    cerr << "data_source_and_type::do_open:cannot open '" << fname << "'\n";
+    std::cerr << "data_source_and_type::do_open:cannot open '" << fname << "'\n";
     return 0;
   }
 
@@ -287,15 +288,15 @@ template <typename T>
 T *
 data_source_and_type<T>::next_molecule()
 {
-//cerr << "Reading next molecule\n";
-//debug_print(cerr);
+//std::cerr << "Reading next molecule\n";
+//debug_print(std::cerr);
 
   if (! _valid)
     return NULL;
 
   if (_do_only > 0 && _molecules_read >= _do_only)
   {
-    cerr << "data_source_and_type::next_molecule: already read " << _molecules_read << " molecules\n";
+    std::cerr << "data_source_and_type::next_molecule: already read " << _molecules_read << " molecules\n";
     _valid = 0;
     return NULL;
   }
@@ -322,11 +323,11 @@ data_source_and_type<T>::next_molecule()
       _molecules_read++;
       if (_verbose)
       {
-        cerr << _molecules_read;
+        std::cerr << _molecules_read;
         if (m->name().length())
-          cerr << " read '" << m->name() << "'\n";
+          std::cerr << " read '" << m->name() << "'\n";
         else
-          cerr << " no name\n";
+          std::cerr << " no name\n";
       }
 
       return m;
@@ -340,11 +341,11 @@ data_source_and_type<T>::next_molecule()
 
     _connection_table_errors_encountered++;
 
-    cerr << "data_source_and_type::next_molecule: Skipping connection table error " << _connection_table_errors_encountered << 
-            " record " << lines_read() << endl;
+    std::cerr << "data_source_and_type::next_molecule: Skipping connection table error " << _connection_table_errors_encountered << 
+            " record " << lines_read() << '\n';
 
     if (m->name().length())
-      cerr << "Molecule name '" << m->name() << "'\n";
+      std::cerr << "Molecule name '" << m->name() << "'\n";
 
     delete m;
 
@@ -354,22 +355,22 @@ data_source_and_type<T>::next_molecule()
 
       size_t bytes_to_echo = here - _offset_for_most_recent_molecule;
 
-//    cerr << "From " << here << " go back to " << _offset_for_most_recent_molecule << " echo " << bytes_to_echo << " bytes\n";
+//    std::cerr << "From " << here << " go back to " << _offset_for_most_recent_molecule << " echo " << bytes_to_echo << " bytes\n";
 
       if (! seekg (_offset_for_most_recent_molecule))
-        cerr << "data_source_and_type::next_molecule:sorry, cannot seek back to " << _offset_for_most_recent_molecule << endl;
+        std::cerr << "data_source_and_type::next_molecule:sorry, cannot seek back to " << _offset_for_most_recent_molecule << '\n';
       else
       {
         echo (_stream_for_connection_table_errors, static_cast<off_t>(bytes_to_echo));
         seekg (here);
 
-        cerr << "from " << _offset_for_most_recent_molecule << " to " << here << " now " << tellg() << endl;
+        std::cerr << "from " << _offset_for_most_recent_molecule << " to " << here << " now " << tellg() << '\n';
       }
     }
 
     if (_connection_table_errors_encountered > _connection_table_errors_allowed)
     {
-      cerr << "data_source_and_type::next_molecule:too many connection table errors " << _connection_table_errors_allowed << endl;
+      std::cerr << "data_source_and_type::next_molecule:too many connection table errors " << _connection_table_errors_allowed << '\n';
       return 0;
     }
   }
@@ -399,7 +400,7 @@ data_source_and_type<T>::set_connection_table_error_file (const IWString & fname
 
   if (! _stream_for_connection_table_errors.open(tmp.null_terminated_chars()))
   {
-    cerr << "data_source_and_type:set_connection_table_error_file: cannot open '" << fname << "'\n";
+    std::cerr << "data_source_and_type:set_connection_table_error_file: cannot open '" << fname << "'\n";
     return 0;
   }
 
@@ -432,7 +433,7 @@ data_source_and_type<T>::_rx_for_input_type() const
       break;
 
     default:
-      cerr << "data_source_and_type::molecules_remaining: no rx for type " << _input_type << endl;
+      std::cerr << "data_source_and_type::molecules_remaining: no rx for type " << _input_type << '\n';
       return 0;
   }
 
@@ -445,7 +446,7 @@ data_source_and_type<T>::molecules_remaining()
 {
   if (FILE_TYPE_INVALID == _input_type)
   {
-    cerr << "data_source_and_type::molecules_remaining: no type specified\n";
+    std::cerr << "data_source_and_type::molecules_remaining: no type specified\n";
     return 0;
   }
 
@@ -507,7 +508,7 @@ data_source_and_type<T>::_do_merck_skip_records()
   {
     if (! _skip_merck_connection_table())
     {
-      cerr << "data_source_and_type::_do_merck_skip_records: fatal error trying to skip " << _skip_first << " records, got " << i << endl;
+      std::cerr << "data_source_and_type::_do_merck_skip_records: fatal error trying to skip " << _skip_first << " records, got " << i << '\n';
       return 0;
     }
   }
@@ -523,33 +524,33 @@ data_source_and_type<T>::_skip_merck_connection_table()
 
   if (! iwstring_data_source::next_record (buffer))
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: premature eof\n";
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: premature eof\n";
     return 0;
   }
 
   if (! iwstring_data_source::next_record (buffer))
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: cannot read 2nd header record\n";
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: cannot read 2nd header record\n";
     return 0;
   }
 
   if (! buffer.starts_with ("MOL "))
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: 2nd record looks invalid, line " << lines_read() << endl;
-    cerr << buffer << endl;
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: 2nd record looks invalid, line " << lines_read() << '\n';
+    std::cerr << buffer << '\n';
     return 0;
   }
 
   if (! iwstring_data_source::next_record (buffer))
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: cannot read atom/bond count record\n";
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: cannot read atom/bond count record\n";
     return 0;
   }
 
   if (buffer.nwords() < 2)
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: invalid na,nb record, line " << lines_read() << endl;
-    cerr << buffer << endl;
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: invalid na,nb record, line " << lines_read() << '\n';
+    std::cerr << buffer << '\n';
     return 0;
   }
 
@@ -561,8 +562,8 @@ data_source_and_type<T>::_skip_merck_connection_table()
 
   if (! token.numeric_value (na) || na < 1)
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: invalid number of atoms\n";
-    cerr << buffer << endl;
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: invalid number of atoms\n";
+    std::cerr << buffer << '\n';
     return 0;
   }
 
@@ -571,8 +572,8 @@ data_source_and_type<T>::_skip_merck_connection_table()
 
   if (! token.numeric_value (nb) || nb < 1)
   {
-    cerr << "data_source_and_type::_skip_merck_connection_table: invalid number of bonds\n";
-    cerr << buffer << endl;
+    std::cerr << "data_source_and_type::_skip_merck_connection_table: invalid number of bonds\n";
+    std::cerr << buffer << '\n';
     return 0;
   }
 
@@ -580,13 +581,13 @@ data_source_and_type<T>::_skip_merck_connection_table()
   if (0 != nb % 5)
     bond_records++;
 
-//cerr << "Skipping " << na << " atoms and " << nb << " bonds or " << (na + bond_records) << " records\n";
+//std::cerr << "Skipping " << na << " atoms and " << nb << " bonds or " << (na + bond_records) << " records\n";
 
   for (int i = 0; i < (na + bond_records); i++)
   {
     if (! data_source_and_type::next_record (buffer))
     {
-      cerr << "data_source_and_type::_skip_merck_connection_table: eof im middle of molecule\n";
+      std::cerr << "data_source_and_type::_skip_merck_connection_table: eof im middle of molecule\n";
       return 0;
     }
   }
@@ -607,7 +608,7 @@ data_source_and_type<T>::_average_size (off_t offset,
 {
   if (! iwstring_data_source::seekg(offset))
   {
-    cerr << "data_source_and_type::_average_size:cannot seek to " << offset << endl;
+    std::cerr << "data_source_and_type::_average_size:cannot seek to " << offset << '\n';
     return 0;
   }
 
@@ -669,7 +670,7 @@ data_source_and_type<T>::estimate_molecules_in_file()
   size_t middle_of_file = _average_size(fsize / 2, rx, 1000);
   size_t end_of_file = _average_size(fsize - 2000 * middle_of_file, rx, 1000);
 
-  cerr << "Sizes: start " << start_of_file << " middle " << middle_of_file << " and " << end_of_file << endl;
+  std::cerr << "Sizes: start " << start_of_file << " middle " << middle_of_file << " and " << end_of_file << '\n';
 
   size_t ave = (start_of_file + middle_of_file + end_of_file) / 3;
 

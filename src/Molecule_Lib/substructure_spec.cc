@@ -1,4 +1,5 @@
 #include <cctype>
+#include <iostream>
 
 #include "re2/re2.h"
 
@@ -9,6 +10,9 @@
 #include "substructure.h"
 #include "target.h"
 #include "tokenise_atomic_smarts.h"
+
+using std::cerr;
+using std::endl;
 
 constexpr char open_brace = '{';
 

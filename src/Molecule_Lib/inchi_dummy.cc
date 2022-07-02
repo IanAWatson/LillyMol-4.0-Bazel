@@ -1,9 +1,13 @@
 #include <stdlib.h>
+#include <iostream>
 
 #include "Foundational/data_source/iwstring_data_source.h"
 
 #include "molecule.h"
 #include "rwmolecule.h"
+
+using std::cerr;
+using std::endl;
 
 int
 inchi_to_inchi_key(const char * inchi,

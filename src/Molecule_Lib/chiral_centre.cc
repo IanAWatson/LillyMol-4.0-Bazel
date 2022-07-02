@@ -1,6 +1,7 @@
+#include <assert.h>
 #include <stdlib.h>
 
-#include <assert.h>
+#include <iostream>
 #include <limits>
 
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
@@ -12,6 +13,9 @@
 #include "mdl.h"
 #include "chiral_centre.h"
 #include "misc2.h"
+
+using std::cerr;
+using std::endl;
 
 static int _automatically_add_implicit_hydrogen_to_incomplete_chiral_centre = 0;
 

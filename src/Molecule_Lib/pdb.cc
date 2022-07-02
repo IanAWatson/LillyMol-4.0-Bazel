@@ -16,6 +16,9 @@
 #include "molecule.h"
 #include "rwmolecule.h"
 
+using std::cerr;
+using std::endl;
+
 /*
   Jun 04. Need to preserve atom names when reading and writing
   pdb files. The right way to do that would be to include an

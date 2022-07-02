@@ -1,8 +1,12 @@
 #include <stdlib.h>
+#include <iostream>
 
 #include "Foundational/iwmisc/misc.h"
 
 #include "molecule.h"
+
+using std::cerr;
+using std::endl;
 
 Symmetry_Class_and_Canonical_Rank::Symmetry_Class_and_Canonical_Rank()
 {

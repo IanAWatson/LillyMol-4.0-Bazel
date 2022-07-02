@@ -3,9 +3,13 @@
 */
 
 #include <algorithm>
+#include <iostream>
 
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
+
+using std::cerr;
+using std::endl;
 
 class CIF_Loop
 {

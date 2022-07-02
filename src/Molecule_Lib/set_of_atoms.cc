@@ -1,8 +1,12 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <iostream>
 
 #include "molecule.h"
 #include "mdl.h"
+
+using std::cerr;
+using std::endl;
 
 Set_of_Atoms::Set_of_Atoms ()
 {

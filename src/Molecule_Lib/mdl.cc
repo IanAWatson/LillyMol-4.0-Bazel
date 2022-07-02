@@ -2,8 +2,6 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 // Be sure to define this symbol so all the private functions get defined
 
@@ -24,10 +22,9 @@ using std::endl;
 #include "readmdl.h"
 #include "rwmolecule.h"
 
-//#define USE_IWMALLOC
-#ifdef USE_IWMALLOC
-#include "iwmalloc.h"
-#endif
+
+using std::cerr;
+using std::endl;
 
 void
 MDL_File_Supporting_Material::_default_values()

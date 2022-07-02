@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 
 #include "assert.h"
@@ -11,6 +12,9 @@
 #include "molecule.h"
 #include "smiles.h"
 #include "misc2.h"
+
+using std::cerr;
+using std::endl;
 
 static int File_Scope_discard_directional_bonds_on_input = 0;
 

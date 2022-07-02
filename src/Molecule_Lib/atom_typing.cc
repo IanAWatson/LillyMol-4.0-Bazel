@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 #include <memory>
 
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
@@ -13,6 +14,9 @@
 #include "path.h"
 #include "rwsubstructure.h"
 #include "target.h"
+
+using std::cerr;
+using std::endl;
 
 static int assign_arbitrary_values_to_unclassified_atoms = 0;
 

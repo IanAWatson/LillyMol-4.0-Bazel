@@ -2,8 +2,9 @@
   Chemical standardisation routines.
 */
 
-#include <memory>
 #include <algorithm>
+#include <iostream>
+#include <memory>
 
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
@@ -21,6 +22,9 @@
 #include "toggle_kekule_form.h"
 #include "smiles.h"
 #include "misc2.h"
+
+using std::cerr;
+using std::endl;
 
 class Molecule_Data_for_Standardisation
 {

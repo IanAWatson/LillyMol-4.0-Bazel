@@ -1,10 +1,14 @@
 #include <algorithm>
+#include <iostream>
 
 #include "linear_fingerprint.h"
 
 #include "Foundational/iwmisc/misc.h"
 
 namespace linear_fingerprint {
+
+using std::cerr;
+using std::endl;
 
 namespace internal {
 

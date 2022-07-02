@@ -3,12 +3,16 @@
 */
 
 #include <stdlib.h>
+#include <iostream>
 
 #include "Foundational/cmdline/cmdline.h"
 
 #include "aromatic.h"
 #include "iw_vdw.h"
 #include "molecule.h"
+
+using std::cerr;
+using std::endl;
 
 /*
   VDW parameters from Shrake and Rupley, J Mol Bio, 79, 351-371 (1973)

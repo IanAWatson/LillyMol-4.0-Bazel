@@ -1,6 +1,11 @@
+#include <iostream>
+
 #include "ostream_and_type.h"
 
 #include "molecule.h"
+
+using std::cerr;
+using std::endl;
 
 int
 ofstream_and_type::_default_values()

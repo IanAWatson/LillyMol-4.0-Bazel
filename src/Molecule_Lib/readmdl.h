@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 
 // Be sure to define this symbol so all the private functions get defined
@@ -69,7 +70,7 @@ Molecule::_read_molecule_mdl_ds(T & input,
   {
     if (! _process_v30_composite_records(input, mdlfsm))
     {
-      cerr << "_read_molecule_mdl_ds:cannot process V30 composite records\n";
+      std::cerr << "_read_molecule_mdl_ds:cannot process V30 composite records\n";
       return 0;
     }
     skip_to_string(input, "M  END", 0);    // 0 means do it quietly
@@ -140,7 +141,7 @@ Molecule::read_molecule_mdl_ds(T & input,
     else if (_number_elements <= d)
       (void) discern_chirality_from_3d_structure();
     else
-      cerr << "Molecule::_read_molecule_mdl_ds:skipped d@3d for too many atoms '" << name() << "' " << _number_elements << '\n';
+      std::cerr << "Molecule::_read_molecule_mdl_ds:skipped d@3d for too many atoms '" << name() << "' " << _number_elements << '\n';
   }
 
   if (0 == _chiral_centres.number_elements())    // none to worry about
@@ -149,8 +150,8 @@ Molecule::read_molecule_mdl_ds(T & input,
     ;
   else               // OOPS, bad chirality info
   {
-    cerr << "Molecule::read_molecule_mdl_ds: erroneous chiral input\n";
-    cerr << _molecule_name << endl;
+    std::cerr << "Molecule::read_molecule_mdl_ds: erroneous chiral input\n";
+    std::cerr << _molecule_name << '\n';
     _chiral_centres.resize(0);
     if (! ignore_incorrect_chiral_input())
       return 0;
@@ -193,20 +194,20 @@ Molecule::_read_mdl_atom_connection_table(T & input,
 
   if (buffer.length() < 6)
   {
-    cerr << "Molecule::_read_mdl_atom_connection_table: the atoms/bond record must be at least 6 chars long, line " << input.lines_read() << endl;
-    cerr << buffer << endl;
+    std::cerr << "Molecule::_read_mdl_atom_connection_table: the atoms/bond record must be at least 6 chars long, line " << input.lines_read() << '\n';
+    std::cerr << buffer << '\n';
     return 0;
   }
 
   int na;
   if (2 != int3d(buffer, na, nb))
   {
-    cerr << "Molecule::_read_mdl_atom_connection_table: error from int3d '" << buffer << "'\n";
-    cerr << "Line " << input.lines_read() << endl;
+    std::cerr << "Molecule::_read_mdl_atom_connection_table: error from int3d '" << buffer << "'\n";
+    std::cerr << "Line " << input.lines_read() << '\n';
     return 0;
   }
 
-//cerr << "Contains '" << na << " atoms and " << nb << " bonds\n";
+//std::cerr << "Contains '" << na << " atoms and " << nb << " bonds\n";
 
   assert (na >= 0 && (nb >= 0));
 
@@ -231,7 +232,7 @@ Molecule::_read_mdl_atom_connection_table(T & input,
 
     if (! mdl_atom_record.build(buffer))
     {
-      cerr << buffer << endl;
+      std::cerr << buffer << '\n';
       return rwmolecule_error("read_molecule_mdl_ds:bad atom data", input);
     }
 
@@ -239,8 +240,8 @@ Molecule::_read_mdl_atom_connection_table(T & input,
 
     if (NULL == a)
     {
-      cerr << buffer << endl;
-      cerr << rwmolecule_error("read_molecule_mdl_ds:bad element", input);
+      std::cerr << buffer << '\n';
+      std::cerr << rwmolecule_error("read_molecule_mdl_ds:bad element", input);
       return 0;
     }
 
@@ -250,8 +251,8 @@ Molecule::_read_mdl_atom_connection_table(T & input,
       ;
     else if (! _mdl_atom_is_chiral_centre(_number_elements - 1, mdl_atom_record.astere(), mdlfos))
     {
-      cerr << "Molecule::_read_mdl_atom_connection_table: invalid chirality on line " << input.lines_read() << endl;
-      cerr << buffer << endl;
+      std::cerr << "Molecule::_read_mdl_atom_connection_table: invalid chirality on line " << input.lines_read() << '\n';
+      std::cerr << buffer << '\n';
       return 0;
     }
   }
@@ -290,7 +291,7 @@ Molecule::_read_mdl_bond_list (T & input, int nb,
 
     if (! mdlfos.parse_bond_record(buffer, na, a1, a2, bond_type_read_in, directionality))
     {
-      cerr << "Molecule::_read_mdl_bond_list: bond record " << i << " is bad '" <<
+      std::cerr << "Molecule::_read_mdl_bond_list: bond record " << i << " is bad '" <<
               buffer << "'\n";
       rc = 0;
       continue;
@@ -300,7 +301,7 @@ Molecule::_read_mdl_bond_list (T & input, int nb,
 
     if (mdlfos.ignore_self_bonds() && (a1 == a2))
     {
-      cerr << "Molecule::_read_mdl_bond_list: ignoring self bonds " << a1 << " to " << a2 << endl;
+      std::cerr << "Molecule::_read_mdl_bond_list: ignoring self bonds " << a1 << " to " << a2 << '\n';
       continue;
     }
 
@@ -310,7 +311,7 @@ Molecule::_read_mdl_bond_list (T & input, int nb,
     {
       if (! input_aromatic_structures())
       {
-        cerr << "Molecule::_read_mdl_bond_list:aromatic input not enabled, bond between atoms " << a1 << " and " << a2 << endl;
+        std::cerr << "Molecule::_read_mdl_bond_list:aromatic input not enabled, bond between atoms " << a1 << " and " << a2 << '\n';
         rc = 0;
         continue;
       }
@@ -322,7 +323,7 @@ Molecule::_read_mdl_bond_list (T & input, int nb,
     }
     else if (! convert_from_mdl_number_to_bond_type(bond_type_read_in, btype))
     {
-      cerr << "Molecule::_read_mdl_bond_list: bad bond type " << bond_type_read_in << endl;
+      std::cerr << "Molecule::_read_mdl_bond_list: bad bond type " << bond_type_read_in << '\n';
       rc = 0;
       continue;
     }
@@ -377,7 +378,7 @@ Molecule::_read_mdl_data_following_tag (T & input,
       _molecule_name.append_with_spacer(buffer, mdlfos.insert_between_sdf_name_tokens());
   }
 
-  cerr << "Molecule::_read_mdl_data_following_tag:premature eof\n";
+  std::cerr << "Molecule::_read_mdl_data_following_tag:premature eof\n";
   return 0;
 }
 
@@ -429,8 +430,8 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
       continue;
     else if (fatal)
     {
-      cerr << "Molecule::_read_molecule_mdl_trailing_records:invalid record, line " << input.lines_read() << endl;
-      cerr << buffer << endl;
+      std::cerr << "Molecule::_read_molecule_mdl_trailing_records:invalid record, line " << input.lines_read() << '\n';
+      std::cerr << buffer << '\n';
       return 0;
     }
 
@@ -491,7 +492,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
     if (buffer.starts_with("M  "))
     {
       if (mdlfos.report_unrecognised_records() || ! mdlfos.ignore_unrecognised_m_records())
-        cerr << "Unrecognised 'M  ' directive '" << buffer << "'\n";
+        std::cerr << "Unrecognised 'M  ' directive '" << buffer << "'\n";
       if (! mdlfos.ignore_unrecognised_m_records())
         return 0;
     }
@@ -501,7 +502,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
       Atom_Alias * a = new Atom_Alias;
       if (! a->build(buffer, input))
       {
-        cerr << "Invalid atom alias data, line " << input.lines_read() << endl;
+        std::cerr << "Invalid atom alias data, line " << input.lines_read() << '\n';
         delete a;
         return 0;
       }
@@ -527,7 +528,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
       {
         if (! _process_mdl_g_record (g, buffer))
         {
-          cerr << "Molecule::_read_molecule_mdl_trailing_records:cannot process G record '" << buffer << "'\n";
+          std::cerr << "Molecule::_read_molecule_mdl_trailing_records:cannot process G record '" << buffer << "'\n";
           return 0;
         }
       }
@@ -538,7 +539,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
     if (read_extra_text_info())
       add_to_text_info(_text_info, buffer);
 
-//  cerr << read_extra_text_info() << " now contains " << _text_info.number_elements() << endl;
+//  std::cerr << read_extra_text_info() << " now contains " << _text_info.number_elements() << '\n';
 
     if (0 == buffer.length())
       continue;
@@ -639,7 +640,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
 //  If we get to here, just ignore it.
 
     if(mdlfos.report_unrecognised_records())
-      cerr << "Ignoring unrecognised form, line " << input.lines_read() << " '" << buffer << "'\n";
+      std::cerr << "Ignoring unrecognised form, line " << input.lines_read() << " '" << buffer << "'\n";
   }
 
   if (mdlfos.set_elements_based_on_atom_aliases() && mdlfos.number_aliases())
@@ -651,9 +652,9 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
 // If we come out here, it must be EOF. That's OK.
 
 //if (trailing_lines > 6)     May 2005, this warning doesn't seem necessary
-//  cerr << "mdl_read_ds: " << trailing_lines << " lines found between bonds and EOF\n";
+//  std::cerr << "mdl_read_ds: " << trailing_lines << " lines found between bonds and EOF\n";
 
-  cerr << "mdl_read_ds returning at EOF without $$$$\n";
+  std::cerr << "mdl_read_ds returning at EOF without $$$$\n";
 
   return 1;
 }
@@ -680,11 +681,11 @@ skip_to_rdfile_start_of_record (T & input,
 
   if (0 == records_read_here)
   {
-    cerr << "read mol rdf eof\n";
+    std::cerr << "read mol rdf eof\n";
     return 0;
   }
 
-  cerr << "EOF reading RDFILE, cannot find start record '" << rdfile_start_of_record << "', tried " << records_read_here << "\n";
+  std::cerr << "EOF reading RDFILE, cannot find start record '" << rdfile_start_of_record << "', tried " << records_read_here << "\n";
   return 0;
 }
 
@@ -944,7 +945,7 @@ Molecule::write_connection_table_mdl (T & os) const
 
   if (! os.good())
   {
-    cerr << "Molecule::write_connection_table_mdl: cannot write\n";
+    std::cerr << "Molecule::write_connection_table_mdl: cannot write\n";
     return 0;
   }
 
@@ -1004,7 +1005,7 @@ Molecule::_write_molecule_bond_list_v30 (T & os) const
       os << " 4 ";
     else
     {
-      cerr << "Molecule::_write_molecule_bond_list_v30: what kind of bond is this " << b->btype() << '\n';
+      std::cerr << "Molecule::_write_molecule_bond_list_v30: what kind of bond is this " << b->btype() << '\n';
       os << " ? ";
     }
 
@@ -1193,7 +1194,7 @@ fetch_collection(T & input,
   {
     if (! line.starts_with("M  V30 "))
     {
-      cerr << "fetch_collection:possibly invalid record prefix '" << line << "', continuing....\n";
+      std::cerr << "fetch_collection:possibly invalid record prefix '" << line << "', continuing....\n";
       continue;
     }
 
@@ -1223,7 +1224,7 @@ fetch_collection(T & input,
 
   if (! got_end_group)
   {
-    cerr << "fetch_collection:premature EOF. Did not find '" << end_group << "'\n";
+    std::cerr << "fetch_collection:premature EOF. Did not find '" << end_group << "'\n";
   }
 
   return mgroup.number_elements();
@@ -1250,19 +1251,19 @@ Molecule::_process_v30_composite_records(T & input,
       collection_type.remove_leading_chars(13);
       if (! fetch_collection(input, collection_type, s))
       {
-        cerr << "Molecule::_process_v30_composite_records:cannot fetch '" << collection_type << " collection end\n";
+        std::cerr << "Molecule::_process_v30_composite_records:cannot fetch '" << collection_type << " collection end\n";
         return 0;
       }
 
-//    cerr << "Got group type " << collection_type << " with " << s.number_elements() << " lines\n";
+//    std::cerr << "Got group type " << collection_type << " with " << s.number_elements() << " lines\n";
       if ("SGROUP" == collection_type && mdlfsm.convert_single_atom_sgroup_to_element())
       {
         if (! _convert_sgroups_to_elements(s))
         {
-          cerr << "Molecule::_process_v30_composite_records:cannot process SGROUP\n";
+          std::cerr << "Molecule::_process_v30_composite_records:cannot process SGROUP\n";
           for (int i = 0; i < s.number_elements(); ++i)
           {
-            cerr << *s[i] << '\n';
+            std::cerr << *s[i] << '\n';
           }
           return 0;
         }

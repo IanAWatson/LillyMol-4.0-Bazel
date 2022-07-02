@@ -1,4 +1,6 @@
 // Tester for fragment related things.
+#include <iostream>
+
 #include "molecule.h"
 
 //#include "googlemock/include/gmock/gmock.h"
@@ -29,9 +31,9 @@ class TestNumberFragments : public testing::TestWithParam<SmilesNfrag> {
 TEST_P(TestNumberFragments, TestCounts) {
   const auto params = GetParam();
   Molecule m;
-  cerr << "Building from " << params.smiles << '\n';
+  std::cerr << "Building from " << params.smiles << '\n';
   ASSERT_TRUE(m.build_from_smiles(params.smiles));
-  cerr << "Built molecule from " << params.smiles << '\n';
+  std::cerr << "Built molecule from " << params.smiles << '\n';
   EXPECT_EQ(m.number_fragments(), params.number_fragments);
 }
 
@@ -67,9 +69,9 @@ class TestFragmentMembership : public testing::TestWithParam<SmilesSameFrag> {
 TEST_P(TestFragmentMembership, TestFragMembership) {
   const auto params = GetParam();
   Molecule m;
-  cerr << "Building from " << params.smiles << '\n';
+  std::cerr << "Building from " << params.smiles << '\n';
   ASSERT_TRUE(m.build_from_smiles(params.smiles));
-  cerr << "Built molecule from " << params.smiles << '\n';
+  std::cerr << "Built molecule from " << params.smiles << '\n';
   if (params.same) {
     EXPECT_EQ(m.fragment_membership(params.a1), m.fragment_membership(params.a2));
   } else {
@@ -81,6 +83,39 @@ INSTANTIATE_TEST_SUITE_P(TestFragMembership, TestFragmentMembership, testing::Va
    SmilesSameFrag{"C.C", 0, 1, false},
    SmilesSameFrag{"C.C.C", 0, 2, false},
    SmilesSameFrag{"C1CC1.CC", 3, 4, true}
+));
+
+struct SmilesFragCount {
+  IWString smiles;
+  int number_fragments;
+  std::vector<int> atoms_in_fragment;
+};
+
+class TestAtomsInFragment : public testing::TestWithParam<SmilesFragCount> {
+  protected:
+    Molecule _m;
+};
+
+TEST_P(TestAtomsInFragment, TestAtomsInFragment) {
+  const auto params = GetParam();
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  EXPECT_EQ(_m.number_fragments(), params.number_fragments);
+  std::vector<int> aif;
+  std::cerr << "Testing " << _m.smiles() << '\n';
+  for (int i = 0; i < params.number_fragments; ++i) {
+    aif.push_back(_m.atoms_in_fragment(i));
+  }
+  for (auto i : aif) {
+    std::cerr << "Have fragment with " << i << " atoms \n";
+  }
+  EXPECT_THAT(aif, testing::UnorderedElementsAreArray(params.atoms_in_fragment));
+}
+INSTANTIATE_TEST_SUITE_P(TestAtomsInFragment, TestAtomsInFragment, testing::Values(
+  SmilesFragCount{"", 0, {}},
+  SmilesFragCount{"CC", 1, {2}},
+  SmilesFragCount{"CC.CCC", 2, {2, 3}},
+  SmilesFragCount{"CC.CCC.CC", 3, {2, 2, 3}},
+  SmilesFragCount{"C.C.C.C.C.C.C.C", 8, {1, 1, 1, 1, 1, 1, 1, 1}}
 ));
 
 TEST(TestCreateSubset, TestCreateSubset) {
@@ -106,7 +141,6 @@ TEST(TestCreateSubset, TestCreateSubset) {
         UnorderedElementsAre(subset.atomic_number(0), subset.atomic_number(1)));
     }
   }
-
 }
 }  // namespace
 

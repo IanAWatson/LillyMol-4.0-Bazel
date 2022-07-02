@@ -1511,6 +1511,78 @@ Fragment_Information::atoms_in_fragment (int matoms,
   return s.number_elements();
 }
 
+//#define NEW_VERSION___
+#ifdef NEW_VERSION___
+// I don't understand this.
+// I was expecting this version to be faster than the recursive version,
+// but it is NOT. It is substantially slower.
+int
+Molecule::_recursive_fragment_membership(Fragment_Information& fragment_information,
+                atom_number_t zatom,
+                int fragment_number,
+                int & bonds_in_fragment,
+                int* atom_stack) {
+  int * fragment_membership = fragment_information.fragment_membership();
+
+  int rc = 0;
+  atom_stack[0] = zatom;
+  int stack_size = 1;
+  do  {
+    --stack_size;
+    const int i = atom_stack[stack_size];
+    ++rc;
+    fragment_membership[i] = fragment_number;
+    const Atom* a = _things[i];
+    bonds_in_fragment += a->ncon();
+    for (const Bond* b : *a) {
+      const atom_number_t j = b->other(i);
+      if (fragment_membership[j] >= 0) {
+        continue;
+      }
+      atom_stack[stack_size] = j;
+      ++stack_size;
+    }
+  }
+  while (stack_size > 0);
+
+  return rc;
+}
+
+int
+Molecule::_recursive_fragment_membership(Fragment_Information& fragment_information)
+{
+  resizable_array<int> & atoms_in_fragment = fragment_information.atoms_in_fragment();
+  resizable_array<int> & bonds_in_fragment = fragment_information.bonds_in_fragment();
+  int * fragment_membership = fragment_information.fragment_membership();
+
+  int fragment_number = 0;
+  std::unique_ptr<int[]> atom_stack(new int[_number_elements]);
+  for (int i = 0; i < _number_elements; ++i) {
+    if (fragment_membership[i] >= 0) {
+      continue;
+    }
+    int bif = 0;
+    atoms_in_fragment.add(_recursive_fragment_membership(fragment_information, i,
+                          fragment_number, bif, atom_stack.get()));
+    bonds_in_fragment.add(bif);
+    fragment_number++;
+  }
+
+  if (! fragment_information.set_number_fragments(fragment_number)) {
+    return 0;
+  }
+
+  for (int i = 0; i < fragment_number; ++i) {
+    bonds_in_fragment[i] /= 2;
+  }
+
+  return fragment_number;
+}
+#endif
+
+#define OLD_VERSION___
+#ifdef OLD_VERSION___
+// Keeping the "old" version because it is faster than the "new" version.
 int
 Molecule::_recursive_fragment_membership(Fragment_Information& fragment_information,
                 atom_number_t zatom,
@@ -1552,8 +1624,9 @@ Molecule::_recursive_fragment_membership(Fragment_Information& fragment_informat
     fragment_number++;
   }
 
-  if (! fragment_information.set_number_fragments(fragment_number))
+  if (! fragment_information.set_number_fragments(fragment_number)) {
     return 0;
+  }
 
   for (int i = 0; i < fragment_number; ++i) {
     bonds_in_fragment[i] /= 2;
@@ -1561,6 +1634,7 @@ Molecule::_recursive_fragment_membership(Fragment_Information& fragment_informat
 
   return fragment_number;
 }
+#endif
 
 int
 Molecule::_compute_fragment_information (Fragment_Information & fragment_information,

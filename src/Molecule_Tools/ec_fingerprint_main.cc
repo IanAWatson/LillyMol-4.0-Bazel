@@ -35,8 +35,6 @@ int reduce_to_largest_fragment = 0;
 
 JobParameters job_parameters;
 
-bool function_as_tdt_filter = false;
-
 const IWString smiles_tag("$SMI<");
 const IWString identifier_tag("PCN<");
 
@@ -231,13 +229,13 @@ EcFingerprintPipe(iwstring_data_source& input,
 template <typename T>
 int
 EcFingerprint(const char * fname, FileType input_type, 
-                ECFingerprint& ec_fp_gen,
-                T& op,
-                IWString_and_File_Descriptor & output)
+              ECFingerprint& ec_fp_gen,
+              T& op,
+              IWString_and_File_Descriptor & output)
 {
   assert(nullptr != fname);
 
-  if (function_as_tdt_filter) {
+  if (job_parameters.function_as_tdt_filter) {
     iwstring_data_source input(fname);
     if (! input.good()) {
       cerr << "EcFingerprint::cannot open filter " << fname << endl;

@@ -154,11 +154,11 @@ is_unique_molecule(Molecule& m)
 
   const int matoms = m.natoms();
 
-  while (matoms >= smiles_hash.number_elements())
-  {
+  while (matoms >= smiles_hash.number_elements()) {
     smiles_hash.add(new IW_STL_Hash_Map_int);
-    if (use_atom_hash)
+    if (use_atom_hash) {
       atom_hash.add(new std::unordered_set<uint64_t>());
+    }
   }
 
   //cerr << matoms << " smiles_hash " << smiles_hash.number_elements() << " formula_hash " << formula_hash.number_elements() << endl;
@@ -736,8 +736,12 @@ unique_molecule(int argc, char** argv)
   for (int i = 0; i < 200; i++)
   {
     smiles_hash.add(new IW_STL_Hash_Map_int);
-    if (perform_formula_check)
+    if (perform_formula_check) {
       formula_hash.add(new IW_STL_Hash_Set);
+    }
+    if (use_atom_hash) {
+      atom_hash.add(new std::unordered_set<uint64_t>());
+    }
   }
 
   for (int i = 0; i < 200; i++)
@@ -776,8 +780,7 @@ unique_molecule(int argc, char** argv)
 
   if (cl.option_present('S'))
   {
-    if (function_as_filter)
-    {
+    if (function_as_filter) {
       cerr << "The -f and -S options are incompatible\n";
       usage(49);
     }
@@ -793,8 +796,7 @@ unique_molecule(int argc, char** argv)
     const_IWSubstring tmp;
     cl.value('S', tmp);
 
-    if (unique_molecule_stream.would_overwrite_input_files(cl, tmp))
-    {
+    if (unique_molecule_stream.would_overwrite_input_files(cl, tmp)) {
       cerr << "Cannot overwrite input file(s) '" << tmp << "'\n";
       return 7;
     }
@@ -809,12 +811,10 @@ unique_molecule(int argc, char** argv)
       cerr << "Unique molecules written to stem '" << tmp << "'\n";
   }
 
-  if (cl.option_present('D'))
-  {
+  if (cl.option_present('D')) {
     if (! cl.option_present('o'))
       duplicate_molecule_stream.add_output_type(FILE_TYPE_SMI);
-    else if (! duplicate_molecule_stream.determine_output_types(cl))
-    {
+    else if (! duplicate_molecule_stream.determine_output_types(cl)) {
       cerr << "Cannot discern output types for duplicate stream\n";
       usage(12);
     }
@@ -822,14 +822,14 @@ unique_molecule(int argc, char** argv)
     IWString tmp;
     cl.value('D', tmp);
 
-    if (! duplicate_molecule_stream.new_stem(tmp, 1))    // causes files to be opened
-    {
+    if (! duplicate_molecule_stream.new_stem(tmp, 1)) {    // causes files to be opened
       cerr << "Could not use stem '" << tmp << "' for duplicates\n";
       return 4;
     }
 
-    if (verbose)
+    if (verbose) {
       cerr << "Duplicate molecules written to stem '" << tmp << "'\n";
+    }
   }
 
   int rc = 0;
@@ -845,11 +845,11 @@ unique_molecule(int argc, char** argv)
       return i + 1;
   }
 
-  if (! unique_molecule_stream.active() && ! duplicate_molecule_stream.active())
+  if (! unique_molecule_stream.active() && ! duplicate_molecule_stream.active()) {
     verbose = 1;
+  }
 
-  if (verbose)
-  {
+  if (verbose) {
     cerr << molecules_read << " molecules read, " << duplicates_found << " duplicates, "
          << (molecules_read - duplicates_found) << " unique structures\n";
     if (number_reactions)
@@ -864,20 +864,17 @@ unique_molecule(int argc, char** argv)
     {
       const IW_STL_Hash_Map_int& f = *(smiles_hash[i]);
 
-      for (IW_STL_Hash_Map_int::const_iterator j = f.begin(); j != f.end(); ++j)
-      {
+      for (IW_STL_Hash_Map_int::const_iterator j = f.begin(); j != f.end(); ++j) {
         cerr << (*j).first << ' ' << (*j).second << '\n';
         //      cerr << (*j).second << " instances of '" << (*j).first << "'\n";
       }
     }
   }
 
-  if (use_atom_hash)
-  {
+  if (use_atom_hash) {
     unsigned int s = 0;
-    for (int i = 0; i < atom_hash.number_elements(); ++i)
-    {
-      s += atom_hash[i]->size();
+    for (auto & h : atom_hash) {
+      s += h->size();
     }
     cerr << "Atom hash contains " << s << " discrete values\n";
   }
@@ -886,8 +883,7 @@ unique_molecule(int argc, char** argv)
 }
 
 int
-main(int argc, char** argv)
-{
+main(int argc, char** argv) {
   prog_name = argv[0];
 
   int rc = unique_molecule(argc, argv);

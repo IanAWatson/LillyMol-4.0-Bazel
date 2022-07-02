@@ -1,10 +1,11 @@
 #ifndef RWMOLECULE_H
 #define RWMOLECULE_H
+#include <iostream>
 
 #define EXTRA_STRING_RECORD(ds, b, c) \
   if (! (ds).next_record ((b)))\
   {\
-    cerr << (c) << " eof\n";\
+    std::cerr << (c) << " eof\n";\
     return 0;\
   }
 

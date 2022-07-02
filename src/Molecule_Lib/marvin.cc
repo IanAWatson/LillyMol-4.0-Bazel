@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include <iostream>
 #include <limits>
 #include <memory>
 
@@ -11,6 +12,9 @@
 
 #include "molecule.h"
 #include "marvin.h"
+
+using std::cerr;
+using std::endl;
 
 static const Marvin_Structure_Information * msi = nullptr;
 

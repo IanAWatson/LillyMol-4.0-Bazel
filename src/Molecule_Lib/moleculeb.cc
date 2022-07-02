@@ -2,8 +2,9 @@
   Molecule functions for when there is a MOLECULE_BOND_LIST
 */
 
-#include <memory>
 #include <stdlib.h>
+#include <iostream>
+#include <memory>
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
@@ -20,6 +21,9 @@
 #include "misc2.h"
 #include "molecule.h"
 #include "path.h"
+
+using std::cerr;
+using std::endl;
 
 static int copy_atom_based_user_specified_void_pointers_during_add_molecle = 0;
 

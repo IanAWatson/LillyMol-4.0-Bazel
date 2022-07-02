@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 
 #include "Foundational/iwmisc/misc.h"
@@ -6,6 +7,8 @@
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/path_around_ring.h"
 
+using std::cerr;
+using std::endl;
 //#define DEBUG_PATH_AROUND_EDGE_OF_RING_SYSTEM
 
 int

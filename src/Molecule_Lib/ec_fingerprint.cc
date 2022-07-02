@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <limits>
 #include <memory>
 
@@ -9,6 +10,9 @@
 #include "ec_fingerprint.h"
 
 namespace ec_fingerprint {
+
+using std::cerr;
+using std::endl;
 
 ShellInfo::ShellInfo(const Molecule& m, const int* include_atom, const atom_type_t* atom_type) :
        _m(m),

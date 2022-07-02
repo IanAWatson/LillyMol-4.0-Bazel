@@ -1,6 +1,8 @@
-#include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdlib.h>
+
+#include <iostream>
 #include <memory>
 
 #define COMPILING_CTB
@@ -10,6 +12,8 @@
 #include "molecule.h"
 #include "path_scoring.h"
 #include "misc2.h"
+
+using std::cerr;
 
 Atomic_Numbers_Encounterd::Atomic_Numbers_Encounterd()
 {
@@ -23,8 +27,7 @@ atomic_number_from_element(const Element * e)
 {
   const IWString s = e->symbol();
 
-  if (! isupper(s[0]))
-  {
+  if (! isupper(s[0])) {
 //  cerr << "Strange element symbol '" << s << "'\n";
     return 26 + 26 * 26 + 1;
   }
@@ -230,7 +233,7 @@ Atomic_Numbers_Encounterd::compare (const Atomic_Numbers_Encounterd & rhs) const
   for (int i = SIZE_OF_ATOMIC_NUMBERS_ENCOUNTERED_ARRAY - 1; i >= 0; i--)
   {
 //  if (_found[i] != rhs._found[i])
-//    cerr << " i = " << i << " lhs " << _found[i] << " and rhs " << rhs._found[i] << endl;
+//    cerr << " i = " << i << " lhs " << _found[i] << " and rhs " << rhs._found[i] << '\n';
 
     if (_found[i] < rhs._found[i])
       return 1;
@@ -287,7 +290,7 @@ Path_Scoring::debug_print (std::ostream & os) const
   {
     const Atomic_Numbers_Encounterd & ane = *(_things[i]);
 
-    os << ' ' << i << "   " << ane << endl;
+    os << ' ' << i << "   " << ane << '\n';
   }
 
   return os.good();
@@ -390,7 +393,7 @@ Path_Scoring::advance (Atom * const * atom,
     new_edge_atoms.resize(ne * 2 + 5);
 
 #ifdef DEBUG_ADVANCE
-  cerr << "Advancing " << ne << " edge atoms, nsteps = " << _nsteps << endl;
+  cerr << "Advancing " << ne << " edge atoms, nsteps = " << _nsteps << '\n';
 #endif
 
   for (int i = 0; i < ne; i++)
@@ -414,7 +417,7 @@ Path_Scoring::advance (Atom * const * atom,
       atom_number_t l = b->other(j);
 
 #ifdef DEBUG_ADVANCE
-      cerr << "Atom " << l << " is attached, claimed = " << claimed[l] << endl;
+      cerr << "Atom " << l << " is attached, claimed = " << claimed[l] << '\n';
 #endif
 
       if (1 == claimed[l])      // someone else already got this one
@@ -433,7 +436,7 @@ Path_Scoring::advance (Atom * const * atom,
 
 #ifdef DEBUG_ADVANCE
       if (_nsteps > 0)
-        cerr << "Added atomic number " << atom[l]->atomic_number() << endl;
+        cerr << "Added atomic number " << atom[l]->atomic_number() << '\n';
 #endif
     }
   }
@@ -479,14 +482,14 @@ straight_bond (const Coordinates & ab,
 {
   angle_t theta = ab.angle_between_unit_vectors(bc);
 
-//cerr << "Theta1 " << theta << endl;
+//cerr << "Theta1 " << theta << '\n';
 
   if (fabs(theta) <= tolerance)
     return 1;
 
   theta = bc.angle_between_unit_vectors(cd);
 
-//cerr << "Theta2 " << theta << endl;
+//cerr << "Theta2 " << theta << '\n';
 
   if (fabs(theta) < tolerance)
     return 1;
@@ -737,7 +740,7 @@ Molecule::identify_ez_atoms (atom_number_t a3, atom_number_t a4,
     int lhs = _score_ez_bond(already_done, ps[0], ps[1]);
 
 #ifdef DEBUG_SCORE_EZ
-  cerr << "After scoring atom " << a3 << " (atoms " << a1 << " and " << a2 << ") lhs " << lhs << endl;
+  cerr << "After scoring atom " << a3 << " (atoms " << a1 << " and " << a2 << ") lhs " << lhs << '\n';
 #endif
 
     if (0 == lhs)      // could not be resolved, double bond cannot be E/Z
@@ -760,7 +763,7 @@ Molecule::identify_ez_atoms (atom_number_t a3, atom_number_t a4,
     int rhs = _score_ez_bond(already_done, ps[0], ps[1]);
 
 #ifdef DEBUG_SCORE_EZ
-  cerr << "After scoring atom " << a4 << " (atoms " << a5 << " and " << a6 << ") rhs " << rhs << endl;
+  cerr << "After scoring atom " << a4 << " (atoms " << a5 << " and " << a6 << ") rhs " << rhs << '\n';
 #endif
 
     if (0 == rhs)     // rhs could not be resolved
@@ -789,7 +792,7 @@ Molecule::ez_by_geometry (atom_number_t a1,
                           angle_t tolerance) const
 {
 #ifdef DEBUG_EZ_GEOMETRY
-  cerr << "Checking geometry for atoms " << a1 << ", " << a2 << ", " << a3 << " and " << a4 << endl;
+  cerr << "Checking geometry for atoms " << a1 << ", " << a2 << ", " << a3 << " and " << a4 << '\n';
 #endif
 
   const Atom * aa1 = _things[a1];
@@ -811,9 +814,9 @@ Molecule::ez_by_geometry (atom_number_t a1,
   }
 
 #ifdef DEBUG_EZ_GEOMETRY
-  cerr << "AB " << ab << endl;
-  cerr << "BC " << bc << endl;
-  cerr << "CD " << cd << endl;
+  cerr << "AB " << ab << '\n';
+  cerr << "BC " << bc << '\n';
+  cerr << "CD " << cd << '\n';
 #endif
 
   ab.normalise();
@@ -835,7 +838,7 @@ Molecule::ez_by_geometry (atom_number_t a1,
   angle_t a = x1.angle_between(x2);
 
 #ifdef DEBUG_EZ_GEOMETRY
-  cerr << "Checking result " << x1 << " and " << x2 << " angle " << (a * RAD2DEG) << endl;
+  cerr << "Checking result " << x1 << " and " << x2 << " angle " << (a * RAD2DEG) << '\n';
 #endif
 
   if (fabs(a) <= (M_PI * 0.5))    // pointing in roughly the same direction
@@ -886,7 +889,7 @@ Molecule::_score_ez_bond (int * already_done,
 
 //#define DEBUG_SCORE_EZ_BOND
 #ifdef DEBUG_SCORE_EZ_BOND
-    cerr << "Compare = " << compare << endl;
+    cerr << "Compare = " << compare << '\n';
 #endif
 
     if (compare < 0)
@@ -895,7 +898,7 @@ Molecule::_score_ez_bond (int * already_done,
       return 1;
 
 #ifdef DEBUG_SCORE_EZ_BOND
-    cerr << "Active " << ps1.active() << " and " << ps2.active() << endl;
+    cerr << "Active " << ps1.active() << " and " << ps2.active() << '\n';
 #endif
 
     if (ps1.active() && ps2.active())    // not yet resolved, need to keep going
@@ -983,8 +986,8 @@ resolved(resizable_array_p<Path_Scoring> & ps,
     const Path_Scoring & curr = *(ps[i]);
 
 #ifdef DEBUG_RESOLVED
-    cerr << "Comparing " << prev << endl;
-    cerr << "     with " << curr << endl;
+    cerr << "Comparing " << prev << '\n';
+    cerr << "     with " << curr << '\n';
 #endif
 
     if (curr != prev)     // these two are resolved
@@ -1054,7 +1057,7 @@ int
 Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
 {
 #ifdef  DEBUG_DISCERN_CIS_TRANS_BOND_FROM_DEPICTION
-  cerr << "Looking for cis-trans bond involving " << (*b) << endl;
+  cerr << "Looking for cis-trans bond involving " << (*b) << '\n';
 #endif
 
   if (b->part_of_cis_trans_grouping())   // already done
@@ -1144,7 +1147,7 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
   int ez = ez_by_geometry(a1, a3, a4, a5, static_cast<angle_t>(10.0 * DEG2RAD));
 
 #ifdef DEBUG_DISCERN_CIS_TRANS_BOND_FROM_DEPICTION
-  cerr << "Atoms " << a1 << "-" << a3 << "=" << a4 << "-" << a5 << " ez = " << ez << endl;
+  cerr << "Atoms " << a1 << "-" << a3 << "=" << a4 << "-" << a5 << " ez = " << ez << '\n';
 #endif
 
   if (0 == ez)
@@ -1163,7 +1166,7 @@ Molecule::_discern_cis_trans_bond_from_depiction (Bond * b)
 
 #ifdef DEBUG_DISCERN_CIS_TRANS_BOND_FROM_DEPICTION
   cerr << "Directions:\n";
-  cerr << "a1 " << a1 << ' ' << a1_direction << " a2 " << a2 << ' ' << a2_direction << " a5 " << a5 << ' ' << a5_direction << " a6 " << a6 << ' ' << a6_direction << endl;
+  cerr << "a1 " << a1 << ' ' << a1_direction << " a2 " << a2 << ' ' << a2_direction << " a5 " << a5 << ' ' << a5_direction << " a6 " << a6 << ' ' << a6_direction << '\n';
 #endif
 
 // Check the various pairs of atoms across the double bond (1,5), (2,5), (2,6) and (1,6)
@@ -1533,7 +1536,7 @@ Molecule::remove_invalid_directional_bonds()
         remove_it = 1;
     }
 
-//  cerr << "Bond between " << a3 << " and " << a4 << " remove_it " << remove_it << endl;
+//  cerr << "Bond between " << a3 << " and " << a4 << " remove_it " << remove_it << '\n';
 
     if (! remove_it)
       continue;

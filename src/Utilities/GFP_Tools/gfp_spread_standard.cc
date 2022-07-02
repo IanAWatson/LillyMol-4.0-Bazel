@@ -997,7 +997,7 @@ spread()
     s = nexts;
 
     if (report_progress())
-      cerr << "Selected " << items_selected << " fingerprints\n";
+      cerr << " selected " << items_selected << " fingerprints\n";
   }
 
   return 1;
