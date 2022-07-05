@@ -132,3 +132,7 @@ IWStringHash::operator () (const IWString & s1, const IWString & s2) const
 }
 
 #endif
+
+#if defined IW_USE_ABSL
+#include "absl/hash/hash.h"
+#endif

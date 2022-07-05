@@ -1211,6 +1211,5 @@ const_IWSubstring::split_into_directive_and_value (const_IWSubstring & directive
 }
 
 #endif
-#endif
 
-/* arch-tag: a3c38e2b-3093-495e-a598-8ad0d05cc122 */
+#endif

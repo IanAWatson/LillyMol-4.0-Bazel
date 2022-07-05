@@ -1,7 +1,19 @@
 cc_library(
-     name = "iwstring",
-     visibility = ["//visibility:public"],
-     srcs = [
+    name = "absl_hash",
+    hdrs = [
+        "absl_hash.h",
+    ],
+    deps = [
+        ":iwstring",
+        "@local_highwayhash//:highwayhash",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "iwstring",
+    visibility = ["//visibility:public"],
+    srcs = [
         "append_number.cc",
         "hexprint.cc",
         "iwgetline.cc",
@@ -18,21 +30,21 @@ cc_library(
         "string_change.cc",
         "string_relationals.cc",
         "unhtml.cc",
-     ],
-     hdrs = [
+    ],
+    hdrs = [
          "iwhash.h",
          "iwstring.h",
          "iw_stl_hash_set.h",
          "iw_stl_hash_map.h",
          "iwzlib.h",
-     ],
-     deps = [
+    ],
+    deps = [
          "//Foundational/iwaray:iwaray",
          "//Foundational/iwmisc:iwconfig",
-     ],
-     linkopts = [
-         "-lm",
-     ]
+    ],
+    linkopts = [
+        "-lm",
+    ]
 )
 
 cc_binary(

@@ -1215,6 +1215,8 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "//Foundational/iwstring:absl_hash",
     ],
     linkopts = [
         "-lz",
