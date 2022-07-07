@@ -1209,9 +1209,9 @@ cc_binary(
         "unique_molecules.cc",
     ],
     deps = [
+        ":unique_molecules_api",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
-        "//Molecule_Lib:iwreaction",
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
@@ -1456,9 +1456,24 @@ cc_library(
         "//Foundational/iwmisc:iwmisc",
         "//Molecule_Lib:iwmolecule"
     ],
-    linkopts = [
-        "-lz"
-    ],
+)
+
+cc_library(
+   name = "unique_molecules_api",
+   srcs = [
+     "unique_molecules_api.cc",
+   ],
+   hdrs = [
+     "unique_molecules_api.h",
+   ],
+   deps = [
+       "//Foundational/cmdline:iwcmdline",
+       "//Foundational/iwstring:absl_hash",
+       "//Molecule_Lib:iwmolecule",
+       "//Molecule_Lib:iwreaction",
+       "//Molecule_Lib:moleculeio",
+        "@com_google_absl//absl/container:flat_hash_set",
+   ],
 )
 
 cc_test(

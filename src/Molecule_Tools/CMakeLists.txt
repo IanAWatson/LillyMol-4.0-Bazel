@@ -164,8 +164,8 @@ set(fileconv_srcs
   fileconv.cc
   fix_structures.cc
   fix_structures.h
-  do_remove_duplicate_fragments.cc
-  do_remove_duplicate_fragments.h
+  remove_duplicate_fragments.cc
+  remove_duplicate_fragments.h
   known_fragment_data.cc
   known_fragment_data.h
 )
