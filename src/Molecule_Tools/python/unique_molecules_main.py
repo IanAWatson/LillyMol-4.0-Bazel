@@ -32,6 +32,8 @@ def main(argv):
     um.set_exclude_cis_trans_bonding_info(1)
   if FLAGS.ignore_isotopes:
     um.set_ignore_isotopes(1)
+  if FLAGS.standardize:
+    um.activate_standardization('all')
 
   if len(FLAGS.dupefile) > 0:
     dupefile = open(FLAGS.dupefile, 'w')

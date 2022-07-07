@@ -46,6 +46,7 @@ PYBIND11_MODULE(unique_molecules, m) {
     .def("set_exclude_cis_trans_bonding_info", &UniqueMoleculesImplementation::set_exclude_cis_trans_bonding_info)
     .def("set_ignore_isotopes", &UniqueMoleculesImplementation::set_ignore_isotopes)
     .def("unique_molecules", &UniqueMoleculesImplementation::unique_molecules)
+    .def("activate_standardization", &UniqueMoleculesImplementation::ActivateChemicalStandardization)
     .def("is_unique", &UniqueMoleculesImplementation::SmilesIsUnique);
     
 }
