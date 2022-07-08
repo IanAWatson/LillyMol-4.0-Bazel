@@ -60,6 +60,12 @@ set(linear_path_fingerprint_srcs
 add_library(linear_path_fingerprint_lib ${linear_path_fingerprint_srcs})
 target_include_directories(linear_path_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(unique_molecules_api_srcs
+  unique_molecules_api.cc
+)
+add_library(unique_molecules_api_lib ${unique_molecules_api_srcs})
+target_include_directories(unique_molecules_api_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 # activity_consistency
 set(activity_consistency_srcs
   activity_consistency.cc

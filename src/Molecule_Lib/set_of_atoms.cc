@@ -2,11 +2,12 @@
 #include <assert.h>
 #include <iostream>
 
-#include "molecule.h"
+#ifdef NEED_WRITE_AS_MDL_V30_COLLECTION_BLOCK
 #include "mdl.h"
+#endif
+#include "molecule.h"
 
 using std::cerr;
-using std::endl;
 
 Set_of_Atoms::Set_of_Atoms ()
 {
@@ -40,7 +41,7 @@ Set_of_Atoms::write(std::ostream & os) const
     os << " " << _things[i];
   }
 
-  os << endl;
+  os << '\n';
   return os.good();
 }
 
@@ -251,6 +252,9 @@ Set_of_Atoms::operator = (const Set_of_Atoms & rhs)
   return *this;
 }
 
+#ifdef NEED_WRITE_AS_MDL_V30_COLLECTION_BLOCK
+// Not sure this is needed. If it is needed, move it to mdl.cc or
+// restructure as a non-member function.
 int
 Set_of_Atoms::write_as_mdl_v30_collection_block(const const_IWSubstring & zname,
                                                  const const_IWSubstring & subname,
@@ -260,7 +264,7 @@ Set_of_Atoms::write_as_mdl_v30_collection_block(const const_IWSubstring & zname,
   output << "M  V30 " << zname;
   if (subname.length() > 0)
     output << '/' << subname;
-  output << endl;
+  output << '\n';
 
   IWString output_buffer;
   output_buffer.resize(200);
@@ -278,6 +282,7 @@ Set_of_Atoms::write_as_mdl_v30_collection_block(const const_IWSubstring & zname,
 
   return output.good();
 }
+#endif
 
 int
 Set_of_Atoms::any_members_in_common(const Set_of_Atoms & rhs) const

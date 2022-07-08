@@ -10,7 +10,9 @@
 
 #include "Foundational/iwmisc/iwminmax.h"
 #include "molecule.h"
+#ifdef NOW_IN_MDL_CC_REMOVE_FROM_HERE_WHEN_OK
 #include "mdl.h"
+#endif
 #include "chiral_centre.h"
 #include "misc2.h"
 
@@ -749,8 +751,8 @@ Chiral_Centre::centre_atom_has_a_lone_pair()
 */
 
 int
-Molecule::_smi_process_new_chiral_centre (Chiral_Centre * c,
-                                          int hcount) const
+Molecule::_smi_process_new_chiral_centre(Chiral_Centre * c,
+                                         int hcount) const
 {
   atom_number_t a = c->a();
   assert(a == _number_elements - 1);
@@ -801,7 +803,7 @@ Molecule::_smi_process_new_chiral_centre (Chiral_Centre * c,
 }
 
 Chiral_Centre *
-Molecule::chiral_centre_at_atom (atom_number_t a) const
+Molecule::chiral_centre_at_atom(atom_number_t a) const
 {
   int nc = _chiral_centres.number_elements();
   for (int i = 0; i < nc; i++)
@@ -815,7 +817,7 @@ Molecule::chiral_centre_at_atom (atom_number_t a) const
 }
 
 Chiral_Centre *
-Molecule::remove_no_delete_chiral_centre_at_atom (atom_number_t zatom)
+Molecule::remove_no_delete_chiral_centre_at_atom(atom_number_t zatom)
 {
   int nc = _chiral_centres.number_elements();
 
@@ -837,7 +839,7 @@ Molecule::remove_no_delete_chiral_centre_at_atom (atom_number_t zatom)
 }
 
 Chiral_Centre *
-Molecule::chiral_centre_in_molecule_not_indexed_by_atom_number (int i) const
+Molecule::chiral_centre_in_molecule_not_indexed_by_atom_number(int i) const
 {
   assert(ok());
   assert(_chiral_centres.ok_index(i));
@@ -852,9 +854,9 @@ Molecule::chiral_centre_in_molecule_not_indexed_by_atom_number (int i) const
 */
 
 int
-Molecule::_smi_atom_bonded_to_chiral_centre (atom_number_t previous_atom,
-                                             int previous_atom_chiral_count,
-                                             atom_number_t atom_bonded_to_chiral_centre)
+Molecule::_smi_atom_bonded_to_chiral_centre(atom_number_t previous_atom,
+                                            int previous_atom_chiral_count,
+                                            atom_number_t atom_bonded_to_chiral_centre)
 {
 // First fetch the chiral centre anchored on PREVIOUS_ATOM
 
@@ -992,7 +994,7 @@ Molecule::_smi_atom_bonded_to_chiral_centre (atom_number_t previous_atom,
 */
 
 int
-Molecule::_check_for_incomplete_chiral_specifications (Chiral_Centre * c)
+Molecule::_check_for_incomplete_chiral_specifications(Chiral_Centre * c)
 {
   atom_number_t zatom = c->a();
 
@@ -1847,8 +1849,8 @@ Chiral_Centre::lone_pair_count() const
 */
 
 Chiral_Centre *
-Molecule::create_chiral_centre (atom_number_t zatom,
-                                int zero_connections_ok)
+Molecule::create_chiral_centre(atom_number_t zatom,
+                               int zero_connections_ok)
 {
   assert(nullptr == chiral_centre_at_atom(zatom));    // cannot already be one at atom A
 
@@ -1894,6 +1896,7 @@ Molecule::create_chiral_centre (atom_number_t zatom,
   return c;
 }
 
+#ifdef NOW_IN_MDL_CC_REMOVE_FROM_HERE_WHEN_OK
 //#define DEBUG_COMPLETE_CHIRAL_CENTRE
 
 /*
@@ -1914,8 +1917,8 @@ Molecule::create_chiral_centre (atom_number_t zatom,
 */
 
 int
-Molecule::_complete_chiral_centre_from_mdl_files (Chiral_Centre * c,
-                                                  const MDL_File_Supporting_Material & mdlfos)
+Molecule::_complete_chiral_centre_from_mdl_files(Chiral_Centre * c,
+                                                 const MDL_File_Supporting_Material & mdlfos)
 {
 #ifdef DEBUG_COMPLETE_CHIRAL_CENTRE
   cerr << "Molecule::_complete_chiral_centre_from_mdl_files:completing\n";
@@ -2117,6 +2120,7 @@ Molecule::_complete_chiral_centres_from_mdl_files(const MDL_File_Supporting_Mate
 
   return rc;
 }
+#endif
 
 int
 Molecule::invert_chirality_on_atom (atom_number_t a)

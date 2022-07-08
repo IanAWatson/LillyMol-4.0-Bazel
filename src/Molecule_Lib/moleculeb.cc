@@ -17,7 +17,9 @@
 #endif
 
 #include "chiral_centre.h"
+#ifdef NOW_IN_MDL_CC_REMOVE_FROM_HERE_WHEN_OK
 #include "mdl.h"
+#endif
 #include "misc2.h"
 #include "molecule.h"
 #include "path.h"
@@ -954,6 +956,7 @@ Molecule::number_up_or_down_wedge_bonds() const
   return rc;
 }
 
+#ifdef NOW_IN_MDL_CC_REMOVE_FROM_HERE_WHEN_OK
 int
 Molecule::write_set_of_bonds_as_mdl_v30_collection(const resizable_array<int> & b,
                                                    const const_IWSubstring & zname,
@@ -1020,6 +1023,7 @@ Molecule::write_set_of_bonds_as_mdl_v30_collection(const int * b, const const_IW
   return output.good();
 }
 
+#endif
 int
 Molecule::assign_bond_numbers_to_bonds()
 {

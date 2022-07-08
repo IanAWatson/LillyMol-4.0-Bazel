@@ -2892,3 +2892,294 @@ Molecule::_write_m_chg_records<std::ostream>(std::ostream &, int) const;
 template int
 Molecule::_mdl_write_atoms_and_bonds_record<std::ostream>(std::ostream &, int, int,
                                                           MDL_File_Supporting_Material &) const;
+
+// Some Chiral_Centre methods that are specific to MDL files. In this file to
+// try to achieve separation between molecule processing and I/O.
+//#define DEBUG_COMPLETE_CHIRAL_CENTRE
+
+/*
+  In setting the chirality from a molfile, we must follow the
+  directions in the MOLFILE manual
+  In their parlance, atom 4 is always top_back
+  and atom 3 is always top_front
+
+  Note that we treat an implicit hydrogen and a lone pair the same
+
+  I checked with ISIS draw and if you have a Deuterium and an implicit Hydrogen,
+  the implicit Hydrogen is still considered the highest numbered atom
+
+  Sulphur is particularly problematic. -S(=O)- seems SP3 hybridised.
+  Directional bonds are used near S(=O)(=O) groups to indicate the bond
+  angle through the Sulphur. Easiest to just allow Sulphur.
+  Phosphorus seems to be the same way...
+*/
+
+int
+Molecule::_complete_chiral_centre_from_mdl_files(Chiral_Centre * c,
+                                                 const MDL_File_Supporting_Material & mdlfos)
+{
+#ifdef DEBUG_COMPLETE_CHIRAL_CENTRE
+  cerr << "Molecule::_complete_chiral_centre_from_mdl_files:completing\n";
+  c->debug_print(cerr);
+#endif
+
+  atom_number_t a = c->a();
+
+  const Atom * atom_a = _things[a];
+
+  int acon = atom_a->ncon();
+
+  if (acon == atom_a->nbonds())   // good, fully saturated
+    ;
+  else if (6 == atom_a->atomic_number())  // the most common case
+    ;
+  else if (16 == atom_a->atomic_number())  // many different possibilities
+    ;
+  else if (15 == atom_a->atomic_number())   // may indeed be correct
+    ;
+  else
+  {
+    cerr << "Molecule::_complete_chiral_centre_from_mdl_files:unsaturated chiral atom, type " << atom_a->atomic_symbol() << "\n";
+    c->debug_print(cerr);
+    return 0;
+  }
+
+  Set_of_Atoms con;
+
+  int explicit_hydrogen_present = 0;
+  int hydrogen_isotope_present = 0;    // I suppose they could have D and T and an implicit Hydrogen
+
+  for (int i = 0; i < acon; i++)
+  {
+    atom_number_t j = atom_a->other(a, i);
+    if (1 == _things[j]->atomic_number() && mdlfos.mdl_read_h_correct_chiral_centres())
+    {
+      if (_things[j]->isotope())
+      {
+        hydrogen_isotope_present++;
+        con.add(j);
+      }
+      else
+      {
+        explicit_hydrogen_present++;
+        con.add(_number_elements + j);    // special atom number that will be larger than any other atom number
+      }
+    }
+    else
+      con.add(j);
+  }
+
+  int ih = _things[a]->implicit_hydrogens();
+
+#ifdef DEBUG_COMPLETE_CHIRAL_CENTRE
+  cerr << "Completing chiral centre at atom " << a << " ncon = " << acon << ", ih = " << ih << endl;
+#endif
+
+// An explicit Hydrogen and an implicit Hydrogen is an error - but, what about a partially Deuterated atom!!
+
+  if (ih + explicit_hydrogen_present > 1)
+  {
+    cerr << "Molecule::_complete_chiral_centre_from_mdl_files: atom " << a << " has " << ih << " implicit hydrogens and " << explicit_hydrogen_present << " explicit\n";
+    cerr << "type " << _things[a]->atomic_symbol() << ", " << _things[a]->ncon() << " connections\n";
+    return 0;
+  }
+
+  int tcon = acon + ih;
+
+// Three connections and a lone pair is fine.
+
+  int lone_pairs = 0;
+  if (3 == tcon)
+  {
+    if ( ! lone_pair_count(a, lone_pairs))
+      return 0;
+      
+    if (1 != lone_pairs)
+      return 0;
+  }
+  else if (acon < 3 || tcon < 3 || tcon > 4)
+  {
+    cerr << "Molecule::_complete_chiral_centre_from_mdl_files: atom " << a << 
+            " has " << acon << " connections\n";
+    cerr << "tcon = " << tcon << " type " << _things[a]->atomic_symbol() << endl;
+
+    return 0;
+  }
+
+  con.sort(int_comparitor_larger);
+
+  if (explicit_hydrogen_present)
+  {
+    for (int i = 0; i < acon; i++)
+    {
+      atom_number_t j = con[i];
+      if (j >= _number_elements)
+      {
+        con[i] = j - _number_elements;
+        break;
+      }
+    }
+  }
+
+#ifdef DEBUG_COMPLETE_CHIRAL_CENTRE
+  cerr << "The following atom numbers are bonded:";
+  for (int i = 0; i < con.number_elements(); i++)
+  {
+    int j = con[i];
+    cerr << ' ' << j << " (" << _things[j]->atomic_symbol() << ')';
+  }
+  cerr << endl;
+  cerr << " ih " << ih << " lone_pairs " << lone_pairs << endl;
+#endif
+
+  if (2 == acon && 1 == ih && 1 == lone_pairs)
+  {
+    c->set_top_front(CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN);
+    c->set_top_back(CHIRAL_CONNECTION_IS_LONE_PAIR);
+  }
+  else
+  {
+    c->set_top_front(con[2]);
+
+    if (4 == acon)
+      c->set_top_back(con[3]);
+    else if (ih)
+      c->set_top_back(CHIRAL_CONNECTION_IS_IMPLICIT_HYDROGEN);
+    else if (lone_pairs)
+      c->set_top_back(CHIRAL_CONNECTION_IS_LONE_PAIR);
+    else
+    {
+      cerr << "Molecule::_complete_chiral_centre_from_mdl_files:three connections by no H or LP\n";
+      return 0;
+    }
+  }
+
+#ifdef DEBUG_COMPLETE_CHIRAL_CENTRE
+  cerr << "Input chirality = " << c->chirality_known() << " top done\n";
+  c->debug_print(cerr);
+  cerr << "Other atoms are 0: " << other(a, 0) << " and 1 " << other(a, 1) << endl;
+#endif
+
+// As coded, I believe this to be incorrect, but Concord seems to interpret
+// this this way.
+
+  if (1 == c->chirality_known())     // clockwise
+  {
+    c->set_left_down (con[1]);
+    c->set_right_down(con[0]);
+  }
+  else if (2 == c->chirality_known())  // anti-clockwise
+  {
+    c->set_left_down (con[0]);
+    c->set_right_down(con[1]);
+  }
+  else
+  {
+    c->debug_print(cerr);
+    assert(nullptr == "Unknown chirality_known value");
+  }
+
+  return 1;
+}
+
+/*
+  We have just finished parsing a MOLFILE, and there were
+  stereo centres in there. All mdl.cc does is identify the
+  stereo centres, we need to check them and fill them out
+*/
+
+
+int
+Molecule::_complete_chiral_centres_from_mdl_files(const MDL_File_Supporting_Material & mdlfos)
+{
+  int rc = 1;    // assume OK until we find a problem
+
+//cerr << "Molecule has " << nc << " chiral centres\n";
+
+  for (int i = _chiral_centres.number_elements() - 1; i >= 0; i--)
+  {
+    Chiral_Centre * c = _chiral_centres[i];
+
+    if (c->complete())
+      continue;
+
+    if (_complete_chiral_centre_from_mdl_files(c, mdlfos))
+      continue;
+
+    if (ignore_incorrect_chiral_input())
+    {
+      cerr << "Discarding invalid chiral centre on atom " << c->a() << " '" << smarts_equivalent_for_atom(c->a()) << "'\n";
+
+      _chiral_centres.remove_item(i);
+    }
+    else
+      rc = 0;
+  }
+
+  return rc;
+}
+int
+Molecule::write_set_of_bonds_as_mdl_v30_collection(const resizable_array<int> & b,
+                                                   const const_IWSubstring & zname,
+                                                   const const_IWSubstring & subname,
+                                                   std::ostream & output) const
+{
+  output << "M  V30 BEGIN COLLECTION\n";
+  output << "M  V30 " << zname;
+  if (subname.length() > 0)
+    output << '/' << subname;
+  output << endl;
+
+  IWString output_buffer;
+  output_buffer.resize(200);
+
+  int n = b.number_elements();
+
+  assert(n <= _bond_list.number_elements());
+
+  output_buffer << "M  V30 BONDS=" << n;
+
+  for (int i = 0; i < n; i++)
+  {
+    output_buffer << ' ' << (b[i] + 1);
+  }
+
+  write_v30_record(output_buffer, output);
+
+  output << "M  V30 END COLLECTION\n";
+
+  return output.good();
+}
+
+int
+Molecule::write_set_of_bonds_as_mdl_v30_collection(const int * b, const const_IWSubstring & zname,
+                                                   const const_IWSubstring & subname,
+                                                   std::ostream & output) const
+{
+  output << "M  V30 BEGIN COLLECTION\n";
+  output << "M  V30 " << zname;
+  if (subname.length() > 0)
+    output << '/' << subname;
+  output << endl;
+
+  IWString output_buffer;
+  output_buffer.resize(200);
+
+  int nb = _bond_list.number_elements();
+
+  int n = count_non_zero_occurrences_in_array(b, nb);
+
+  output_buffer << "M  V30 BONDS=" << n;
+
+  for (int i = 0; i < nb; i++)
+  {
+    if (0 != b[i])
+      output_buffer << ' ' << (i + 1);
+  }
+
+  write_v30_record(output_buffer, output);
+
+  output << "M  V30 END COLLECTION\n";
+
+  return output.good();
+}

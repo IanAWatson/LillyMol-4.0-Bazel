@@ -26,7 +26,6 @@
 #include "Foundational/iwmisc/misc.h"
 
 #include "aromatic.h"
-#include "atom_typing.h"
 #include "misc2.h"
 #include "path.h"
 #include "substructure.h"
@@ -1275,17 +1274,16 @@ Molecule_to_Match::_initialise_molecule(Molecule * m)
 
   _start_matching_at = INVALID_ATOM_NUMBER;
 
-  if (use_fingerprints_for_screening_substructure_searches())
-  {
+  if (use_fingerprints_for_screening_substructure_searches()) {
 #ifdef FINGERPRINT_SUBSTRUCTURE_SEARCHES
     IWMFingerprint iwmfingerprint;
     iwmfingerprint.construct_fingerprint(*m);
     _fingerprint = new IW_Bits_Base;
     (*_fingerprint) = iwmfingerprint;
 #endif
-  }
-  else
+  } else {
     _fingerprint = nullptr;
+  }
 
   return;
 }

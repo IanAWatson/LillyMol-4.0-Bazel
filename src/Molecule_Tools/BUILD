@@ -1239,6 +1239,19 @@ cc_library(
 )
 
 cc_library(
+    name = "coords_and_connectivity",
+    srcs = [
+        "coords_and_connectivity.cc",
+    ],
+    hdrs = [
+        "coords_and_connectivity.h",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
     name = "core_replacement_lib",
     srcs = [
         "core_replacement_lib.cc",
@@ -1630,3 +1643,16 @@ cc_test(
 #    linkopts = [
 #    ],
 #)
+
+cc_test(
+    name = "coords_and_connectivity_test",
+    srcs = [
+        "coords_and_connectivity_test.cc",
+    ],
+    deps = [
+        "coords_and_connectivity",
+        "//Molecule_Lib:minimal_lillymol",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+    ],
+)
