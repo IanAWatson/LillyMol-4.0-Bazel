@@ -36,12 +36,25 @@ class CachedMolecule {
     // xyz of the second atom...
     // Returns the number of atoms. coords.size() == 3 * natoms;
     int GetCoords(std::vector<float>& coords) const;
+    // A more modern version of this that returns its result.
+    // Not implemented, because I don't know how this would work
+    // with python.
+    std::vector<float> GetCoords() const;
 
     // Fill `connections` with natoms*natoms data about connectivity.
     // If there is a single bond between two atoms,the entry on
     // `connections` will be 1, double bond-> 2, triple bond->3
     // No provision for aromatic - although that would be easy.
     int ConnectionMatrix(std::vector<int>& connections) const;
+    // A more modern version of this that returns its result.
+    // Not implemented, because I don't know how this would work
+    // with python.
+    std::vector<int> ConnectionMatrix() const;
+
+    // For testing it is convenient to access the molecule itself.
+    Molecule& molecule() {
+      return _mol;
+    }
 };
 
 }  // namespace cached_molecule

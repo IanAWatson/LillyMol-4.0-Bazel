@@ -1263,6 +1263,7 @@ cc_library(
     ],
     deps = [
         "//Molecule_Lib:minimal_lillymol",
+        "//Molecule_Lib:substructure",
     ],
 )
 

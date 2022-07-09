@@ -2,6 +2,9 @@
 #define MOLECULE_LIB_MOLECULEIO_H_
 
 // Functions controlling aspects of reading writing and building molecules.
+// This is WIP, there are more functions still in molecule.h that need to
+// be migrated here, and some of the functions listed here have not been
+// implemented.
 
 #include "Foundational/iwstring/iwstring.h"
 
