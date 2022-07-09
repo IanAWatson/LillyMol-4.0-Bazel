@@ -1,8 +1,12 @@
+#include <iostream>
+
 #include "re2/re2.h"
 
 #include "Molecule_Tools/ring_closure_enumeration_lib.h"
 
 namespace ring_closure_enumeration {
+
+using std::cerr;
 
 BondFormation::BondFormation() {
   _isotope = 0;

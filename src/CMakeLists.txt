@@ -24,6 +24,8 @@ FetchContent_MakeAvailable(googletest)
 #find_package(GTest REQUIRED CONFIG)
 endif(IWTEST)
 
+find_package(Protobuf REQUIRED)
+
 
 #FetchContent_Declare(
 #  clif

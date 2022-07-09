@@ -10,7 +10,6 @@
 #include "misc2.h"
 
 using std::cerr;
-using std::endl;
 
 /*
   This file contains miscelaneous functions which cannot go in misc1.cc
@@ -94,7 +93,7 @@ try_shortening (const int * i1,
   for (int i = 0; i < n; i++)
   {
 #ifdef DEBUG_SHORTENING
-    cerr << "i = " << i << " i1 = " << i1[i] << " i2 = " << i2[i] << endl;
+    cerr << "i = " << i << " i1 = " << i1[i] << " i2 = " << i2[i] << '\n';
 #endif
 
     if (i2[i])
@@ -112,7 +111,7 @@ try_shortening (const int * i1,
   }
 
 #ifdef DEBUG_SHORTENING
-  cerr << "i2 contains " << bits_in_i2 << " bits, xor has " << bits_in_xor << endl;
+  cerr << "i2 contains " << bits_in_i2 << " bits, xor has " << bits_in_xor << '\n';
 #endif
 
   if (0 == bits_in_common)
@@ -242,7 +241,7 @@ iw_combinatorial_combinations(int n, int k)
 
     if (tmp < rc)    // must have overflowed
     {
-      cerr << "Overflow in iw_combinatorial_combinations " << n << "," << k << endl;
+      cerr << "Overflow in iw_combinatorial_combinations " << n << "," << k << '\n';
       return 0;
     }
 
@@ -253,16 +252,16 @@ iw_combinatorial_combinations(int n, int k)
 
   rc = rc / iwfactorial[smaller_denominator];
 
-//cerr << "Dividing by " << iwfactorial[smaller_denominator] << " to yield " << rc << endl;
+//cerr << "Dividing by " << iwfactorial[smaller_denominator] << " to yield " << rc << '\n';
 
 //#define DEBUG_IW_COMBINATORIAL_COMBINATIONS
 #ifdef DEBUG_IW_COMBINATORIAL_COMBINATIONS
 
   // Note this doesn't work if things overflow the factorial object
 
-  cerr << n << " choose " << k << " is " << rc << endl;
+  cerr << n << " choose " << k << " is " << rc << '\n';
   uint64_t bf = (iwfactorial[n] / (iwfactorial[k] * iwfactorial[n - k]));
-  cerr << "Brute force " << bf << endl;
+  cerr << "Brute force " << bf << '\n';
   assert(bf == rc);
 
 #endif
@@ -294,7 +293,7 @@ skip_to_string(T & input, const char * target, int report_discard)
     {
       if (records_discarded && report_discard)
         cerr << "skip to string: '" << target << "' discarded " << records_discarded
-             << " records starting at " << start_record << endl;
+             << " records starting at " << start_record << '\n';
       return 1;
     }
 

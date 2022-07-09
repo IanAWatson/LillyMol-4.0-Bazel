@@ -19,6 +19,7 @@
 #include "mdl_atom_record.h"
 #include "misc2.h"
 #include "molecule.h"
+#include "moleculeio.h"
 #include "readmdl.h"
 #include "rwmolecule.h"
 
@@ -828,8 +829,7 @@ Molecule::_final_processing_of_aromatic_mdl_input(int * aromatic_atoms, int * ar
 int
 return_code_depending_on_ignore_incorrect_chiral_input()
 {
-  if (ignore_incorrect_chiral_input())
-  {
+  if (moleculeio::ignore_incorrect_chiral_input()) {
     cerr << "Ignored\n";
     return 1;
   }
@@ -1767,7 +1767,7 @@ Molecule::write_extra_text_info(IWString & buffer) const
   {
     const IWString * info = _text_info[i];
 
-    buffer << (*info) << newline_string();
+    buffer << (*info) << moleculeio::newline_string();
   }
 
   return buffer.length();
@@ -2530,7 +2530,7 @@ Molecule::_write_M_RGP_records(const MDL_File_Supporting_Material & mdlfos, std:
     else
       continue;
 
-    os << "M  RGP  1 " << std::setw(3) << (i + 1) << "   " << s[1] << newline_string();
+    os << "M  RGP  1 " << std::setw(3) << (i + 1) << "   " << s[1] << moleculeio::newline_string();
   }
 
   return os.good();
@@ -3106,8 +3106,7 @@ Molecule::_complete_chiral_centres_from_mdl_files(const MDL_File_Supporting_Mate
     if (_complete_chiral_centre_from_mdl_files(c, mdlfos))
       continue;
 
-    if (ignore_incorrect_chiral_input())
-    {
+    if (moleculeio::ignore_incorrect_chiral_input()) {
       cerr << "Discarding invalid chiral centre on atom " << c->a() << " '" << smarts_equivalent_for_atom(c->a()) << "'\n";
 
       _chiral_centres.remove_item(i);
@@ -3175,6 +3174,34 @@ Molecule::write_set_of_bonds_as_mdl_v30_collection(const int * b, const const_IW
   {
     if (0 != b[i])
       output_buffer << ' ' << (i + 1);
+  }
+
+  write_v30_record(output_buffer, output);
+
+  output << "M  V30 END COLLECTION\n";
+
+  return output.good();
+}
+
+int
+Set_of_Atoms::write_as_mdl_v30_collection_block(const const_IWSubstring & zname,
+                                                 const const_IWSubstring & subname,
+                                                 std::ostream & output) const
+{
+  output << "M  V30 BEGIN COLLECTION\n";
+  output << "M  V30 " << zname;
+  if (subname.length() > 0)
+    output << '/' << subname;
+  output << '\n';
+
+  IWString output_buffer;
+  output_buffer.resize(200);
+
+  output_buffer << "M  V30 ATOMS=" << _number_elements;
+
+  for (int i = 0; i < _number_elements; i++)
+  {
+    output_buffer << ' ' << (_things[i] + 1);
   }
 
   write_v30_record(output_buffer, output);

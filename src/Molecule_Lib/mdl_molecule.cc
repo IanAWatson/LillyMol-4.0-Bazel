@@ -14,6 +14,7 @@
 
 #include "mdl_molecule.h"
 #include "mdl_atom_record.h"
+#include "moleculeio.h"
 #include "molecule_to_query.h"
 
 static int convert_a_and_q_atoms_to_atom_lists = 1;
@@ -606,7 +607,7 @@ MDL_Molecule::read_molecule_mdl_ds (iwstring_data_source & input,
   if (nb > 0)
     check_bonding();
 
-  if (ignore_all_chiral_information_on_input())
+  if (moleculeio::ignore_all_chiral_information_on_input())
     Molecule::remove_all_chiral_centres();
   else if (mdl_molecule_discard_chirality)
     ;
@@ -621,8 +622,9 @@ MDL_Molecule::read_molecule_mdl_ds (iwstring_data_source & input,
   {
     cerr << "MDL_Molecule::read_molecule_mdl_ds: erroneous chiral input '" << Molecule::name() << "'\n";
     Molecule::remove_all_chiral_centres();
-    if (! ignore_incorrect_chiral_input())
+    if (! moleculeio::ignore_incorrect_chiral_input()) {
       return 0;
+    }
   }
 
 //int got_mend = 0;
@@ -662,8 +664,9 @@ MDL_Molecule::read_molecule_mdl_ds (iwstring_data_source & input,
       return 0;
     }
 
-    if (read_extra_text_info())
+    if (moleculeio::read_extra_text_info()) {
       Molecule::add_extra_text_info(buffer);
+    }
   }
 
   na = natoms();    // link atoms remove the atom, so NA may have changed. Recompute

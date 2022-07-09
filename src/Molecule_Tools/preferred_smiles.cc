@@ -4,6 +4,7 @@
 */
 
 #include <stdlib.h>
+#include <iostream>
 #include <memory>
 
 #include "Foundational/cmdline/cmdline.h"
@@ -13,6 +14,9 @@
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
+
+using std::cerr;
+using std::endl;
 
 const char * prog_name = nullptr;
 

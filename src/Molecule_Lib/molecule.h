@@ -1,6 +1,7 @@
 #ifndef IW_MOLECULE_H
 #define IW_MOLECULE_H 1
 
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -1893,17 +1894,17 @@ extern void set_place_mol2_residue_information_in_user_specified_void_ptr(int s)
 extern void set_mol2_write_formal_charge_as_partial_charge(int s);
 extern void set_mol2_read_charge_column_contains_formal_charges(int s);
 
-extern int  ignore_all_chiral_information_on_input();
-extern void set_ignore_all_chiral_information_on_input(int);
+//extern int  ignore_all_chiral_information_on_input();
+//extern void set_ignore_all_chiral_information_on_input(int);
 
 extern void set_ignore_tdts_with_no_smiles(int);
 extern void set_smiles_tag(const const_IWSubstring &);
 
-extern int  flush_files_after_writing_each_molecule();
-extern void set_flush_files_after_writing_each_molecule(int);
+//extern int  flush_files_after_writing_each_molecule();
+//extern void set_flush_files_after_writing_each_molecule(int);
 
-extern int  ignore_incorrect_chiral_input();
-extern void set_ignore_incorrect_chiral_input(int);
+//extern int  ignore_incorrect_chiral_input();
+//extern void set_ignore_incorrect_chiral_input(int);
 extern void set_automatically_add_implicit_hydrogen_to_incomplete_chiral_centre(int s);
 
 extern int  set_sdf_identifier(const const_IWSubstring &);
@@ -1919,14 +1920,12 @@ extern void set_mdl_display_invalid_chiral_connectivity(int);
 extern void set_tdt_identifier_dataitem(const const_IWSubstring &);
 extern void set_tdt_append_dataitem(const const_IWSubstring &);
 
-extern void set_discern_cis_trans_bonds(int);
-extern int  discern_cis_trans_bonds();
+//extern void set_discern_cis_trans_bonds(int);
+//extern int  discern_cis_trans_bonds();
 
-extern void set_discern_chirality_from_3d_coordinates(int);
-extern int  discern_chirality_from_3d_coordinates();
+//extern void set_discern_chirality_from_3d_coordinates(int);
+//extern int  discern_chirality_from_3d_coordinates();
 
-extern void set_ignore_bad_cis_trans_input(int s);
-extern int ignore_bad_cis_trans_input();
 extern void set_discard_directional_bonds_on_input(int);
 
 #ifdef BONDS_KNOW_RING_MEMBERSHIP
@@ -1937,16 +1936,16 @@ extern void set_discard_directional_bonds_on_input(int);
 
 #endif
 
-extern void set_read_extra_text_info(int);
-extern int  read_extra_text_info();
-extern void set_write_extra_text_info(int);
-extern int  write_extra_text_info();
-extern char input_file_delimiter();
-extern int  input_is_dos_mode();
+//extern void set_read_extra_text_info(int);
+//extern int  read_extra_text_info();
+//extern void set_write_extra_text_info(int);
+//extern int  write_extra_text_info();
+//extern char input_file_delimiter();
+//extern int  input_is_dos_mode();
 
-extern void set_write_DOS_records(int s);
-extern int  write_DOS_records();
-extern const IWString & newline_string();
+//extern void set_write_DOS_records(int s);
+//extern int  write_DOS_records();
+//extern const IWString & newline_string();
 
 extern void set_skip_first_molecules(int);
 extern int  skip_first_molecules();

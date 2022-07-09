@@ -7073,3 +7073,44 @@ bool is_aromatic_atom(aromaticity_type_t arom) {
 bool is_aliphatic_atom(aromaticity_type_t arom) {
   return (_ALIPH_BIT & arom) != 0; 
 }
+
+/*
+  Does the ring consist of anything other than alternating single and double bonds
+*/
+
+int
+is_fixed_kekule_form(const Molecule & m,
+                     const Ring & r)
+{
+  bond_type_t previous_bond_was = 0;
+  bond_type_t first_bond_encountered = 0;
+
+//cerr << "Checking ring " << r << endl;
+  for (Ring_Bond_Iterator j (r); j != r.end(); j++)
+  {
+    atom_number_t a1 = j.a1();
+    atom_number_t a2 = j.a2();
+
+    const Bond * b = m.bond_between_atoms(a1, a2);
+
+    bond_type_t bt;
+    if (b->is_single_bond())
+      bt = SINGLE_BOND;
+    else
+      bt = DOUBLE_BOND;
+
+//  cerr << "From " << a1 << " to " << a2 << " bt " << bt << " prev " << previous_bond_was << endl;
+    if (0 == previous_bond_was)
+      first_bond_encountered = bt;
+    else if (previous_bond_was == bt)
+      return 1;
+
+    previous_bond_was = bt;
+  }
+
+// If the last bond we encountered is the same as the first we encountered,
+// this must be a fixed system. Note we could work this out from the size
+// of the ring, but this is easier
+
+  return first_bond_encountered == previous_bond_was;   // if same, then fixed form
+}

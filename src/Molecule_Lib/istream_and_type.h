@@ -1,10 +1,10 @@
 #ifndef IW_ISTREAM_AND_TYPE
 #define IW_ISTREAM_AND_TYPE
-#include <iostream>
 
 #include "Foundational/data_source/iwstring_data_source.h"
 
 #include "iwmtypes.h"
+#include "moleculeio.h"
 
 template <typename T>
 class data_source_and_type : public iwstring_data_source
@@ -138,15 +138,14 @@ data_source_and_type<T>::_file_opened_ok (const IWString & fname)
 
   _valid = 1;
 
-  iwstring_data_source::set_record_delimiter (input_file_delimiter());
+  iwstring_data_source::set_record_delimiter (moleculeio::input_file_delimiter());
 
-  if (input_is_dos_mode())
+  if (moleculeio::input_is_dos_mode()) {
     iwstring_data_source::set_dos (1);
+  }
 
-  if (seek_to_from_command_line() > 0)
-  {
-    if (! iwstring_data_source::seekg (seek_to_from_command_line()))
-    {
+  if (seek_to_from_command_line() > 0) {
+    if (! iwstring_data_source::seekg (seek_to_from_command_line())) {
       std::cerr << "data_source_and_type::_file_opened_ok: cannot seek to " << seek_to_from_command_line() << '\n';
     }
   }
@@ -159,11 +158,9 @@ data_source_and_type<T>::data_source_and_type(FileType input_type,
                                               const char * fname) :
                                       iwstring_data_source (fname)
 {
-  if (0 == input_type)
-  {
+  if (0 == input_type) {
     input_type = discern_file_type_from_name(fname);
-    if (0 == input_type)
-    {
+    if (0 == input_type) {
       std::cerr << "Data_Source_and_Type:: cannot discern input type '" << fname << "'\n";
       return;
     }

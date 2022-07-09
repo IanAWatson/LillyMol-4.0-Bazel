@@ -13,14 +13,15 @@
 
 #include "Foundational/iwmisc/misc.h"
 
-#include "mdl.h"
-#include "atom_alias.h"
-#include "molecule.h"
-#include "misc2.h"
-#include "chiral_centre.h"
-#include "rwmolecule.h"
 #include "aromatic.h"
+#include "atom_alias.h"
+#include "chiral_centre.h"
+#include "mdl.h"
 #include "mdl_atom_record.h"
+#include "misc2.h"
+#include "moleculeio.h"
+#include "molecule.h"
+#include "rwmolecule.h"
 
 /*
   MDL files are somewhat strange in that there several varieties.
@@ -127,15 +128,15 @@ Molecule::read_molecule_mdl_ds(T & input,
 // isn't robust.  We could have some centres that are not atom marked,
 // but have wedge bonds
 
-  if(ignore_all_chiral_information_on_input())
+  if(moleculeio::ignore_all_chiral_information_on_input())
     _chiral_centres.resize(0);
   else if(mdlfos->discern_chirality_from_wedge_bonds())
    (void) discern_chirality_from_wedge_bonds();
   else if (0 == _chiral_centres.number_elements() && number_up_or_down_wedge_bonds())
      (void) discern_chirality_from_wedge_bonds();
-  else if (discern_chirality_from_3d_coordinates() && 3 == highest_coordinate_dimensionality())
+  else if (moleculeio::discern_chirality_from_3d_coordinates() && 3 == highest_coordinate_dimensionality())
   {
-    int d = discern_chirality_from_3d_coordinates();
+    int d = moleculeio::discern_chirality_from_3d_coordinates();
     if (1 == d)
       (void) discern_chirality_from_3d_structure();
     else if (_number_elements <= d)
@@ -153,16 +154,18 @@ Molecule::read_molecule_mdl_ds(T & input,
     std::cerr << "Molecule::read_molecule_mdl_ds: erroneous chiral input\n";
     std::cerr << _molecule_name << '\n';
     _chiral_centres.resize(0);
-    if (! ignore_incorrect_chiral_input())
+    if (! moleculeio::ignore_incorrect_chiral_input()) {
       return 0;
+    }
   }
 
 // Do cis-trans bonds last because they depend on ring membership. Ran into a case, 583770, 
 // where the ring perception forced a smiles ordering that was wrong because chirality hadn't
 // been perceived
 
-  if(discern_cis_trans_bonds())
+  if (moleculeio::discern_cis_trans_bonds()) {
    (void) discern_cis_trans_bonds_from_depiction();
+  }
 
   return 1;
 }
@@ -366,7 +369,7 @@ Molecule::_read_mdl_data_following_tag (T & input,
     if (' ' != mdlfos.gsub_mdl_file_data())
       buffer.gsub(' ', mdlfos.gsub_mdl_file_data());
 
-    if (read_extra_text_info())   // even if buffer is empty
+    if (moleculeio::read_extra_text_info())   // even if buffer is empty
       _text_info.add(new IWString(buffer));
 
     if (0 == buffer.length() || (1 == buffer.length() && 13 == static_cast<int>(buffer[0])))    // 13 is ^M
@@ -395,7 +398,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
                                                int return_on_m_end,
                                                MDL_File_Supporting_Material & mdlfos)   // non const because of rx match
 {
-  if (read_extra_text_info() && 0 == _text_info.number_elements())
+  if (moleculeio::read_extra_text_info() && 0 == _text_info.number_elements())
     _text_info.resize(10);
 
 //Aprop atom_properties[MAX_PAIRS];
@@ -536,7 +539,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
       continue;
     }
 
-    if (read_extra_text_info())
+    if (moleculeio::read_extra_text_info())
       add_to_text_info(_text_info, buffer);
 
 //  std::cerr << read_extra_text_info() << " now contains " << _text_info.number_elements() << '\n';
@@ -553,7 +556,7 @@ Molecule::_read_molecule_mdl_trailing_records (T & input,
 
       EXTRA_STRING_RECORD (input, buffer, "read mol mdl");
 
-      if(read_extra_text_info())
+      if(moleculeio::read_extra_text_info())
         add_to_text_info(_text_info, buffer);
 
       IWString tmp;
@@ -702,7 +705,7 @@ Molecule::write_molecule_mdl (T & os,
   if (_number_elements > 999 || mdlfos->write_v30_mdl_files() || _contains_isotope_above (999))
     return write_molecule_mdl_v30(os, comments, 1);
 
-  os << _molecule_name << newline_string();
+  os << _molecule_name << moleculeio::newline_string();
 
   if(mdlfos->isis_standard_records())
   {
@@ -712,17 +715,17 @@ Molecule::write_molecule_mdl (T & os,
     else 
       dim = 2;
 
-    os << "  -ISIS-  0516971354" << dim << "D 1   1.00000     0.00000     1" << newline_string();
-    os << newline_string();
+    os << "  -ISIS-  0516971354" << dim << "D 1   1.00000     0.00000     1" << moleculeio::newline_string();
+    os << moleculeio::newline_string();
   }
   else
   {
     if(comments.length())
-      os << comments << newline_string();
+      os << comments << moleculeio::newline_string();
     else
-      os << "Blank" << newline_string();
+      os << "Blank" << moleculeio::newline_string();
 
-    os << "Blank" << newline_string();
+    os << "Blank" << moleculeio::newline_string();
   }
 
   int rc = write_connection_table_mdl(os);
@@ -730,28 +733,30 @@ Molecule::write_molecule_mdl (T & os,
 //if(isis_standard_records)
 //  os << "M  END\n";
 
-  if (::write_extra_text_info())
+  if (moleculeio::write_extra_text_info()) {
     write_extra_text_info(os);
+  }
 
-  if (mdlfos->write_mdl_dollars())
-    os << "$$$$" << newline_string();
+  if (mdlfos->write_mdl_dollars()) {
+    os << "$$$$" << moleculeio::newline_string();
+  }
 
-  if (flush_files_after_writing_each_molecule())
+  if (moleculeio::flush_files_after_writing_each_molecule()) {
     os.flush();
+  }
 
   return rc;
 }
 
 template <typename T>
 int
-Molecule::write_extra_text_info (T & os) const
+Molecule::write_extra_text_info(T & os) const
 {
   int ne = _text_info.number_elements();
 
-  for (int i = 0; i < ne; i++)
-  {
+  for (int i = 0; i < ne; i++) {
     const IWString * info = _text_info[i];
-    os <<(*info) << newline_string();
+    os <<(*info) << moleculeio::newline_string();
   }
 
   return os.good();
@@ -818,7 +823,7 @@ Molecule::_mdl_write_atoms_and_bonds_record (T & os,
     os << " V2000";  // Ctab version
   }
 
-  os << newline_string();
+  os << moleculeio::newline_string();
 
   return os.good();
 }
@@ -864,7 +869,7 @@ Molecule::write_connection_table_mdl (T & os) const
     if(mdlfos->isis_standard_records())
       output_buffer += "  0  0  0           0  0  0";
 
-    output_buffer += newline_string();
+    output_buffer += moleculeio::newline_string();
 
     os << output_buffer;
 
@@ -918,7 +923,7 @@ Molecule::write_connection_table_mdl (T & os) const
       os << "     0  0";
     }
 
-    os << newline_string();
+    os << moleculeio::newline_string();
   }
 
   os.width(width);
@@ -941,7 +946,7 @@ Molecule::write_connection_table_mdl (T & os) const
     _write_M_RGP_records(*mdlfos, os);
 
   if (mdlfos->isis_standard_records() || (need_m_end && mdlfos->write_mdl_m_end_record()) || mdlfos->write_mdl_m_end_record() > 1)
-    os << "M  END" << newline_string();
+    os << "M  END" << moleculeio::newline_string();
 
   if (! os.good())
   {
@@ -1120,7 +1125,7 @@ Molecule::_write_m_chg_records(T & os, int nc) const
       }
     }
 
-    os << newline_string();
+    os << moleculeio::newline_string();
   }
 
   return os.good();
@@ -1169,7 +1174,7 @@ Molecule::_write_m_iso_records(T & os, int n) const
       items_written++;
     }
 
-    os << newline_string();
+    os << moleculeio::newline_string();
   }
 
   return os.good();

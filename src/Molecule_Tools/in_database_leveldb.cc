@@ -1,5 +1,6 @@
 // Look up molecules in a LevelDB database.
 #include <iomanip>
+#include <iostream>
 
 #include "leveldb/db.h"
 #include "Foundational/cmdline/cmdline.h"
@@ -15,6 +16,8 @@
 #include "Molecule_Tools/molecule_database_options.pb.h"
 
 namespace molecule_database {
+
+using std::cerr;
 
 int verbose = 0;
 

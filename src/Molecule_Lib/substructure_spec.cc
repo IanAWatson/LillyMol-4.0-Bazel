@@ -3093,8 +3093,7 @@ Substructure_Atom_Specifier::construct_from_smiles_token(const const_IWSubstring
   const Element * e;
 
   int nchars = parse_smiles_token(smiles.rawchars(), smiles.length(), e, _aromaticity);
-  if (0 == nchars || nullptr == e)
-  {
+  if (0 == nchars || nullptr == e) {
     cerr << "Substructure_Atom_Specifier::construct_from_smiles_token: cannot parse '" << smiles << "'\n";
 //  iwabort();
     return 0;

@@ -1,8 +1,11 @@
+#include <iostream>
 #include <memory>
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/molecule.h"
 #include "nvrtspsa.h"
+
+using std::cerr;
 
 static int display_psa_unclassified_atom_mesages = 1;
 
@@ -53,11 +56,11 @@ report_novartis_psa_unclassified_atom (Molecule & m,
   else
     cerr << '-' << (-fc);
 
-  cerr << "' atom in Novartis Polar Surface area, atom " << zatom << endl;
+  cerr << "' atom in Novartis Polar Surface area, atom " << zatom << '\n';
   cerr << a.ncon() << " connections, ";
   if (a.formal_charge())
     cerr << "charge " << a.formal_charge() << ", ";
-  cerr << hcount << " hydrogens, aromatic " << is_aromatic << endl;
+  cerr << hcount << " hydrogens, aromatic " << is_aromatic << '\n';
 
   return;
 }
@@ -385,12 +388,12 @@ novartis_polar_surface_area (Molecule & m,
 
 #ifdef DEBUG_NOVARTIS_POLAR_SURFACE_AREA
     if (0.0 != delta)
-      cerr << "atom " << i << ' ' << m.smarts_equivalent_for_atom(i) << " value " << delta << " result so far " << result << endl;
+      cerr << "atom " << i << ' ' << m.smarts_equivalent_for_atom(i) << " value " << delta << " result so far " << result << '\n';
 #endif
   }
 
 #ifdef DEBUG_NOVARTIS_POLAR_SURFACE_AREA
-  cerr << "Total " << result << endl;
+  cerr << "Total " << result << '\n';
 #endif
 
   return result;

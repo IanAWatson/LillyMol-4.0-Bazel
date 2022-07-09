@@ -2,14 +2,16 @@
    recursive breaking
  */
 
+#include <math.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
-#include <memory>
-#include <limits>
-#include <vector>
+
 #include <algorithm>
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <vector>
+
 using std::cerr;
 using std::endl;
 
@@ -35,6 +37,7 @@ using std::endl;
 #include "Molecule_Lib/mdl.h"
 #include "Molecule_Lib/misc2.h"
 #include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/moleculeio.h"
 #include "Molecule_Lib/molecule_to_query.h"
 #include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/output.h"
@@ -7076,7 +7079,7 @@ dicer (int argc, char ** argv)
     }
     else
     {
-      set_read_extra_text_info(1);
+      moleculeio::set_read_extra_text_info(1);
       MDL_File_Supporting_Material * mdlfs = global_default_MDL_File_Supporting_Material();
       mdlfs->set_report_unrecognised_records(0);
     }

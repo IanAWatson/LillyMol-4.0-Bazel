@@ -2,7 +2,10 @@
 #define TOGGLE_KEKULE_FORM_H
 
 #include "molecule.h"
+
+#ifdef COMPILING_TOGGLE_KEKULE_FORM_PROTO
 #include "Molecule_Lib/toggle_kekule_form.pb.h"
+#endif
 
 class Command_Line;
 class msi_attribute;
@@ -172,7 +175,11 @@ class Toggle_Kekule_Form
     int add_bond (int, int, bond_type_t);
     int add_bond (Bond * b);
 
+    // In order to avoid having a protobuf dependency in minimal_lillymol, this
+    // method must be suppressed. Expose by setting the variable.
+#ifdef COMPILING_TOGGLE_KEKULE_FORM_PROTO
     int ConstructFromProto(const ToggleKekuleForm::ToggleKekuleForm& proto);
+#endif
 
     void set_allow_pyrrole_to_change (int s) { _allow_pyrrole_to_change = s;}
 

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 
 #include "Molecule_Lib/path.h"
@@ -5,6 +6,9 @@
 #include "tp_first_pass_lib.h"
 
 namespace lilly_medchem_rules {
+
+using std::cerr;
+using std::endl;
 
 // Returns true if `value` is in [0, 1].
 template <typename T>

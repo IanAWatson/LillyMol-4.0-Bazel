@@ -2,6 +2,7 @@
   Identify the scaffold(s) in a molecule
 */
 
+#include <iostream>
 #include <memory>
 
 #include "Foundational/cmdline/cmdline.h"
@@ -15,6 +16,9 @@
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/rotbond_common.h"
 #include "Molecule_Lib/smiles.h"
+
+using std::cerr;
+using std::endl;
 
 const char * prog_name = nullptr;
 

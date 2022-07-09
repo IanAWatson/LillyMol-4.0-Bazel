@@ -217,7 +217,53 @@ int DiscernChemaxonSmilesExtensions();
 
 void SetProcessQuotedSmiles(int s);
 int ProcessQuotedSmiles();
-}  //  namespace smiles
+
+// Examine `s`, assumed to be `nchars` remaining, for a ring number specification.
+// Can be either a digit, or a % directive.
+// `ring_number` and `characters_processed` will be set on success.
+int fetch_ring_number(const char * s,
+                  int nchars,
+                  int & ring_number,
+                  int & characters_processed);
+
+void set_ignore_bad_cis_trans_input(int s);
+int ignore_bad_cis_trans_input();
+}  // namespace smiles
+
+//  This is used to keep track of ring openings and closings during 
+//  reading a smiles
+
+class Smiles_Ring_Status: public resizable_array<atom_number_t> {
+  private:
+    resizable_array<bond_type_t> _bt;
+
+    int _rings_encountered;
+
+  public:
+    Smiles_Ring_Status();
+
+    int complete() const;
+    int report_hanging_ring_closures(std::ostream &) const;
+
+    int encounter(int, atom_number_t, atom_number_t &, bond_type_t &);
+
+    int rings_encountered() const { return _rings_encountered;}
+};
+
+/*
+  For efficiency, when using Smiles_Ring_Status, we temporarily store
+  any directionality of a bond in the bond type itself - this avoids
+  having a 2nd stack of bond directionalities.
+
+  Make sure any bits used don't collide with any already used by btype
+  Both UP and DOWN use bit 1024 so we can check for non-directionality
+  by making just one comparison
+*/
+
+#define SMI_DIRECTIONAL_UP 2048
+#define SMI_DIRECTIONAL_DOWN 4096
+#define SMI_DIRECTIONAL_EITHER (SMI_DIRECTIONAL_UP | SMI_DIRECTIONAL_DOWN)
+
 
 /*
   Used for parsing leading numeric qualifiers

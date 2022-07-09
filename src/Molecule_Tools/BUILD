@@ -331,6 +331,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "iwdemerit",
+    srcs = [
+      "iwdemerit.cc",
+      "substructure_demerits.cc",
+      "substructure_demerits.h",
+      "qry_and_demerit.h",
+    ],
+    deps = [
+        "iwdemerit_lib",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "iwdescr",
     srcs = [
         "iwdescr.cc",
@@ -1247,7 +1262,7 @@ cc_library(
         "coords_and_connectivity.h",
     ],
     deps = [
-        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:minimal_lillymol",
     ],
 )
 

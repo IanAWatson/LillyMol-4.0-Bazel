@@ -9,9 +9,8 @@
 
 using std::cerr;
 
-Set_of_Atoms::Set_of_Atoms ()
-{
-//cerr << "Set_of_Atoms::Set_of_Atoms called\n";
+Set_of_Atoms::Set_of_Atoms() {
+  //cerr << "Set_of_Atoms::Set_of_Atoms called\n";
 }
 
 Set_of_Atoms::Set_of_Atoms(int initial_size) : resizable_array<atom_number_t>(initial_size)
@@ -251,38 +250,6 @@ Set_of_Atoms::operator = (const Set_of_Atoms & rhs)
 
   return *this;
 }
-
-#ifdef NEED_WRITE_AS_MDL_V30_COLLECTION_BLOCK
-// Not sure this is needed. If it is needed, move it to mdl.cc or
-// restructure as a non-member function.
-int
-Set_of_Atoms::write_as_mdl_v30_collection_block(const const_IWSubstring & zname,
-                                                 const const_IWSubstring & subname,
-                                                 std::ostream & output) const
-{
-  output << "M  V30 BEGIN COLLECTION\n";
-  output << "M  V30 " << zname;
-  if (subname.length() > 0)
-    output << '/' << subname;
-  output << '\n';
-
-  IWString output_buffer;
-  output_buffer.resize(200);
-
-  output_buffer << "M  V30 ATOMS=" << _number_elements;
-
-  for (int i = 0; i < _number_elements; i++)
-  {
-    output_buffer << ' ' << (_things[i] + 1);
-  }
-
-  write_v30_record(output_buffer, output);
-
-  output << "M  V30 END COLLECTION\n";
-
-  return output.good();
-}
-#endif
 
 int
 Set_of_Atoms::any_members_in_common(const Set_of_Atoms & rhs) const

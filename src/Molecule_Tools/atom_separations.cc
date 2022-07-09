@@ -80,7 +80,7 @@ Hasher::Value(int z1, int z2, int z3, int d12, int d13, int d23) const {
     }
   }
 
-  // Use base 40 to encode the distances, 40^3 = 64, so atoms start with 100k
+  // Use base 40 to encode the distances, 40^3 = 64000, so atoms start with 100k
   uint32_t rc = 100000 * 100 * z1 +
                 100000 * 10 * z2 +
                 100000 * z3 +

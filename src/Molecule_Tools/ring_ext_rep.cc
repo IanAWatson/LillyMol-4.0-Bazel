@@ -1,8 +1,12 @@
 #include <stdlib.h>
+#include <iostream>
 
 #include "Molecule_Lib/path.h"
 
 #include "ring_ext_rep.h"
+
+using std::cerr;
+using std::endl;
 
 
 Ring_Extraction_Replacement_Conditions::Ring_Extraction_Replacement_Conditions()

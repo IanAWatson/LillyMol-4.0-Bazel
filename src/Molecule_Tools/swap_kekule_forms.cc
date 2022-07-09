@@ -1,8 +1,12 @@
 #include <stdlib.h>
+#include <iostream>
 
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/toggle_kekule_form.h"
+
+using std::cerr;
+using std::endl;
 
 int
 find_adjacent_atoms_in_common_between_two_rings (const Ring & ri, 

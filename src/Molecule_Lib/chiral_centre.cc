@@ -9,12 +9,14 @@
 #endif
 
 #include "Foundational/iwmisc/iwminmax.h"
-#include "molecule.h"
+
+#include "Molecule_Lib/chiral_centre.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/moleculeio.h"
 #ifdef NOW_IN_MDL_CC_REMOVE_FROM_HERE_WHEN_OK
 #include "mdl.h"
 #endif
-#include "chiral_centre.h"
-#include "misc2.h"
+#include "Molecule_Lib/misc2.h"
 
 using std::cerr;
 using std::endl;
@@ -1112,7 +1114,7 @@ Molecule::_check_for_incomplete_chiral_specifications()
 
     _chiral_centres.remove_item(i);
 
-    if (! ignore_incorrect_chiral_input())
+    if (! moleculeio::ignore_incorrect_chiral_input())
       rc = 0;
   }
 
@@ -2108,7 +2110,7 @@ Molecule::_complete_chiral_centres_from_mdl_files(const MDL_File_Supporting_Mate
     if (_complete_chiral_centre_from_mdl_files(c, mdlfos))
       continue;
 
-    if (ignore_incorrect_chiral_input())
+    if (moleculeio::ignore_incorrect_chiral_input())
     {
       cerr << "Discarding invalid chiral centre on atom " << c->a() << " '" << smarts_equivalent_for_atom(c->a()) << "'\n";
 

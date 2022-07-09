@@ -150,12 +150,9 @@ TEST_F(TestNMABToken, JustOpAndRelational) {
 
 TEST_F(TestNMABToken, EmptySmarts) {
   s = "{[]}";
-  cerr << "first\n";
   EXPECT_EQ(TokeniseNMABSpecification(s, tokens), 0);
-  cerr << "second\n";
   s = "{1[]}";
   EXPECT_EQ(TokeniseNMABSpecification(s, tokens), 0);
-  cerr << "third\n";
   s = "{>1[]}";
   EXPECT_EQ(TokeniseNMABSpecification(s, tokens), 0);
   s = "{,>1[]}";

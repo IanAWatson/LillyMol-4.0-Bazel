@@ -14,10 +14,10 @@
 #include "Foundational/iwmisc/misc.h"
 
 #include "molecule.h"
+#include "moleculeio.h"
 #include "rwmolecule.h"
 
 using std::cerr;
-using std::endl;
 
 /*
   Jun 04. Need to preserve atom names when reading and writing
@@ -209,7 +209,7 @@ parse_pdb_atom_record(IWString& buffer,    // not const
   if (! buffer.nextword(token, i))    // sequence number
     return 0;
 
-  //cerr << "From " << buffer << " sequence number is " << token << endl;
+  //cerr << "From " << buffer << " sequence number is " << token << '\n';
 
   int atom_number;
 
@@ -245,7 +245,7 @@ parse_pdb_atom_record(IWString& buffer,    // not const
     const_IWSubstring s;
     buffer.from_to(76, 77, s);    // columns 77 to 78
     s.strip_leading_blanks();
-    //  cerr << "From " << buffer << endl;
+    //  cerr << "From " << buffer << '\n';
     //  cerr << "Getting element from '" << s << "'\n";
     const Element* e = get_element_from_symbol_no_case_conversion(s);
     if (nullptr == e)
@@ -353,7 +353,7 @@ ATOM      1  C   ACE     0     -37.000   8.810  17.821  1.00  0.00      3LDH    
       if (! parse_pdb_atom_record(buffer, anumber, atom_number_to_atom_number, atoms))
       {
         cerr << "Molecule::read_molecule_pdb_ds:invalid input '" << buffer << "', line "
-             << input.lines_read() << endl;
+             << input.lines_read() << '\n';
         return 0;
       }
     }
@@ -433,7 +433,7 @@ CONECT 2556 2557 2558 2559 2578                                                 
 
     if (nullptr != tmp[k])
     {
-      cerr << "Molecule::read_molecule_pdb_ds:duplicate atom " << k << endl;
+      cerr << "Molecule::read_molecule_pdb_ds:duplicate atom " << k << '\n';
       return 0;
     }
 
@@ -446,7 +446,7 @@ CONECT 2556 2557 2558 2559 2578                                                 
   {
     if (nullptr == tmp[i])
     {
-      cerr << "Molecule::read_molecule_pdb_ds:no atom " << i << endl;
+      cerr << "Molecule::read_molecule_pdb_ds:no atom " << i << '\n';
       return 0;
     }
 
@@ -465,7 +465,7 @@ CONECT 2556 2557 2558 2559 2578                                                 
     if (a1 < 0 || a2 < 0 || a1 >= na || a2 >= na)
     {
       cerr << "Molecule::read_molecule_pdb_ds:invalid bond " << b->a1() << " to " << b->a2()
-           << endl;
+           << '\n';
       return 0;
     }
 
@@ -473,7 +473,7 @@ CONECT 2556 2557 2558 2559 2578                                                 
     {
       if (ignore_self_bonds())
         cerr << "Molecule::read_molecule_pdb_ds:ignoring self bond " << a1 << " to " << a2 << " in "
-             << _molecule_name << endl;
+             << _molecule_name << '\n';
       else
       {
         cerr << "Molecule::read_molecule_pdb_ds:atoms " << a1 << " and " << a2 << " in "
@@ -495,11 +495,11 @@ CONECT 2556 2557 2558 2559 2578                                                 
       stored_pdb_atom_information.number_elements() != _number_elements)
   {
     cerr << "PDB stored name mismatch with atom count "
-         << stored_pdb_atom_information.number_elements() << " and " << _number_elements << endl;
+         << stored_pdb_atom_information.number_elements() << " and " << _number_elements << '\n';
     abort();
   }
 
-  if (discern_chirality_from_3d_coordinates() && 3 == highest_coordinate_dimensionality())
+  if (moleculeio::discern_chirality_from_3d_coordinates() && 3 == highest_coordinate_dimensionality())
     (void)discern_chirality_from_3d_structure();
 
   return _number_elements;
@@ -809,7 +809,7 @@ Molecule::write_molecule_pdb(std::ostream& os, const IWString& comments)
   os << '-' << std::setw(2) << (tm->tm_year - 100) << "  1UNK\n";
   os << "COMPND    " << name() << '\n';
   if (comments.length())
-    os << "REMARK    " << comments << endl;
+    os << "REMARK    " << comments << '\n';
   os << "REMARK   1 fileconv:" << __FILE__ << " compiled " << __DATE__ << " at " << __TIME__
      << '\n';
 

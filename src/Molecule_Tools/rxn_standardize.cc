@@ -4,8 +4,6 @@
 
 #include <iostream>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/accumulator/accumulator.h"
@@ -13,9 +11,14 @@ using std::endl;
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/standardise.h"
+#include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/moleculeio.h"
 #include "Molecule_Lib/mdl_molecule.h"
 #include "Molecule_Lib/rxn_file.h"
+#include "Molecule_Lib/standardise.h"
+
+using std::cerr;
+using std::endl;
 
 const char * prog_name = nullptr;
 
@@ -1114,7 +1117,7 @@ rxn_standardize (int argc, char ** argv)
   	// for MDL mols:
     set_mdl_molecule_discard_chirality(1);
     //for smiles:
-    set_ignore_all_chiral_information_on_input(1);
+    moleculeio::set_ignore_all_chiral_information_on_input(1);
 
     if (verbose)
       cerr << "Will discard all chirality input on input\n";

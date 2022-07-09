@@ -1,8 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
-using std::cerr;
-using std::endl;
 
 #define COMPILING_TRIPOS_CC
 
@@ -15,7 +13,11 @@ using std::endl;
 #include "charge_calculation.h"
 #include "misc2.h"
 #include "molecule.h"
+#include "moleculeio.h"
 #include "rwmolecule.h"
+
+using std::cerr;
+using std::endl;
 
 static int assign_default_formal_charges = 0;
 
@@ -152,7 +154,7 @@ Molecule::read_molecule_mol2_ds(iwstring_data_source & input)
   else if (_atom_type->number_elements() > 0 && 0 == _atom_type->ztype().length())
     _atom_type->set_type(ATOM_TYPE_SYBYL);
 
-  int d = discern_chirality_from_3d_coordinates();
+  int d = moleculeio::discern_chirality_from_3d_coordinates();
 
   if (d && 3 == highest_coordinate_dimensionality())
   {

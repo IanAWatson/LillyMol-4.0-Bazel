@@ -1,5 +1,8 @@
 #include <memory>
 
+// Expose public member function in toggle_kekule_form for reading protobuf
+#define COMPILING_TOGGLE_KEKULE_FORM_PROTO
+
 #include "iwreaction.h"
 
 template <typename P>

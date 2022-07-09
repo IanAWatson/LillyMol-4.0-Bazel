@@ -554,7 +554,6 @@ Options::DoReplacement(Molecule& m,
   }
   cerr << "Exemplar count ok " << proto.count() << '\n';
   cerr << "a11 " << a11 << " a12 " << a12 << " a21 " << a21 << " a22 " << a22 << '\n';
-  Molecule mcopy(m);
   const int matoms = m.natoms();
   std::fill_n(storage, matoms, 0);
   atoms_between.Scatter(storage, 1);
@@ -568,6 +567,7 @@ Options::DoReplacement(Molecule& m,
   atoms_between.DebugPrint(cerr);
   int * xref = storage + matoms;
   EstablishXref(storage, matoms, xref);
+  Molecule mcopy(m);
   mcopy.remove_atoms(storage);
   for (int i = 0; i < matoms; ++i) {
     cerr << i << " " << storage[i] << " xref " << xref[i] << '\n';

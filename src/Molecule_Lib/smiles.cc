@@ -3392,3 +3392,263 @@ Molecule::smiles_using_order(const int * user_specified_rank)
 
   return _smiles_information.smiles();
 }
+
+namespace smiles {
+/*static int
+fetch_ring_number (const char * s,
+                   int & ring_number,
+                   int & characters_processed)
+{
+  if (isdigit (*s))
+  {
+    ring_number = *s - '0';
+    characters_processed = 1;
+    return 1;
+  }
+
+  if ('%' != *s)
+    return 0;
+
+  s++;    // skip over the %
+
+  int tmp = fetch_numeric (s, ring_number, 2);
+  if (2 != tmp)
+    return 0;
+  
+  characters_processed = 3;
+
+  return 1;
+}*/
+
+int
+fetch_ring_number(const char * s,
+                  int nchars,
+                  int & ring_number,
+                  int & characters_processed)
+{
+  if (isdigit(*s))
+  {
+    ring_number = *s - '0';
+    characters_processed = 1;
+    return 1;
+  }
+
+#ifdef DEBUG_FETCH_RING_NUMBER
+  cerr << "fetch_ring_number:looking at '" << *s << "', nchars " << nchars << endl;
+  for (int i = 0; i < nchars; ++i)
+  {
+    cerr << s[i];
+  }
+  cerr << endl;
+#endif
+
+  if ('%' != *s) {
+    return 0;
+  }
+
+  if (nchars < 3)     // shortest would be %nn
+    return 0;
+
+  s++;    // skip over the %
+
+  if ('(' != *s)    // must be a simple %nn
+  {
+    if (2 != fetch_numeric_char(s, ring_number, 2))
+      return 0;
+
+    characters_processed = 3;
+
+    return 1;
+  }
+
+// The more complex case of %(nnn)
+
+  nchars -= 2;      // we have consumed %(
+  s++;
+
+  ring_number = 0;
+
+  for (int i = 0; i < nchars; i++)
+  {
+    int j = *s - '0';
+
+    if (j >= 0 && j <= 9)
+    {
+      ring_number = 10 * ring_number + j;
+      s++;
+    }
+    else if (')' == *s)
+    {
+      characters_processed = i + 3;
+      return 1;
+    }
+    else
+      return 0;
+  }
+
+  return 0;
+}
+
+int process_quoted_smiles = 0;
+void
+SetProcessQuotedSmiles(int s) {
+  process_quoted_smiles = s;
+}
+int ProcessQuotedSmiles() {
+  return process_quoted_smiles;
+}
+
+// When reading a smiles, if the 2nd token looks like |...|, process
+// that as a Chemaxon smiles extension
+int _discern_chemaxon_smiles_extensions = 0;
+
+void
+SetDiscernChemaxonSmilesExtensions(int s) {
+  _discern_chemaxon_smiles_extensions = s;
+}
+
+int
+DiscernChemaxonSmilesExtensions() {
+  return _discern_chemaxon_smiles_extensions;
+}
+
+
+int _ignore_bad_cis_trans_input = 0;
+
+void
+set_ignore_bad_cis_trans_input(int s)
+{
+  _ignore_bad_cis_trans_input = s;
+}
+
+int
+ignore_bad_cis_trans_input()
+{
+  return _ignore_bad_cis_trans_input;
+}
+
+}  // namespace smiles
+
+Smiles_Ring_Status::Smiles_Ring_Status()
+{
+  _rings_encountered = 0;
+}
+
+/*
+  We will be complete when we are not storing any valid atom numbers
+*/
+
+int
+Smiles_Ring_Status::complete() const
+{
+  for (int i = 0; i < _number_elements; i++)
+  {
+    if (INVALID_ATOM_NUMBER != _things[i])
+      return 0;
+  }
+
+  return 1;
+}
+
+int
+Smiles_Ring_Status::report_hanging_ring_closures(std::ostream & os) const
+{
+  for (int i = 0; i < _number_elements; i++)
+  {
+    if (INVALID_ATOM_NUMBER != _things[i])
+      os << "Hanging ring closure " << i << endl;
+  }
+
+  return 1;
+}
+
+/*
+  At atom A we have encountered a ring opening/closing number.
+  Analyse that ring number.
+  If ring_number corresponds to closing a ring, we set OTHER_END and
+  return 1.
+  For ring openings we return 0;
+
+  Note that we aren't using the bt variable. For this reason, we do not
+  correctly process the smiles C=1CC1.
+  Change this sometime if it ever becomes a problem
+*/
+
+int
+Smiles_Ring_Status::encounter(int ring_number, atom_number_t a,
+                              atom_number_t & other_end,
+                              bond_type_t & bt)
+{
+  assert(ring_number >= 0);
+
+  static bond_type_t single_or_aromatic = (SINGLE_BOND | AROMATIC_BOND);
+
+  if (ring_number >= _number_elements)     // definitely a new ring.
+  {
+    extend(2 * ring_number + 1, INVALID_ATOM_NUMBER);
+    _bt.extend(2 * ring_number + 1, SINGLE_BOND);
+  }
+
+// If ring_number is in range, and _things[ring_number] is an OK atom
+//  number, then we have a ring closure
+
+  else if (INVALID_ATOM_NUMBER != _things[ring_number])
+  {
+//  cerr << "Encounter ring " << ring_number << " making bond between atom " << _things[ring_number] << " type " << bt << " stored type " << _bt[ring_number] << endl;
+    other_end = _things[ring_number];
+    _things[ring_number] = INVALID_ATOM_NUMBER;
+
+    if (NOT_A_BOND == _bt[ring_number])    // was not set during ring opening, use what just came in
+    {
+      if (NOT_A_BOND == bt)
+        _bt[ring_number] = single_or_aromatic;
+      else 
+        _bt[ring_number] = bt;
+    }
+    else if (NOT_A_BOND == bt)      // was set during opening, and closing does not specify
+      bt = _bt[ring_number];
+    else if (bt == _bt[ring_number])    // great, same as on ring opening
+      ;
+    else if (SMI_DIRECTIONAL_UP & bt)
+      _bt[ring_number] = bt ^ SMI_DIRECTIONAL_UP;
+    else if (SMI_DIRECTIONAL_DOWN & bt)
+      _bt[ring_number] = bt ^ SMI_DIRECTIONAL_DOWN;
+    else
+    {
+      cerr << "Smiles_Ring_Status::encounter:inconsistent bonds at opening " << _bt[ring_number] << " and closing " << _bt[ring_number] << " of ring " << ring_number << " using last\n";
+      _bt[ring_number] = bt;
+    }
+
+    bt = _bt[ring_number];
+//  cerr << "Returned bond type " << bt << endl;
+    return 1;    // ring closure
+  }
+
+// If we come to here, then this is a ring opening. Note that if we
+// have a directional bond for a ring opening, we need to swap the 
+// directionality because the closing will look down from the opposite
+// direction
+
+  static bond_type_t any_directionality = (SMI_DIRECTIONAL_UP | SMI_DIRECTIONAL_DOWN);
+
+  if ((bt & any_directionality) == 0) {  // no directionality.
+  } else if (bt & SMI_DIRECTIONAL_UP) {
+    bt = (bt ^ SMI_DIRECTIONAL_UP) | SMI_DIRECTIONAL_DOWN;
+  } else if (bt & SMI_DIRECTIONAL_DOWN) {
+    bt = (bt ^ SMI_DIRECTIONAL_DOWN) | SMI_DIRECTIONAL_UP;
+  }
+
+  _things[ring_number] = a;
+  _bt[ring_number] = bt;
+
+//cerr << "_BT " << ring_number << ' ' << bt << endl;
+
+  _rings_encountered++;
+
+  return 0;      // ring opening
+}
+
+void
+reset_smiles_file_scope_variables() {
+  smiles::_ignore_bad_cis_trans_input = 0;
+}

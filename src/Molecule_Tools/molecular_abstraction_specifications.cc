@@ -1,6 +1,10 @@
 #include <stdlib.h>
+#include <iostream>
 
 #include "molecular_abstraction_specifications.h"
+
+using std::cerr;
+using std::endl;
 
 #define MA_OPEN_PAREN '('
 #define MA_CLOSE_PAREN ')'

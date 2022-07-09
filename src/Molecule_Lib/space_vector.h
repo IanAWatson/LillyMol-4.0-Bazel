@@ -493,8 +493,7 @@ template <typename T>
 int
 Space_Vector<T>::read(const const_IWSubstring & buffer, char separator)
 {
-  if (buffer.nwords(separator) < 3)
-  {
+  if (buffer.nwords(separator) < 3) {
     std::cerr << "vector::read: must have at least 3 tokens '" << buffer << "' has " << buffer.nwords(separator) << '\n';
     return 0;
   }
@@ -503,22 +502,19 @@ Space_Vector<T>::read(const const_IWSubstring & buffer, char separator)
   const_IWSubstring token;
 
   (void) buffer.nextword(token, i, separator);
-  if (! token.numeric_value(_x))
-  {
+  if (! token.numeric_value(_x)) {
     std::cerr << "vector::read: cannot parse first token as numeric\n";
     return 0;
   }
 
   (void) buffer.nextword(token, i, separator);
-  if (! token.numeric_value(_y))
-  {
+  if (! token.numeric_value(_y)) {
     std::cerr << "vector::read: cannot parse second token as numeric\n";
     return 0;
   }
 
   (void) buffer.nextword(token, i, separator);
-  if (! token.numeric_value(_z))
-  {
+  if (! token.numeric_value(_z)) {
     std::cerr << "vector::read: cannot parse third token as numeric\n";
     return 0;
   }

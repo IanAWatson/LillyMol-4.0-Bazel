@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <google/protobuf/util/message_differencer.h>
 
 #include "Molecule_Lib/mol2graph_proto.h"
@@ -5,6 +7,9 @@
 #include "molecule_database_options.h"
 
 namespace  molecule_database {
+
+using std::cerr;
+using std::endl;
 
 void Preprocess(Molecule& m, const LLYMol::MoleculeDatabaseOptions& options,
                 Chemical_Standardisation& chemical_standardisation) {

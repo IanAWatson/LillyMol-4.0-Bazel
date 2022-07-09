@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include <iostream>
 #include <limits>
 
 #include "re2/re2.h"
@@ -15,6 +16,9 @@
 #include "Molecule_Lib/target.h"
 
 #include "molecular_abstraction_functions.h"
+
+using std::cerr;
+using std::endl;
 
 static int default_append_count_to_tag = 0;
 
