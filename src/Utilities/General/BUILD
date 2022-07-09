@@ -84,6 +84,7 @@ cc_binary(
         ":class_label_translation_cc_proto",
         "//Foundational/cmdline_v2:cmdline_v2",
         "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:proto_support",
         "//Foundational/iwstring:iwstring",
     ],
     linkopts = [
@@ -149,6 +150,7 @@ cc_binary(
         ":scaler",
         ":feature_scaling_cc_proto",
         "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/iwmisc:proto_support",
         "//Foundational/iwstring:iwstring",
         "//Foundational/data_source:iwstring_data_source",
     ],

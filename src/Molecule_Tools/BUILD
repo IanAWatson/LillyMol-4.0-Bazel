@@ -564,6 +564,7 @@ cc_binary(
         "//Molecule_Lib:iwreaction",
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:proto_support",
         "//Foundational/iw_tdt:iw_tdt",
     ],
     linkopts = [
@@ -1263,7 +1264,6 @@ cc_library(
     ],
     deps = [
         "//Molecule_Lib:minimal_lillymol",
-        "//Molecule_Lib:substructure",
     ],
 )
 

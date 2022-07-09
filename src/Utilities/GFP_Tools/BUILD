@@ -503,6 +503,7 @@ cc_library(
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwbits:iwbits",
         "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:proto_support",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Foundational/iwqsort:iwqsort",
         "//Foundational/iw_tdt:iw_tdt",

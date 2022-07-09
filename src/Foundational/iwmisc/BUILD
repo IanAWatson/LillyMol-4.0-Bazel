@@ -33,7 +33,6 @@ cc_library(
         "new_double.cc",
         "new_float.cc",
         "new_int.cc",
-        "proto_support.cc",
         "report_progress.cc",
         "write_space_suppressed_string.cc",
         "_numeric_data_from_file_int.cc",
@@ -53,7 +52,6 @@ cc_library(
         "msi_object.h",
         "numeric_data_from_file.h",
         "primes.h",
-        "proto_support.h",
         "report_progress.h",
         "set_or_unset.h",
         "timsort.hpp",
@@ -63,7 +61,6 @@ cc_library(
         ":iwconfig",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwstring_data_source",
-	"@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -148,6 +145,22 @@ cc_library(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_library(
+    name = "proto_support",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "proto_support.cc",
+    ],
+    hdrs = [
+        "proto_support.h",
+    ],
+    deps = [
+	"@com_google_protobuf//:protobuf",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwstring:iwstring",
     ],
 )
 

@@ -371,35 +371,38 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "substructure",
-    srcs = [
-        "atom_alias.cc",
-        "csubstructure.cc",
-        "geometric_constraints.cc",
-        "iwsubstructure.cc",
-        "ss_bonds.cc",
-        "ss_ring.cc",
-        "ss_ring_base.cc",
-        "ss_ring_sys.cc",
-        "substructure_a.cc",
-        "substructure_chiral.cc",
-        "substructure_env.cc",
-        "substructure_results.cc",
-        "substructure_spec.cc",
-    ],
-    hdrs = [
-        "atom_alias.h",
-        "geometric_constraints.h",
-        "substructure.h",
-    ],
-    deps = [
-        ":minimal_lillymol",
-        ":geometric_constraints_cc_proto",
-        "//Foundational/iwbits:iwbits",
-        "//Foundational/iwmisc:iwmisc",
-    ],
-)
+#  Building this library fails when dealing with atom typing, where
+#  we run into circular dependencies. If that ever gets resolved then
+#  this could be implemented
+#  cc_library(
+#      name = "substructure",
+#      srcs = [
+#          "atom_alias.cc",
+#          "csubstructure.cc",
+#          "geometric_constraints.cc",
+#          "iwsubstructure.cc",
+#          "ss_bonds.cc",
+#          "ss_ring.cc",
+#          "ss_ring_base.cc",
+#          "ss_ring_sys.cc",
+#          "substructure_a.cc",
+#          "substructure_chiral.cc",
+#          "substructure_env.cc",
+#          "substructure_results.cc",
+#          "substructure_spec.cc",
+#      ],
+#      hdrs = [
+#          "atom_alias.h",
+#          "geometric_constraints.h",
+#          "substructure.h",
+#      ],
+#      deps = [
+#          ":minimal_lillymol",
+#          ":geometric_constraints_cc_proto",
+#          "//Foundational/iwbits:iwbits",
+#          "//Foundational/iwmisc:iwmisc",
+#      ],
+#  )
 
 cc_library(
     name = "moleculeio",

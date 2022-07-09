@@ -5,7 +5,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "Molecule_Lib/substructure.h"
 #include "Molecule_Tools/coords_and_connectivity.h"
 
 namespace {
@@ -169,8 +168,6 @@ TEST(TestCachedMolecule, TestSubstructureQuery) {
   CachedMolecule mol;
   constexpr int kNatoms = 4;
   ASSERT_EQ(mol.ParseSmiles("NCOC"), kNatoms);
-  Substructure_Query query;
-  ASSERT_TRUE(query.create_from_smarts("NCOC"));
 }
 
 

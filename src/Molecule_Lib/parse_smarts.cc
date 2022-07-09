@@ -30,7 +30,6 @@ static const Element * smi_element_cl;
 static const Element * smi_element_br;
 static const Element * smi_element_i;
 static const Element * smi_element_hydrogen;
-static const Element * smi_element_a = nullptr;
 
 static void
 initialise_organic_subset()

@@ -606,23 +606,22 @@ parse_smiles_token(const char * smiles,
       smi_element_a = get_element_from_symbol_no_case_conversion("a");
 //    cerr << "smi_element_a now " << smi_element_a << endl;
 
-      if (nullptr != smi_element_a)
-        ;
-      else if (! auto_create_new_elements())
-      {
+      if (nullptr != smi_element_a) {
+      } else if (! auto_create_new_elements()) {
         cerr << "Cannot create 'a' element, use '-E autocreate'\n";
         return 0;
-      }
-      else
+      } else {
         smi_element_a = create_element_with_symbol('a');
+      }
     }
 
     e = smi_element_a;
 
 //  cerr << "'a' atom found, arom " << e->permanent_aromatic() << endl;
 
-    if (e->permanent_aromatic())
+    if (e->permanent_aromatic()) {
       aromatic = AROMATIC;
+    }
 
     return 1;
   }
