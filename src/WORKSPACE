@@ -141,14 +141,16 @@ local_repository(
     path = "/home/ian/pub/googletest",
 )
 
+# Multiple ways of getting re2, remote or local.
+# git_repository(
+#     name = "re2",
+#     remote = "https://github.com/google/re2",
+#     branch = "main",
+# )
+
 local_repository(
     name = 're2',
     path = "/home/ian/pub/re2",
-)
-
-local_repository(
-    name = 'riegeli',
-    path = "/home/ian/pub/riegeli",
 )
 
 local_repository(
