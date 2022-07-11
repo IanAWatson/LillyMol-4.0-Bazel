@@ -8,6 +8,9 @@ constexpr float kBohrToAngstrom = 0.529177f;
 
 using std::cerr;
 
+using GoogleSmu::BondTopology;
+using GoogleSmu::Geometry;
+
 std::optional<Molecule>
 MoleculeFromBondTopology(const BondTopology& bond_topology) {
   Molecule result;

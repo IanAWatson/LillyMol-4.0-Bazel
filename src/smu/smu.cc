@@ -14,6 +14,8 @@
 
 // Implementation for SMU
 
+#include <iostream>
+
 #include "smu.h"
 
 #include <algorithm>
@@ -24,6 +26,8 @@
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 
 namespace smu {
+
+using std::cerr;
 
 int invalid_valence_rejected = 0;
 

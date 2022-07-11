@@ -15,6 +15,8 @@
 
 namespace smu_chirality {
 
+using std::cerr;
+
 struct JobOptions {
   int verbose = 0;
 

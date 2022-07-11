@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+
 #include "smu.h"
 
 namespace smu {
+
+using std::cerr;
 
 SmuResults::SmuResults() {
   _molecules_examined = 0;

@@ -27,6 +27,8 @@
 namespace bond_score {
 
 using std::cerr;
+using GoogleSmu::BondTopology;
+using GoogleSmu::Geometry;
 
 void
 Usage(int rc)
@@ -138,7 +140,7 @@ struct Options
   int no_optimised_geometry = 0;
 
   private:
-    int BondScore(Conformer& conformer, iw_tf_data_record::TFDataWriter& output);
+    int BondScore(GoogleSmu::Molecule& conformer, iw_tf_data_record::TFDataWriter& output);
     void ComputeDeviationFromReference(const Geometry& geom, BondTopology& bt);
 
   public:
@@ -315,7 +317,8 @@ Options::ComputeDeviationFromReference(const Geometry& geom,
     score += ComputeScore(d, iter->second);
     ++n;
   }
-  bt.set_deviation_from_reference(score / n);
+
+  // not in new dataset.proto bt.set_deviation_from_reference(score / n);
 
   acc_score.extra(score);
 
@@ -325,7 +328,7 @@ Options::ComputeDeviationFromReference(const Geometry& geom,
 }
 
 int
-Options::BondScore(Conformer& conformer,
+Options::BondScore(GoogleSmu::Molecule& conformer,
           iw_tf_data_record::TFDataWriter& output)
 {
   if (conformer.optimized_geometry().atom_positions().size() == 0) {
@@ -346,7 +349,7 @@ Options::Process(iw_tf_data_record::TFDataReader& input,
                  iw_tf_data_record::TFDataWriter& output)
 {
   while (true) {
-    std::optional<Conformer> data = input.ReadProto<Conformer>();
+    std::optional<GoogleSmu::Molecule> data = input.ReadProto<GoogleSmu::Molecule>();
     if (! data) {
       cerr << "Did not read data\n";
       return 1;

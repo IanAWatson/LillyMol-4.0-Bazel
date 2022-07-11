@@ -54,8 +54,9 @@ cc_binary(
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwtfdata_record",
-         "//Molecule_Lib:iwmolecule",
-         "//Molecule_Lib:moleculeio",
+        "//Foundational/iwmisc:proto_support",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
     ],
 )
 
@@ -83,6 +84,7 @@ cc_binary(
         ":bond_length_distribution_cc_proto",
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:proto_support",
          "//Molecule_Lib:iwmolecule",
          "//Molecule_Lib:moleculeio",
     ],

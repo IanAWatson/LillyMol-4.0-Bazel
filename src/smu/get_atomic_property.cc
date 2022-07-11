@@ -25,6 +25,8 @@ namespace get_atomic_property {
 
 using std::cerr;
 
+using GoogleSmu::BondTopology;
+
 struct Options {
   int verbose = 0;
 
@@ -506,7 +508,7 @@ Usage(int rc) {
 
 // Maybe return an atomic value from `conformer` for `atom_number`.
 std::optional<double>
-GetValue(const Conformer& conformer, int atom_number) {
+GetValue(const GoogleSmu::Molecule& conformer, int atom_number) {
   if (! conformer.properties().has_nmr_isotropic_shielding_pbe0_aug_pcs_1()) {
     return std::nullopt;
   }
@@ -516,7 +518,7 @@ GetValue(const Conformer& conformer, int atom_number) {
 
 int
 PlaceIsotopeOnEachAtom(Options& options,
-                  const Conformer& conformer,
+                  const GoogleSmu::Molecule& conformer,
                   Molecule& m,
                   IWString_and_File_Descriptor& output) {
   constexpr char kSep = ' ';
@@ -554,7 +556,7 @@ PlaceIsotopeOnEachAtom(Options& options,
 // Do substructure searches over `m`.
 int
 GetAtomicProperty(Options& options,
-                  const Conformer& conformer,
+                  const GoogleSmu::Molecule& conformer,
                   Molecule& m,
                   IWString_and_File_Descriptor& output) {
   Molecule_to_Match target(&m);
@@ -592,18 +594,18 @@ GetAtomicProperty(Options& options,
   return 1;
 }
 
-// Set the molecule name to `conformer_id`.
+// Set the molecule name to `molecule_id`.
 void
-SetName(int conformer_id,
+SetName(int molecule_id,
         Molecule& m) {
   IWString name;
-  name << conformer_id;
+  name << molecule_id;
   m.set_name(name);
 }
 
 int
 GetAtomicProperty(Options& options,
-                  const Conformer& conformer,
+                  const GoogleSmu::Molecule& conformer,
                   IWString_and_File_Descriptor& output) {
   if (conformer.bond_topologies().size() == 0) {
     options.no_bond_topologies++;
@@ -614,7 +616,7 @@ GetAtomicProperty(Options& options,
     cerr << "Processed " << options.conformers_read << " molecules\n";
   }
 
-  if (conformer.fate() != Conformer::FATE_SUCCESS) {
+  if (conformer.properties().errors().fate() != GoogleSmu::Properties::FATE_SUCCESS) {
     return 1;
   }
 
@@ -631,7 +633,7 @@ GetAtomicProperty(Options& options,
     options.no_molecule++;
     return 1;
   }
-  SetName(conformer.conformer_id(), *maybe_mol);
+  SetName(conformer.molecule_id(), *maybe_mol);
 
   if (options.isotope_on_each_atom) {
     return PlaceIsotopeOnEachAtom(options, conformer, *maybe_mol, output);
@@ -645,7 +647,7 @@ GetAtomicProperty2(Options& options,
                    const const_IWSubstring& buffer,
                    IWString_and_File_Descriptor& output) {
   const std::string as_string(buffer.data(), buffer.length());
-  Conformer conformer;
+  GoogleSmu::Molecule conformer;
   if (! conformer.ParseFromString(as_string)) {
     cerr << "Cannot decode proto\n";
     return 0;

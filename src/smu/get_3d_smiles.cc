@@ -12,6 +12,8 @@
 namespace get_3d_smiles {
 
 using std::cerr;
+using GoogleSmu::BondTopology;
+using GoogleSmu::Geometry;
 
 struct JobOptions {
   int verbose = 0;
@@ -162,7 +164,7 @@ Usage(int rc) {
 }
 
 int
-MaybeWriteMultiBT(const Conformer& conformer,
+MaybeWriteMultiBT(const GoogleSmu::Molecule& conformer,
                   JobOptions& options) {
   if (! options.stream_for_multiple_bt.is_open()) {
     return 1;
@@ -218,9 +220,9 @@ MaybeWriteMultiBT(const Conformer& conformer,
   for (int i = 0; i < number_bond_topologies; ++i) {
     char is_first = (i == find_first_at ? '*' : '.');
     options.stream_for_multiple_bt << smiles[i] <<
-         sep << conformer.conformer_id() <<
-         sep << conformer.properties().optimized_geometry_energy().value() <<
-         sep << conformer.fate() << 
+         sep << conformer.molecule_id() <<
+         sep << conformer.properties().single_point_energy_pbe0d3_6_311gd().value() <<
+         sep << conformer.properties().errors().fate() << 
          sep << is_first <<
          sep << find_first_at <<
          sep << ring_bond_count_differs <<
@@ -233,7 +235,7 @@ MaybeWriteMultiBT(const Conformer& conformer,
 }
 
 int
-Get3DSmiles(const Conformer& conformer,
+Get3DSmiles(const GoogleSmu::Molecule& conformer,
             JobOptions& options,
             IWString_and_File_Descriptor& output) {
   options.bt_count[conformer.bond_topologies().size()]++;
@@ -270,9 +272,9 @@ Get3DSmiles(const Conformer& conformer,
 
   const char sep = ' ';
 
-  output << maybe_mol->smiles() << sep << conformer.conformer_id() <<
-         sep << conformer.properties().optimized_geometry_energy().value() <<
-         sep << conformer.fate() << 
+  output << maybe_mol->smiles() << sep << conformer.molecule_id() <<
+         sep << conformer.properties().single_point_energy_pbe0d3_6_311gd().value() <<
+         sep << conformer.properties().errors().fate() << 
          sep << conformer.bond_topologies().size() << '\n';
 
   output.write_if_buffer_holds_more_than(8192);
@@ -287,7 +289,7 @@ Get3DSmiles(const const_IWSubstring& data,
             JobOptions& options,
             IWString_and_File_Descriptor& output) {
   const std::string as_string(data.data(), data.length());
-  Conformer conformer;
+  GoogleSmu::Molecule conformer;
   if (! conformer.ParseFromString(as_string)) {
     cerr << "Cannot decode proto\n";
     return 0;

@@ -1,4 +1,5 @@
 // Extract any float value from SMU data.
+// A two pass process that profiles the raw values and then identifies extreme values.
 
 #include <cmath>
 #include <iostream>
@@ -19,6 +20,8 @@
 namespace get_nmr {
 
 using std::cerr;
+
+using GoogleSmu::BondTopology;
 
 int
 ToAtomicNumber(const BondTopology::AtomType atype) {
@@ -60,9 +63,10 @@ struct JobOptions {
   int nprocess = std::numeric_limits<int>::max();
 
   // We can ignore N-F and O-F bonds if we wish.
-  // For two atomic numbers, set the value MAX(z1,z1) + z2
+  // For two atomic numbers, set the value 10 * MAX(z1,z1) + z2
   // in this array.
   extending_resizable_array<int> ignored;
+
   // We need a fast means of checking whether or not an
   // atomic number is set in the `ignored` array.
   extending_resizable_array<int> need_to_check;
@@ -95,10 +99,11 @@ struct JobOptions {
 
 int
 AtomPairHash(int z1, int z2) {
+  constexpr int kBase = 10;
   if (z1 < z2) {
-    return 10 * z2 + z1;
+    return kBase * z2 + z1;
   }
-  return 10 * z1 + z2;
+  return kBase * z1 + z2;
 }
 
 int
@@ -167,14 +172,14 @@ Usage(int rc) {
 
 int
 WriteIfExtremeValue(JobOptions& options,
-                    const Conformer& conformer,
+                    const GoogleSmu::Molecule& conformer,
                     const std::vector<std::pair<int, int>> & quantiles,
                     IWString_and_File_Descriptor& output) {
   const int startingbt = smu::IndexOfStartingBTid(conformer.bond_topologies());
   const BondTopology& bt0 = conformer.bond_topologies(startingbt);
-//const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
+  const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
   // const auto& nmr = conformer.properties().partial_charges_paboon_pbe0_aug_pc_1().values();  no values
-  const auto& nmr = conformer.properties().partial_charges_esp_fit_pbe0_aug_pc_1().values();
+ // const auto& nmr = conformer.properties().partial_charges_esp_fit_pbe0_aug_pc_1().values();
   const int matoms = bt0.atoms().size();
   resizable_array<int> outlier_atoms;
   resizable_array<int> outlier_values;
@@ -218,8 +223,8 @@ WriteIfExtremeValue(JobOptions& options,
   constexpr char sep = ' ';
 
   output << maybe_mol->smiles() << sep
-         << conformer.conformer_id() << sep
-         << (conformer.conformer_id() / 1000) << sep
+         << conformer.molecule_id() << sep
+         << (conformer.molecule_id() / 1000) << sep
          << max_outlier_value << sep
          << outlier_atomic_symbol << sep
          << conformer.properties().single_point_energy_atomic_b5().value()
@@ -231,42 +236,46 @@ WriteIfExtremeValue(JobOptions& options,
 }
 
 void
-CopyData(const Conformer& source,
-         Conformer& destination) {
-  destination.set_conformer_id(source.conformer_id());
-  destination.set_fate(source.fate());
+CopyData(const GoogleSmu::Molecule& source,
+         GoogleSmu::Molecule& destination) {
+  destination.set_molecule_id(source.molecule_id());
+  destination.mutable_properties()->mutable_errors()->set_fate(source.properties().errors().fate());
   for (const auto & existing_bt : source.bond_topologies()) {
     BondTopology* bt = destination.add_bond_topologies();
     *bt = existing_bt;
   }
 
   destination.mutable_properties()->mutable_single_point_energy_atomic_b5()->set_value(source.properties().single_point_energy_atomic_b5().value());
-  for (const double existing_nmr : source.properties().partial_charges_esp_fit_pbe0_aug_pc_1().values()) {
-    destination.mutable_properties()->mutable_partial_charges_esp_fit_pbe0_aug_pc_1()->add_values(existing_nmr);
+  //for (const double existing_nmr : source.properties().partial_charges_esp_fit_pbe0_aug_pc_1().values()) {
+  //  destination.mutable_properties()->mutable_partial_charges_esp_fit_pbe0_aug_pc_1()->add_values(existing_nmr);
+  //}
+  *destination.mutable_properties()->mutable_nmr_isotropic_shielding_pbe0_aug_pcs_1()->mutable_values() = source.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
+  for (const double existing_value : source.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values()) {
+    destination.mutable_properties()->mutable_nmr_isotropic_shielding_pbe0_aug_pcs_1()->add_values(existing_value);
   }
   // single_point_energy_atomic_b5
   // nmr_isotropic_shielding_pbe0_aug_pcs_1
 }
 
 int
-GetLowEnergyNmr(const Conformer& conformer,
+GetLowEnergyNmr(const GoogleSmu::Molecule& conformer,
             JobOptions& options,
-            std::unordered_map<int,  Conformer>& low_energy) {
-  if (conformer.fate() != Conformer::FATE_SUCCESS) {
+            std::unordered_map<int,  GoogleSmu::Molecule>& low_energy) {
+  if (conformer.properties().errors().fate() != GoogleSmu::Properties::FATE_SUCCESS) {
     return 1;
   }
   if (! conformer.properties().has_nmr_isotropic_shielding_pbe0_aug_pcs_1()) {
     return 1;
   }
-  if (! conformer.properties().has_partial_charges_esp_fit_pbe0_aug_pc_1()) {
-    return 1;
-  }
+  //if (! conformer.properties().has_partial_charges_esp_fit_pbe0_aug_pc_1()) {
+  //  return 1;
+  //}
   if (conformer.bond_topologies().size() == 0) {
     return 1;
   }
 
   if (options.btid_to_fetch.size() > 0) {
-    int btid = conformer.conformer_id() / 1000;
+    int btid = conformer.molecule_id() / 1000;
     if (auto iter = options.btid_to_fetch.find(btid);
         iter == options.btid_to_fetch.end()) {
       return 1;
@@ -276,7 +285,7 @@ GetLowEnergyNmr(const Conformer& conformer,
 
   options.results_obtained++;
 
-  const int bond_topology_id = conformer.conformer_id() / 1000;
+  const int bond_topology_id = conformer.molecule_id() / 1000;
   const auto iter = low_energy.find(bond_topology_id);
   // If this is higher energy than anything previously found for this bond_topology_id,
   // not interested.
@@ -288,7 +297,7 @@ GetLowEnergyNmr(const Conformer& conformer,
     // Update info stored.
     CopyData(conformer, iter->second);
   } else {  // emplace new information.
-    Conformer to_store;
+    GoogleSmu::Molecule to_store;
     CopyData(conformer, to_store);
     low_energy.emplace(bond_topology_id, std::move(to_store));
   }
@@ -299,9 +308,9 @@ GetLowEnergyNmr(const Conformer& conformer,
 int
 GetLowEnergyNmr(const const_IWSubstring& data,
             JobOptions& options,
-            std::unordered_map<int,  Conformer>& low_energy) {
+            std::unordered_map<int,  GoogleSmu::Molecule>& low_energy) {
   const std::string as_string(data.data(), data.length());
-  Conformer conformer;
+  GoogleSmu::Molecule conformer;
   if (! conformer.ParseFromString(as_string)) {
     cerr << "Cannot decode proto\n";
     return 0;
@@ -314,7 +323,7 @@ GetLowEnergyNmr(const const_IWSubstring& data,
 int
 GetLowEnergyNmr(iw_tf_data_record::TFDataReader& reader,
        JobOptions& options,
-       std::unordered_map<int,  Conformer>& low_energy) {
+       std::unordered_map<int,  GoogleSmu::Molecule>& low_energy) {
   while (reader.good() && ! reader.eof()) {
     std::optional<const_IWSubstring> data = reader.Next();
     if (! data) {
@@ -340,7 +349,7 @@ GetLowEnergyNmr(iw_tf_data_record::TFDataReader& reader,
 int
 GetLowEnergyNmr(const char * fname,
             JobOptions& options,
-            std::unordered_map<int, Conformer>& low_energy) {
+            std::unordered_map<int, GoogleSmu::Molecule>& low_energy) {
   iw_tf_data_record::TFDataReader reader(fname);
   if (! reader.good()) {
     cerr << "Cannot open " << fname << '\n';
@@ -433,7 +442,7 @@ GetNMR(int argc, char ** argv) {
 
   // First scan the input data and for each BondTopology get the lowest
   // energy Conformer.
-  std::unordered_map<int, Conformer> low_energy;
+  std::unordered_map<int, GoogleSmu::Molecule> low_energy;
 
   for (const char * fname : cl) {
     if (! GetLowEnergyNmr(fname, options, low_energy)) {
@@ -453,25 +462,25 @@ GetNMR(int argc, char ** argv) {
   for (const auto& [btid, conformer] : low_energy) {
     int startingbt = smu::IndexOfStartingBTid(conformer.bond_topologies());
     output << conformer.bond_topologies(startingbt).smiles() << sep 
-           << conformer.conformer_id() << sep
+           << conformer.molecule_id() << sep
            << conformer.properties().single_point_energy_atomic_b5().value() << sep
-           << conformer.fate() << sep
+           << conformer.properties().errors().fate() << sep
            << conformer.bond_topologies().size() << '\n';
     const BondTopology& bt0 = conformer.bond_topologies(startingbt);
     const int natoms = bt0.atoms().size();
-    cerr << "Molecule has " << natoms << " atoms\n";
+    //cerr << "Molecule has " << natoms << " atoms\n";
     for (int i = 0; i < natoms; ++i) {
       const int atomic_number = ToAtomicNumber(bt0.atoms(i));
-      cerr << "Checking ignore " << i << " atomic_number " << atomic_number << '\n';
+      // cerr << "Checking ignore " << i << " atomic_number " << atomic_number << '\n';
       if (options.Ignore(bt0, i, atomic_number)) {
         continue;
       }
-      cerr << "Not ignored, fetching value " << i << '\n';
-      double s = conformer.properties().partial_charges_esp_fit_pbe0_aug_pc_1().values(i);
+      // cerr << "Not ignored, fetching value " << i << '\n';
+      double s = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values(i);
       int j = static_cast<int>(s * options.scaling_factor);
-      cerr << " atomic_number " << atomic_number << " j " << j << '\n';
+      // cerr << " atomic_number " << atomic_number << " j " << j << '\n';
       shielding[atomic_number][j] += 1;
-      cerr << "Updated hash\n";
+      // cerr << "Updated hash\n";
     }
   }
   output.flush();

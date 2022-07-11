@@ -22,6 +22,7 @@
 namespace get_smiles_bt {
 
 using std::cerr;
+using GoogleSmu::BondTopology;
 
 void Usage(int rc) {
   ::exit(rc);
@@ -79,7 +80,7 @@ Options::Report(std::ostream& output) const {
 
 int
 GetSmilesBT(Options& options,
-            Conformer& conformer,
+            GoogleSmu::Molecule& conformer,
             IWString_and_File_Descriptor& output) {
   if (conformer.bond_topologies().size() == 0) {
     options.no_bond_topologies++;
@@ -88,13 +89,13 @@ GetSmilesBT(Options& options,
 
   options.report_progress();  // For some reason is not working.
 
-  if (conformer.fate() != Conformer::FATE_SUCCESS) {
+  if (conformer.properties().errors().fate() != GoogleSmu::Properties::FATE_SUCCESS) {
     return 1;
   }
 
   constexpr char kSep = ' ';
 
-  output << conformer.conformer_id();
+  output << conformer.molecule_id();
   const std::string& openbabel_smiles = conformer.properties().smiles_openbabel();
   if (openbabel_smiles.length() > 0) {
     output << kSep << openbabel_smiles;
@@ -143,7 +144,7 @@ GetSmilesBT2(Options& options,
              const const_IWSubstring& buffer,
              IWString_and_File_Descriptor& output) {
   const std::string as_string(buffer.data(), buffer.length());
-  Conformer conformer;
+  GoogleSmu::Molecule conformer;
   if (! conformer.ParseFromString(as_string)) {
     cerr << "Cannot decode proto\n";
     return 0;
