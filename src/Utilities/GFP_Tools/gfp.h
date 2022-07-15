@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <iostream>
+#include <optional>
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/set_or_unset.h"
