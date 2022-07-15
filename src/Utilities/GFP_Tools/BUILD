@@ -69,6 +69,9 @@ cc_binary(
         "//Utilities/General:class_label_translation_cc_proto",
         "//Utilities/General:scaler",
     ],
+    tags = [
+        "catboost",
+    ],
 )
 
 cc_binary(
