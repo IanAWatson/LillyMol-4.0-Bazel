@@ -24,8 +24,9 @@ cc_test (
         ":string_data_source",
         "//Foundational/iwstring:iwstring",
         "//Foundational/iwmisc:iwre2",
-        "@re2//:re2",
+	"@com_google_protobuf//:protobuf",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
+        "@re2//:re2",
     ],
 )

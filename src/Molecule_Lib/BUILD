@@ -655,11 +655,9 @@ cc_test(
     deps = [
         ":coordinate_box",
         "@googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
     timeout="short",
-    linkopts = [
-        "-lz -lm",
-    ],
 )
 
 
@@ -735,6 +733,7 @@ cc_test(
     deps = [
         ":space_vector",
         "@googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
     linkopts = [
         "-lz",
