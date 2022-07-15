@@ -368,6 +368,7 @@ cc_library(
         "//Foundational/iwbits:iwbits",
         "//Foundational/iwqsort:iwqsort",
         "//Foundational/iwstring:iwstring",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
