@@ -3353,7 +3353,7 @@ MatchedAtomMatch::ConstructFromProto(const SubstructureSearch::MatchedAtomMatch&
     _atoms << atom;
   }
 
-  for (const std::string smarts : proto.smarts()) {
+  for (const std::string& smarts : proto.smarts()) {
     if (smarts.empty()) {
       cerr << "MatchedAtomMatch::ConstructFromProto:skipping empty smarts\n";
       continue;
