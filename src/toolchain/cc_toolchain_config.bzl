@@ -18,7 +18,7 @@ def _impl(ctx):
     tool_paths = [
         tool_path(
             name = "gcc",
-            path = "/usr/bin/clang-11",
+            path = "/usr/bin/clang-12",
         ),
         tool_path(
             name = "ld",
@@ -73,7 +73,7 @@ def _impl(ctx):
         ctx = ctx,
         features = features, # NEW
         cxx_builtin_include_directories = [
-            "/usr/lib/llvm-11/lib/clang/11.0.0/include",
+            "/usr/lib/llvm-12/lib/clang/12.0.0/include",
             "/usr/include",
         ],
         toolchain_identifier = "local",
@@ -81,7 +81,7 @@ def _impl(ctx):
         target_system_name = "local",
         target_cpu = "skylake",
         target_libc = "unknown",
-        compiler = "clang-11",
+        compiler = "clang-12",
         abi_version = "unknown",
         abi_libc_version = "unknown",
         tool_paths = tool_paths,
