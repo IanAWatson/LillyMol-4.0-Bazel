@@ -71,6 +71,7 @@ cc_binary(
         "atom_pair_fingerprint_main.cc",
     ],
     deps = [
+        ":fingerprint_writer",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
@@ -375,6 +376,7 @@ cc_binary(
         "iwecfp.cc",
     ],
     deps = [
+        ":fingerprint_writer",
         "//Molecule_Lib:iwmfingerprint",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
@@ -417,6 +419,7 @@ cc_binary(
         "linear_fingerprint_main.cc",
     ],
     deps = [
+        ":fingerprint_writer",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
@@ -1323,6 +1326,22 @@ cc_library(
     ],
     deps = [
         "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+
+cc_library(
+    name = "fingerprint_writer",
+    srcs = [
+        "fingerprint_writer.cc",
+    ],
+    hdrs = [
+        "fingerprint_writer.h",
+    ],
+    deps = [
+        "//Foundational/iwbits:iwbits",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "//Foundational/iwstring:iwstring",
     ],
 )
 

@@ -111,8 +111,9 @@ EcFingerprint(Molecule & m,
               T& op,
               IWString_and_File_Descriptor & output)
 {
-  if (gather_molecule_statistics)
+  if (gather_molecule_statistics) {
     GatherStatistics(m);
+  }
 
   // A single atom molecule would produce zero bits, or two atoms in different fragments...
   if (! ec_fp_gen.Fingerprint(m, nullptr, atype, op)) {
@@ -122,8 +123,9 @@ EcFingerprint(Molecule & m,
 
   op.FingerprintingComplete(m);
 
-  if (! job_parameters.produce_output)
+  if (! job_parameters.produce_output) {
     return 1;
+  }
 
   op.DoAnyOutput(m, job_parameters, output);
 

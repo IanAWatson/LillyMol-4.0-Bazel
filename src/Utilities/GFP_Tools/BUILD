@@ -196,6 +196,9 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
+    copts = [
+        "-I /usr/include/x86_64-linux-gnu/mpich",
+    ],
     linkopts = [
         "-lmpi",
     ],

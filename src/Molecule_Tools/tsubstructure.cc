@@ -2640,7 +2640,7 @@ tsubstructure(int argc, char** argv) {
       if (!cl.value('y', default_fingerprint_nbits) || default_fingerprint_nbits < 1 ||
           default_fingerprint_nbits < queries.number_elements()) {
         cerr << "The -y option must be followed by a whole number between 2 and "
-             << queries.number_elements() << endl;
+             << queries.number_elements() << '\n';
         usage(15);
       }
       tsubfp.set_default_fingerprint_nbits(default_fingerprint_nbits);
@@ -2652,7 +2652,7 @@ tsubstructure(int argc, char** argv) {
 
     if (verbose)
       cerr << "Query matches written as fingerprints to '" << cl.option_value('J')
-           << "' fingerprints size " << default_fingerprint_nbits << endl;
+           << "' fingerprints size " << default_fingerprint_nbits << '\n';
 
     tsubfp.set_default_fingerprint_nbits(default_fingerprint_nbits);
   } else if (cl.option_present('a') || cl.option_present('Y') ||
@@ -2691,7 +2691,7 @@ tsubstructure(int argc, char** argv) {
       }
     }
 
-    std::cout << endl;
+    std::cout << '\n';
   }
 
   // This keeps track of the number of molecules which match I queries.

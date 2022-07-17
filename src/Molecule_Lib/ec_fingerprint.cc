@@ -213,8 +213,9 @@ int
 ProduceFingerprint::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
                                 IWString_and_File_Descriptor& output)
 {
-  if (! job_parameters.produce_output)
+  if (! job_parameters.produce_output) {
     return 1;
+  }
 
   if (! job_parameters.function_as_tdt_filter) {
     output << job_parameters.smiles_tag << m.smiles() << ">\n";

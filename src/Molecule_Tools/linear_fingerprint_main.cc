@@ -18,6 +18,8 @@ using std::endl;
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/smiles.h"
 
+#include "fingerprint_writer.h"
+
 const char * prog_name = nullptr;
 
 int verbose = 0;
@@ -36,9 +38,8 @@ bool function_as_tdt_filter = false;
 
 bool check_for_collisions = false;
 
-// By default, non colliding fingerprints are generated.
-// If set, fixed width fingerprints are produced.
-int fixed_width = 0;
+
+fingerprint_writer::FingerprintWriter fp_writer;
 
 const IWString smiles_tag("$SMI<");
 const IWString identifier_tag("PCN<");
@@ -62,7 +63,7 @@ usage(int rc)
   cerr << "  -r <rad>      minimum path length (def 0)\n";
   cerr << "  -R <rad>      maximum path length (def 7)\n";
   cerr << "  -P ...        atom type specification\n";
-  cerr << "  -J <tag>      tag for fingerprints\n";
+  cerr << "  -J <tag>      tag for fingerprints, enter '-J help' for info on fixed/descriptor output\n";
   cerr << "  -f            function as a TDT filter\n";
   cerr << "  -X <fname>    look for bits in <fname> and provide explanations\n";
   cerr << "  -B <fname>    write all bits found to <fname>\n";
@@ -70,7 +71,6 @@ usage(int rc)
   cerr << "  -s            gather statistics on molecules processed\n";
   cerr << "  -c            produce isotopically labelled smiles with coverage\n";
   cerr << "  -x            allow linear paths can cross\n";
-  cerr << "  -w <nbits>    produce a fixed width fingerprint\n";
   cerr << "  -l            reduce to largest fragment\n";
   cerr << "  -i <type>     input specification\n";
   cerr << "  -g ...        chemical standardisation options\n";
@@ -140,27 +140,26 @@ LinearFingerprint(Molecule & m,
     cerr << "LinearFingerprintGenerator:fingerprinting failed " << m.smiles() << " ignored\n";
   }
 
-  if (gather_molecule_statistics)
+  if (gather_molecule_statistics) {
     GatherStatistics(m);
+  }
 
-  if (verbose)
+  if (verbose) {
     bits_set.extra(sfc.nbits());
+  }
 
-  if (! function_as_tdt_filter) {
+  int need_vbar = 0;
+  if (function_as_tdt_filter) {
+  } else if (fp_writer.IsWritingDescriptors()) {
+  } else {
     output << smiles_tag << m.smiles() << ">\n";
     output << identifier_tag << m.name() << ">\n";
+    need_vbar = 1;
   }
 
-  if (fixed_width)
-    WriteFixedWidth(m, sfc, fixed_width, output);
-  else
-  {
-    IWString tmp;
-    sfc.daylight_ascii_form_with_counts_encoded(tag, tmp);
-    output << tmp << "\n";
-  }
+  fp_writer.WriteFingerprint(m.name(), sfc, output);
 
-  if (! function_as_tdt_filter) {
+  if (need_vbar) {
     output << "|\n";
   }
 
@@ -288,7 +287,7 @@ LinearFingerprint(const char * fname, FileType input_type,
 int
 LinearFingerprint(int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "E:A:K:lg:i:J:P:vfr:R:ysB:cxw:");
+  Command_Line cl(argc, argv, "E:A:K:lg:i:J:P:vfr:R:ysB:cx");
 
   if (cl.unrecognised_options_encountered())
     usage(1);
@@ -365,9 +364,11 @@ LinearFingerprint(int argc, char ** argv)
     usage(1);
   }
 
-  cl.value('J', tag);
-  if (! tag.ends_with('<')) {
-    tag += '<';
+  if (cl.option_present('J')) {
+    if (! fp_writer.Initialise(cl, 'J', verbose)) {
+      cerr << "Cannot initialise fingerprint specification (-J)\n";
+      return 1;
+    }
   }
 
   FileType input_type = FILE_TYPE_INVALID;
@@ -419,16 +420,6 @@ LinearFingerprint(int argc, char ** argv)
       cerr << "Paths can cross\n";
   }
 
-  if (cl.option_present('w')) {
-    if (! cl.value('w', fixed_width) || fixed_width < 1) {
-      cerr << "Invalid fixed width specification (-w)\n";
-      usage(1);
-    }
-
-    if (verbose)
-      cerr << "Will generate fixed width fingerprints\n";
-  }
-
   if (cl.option_present('B')) {
     const char * fname = cl.option_value('B');
     if (!linear_fp_gen.OpenStreamForBitMeanings(fname)) {
@@ -447,12 +438,12 @@ LinearFingerprint(int argc, char ** argv)
   }
 
   IWString_and_File_Descriptor output(1);
+  fp_writer.WriteHeaderIfNeeded(output);
 
-  int rc = 0;
-  for (int i = 0; i < cl.number_elements(); ++i) {
-    if (! LinearFingerprint(cl[i], input_type, linear_fp_gen, output)) {
-      rc = i + 1;
-      break;
+  for (const char * fname : cl) {
+    if (! LinearFingerprint(fname, input_type, linear_fp_gen, output)) {
+      cerr << "Fatal error processing '" << fname << "'\n";
+      return 1;
     }
   }
 
@@ -473,7 +464,7 @@ LinearFingerprint(int argc, char ** argv)
     }
   }
 
-  return rc;
+  return 0;
 }
 
 int
