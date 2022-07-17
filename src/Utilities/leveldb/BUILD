@@ -9,6 +9,7 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+        "-lpthread",
         "-lre2",
     ],
 )
