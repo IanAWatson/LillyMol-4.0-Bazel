@@ -185,6 +185,7 @@ cc_test  (
     ],
     deps = [
         ":iwmisc",
+	"@com_google_protobuf//:protobuf",
         "@googletest//:gtest_main",
     ],
     linkopts = [
@@ -228,6 +229,7 @@ cc_test  (
     deps = [
         ":memoized_floats",
         "@benchmark//:benchmark",
+	"@com_google_protobuf//:protobuf",
         "@googletest//:gtest_main",
     ],
     linkopts = [

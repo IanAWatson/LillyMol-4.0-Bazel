@@ -59,6 +59,7 @@ cc_test(
     ],
     deps = [
         ":iwbits",
+	"@com_google_protobuf//:protobuf",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
