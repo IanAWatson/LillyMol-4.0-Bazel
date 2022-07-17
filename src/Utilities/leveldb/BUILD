@@ -5,10 +5,10 @@ cc_binary(
     ],
     deps = [
         "//Foundational/cmdline:iwcmdline",
+        "@leveldb//:leveldb",
     ],
     linkopts = [
         "-lz",
         "-lre2",
-        "-lleveldb",
     ],
 )
