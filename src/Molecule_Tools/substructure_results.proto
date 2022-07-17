@@ -1,0 +1,26 @@
+// Protos used for the Medchem rules.
+syntax = "proto3";
+
+package SubstructureSearch;
+
+message QueryMatch {
+  // The name of the query.
+  string name = 1;
+
+  // The number of times it matches.
+  uint32 nhits = 2;
+
+  // The demerit associated with this query.
+  uint32 demerit = 3;
+}
+
+message QueryMatches {
+  // The name of the molecule being searched.
+  string molecule_name = 1;
+
+  // For each query that matches the molecule.
+  repeated QueryMatches matches = 3;
+
+  // Should be the sum of the demerit values in `matches`.
+  uint32 demerit = 4;
+}
