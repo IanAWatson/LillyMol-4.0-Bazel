@@ -280,6 +280,9 @@ cc_binary(
     linkopts = [
         "-llmdb",
     ],
+    tags = [
+        "lmdb",
+    ],
 )
 
 cc_binary(
@@ -1254,6 +1257,7 @@ cc_library(
         "//Foundational/iwstring:iwstring",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
+        "@leveldb//:leveldb",
     ],
 )
 
