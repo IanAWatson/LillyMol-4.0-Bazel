@@ -132,15 +132,16 @@ fetch_closing_paren(const_IWSubstring & buffer,
   in the sidechain.
 */
 
+#ifdef OLD_VERSION_DOES_NOT_WORK
 static int
 tokenise_smarts_into_components(const_IWSubstring smarts,    // pass by value
                                 resizable_array_p<IWString> & components)
 {
-//cerr << "Smarts '" << smarts << "'\n";
+  cerr << "Smarts '" << smarts << "'\n";
 
   while (smarts.length() > 0)
   {
-//  cerr << "  smarts '" << smarts << "'\n";
+    cerr << "  smarts '" << smarts << "' length " << smarts.length() << '\n';
 
     if (smarts.starts_with('('))
     {
@@ -155,7 +156,7 @@ tokenise_smarts_into_components(const_IWSubstring smarts,    // pass by value
     {
       IWString * s = new IWString;
 
-//    cerr << "Check " << smarts.length() << " characters\n";
+      cerr << "Check " << smarts.length() << " characters\n";
       for (int i = 0; i < smarts.length(); ++i)
       {
         const char c = smarts[i];
@@ -173,17 +174,76 @@ tokenise_smarts_into_components(const_IWSubstring smarts,    // pass by value
           continue;
         }
 
-//      cerr << "Found '" << *s << "'\n";
+        cerr << "Found '" << *s << "'\n";
         components.add(s);
 
         smarts += i;
-//      cerr << "Smarts updated to " << smarts << endl;
         break;
       }
       if (s->length())
       {
         components.add(s);
-        smarts += s->length();
+        //smarts += s->length();
+        if (smarts.starts_with('.')) {
+          smarts++;
+        }
+      }
+    }
+  }
+
+  return components.number_elements();
+}
+#endif
+
+// This badly needs unit tests.
+static int
+tokenise_smarts_into_components(const_IWSubstring smarts,    // pass by value
+                                resizable_array_p<IWString> & components)
+{
+#ifdef debug_TOKENISE_SMARTS_INTO_COMPONENTS
+  cerr << "Smarts '" << smarts << "'\n";
+#endif
+
+  while (smarts.length() > 0) {
+#ifdef debug_TOKENISE_SMARTS_INTO_COMPONENTS
+    cerr << "  smarts '" << smarts << "' length " << smarts.length() << '\n';
+#endif
+
+    if (smarts.starts_with('(')) {
+      IWString * c = new IWString;
+      fetch_closing_paren(smarts, *c);
+      components.add(c);
+      smarts++;
+      if (smarts.starts_with('.'))
+        smarts++;
+    }
+    else
+    {
+      IWString * s = new IWString;
+
+      while (smarts.length() > 0) {
+        const char c = smarts[0];
+
+        if ('.' != c) {
+          s->add(c);
+          smarts++;
+          if (smarts.empty()) {
+            components.add(s);
+            break;
+          }
+          continue;
+        }
+
+        if (smarts.starts_with("...")) {
+          *s << "...";
+          smarts += 3;
+          continue;
+        }
+
+        // We are left with the case of smarts[0] == '.'
+        components.add(s);
+        smarts++;
+        break;
       }
     }
   }
