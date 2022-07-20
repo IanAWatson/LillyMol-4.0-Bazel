@@ -199,9 +199,12 @@ cc_binary(
     copts = [
         "-I /usr/include/x86_64-linux-gnu/mpich",
     ],
+    tags = [
+        "mpi",
+    ],
     linkopts = [
-        "-lmpich",
         "-lfabric",
+        "-lmpich",
         "-lhwloc",
     ],
 )
