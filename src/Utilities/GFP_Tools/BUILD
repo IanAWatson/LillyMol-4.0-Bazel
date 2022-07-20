@@ -201,6 +201,8 @@ cc_binary(
     ],
     linkopts = [
         "-lmpich",
+        "-lfabric",
+        "-lhwloc",
     ],
 )
 
