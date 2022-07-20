@@ -149,7 +149,7 @@ DistanceBetweenAtoms(const Geometry& geometry, int a1, int a2)
 int
 IndexOfStartingBTid(const google::protobuf::RepeatedPtrField<BondTopology>& btids) {
   for (int i = 0; i < btids.size(); ++i) {
-    if (btids[i].is_starting_topology()) {
+    if (btids[i].source() & GoogleSmu::BondTopology::SOURCE_STARTING) {
       return i;
     }
   }

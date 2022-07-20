@@ -4,6 +4,8 @@
 #include <iostream>
 #include <memory>
 
+#include <google/protobuf/descriptor.h>
+
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
@@ -48,6 +50,8 @@ struct Options {
   // And the raw values.
   resizable_array<double> *raw_values;
 
+  std::string property_name;
+
   // If writing distributions, a file name stem for those
   // output files.
   IWString raw_data_stem;
@@ -72,6 +76,9 @@ struct Options {
   // If set, write a molecule that has isotopic values for every
   // atom
   int isotope_on_each_atom = 0;
+
+  // In order to convert floating point values to integer isotopes, we need a multiplier.
+  float isotope_multiplier = 1.0f;
 
   IWString_and_File_Descriptor stream_for_extrema;
 
@@ -165,6 +172,30 @@ Options::Build(Command_Line& cl) {
     if (! process_queries(cl, queries, verbose, 'q')) {
       cerr << "Cannot discern queries\n";
       return 0;
+    }
+  }
+
+  if (! cl.option_present('p')) {
+    cerr << "Must specify the property to fetch via the -p option\n";
+    return 0;
+  }
+
+  if (cl.option_present('p')) {
+    IWString p = cl.string_value('p');
+    property_name = p.null_terminated_chars();
+    if (verbose) {
+      cerr << "Loopking for property " << property_name << '\n';
+    }
+  }
+
+  if (cl.option_present('m')) {
+    if (! cl.value('m', isotope_multiplier) || isotope_multiplier <= 0.0f) {
+      cerr << "The isotope multiplier must be a +ve value\n";
+      return 0;
+    }
+
+    if (verbose) {
+      cerr << "Will multiply float value by " << isotope_multiplier << " for conversion to isotopes\n";
     }
   }
 
@@ -348,6 +379,10 @@ Options::WriteExtremeValue(Molecule& m,
                            int query_number,
                            double value) {
   constexpr char kSep = ' ';
+  if (! stream_for_extrema.is_open()) {
+    return 0;
+  }
+
   stream_for_extrema << m.smiles() << kSep << m.name()
                      << kSep << static_cast<float>(value)
                      << kSep << query_number << '\n';
@@ -501,6 +536,7 @@ Usage(int rc) {
   cerr << " -X <maxval>   define the max value for reporting extrema (-Z)\n";
   cerr << " -e            write a molecule with each atom isotopically labelled with the value to -Z file\n";
   cerr << " -Z <fname>    write molecules that have a value outside [min,max] to <fname>\n";
+  cerr << " -p <property> name of a AtomicMolecularProperty field in the proto\n";
   cerr << " -r <rpt>      report progress every <rpt> items processed\n";
   cerr << " -v            verbose output\n";
   ::exit(rc);
@@ -514,6 +550,34 @@ GetValue(const GoogleSmu::Molecule& conformer, int atom_number) {
   }
   const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
   return nmr[atom_number];
+}
+
+int foo(int s) {
+  return s + 1;
+}
+
+// First we need to find the AtomicMolecularProperty message in proto.properties().
+// Once that is found, we need to get the message, and then get the Reflection
+// for that message, and the field descriptor for the 'values' field.
+std::optional<double>
+GetValue(const GoogleSmu::Molecule& proto,
+         int atom_number,
+         const std::string& property_name) {
+  const /*Descriptor*/auto* descriptor = proto.properties().GetDescriptor();
+  const /*Reflection*/auto* reflection = proto.properties().GetReflection();
+  //const FieldDescriptor * field_descriptor = proto.FindFieldByName(property);
+  const auto * field_descriptor = descriptor->FindFieldByName(property_name);
+  if (field_descriptor == nullptr) {
+    cerr << "No feature '" << property_name << "'\n";
+    return std::nullopt;
+  }
+
+  // cerr << reflection->SpaceUsedLong(proto.properties()) << " space used\n";
+  const auto& values = reflection->GetMessage(proto.properties(), field_descriptor);
+  auto* r2 = values.GetReflection();
+  auto* d2 = values.GetDescriptor();
+  auto* f2 = d2->FindFieldByName("values");
+  return r2->GetRepeatedDouble(values, f2, atom_number);
 }
 
 int
@@ -530,15 +594,16 @@ PlaceIsotopeOnEachAtom(Options& options,
       continue;
     }
 
-    std::optional<double> maybe_value = GetValue(conformer, i);
+    std::optional<double> maybe_value = GetValue(conformer, i, options.property_name);
     if (! maybe_value) {
       continue;
     }
-    values << static_cast<float>(*maybe_value);
-    if (*maybe_value < 0) {
-      m.set_isotope(i, static_cast<int>(- *maybe_value));
+    const double value = *maybe_value;
+    values << static_cast<float>(value);
+    if (value < 0) {
+      m.set_isotope(i, static_cast<int>(-value * options.isotope_multiplier));
     } else {
-      m.set_isotope(i, static_cast<int>(*maybe_value));
+      m.set_isotope(i, static_cast<int>(value * options.isotope_multiplier));
     }
   }
 
@@ -563,6 +628,8 @@ GetAtomicProperty(Options& options,
 
   options.molecules_searched++;
 
+  int is_outlier = 0;
+
   const int nq = options.queries.number_elements();
   for (int qnum = 0; qnum < nq; ++qnum) {
     Substructure_Results sresults;
@@ -576,17 +643,21 @@ GetAtomicProperty(Options& options,
 
     for (int j = 0; j < nhits; ++j) {
       const Set_of_Atoms * e = sresults.embedding(j);
-      std::optional<double> maybe_value = GetValue(conformer, e->item(0));
+      std::optional<double> maybe_value = GetValue(conformer, e->item(0), options.property_name);
       if (! maybe_value) {
         continue;
       }
+      const double value = *maybe_value;
       if (value_to_write == std::nullopt) {
-        value_to_write = *maybe_value;
+        value_to_write = value;
       }
-      options.Extra(m, e->item(0), qnum, *maybe_value);
+      options.Extra(m, e->item(0), qnum, value);
+      if (value < options.minval || value > options.maxval) {
+        ++is_outlier;
+      }
     }
 
-    if (m.number_isotopic_atoms() > 0 && value_to_write != std::nullopt) {
+    if (is_outlier) {
       options.WriteExtremeValue(m, qnum, *value_to_write);
     }
   }
@@ -689,7 +760,7 @@ GetAtomicProperty(Options& options,
 
 int
 GetAtomicProperty(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vq:s:A:r:S:I:z:Z:X:e");
+  Command_Line cl(argc, argv, "vq:s:A:r:S:I:z:Z:X:ep:m:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

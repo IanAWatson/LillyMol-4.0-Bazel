@@ -200,7 +200,7 @@ cc_binary(
         "-I /usr/include/x86_64-linux-gnu/mpich",
     ],
     linkopts = [
-        "-lmpi",
+        "-lmpich",
     ],
 )
 

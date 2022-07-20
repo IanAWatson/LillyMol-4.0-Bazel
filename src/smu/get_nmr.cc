@@ -159,8 +159,8 @@ WriteIfExtremeValue(JobOptions& options,
                     IWString_and_File_Descriptor& output) {
   const int startingbt = smu::IndexOfStartingBTid(conformer.bond_topologies());
   const BondTopology& bt0 = conformer.bond_topologies(startingbt);
-//const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
-  const auto& nmr = conformer.properties().partial_charges_paboon_pbe0_aug_pc_1().values();
+  const auto& nmr = conformer.properties().nmr_isotropic_shielding_pbe0_aug_pcs_1().values();
+//const auto& nmr = conformer.properties().partial_charges_paboon_pbe0_aug_pc_1().values();
   const int matoms = bt0.atoms().size();
   resizable_array<int> outlier_atoms;
   resizable_array<int> outlier_values;
@@ -415,6 +415,8 @@ GetNMR(int argc, char ** argv) {
       return 1;
     }
   }
+
+  cerr << "Low energy forms gathered, size " <<  low_energy.size() << '\n';
 
   constexpr char sep = ' ';
   IWString_and_File_Descriptor output(1);

@@ -1,5 +1,7 @@
 // Extracts bond length distributions from 3D files
 
+#include <stdlib.h>
+
 #include <iostream>
 #include <map>
 #include <memory>
@@ -25,7 +27,9 @@ constexpr float kVeryShort = 0.8;
 void
 Usage(int rc) {
   cerr << "Extracts bond length distributions from molecules\n";
+  cerr << " -S <stem>      name stem for bond length distribution data\n";
   cerr << " -q <query>     query(s) identifying bonds to be measured\n";
+  cerr << " -b             matched atoms in a query match must be bonded\n";
   cerr << " -v             verbose output\n";
 
   ::exit(rc);

@@ -29,14 +29,19 @@ struct JobOptions {
 
   int no_optimized_geometry = 0;
 
+  int not_fate_success = 0;
+
   int atom_count_mismatch = 0;
 
   int starting_topology_not_found = 0;
 
   int write_smiles = 1;
 
+  // The number of BondTopologies to write.
+  int nbt_write = std::numeric_limits<int>::max();
+
   Report_Progress report_progress;
-  
+
   // The position at which the starting BT is found.
   extending_resizable_array<int> starting_topology_found;
 
@@ -150,7 +155,7 @@ AddGeometry(const Geometry& geometry,
 std::optional<Molecule>
 GetStartingBondTopology(const google::protobuf::RepeatedPtrField<BondTopology>& bond_topologies) {
   for (const BondTopology& bt : bond_topologies) {
-    if (bt.is_starting_topology()) {
+    if (bt.source() & GoogleSmu::BondTopology::SOURCE_STARTING) {
       return MoleculeFromBondTopology(bt);
     }
   }
@@ -160,6 +165,11 @@ GetStartingBondTopology(const google::protobuf::RepeatedPtrField<BondTopology>& 
 
 void
 Usage(int rc) {
+  cerr << " -M <fname>       stream for items with multiple BondTopology\n";
+  cerr << " -n <nwrite>      number of BondTopology's per Conformation to write\n";
+  cerr << " -x               do NOT write smiles\n";
+  cerr << " -r <n>           report progress every <n> molecules\n";
+  cerr << " -v               verbose output\n";
   exit(rc);
 }
 
@@ -185,6 +195,9 @@ MaybeWriteMultiBT(const GoogleSmu::Molecule& conformer,
 
   for (int i = 0; i < number_bond_topologies; ++i) {
     const BondTopology & bt = conformer.bond_topologies(i);
+    if (bt.source() & GoogleSmu::BondTopology::SOURCE_STARTING) {
+      find_first_at = i;
+    }
     std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(bt);
     if (! maybe_mol) {
       cerr << "No Molecule from BT\n";
@@ -192,9 +205,6 @@ MaybeWriteMultiBT(const GoogleSmu::Molecule& conformer,
     }
     AddGeometry(conformer.optimized_geometry(), options, *maybe_mol);
     smiles[i] = maybe_mol->smiles();
-    if (bt.is_starting_topology()) {
-      find_first_at = i;
-    }
 
     for (int j = 0; j < matoms; ++j) {
       const int rbcj = maybe_mol->ring_bond_count(j);
@@ -216,8 +226,11 @@ MaybeWriteMultiBT(const GoogleSmu::Molecule& conformer,
   if (! options.write_smiles) {
     return 1;
   }
+
   constexpr char sep = ' ';
-  for (int i = 0; i < number_bond_topologies; ++i) {
+  const int nwrite = std::min(number_bond_topologies, options.nbt_write);
+
+  for (int i = 0; i < nwrite; ++i) {
     char is_first = (i == find_first_at ? '*' : '.');
     options.stream_for_multiple_bt << smiles[i] <<
          sep << conformer.molecule_id() <<
@@ -240,9 +253,14 @@ Get3DSmiles(const GoogleSmu::Molecule& conformer,
             IWString_and_File_Descriptor& output) {
   options.bt_count[conformer.bond_topologies().size()]++;
 
-  if (conformer.bond_topologies().size() == 0) {
+  if (conformer.bond_topologies().empty()) {
     options.no_bond_topologies++;
     return 0;
+  }
+
+  if ((conformer.properties().errors().fate() & GoogleSmu::Properties::FATE_SUCCESS) == 0) {
+    ++options.not_fate_success;
+    return 1;
   }
 
   if (conformer.bond_topologies().size() > 1) {
@@ -253,31 +271,57 @@ Get3DSmiles(const GoogleSmu::Molecule& conformer,
     return 1;
   }
 
-  std::optional<Molecule> maybe_mol = GetStartingBondTopology(conformer.bond_topologies());
-
-//std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(conformer.bond_topologies(0));
-  if (! maybe_mol) {
-    options.no_molecule_generated++;
-    return 1;
-  }
-
   if (conformer.optimized_geometry().atom_positions().size() == 0) {
     options.no_optimized_geometry++;
     return 1;
   }
 
-  if (! AddGeometry(conformer.optimized_geometry(), options, *maybe_mol)) {
-    return 0;
+  constexpr char sep = ' ';
+
+  std::optional<Molecule> maybe_mol = GetStartingBondTopology(conformer.bond_topologies());
+  if (! maybe_mol) {
+    ++options.starting_topology_not_found;
+    return 1;
   }
 
-  const char sep = ' ';
+  int find_first_at = -1;
 
-  output << maybe_mol->smiles() << sep << conformer.molecule_id() <<
-         sep << conformer.properties().single_point_energy_pbe0d3_6_311gd().value() <<
-         sep << conformer.properties().errors().fate() << 
-         sep << conformer.bond_topologies().size() << '\n';
+  int nwrite = std::min(options.nbt_write, conformer.bond_topologies_size());
+  for (int i = 0; i < nwrite; ++i) {
+    const BondTopology& bt = conformer.bond_topologies(i);
+    char is_first;
+    if (bt.source() & GoogleSmu::BondTopology::SOURCE_STARTING) {
+      is_first = '*';
+      find_first_at = i;
+    } else {
+      is_first = '.';
+    }
 
-  output.write_if_buffer_holds_more_than(8192);
+    std::optional<Molecule> maybe_mol = MoleculeFromBondTopology(bt);
+    if (! maybe_mol) {
+      cerr << "No Molecule from BT\n";
+      continue;
+    }
+    if (! AddGeometry(conformer.optimized_geometry(), options, *maybe_mol)) {
+      continue;
+    }
+
+    output << maybe_mol->smiles() << sep << conformer.molecule_id() <<
+           sep << i <<
+           sep << is_first <<
+           sep << bt.geometry_score() <<
+           sep << conformer.properties().single_point_energy_pbe0d3_6_311gd().value() <<
+           sep << conformer.properties().errors().fate() << 
+           sep << conformer.bond_topologies().size() << '\n';
+
+    output.write_if_buffer_holds_more_than(8192);
+  }
+
+  if (find_first_at < 0) {
+    ++options.starting_topology_not_found;
+  } else {
+    ++options.starting_topology_found[find_first_at];
+  }
 
   options.items_written++;
 
@@ -348,7 +392,7 @@ Get3DSmiles(const char * fname,
 
 int
 Get3DSmiles(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vM:nr:");
+  Command_Line cl(argc, argv, "vM:xr:n:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -368,10 +412,21 @@ Get3DSmiles(int argc, char** argv) {
     }
   }
 
-  if (cl.option_present('n')) {
+  if (cl.option_present('x')) {
     options.write_smiles = 0;
     if (options.verbose)
       cerr << "Output suppressed\n";
+  }
+
+  if (cl.option_present('n')) {
+    if (! cl.value('n', options.nbt_write) || options.nbt_write < 1) {
+      cerr << "The number of BondTopology to write (-n) must be a whole +ve number\n";
+      return 1;
+    }
+
+    if (options.verbose) {
+      cerr << "Will write the first " << options.nbt_write << " BondTopology for each Molecule\n";
+    }
   }
 
   if (cl.option_present('M')) {
@@ -401,6 +456,7 @@ Get3DSmiles(int argc, char** argv) {
 
   if (options.verbose) {
     cerr << "Read " << options.items_read << " wrote " << options.items_written << '\n';
+    cerr << options.not_fate_success << " conformers not fate success\n";
     cerr << options.atom_count_mismatch << " atom count mismatch\n";
     cerr << options.no_bond_topologies << " no bond topologies\n";
     cerr << options.no_molecule_generated << " no_molecule_generated\n";
@@ -410,9 +466,10 @@ Get3DSmiles(int argc, char** argv) {
     for (int i = 0; i <= nprint; ++i) {
       cerr << options.bt_count[i] << " molecules had " << i << " bond topologoes\n";
     }
-    nprint = IndexLastNonZero(options.starting_topology_found);
-    for (int i = 0; i <= nprint; ++i) {
-      cerr << options.starting_topology_found[i] << " starting bond topologies found in position " << i << '\n';
+    for (int i = 0; i < options.starting_topology_found.number_elements(); ++i) {
+      if (options.starting_topology_found[i]) {
+        cerr << options.starting_topology_found[i] << " starting topology found at " << i << '\n';
+      }
     }
   }
   return 0;

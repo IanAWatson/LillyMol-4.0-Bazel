@@ -1298,7 +1298,7 @@ trxn (int argc, char ** argv)
 
   if (cl.option_present('g'))
   {
-    if (! chemical_standardisation.construct_from_command_line(cl, verbose, 'g'))
+    if (! chemical_standardisation.construct_from_command_line(cl, verbose > 1, 'g'))
     {
       cerr << "Cannot construct chemical standardisation object (-g option)\n";
       usage(7);
