@@ -91,6 +91,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "get_all_bond_length_distributions",
+    srcs = [
+         "get_all_bond_length_distributions.cc",
+    ],
+    deps = [
+        ":bond_length_distribution_cc_proto",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:proto_support",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "get_3d_smiles",
     srcs = [
         "get_3d_smiles.cc",

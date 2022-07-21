@@ -82,6 +82,8 @@ struct Options {
 
   IWString_and_File_Descriptor stream_for_extrema;
 
+  int extreme_values_written = 0;
+
   char output_separator = ' ';
 
   private:
@@ -104,7 +106,7 @@ struct Options {
 
     // A result has been recorded for a given atom. `ndx` is the 
     // query number providing the match.
-    int Extra(Molecule& m, atom_number_t zatom, int ndx, double value);
+    int Extra(const Options& options, Molecule& m, atom_number_t zatom, int ndx, double value);
 
     // If `value` is outside the range of [minval,maxval] write it
     // to stream_for_extrema.
@@ -204,7 +206,6 @@ Options::Build(Command_Line& cl) {
       cerr << "Cannot initialise progress reporting\n";
       return 0;
     }
-    cerr << "report_progress.active " << report_progress.active() << '\n';
   }
 
   if (cl.option_present('S')) {
@@ -353,7 +354,8 @@ ReportDistribution(resizable_array<double>& raw_values,
 }
 
 int
-Options::Extra(Molecule& m,
+Options::Extra(const Options& options,
+               Molecule& m,
                atom_number_t zatom,
                int ndx, double value) {
   acc[ndx].extra(value);
@@ -363,12 +365,10 @@ Options::Extra(Molecule& m,
     return 1;
   }
 
-  if (value < -1) {
-    m.set_isotope(zatom, static_cast<int>(-value));
-  } else if (value > 1.0) {
-    m.set_isotope(zatom, static_cast<int>(value));
+  if (value < 0.0) {
+    m.set_isotope(zatom, static_cast<int>(-value * options.isotope_multiplier));
   } else {
-    m.set_isotope(zatom, ndx + 1);
+    m.set_isotope(zatom, static_cast<int>(value * options.isotope_multiplier));
   }
   
   return 1;
@@ -383,6 +383,8 @@ Options::WriteExtremeValue(Molecule& m,
     return 0;
   }
 
+  ++extreme_values_written;
+
   stream_for_extrema << m.smiles() << kSep << m.name()
                      << kSep << static_cast<float>(value)
                      << kSep << query_number << '\n';
@@ -396,6 +398,7 @@ Options::Report(std::ostream& output) const {
   output << no_bond_topologies << " no bond topologies\n";
   output << no_starting_bond_topology << " no starting bond topology\n";
   output << molecules_searched << " molecules searched\n";
+  output << extreme_values_written << " extreme_values_written\n";
   output << queries.number_elements() << " queries\n";
   for (int i = 0; i < queries.number_elements(); ++i) {
     output << i << ' ' << queries[i]->comment() << ' ' << acc[i].n() << " matches " <<
@@ -651,7 +654,7 @@ GetAtomicProperty(Options& options,
       if (value_to_write == std::nullopt) {
         value_to_write = value;
       }
-      options.Extra(m, e->item(0), qnum, value);
+      options.Extra(options, m, e->item(0), qnum, value);
       if (value < options.minval || value > options.maxval) {
         ++is_outlier;
       }
