@@ -4817,6 +4817,10 @@ Chemical_Standardisation::_do_isoxazole(Molecule & m,
   return rc;
 }
 
+// Transform 
+// COC1=C(C=CC=C1)C1=CC(=N)NO1 ID:EN300-192006
+// to
+// COC1=C(C=CC=C1)C1=CC(N)=NO1 ID:EN300-192006
 int
 Chemical_Standardisation::_do_isoxazole(Molecule & m,
                                         const Set_of_Atoms & r,
@@ -4855,52 +4859,53 @@ Chemical_Standardisation::_do_isoxazole(Molecule & m,
   if (n < 0 || o < 0)
     return 0;
 
-  if (1 == m.implicit_hydrogens(r[n]))    // already in the right form
+  // Double bond is in the ring, already in the right form.
+  if (m.implicit_hydrogens(r[n]) == 0) {
     return 0;
+  }
 
-  if (! m.are_bonded(r[o], r[n]))
+  if (! m.are_bonded(r[o], r[n])) {
     return 0;
+  }
 
   const Atom * an = m.atomi(r[n]);
 
-  if (2 != an->ncon())
+  if (2 != an->ncon()) {
     return 0;
+  }
 
-// Need to find a 3 connected atom adjacent to the Nitrogen
+  // Check to see if there is an exocyclic double bond adjacent to
+  // the Nigroegn
 
   atom_number_t anchor = INVALID_ATOM_NUMBER;
   atom_number_t exocyclic = INVALID_ATOM_NUMBER;
 
-  for (int i = 0; i < 2; ++i)
-  {
-    const Bond * b = an->item(i);
-
-    if (b->is_single_bond())   // to the oxygen
-      continue;
-
+  for (const Bond* b : *an) {
     const atom_number_t x = b->other(r[n]);
+    if (x == r[o]) {
+      continue;
+    }
 
     const Atom * ax = m.atomi(x);
 
-    if (6 != ax->atomic_number() || 3 != ax->ncon())
+    if (6 != ax->atomic_number() || 3 != ax->ncon()) {
       continue;
+    }
 
-    for (int j = 0; j < 3; ++j)
-    {
-      const Bond * b = ax->item(j);    // i know we are shadowing something in the outer loop
-
-      if (! b->is_single_bond())
+    for (const Bond* b : *ax) {  // Re-use `b`.
+      if (b->is_single_bond()) {
         continue;
+      }
       
       const atom_number_t y = b->other(x);
 
       const Atom * ay = m.atomi(y);
 
-      if (1 != ay->ncon())
+      if (1 != ay->ncon()) {
         continue;
+      }
 
-      if (8 == ay->atomic_number() || 16 == ay->atomic_number() || 7 == ay->atomic_number())
-      {
+      if (8 == ay->atomic_number() || 16 == ay->atomic_number() || 7 == ay->atomic_number()) {
         anchor = x;
         exocyclic = y;
         break;
@@ -4908,11 +4913,12 @@ Chemical_Standardisation::_do_isoxazole(Molecule & m,
     }
   }
 
-  if (INVALID_ATOM_NUMBER == anchor)
+  if (INVALID_ATOM_NUMBER == anchor) {
     return 0;
+  }
 
-  m.set_bond_type_between_atoms(exocyclic, anchor, DOUBLE_BOND);
-  m.set_bond_type_between_atoms(anchor, r[n], SINGLE_BOND);
+  m.set_bond_type_between_atoms(exocyclic, anchor, SINGLE_BOND);
+  m.set_bond_type_between_atoms(anchor, r[n], DOUBLE_BOND);
 
   return 1;
 }
