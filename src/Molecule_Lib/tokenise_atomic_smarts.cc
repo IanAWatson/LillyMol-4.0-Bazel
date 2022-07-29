@@ -5,7 +5,8 @@
 #include "tokenise_atomic_smarts.h"
 
 using std::cerr;
-using std::endl;
+
+static constexpr const char* kDollarOpenParen = "$(";
 
 Atomic_Smarts_Component::Atomic_Smarts_Component ()
 {
@@ -80,7 +81,7 @@ Atomic_Smarts_Component::debug_print (std::ostream & os) const
 
   if (nullptr == _next)
   {
-    os << endl;
+    os << '\n';
     return 1;
   }
 
@@ -103,11 +104,24 @@ operator << (std::ostream & os, const Atomic_Smarts_Component & rhs)
   return os << " (next)";
 }
 
+int
+Atomic_Smarts_Component::ConvertToEnvironment() {
+  if (IWString::starts_with(kDollarOpenParen)) {
+    return 0;
+  }
+
+  IWString& me = *this;
+
+  IWString new_value;
+  new_value << kDollarOpenParen << me << ')';
+  me = new_value;
+  return 1;
+}
+
 static int
-characters_in_environment (const_IWSubstring & smarts)
+characters_in_environment(const_IWSubstring & smarts)
 {
-  if (smarts.nchars() <= 3)
-  {
+  if (smarts.nchars() <= 3) {
     cerr << "Atomic environment too short, must be at least '$(*)'\n";
     return 0;
   }
@@ -115,16 +129,15 @@ characters_in_environment (const_IWSubstring & smarts)
   assert (smarts.starts_with("$("));
 
   int paren_level = 1;
-  for (int i = 2; i < smarts.nchars(); i++)
-  {
+  for (int i = 2; i < smarts.nchars(); i++) {
 /// cerr << "in env '" << smarts[i] << "'\n";
-    if ('(' == smarts[i])
+    if ('(' == smarts[i]) {
       paren_level++;
-    else if (')' == smarts[i])
-    {
+    } else if (')' == smarts[i]) {
       paren_level--;
-      if (0 == paren_level)
+      if (0 == paren_level){
         return i + 1;
+      }
     }
   }
 
@@ -133,8 +146,8 @@ characters_in_environment (const_IWSubstring & smarts)
 }
 
 static int
-number_repeated_characters (const const_IWSubstring & smarts,
-                            char c)
+number_repeated_characters(const const_IWSubstring & smarts,
+                           char c)
 {
   assert (c == smarts[0]);
 
@@ -160,7 +173,7 @@ static int
 number_numeric_characters (const const_IWSubstring & smarts,
                            int istart)
 {
-//cerr << "Counting numeric characters '" << smarts << "' starting at " << istart << endl;
+//cerr << "Counting numeric characters '" << smarts << "' starting at " << istart << '\n';
 
   int rc = 0;
 
@@ -270,10 +283,11 @@ characters_in_next_primitive (const const_IWSubstring & smarts,
 }
 
 static int
-characters_in_next_token (const_IWSubstring & smarts)
+characters_in_next_token(const_IWSubstring & smarts)
 {
-  if ('$' == smarts[0])
+  if ('$' == smarts[0]) {
     return characters_in_environment(smarts);
+  }
 
   int square_bracket_level = 0;
   int curly_brace_level = 0;
@@ -281,7 +295,7 @@ characters_in_next_token (const_IWSubstring & smarts)
   {
     char c = smarts[i];
 
-//  cerr << "Examining '" << c << "' sqbrklvl = " << square_bracket_level << endl;
+//  cerr << "Examining '" << c << "' sqbrklvl = " << square_bracket_level << '\n';
 
     if ('[' == c)
     {
@@ -342,8 +356,30 @@ Atomic_Smarts_Component::parse (const_IWSubstring smarts)      // our own copy
   
   int rc = _parse(smarts);
 
-  if (0 == rc)
+  if (0 == rc) {
     return 0;
+  }
+
+// If there is a mixture of primitive ahd $() tokens, conver them to the same form.
+  int dollar_count = 0;
+  int primitive_count = 0;
+  for (const Atomic_Smarts_Component* asc = this; asc != nullptr; asc = asc->next()) {
+    if (asc->starts_with(kDollarOpenParen)) {
+      ++dollar_count;
+    } else {
+      ++primitive_count;
+    }
+  }
+
+  // If either one is zero, this is not mixed.
+  if (dollar_count == 0 || primitive_count == 0) {
+    return rc;
+  }
+
+  // Mixed, convert all to environments.
+  for (Atomic_Smarts_Component* asc = this; asc != nullptr; asc = asc->next()) {
+    asc->ConvertToEnvironment();
+  }
 
 // Because of limitations of the implentation, we need to "fix" some special
 // cases. Mainly we need to remove any operator which follows an atom and
@@ -368,7 +404,7 @@ Atomic_Smarts_Component::parse (const_IWSubstring smarts)      // our own copy
 }
 
 int
-Atomic_Smarts_Component::_parse (const_IWSubstring & smarts)
+Atomic_Smarts_Component::_parse(const_IWSubstring & smarts)
 {
   assert (smarts.length());
 
@@ -415,13 +451,15 @@ Atomic_Smarts_Component::_parse (const_IWSubstring & smarts)
       characters_processed = characters_processed + length_of_our_token;
     }
   }
-  else
+  else {
     length_of_our_token = characters_in_next_token(smarts);
+  }
 
-  const_IWSubstring::operator=(smarts);    // copy the smarts
+  IWString::operator=(smarts);    // copy the smarts
 
-  if (0 == length_of_our_token)
+  if (0 == length_of_our_token) {
     return 0;
+  }
 
   iwtruncate(length_of_our_token);     // keep the number we used
 
@@ -431,15 +469,16 @@ Atomic_Smarts_Component::_parse (const_IWSubstring & smarts)
   cerr << '\'';
   if (0 == _unary_operator)
     cerr << " unary op = " << _unary_operator;
-  cerr << endl;
+  cerr << '\n';
 #endif
 
   smarts += (length_of_our_token);      // get rid of the characters we consume
 
   characters_processed += length_of_our_token;
 
-  if (0 == smarts.length())     // we are done
+  if (0 == smarts.length()) {     // we are done
     return 1;
+  }
 
   if ('&' == smarts[0])
   {
@@ -471,7 +510,7 @@ Atomic_Smarts_Component::_parse (const_IWSubstring & smarts)
   }
 
 #ifdef DEBUG_PARSE
-  cerr << " op = " << _op << endl;
+  cerr << " op = " << _op << '\n';
 
   cerr << "Smarts now '" << smarts << "'\n";
 #endif
@@ -537,7 +576,7 @@ test_tokenise_atomic_smarts (iwstring_data_source & input, std::ostream & output
   {
     if (! test_tokenise_atomic_smarts(buffer, output))
     {
-      cerr << "Cannot parse '" << buffer << "', line " << input.lines_read() << endl;
+      cerr << "Cannot parse '" << buffer << "', line " << input.lines_read() << '\n';
       return 0;
     }
   }

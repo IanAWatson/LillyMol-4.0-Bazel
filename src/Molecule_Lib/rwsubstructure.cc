@@ -2695,6 +2695,9 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     else
       set_element(e);
   }
+  else if (mqs.isotope_means_match_any_atom() &&
+           a->isotope() == mqs.isotope_means_match_any_atom()) {
+  }
   else if ("A" == initial_atomic_symbol)    // match any atom
     ;
   else if (mdlad->atom_list().active())
@@ -2839,16 +2842,15 @@ Substructure_Atom::create_from_molecule (Molecule & m,
   else if (a->formal_charge())
     set_formal_charge(a->formal_charge());
 
-  if (smarts_specified.length())
-    ;
-  else if (only_include_isotopically_labeled_atoms())  // ignore isotopic labels
-    ;
-  else if (mqs.substituents_only_at_isotopic_atoms())   // ignore isotopes
-    ;
-  else if (0 != mqs.isotopic_label_means())
-    ;
-  else if (a->isotope())
+  if (smarts_specified.length()) {  // Ignore isotopic labels
+  } else if (only_include_isotopically_labeled_atoms()) {  // ignore isotopic labels
+  } else if (mqs.substituents_only_at_isotopic_atoms()) {   // ignore isotopes
+  } else if (0 != mqs.isotopic_label_means()) {
+  } else if (a->isotope() == 0) {
+  } else if (mqs.isotope_means_match_any_atom() == a->isotope()) {
+  } else if (a->isotope()) {
     _isotope.add(a->isotope());
+  }
     
   if (a->userAtomType() > 0)      
     _userAtomType  = a->userAtomType();

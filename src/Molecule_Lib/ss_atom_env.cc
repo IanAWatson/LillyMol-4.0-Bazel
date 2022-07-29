@@ -29,6 +29,7 @@ Substructure_Atom_Environment::Substructure_Atom_Environment()
 int
 Substructure_Atom_Environment::ok() const
 {
+  cerr << "_number_elements " << _number_elements << " _operator.number_results " << _operator.number_results() << '\n';
   if (1 == _number_elements && 0 == _operator.number_operators())
     ;
   else if (_number_elements == _operator.number_operators())    // true during building
@@ -99,8 +100,9 @@ Substructure_Atom_Environment::create_from_smarts(const Atomic_Smarts_Component 
 
   _operator.set_unary_operator(_operator.number_results() - 1, env.unary_operator());
 
-  if (IW_LOGEXP_UNDEFINED != env.op())
+  if (IW_LOGEXP_UNDEFINED != env.op()) {
     _operator.add_operator(env.op());
+  }
 
 #ifdef DEBUG_SS_ATOM_ENV_CREATE_FROM_SMARTS
   cerr << "After parsing smarts\n";

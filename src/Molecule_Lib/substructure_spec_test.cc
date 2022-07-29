@@ -1450,7 +1450,7 @@ TEST_P(TestRanges, TestH) {
   const auto params = GetParam();
   ASSERT_TRUE(_m.build_from_smiles(params.smiles));
   ASSERT_TRUE(_query.create_from_smarts(params.smarts));
-//cerr << "TestingH '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  //std::cerr << "TestingH '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
   EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
 }
 INSTANTIATE_TEST_SUITE_P(TestRanges, TestRanges, testing::Values(
@@ -1576,7 +1576,8 @@ INSTANTIATE_TEST_SUITE_P(TestRangesr, TestRanges, testing::Values(
   SmilesSmartsNhits{"C", "[r]", 0},
   SmilesSmartsNhits{"C", "[r>2]", 0},
   SmilesSmartsNhits{"C", "[r{3-}]", 0},
-  SmilesSmartsNhits{"C1CC1", "[r]", 3},
+  // We do not permit unqualified 'r', seems to make no sense. Use 'R'
+  // SmilesSmartsNhits{"C1CC1", "[r]", 3},
   SmilesSmartsNhits{"C1CC1", "[r3]", 3},
   SmilesSmartsNhits{"C1CC1", "[r>2]", 3},
   SmilesSmartsNhits{"C12CC2C3CCCC31", "[r3]", 3},
@@ -1599,7 +1600,7 @@ INSTANTIATE_TEST_SUITE_P(TestRangesr, TestRanges, testing::Values(
 
 TEST_P(TestRanges, Testx) {
   const auto params = GetParam();
-//cerr << "Testingx '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  // std::cerr << "Testingx '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
   ASSERT_TRUE(_m.build_from_smiles(params.smiles));
   ASSERT_TRUE(_query.create_from_smarts(params.smarts));
   EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
@@ -1721,6 +1722,30 @@ INSTANTIATE_TEST_SUITE_P(TestInvalidSmarts, TestInvalidSmarts, testing::Values(
   IWString{"[D{-3 }]"},
   IWString{"[D{ 3-}]"},
   IWString{"[G]"}
+));
+
+class TestAnySmarts : public testing::TestWithParam<SmilesSmartsNhits> {
+  protected:
+    Substructure_Query _query;
+    Molecule _m;
+};
+
+// Some tests checking mixed smarts forms, primitives and $() forms.
+TEST_P(TestAnySmarts, Test1) {
+  const auto params = GetParam();
+  std::cerr << "TestAnySmarts '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+  ASSERT_TRUE(_query.create_from_smarts(params.smarts));
+  EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
+}
+INSTANTIATE_TEST_SUITE_P(TestAnySmarts, TestAnySmarts, testing::Values(
+  SmilesSmartsNhits{"C", "[C,$(C)]", 1},
+  SmilesSmartsNhits{"C", "[$(C),C]", 1},
+  SmilesSmartsNhits{"C", "[$(C);C]", 1},
+  SmilesSmartsNhits{"C", "[$(C)^O]", 1},
+  SmilesSmartsNhits{"C", "[C;!$(N)]", 1},
+  SmilesSmartsNhits{"C", "[$(C);!$(N)]", 1},
+  SmilesSmartsNhits{"C", "[C,$(C),F,N,O,$([P]),[U]]", 1}
 ));
 
 }  // namespace

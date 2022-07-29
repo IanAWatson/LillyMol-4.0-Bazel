@@ -1033,8 +1033,9 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
 #ifdef DEBUG_ATOM_MATCHES
     cerr << "Checking " << _environment.number_elements() << " environment components\n";
 #endif
-    if (! _environment.matches(target, target.atoms_in_target_molecule(), already_matched))
+    if (! _environment.matches(target, target.atoms_in_target_molecule(), already_matched)) {
       return ! _match_as_match_or_rejection;
+    }
 
 #ifdef DEBUG_ATOM_MATCHES
     cerr << "Environment matches, continuing\n";

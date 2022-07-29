@@ -1680,11 +1680,12 @@ Molecule::_build_from_smiles (const char * smiles, int nchars,
 }
 
 int
-Molecule::_build_from_smiles (const char * smiles, int nchars)
+Molecule::_build_from_smiles(const char * smiles, int nchars)
 {
   resize (0);
-
-  assert(nchars > 0);
+  if (nchars == 0) {
+    return 1;
+  }
 
   if ('.' != smiles[0])
     ;

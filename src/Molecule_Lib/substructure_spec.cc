@@ -1635,33 +1635,10 @@ truncate_after_digits(const const_IWSubstring & ignore_these,
 
 //#define DEBUG_ATOM_CONSTRUCT_FROM_SMARTS_TOKEN
 
-/*
-  this turned out to be surprisingly difficult, and revealed some interesting
-  aspects of how I'm doing substructures. I quickly realised that my data
-  structure cannot represent something like 
-    c,n;R,H
-  which (I think) is grouped as
-    (c,n);(R,H)
-  which means "a carbon or nitrogen" AND "either a ring atom or an attached H"
-
-  Oct 97, well wait a minute, of course I can store this. Store "carbon or nitrogen"
-  in the object's Substructure_Atom_Specifier, and then two components - remember
-  components are matched with the OR operator.
-
-  Therefore I must place a limitation, only one "and group" may have a
-  comma operator, and to make things even easier for myself, this must
-  be the first grouping
-
-  Dec 2005. Major problems. Cannot correctly parse [O,S;H] or the
-  other way round [H;O,S]. These must be interpreted as "Oxygen or Sulphur,
-  and having one implicit Hydrogen"
-
-  But, we tokenise the smarts, and we present 'H' by itself to ->construct_from_smarts_token()
-  and it will interpret the H as elemental Hydrogen. We need to pre-screen
-  the tokens and see if any of them match elemental hydrogen
-
-  Jan 2006: This is still broken. Not sure how to fix it. Get back to this...
-*/
+// Jul 2022. Fix long standing problem with smarts tokenization.
+// If there are mixed forms of primitives and recursive forms,
+// the Atomic_Smarts_Component automatically converts all components
+// to $() form.
 
 #define SMARTS_PREVIOUS_TOKEN_UNSPECIFIED            0
 
@@ -1930,34 +1907,33 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 
   Atomic_Smarts_Component * asc = & tokens;
 
-  do
-  {
+  do {
 #ifdef DEBUG_ATOM_CONSTRUCT_FROM_SMARTS_TOKEN
     cerr << "Building component from '" << *asc << "'\n";
 #endif
 
-    if (asc->starts_with("$("))
-    {
-      if (! _parse_smarts_environment(*asc))
-      {
+    if (asc->starts_with("$(")) {
+      if (! _parse_smarts_environment(*asc)) {
         cerr << "Cannot parse environment token '" << (*asc) << "'\n";
         return 0;
       }
     }
     else
     {
-      Substructure_Atom_Specifier * a = new Substructure_Atom_Specifier;
-      if (! a->construct_from_smarts_token(*asc))
-      {
+      std::unique_ptr<Substructure_Atom_Specifier> a = std::make_unique<Substructure_Atom_Specifier>();
+      if (! a->construct_from_smarts_token(*asc)) {
         cerr << "Substructure_Atom::construct_from_smarts_token: cannot parse component '" << *(asc) << "'\n";
-        delete a;
         return 0;
       }
 
-      _components.add(a);
+      _components.add(a.release());
 
-      if (IW_LOGEXP_UNDEFINED != asc->op())
-        _operator.add_operator(asc->op());
+      if (IW_LOGEXP_UNDEFINED != asc->op()) {
+        if (! _operator.add_operator(asc->op())) {
+          cerr << "Substructure_Atom::construct_from_smarts_token:cannot add op " << asc->op() << '\n';
+          return 0;
+        }
+      }
 
       _operator.set_unary_operator(uopindex, asc->unary_operator());
       uopindex++;
@@ -2516,8 +2492,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed, _hcount);
       if (nchars == 0) {
-        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "Bad H qualifier");
-        return 0;
+        _hcount.add(1);
       }
     }
     else if ('H' == s && next_char_is_lowercase_letter && (nchars = element_from_smarts_string(smarts, characters_to_process - characters_processed, e)))
@@ -2736,8 +2711,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _daylight_x);
       if (nchars == 0) {
-        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "the 'X' specifier must be followed by a whole number");
-        return 0;
+        _daylight_x.set_min(1);
       }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_X;
     }
@@ -2762,8 +2736,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _nbonds);
       if (0 == nchars) {
-        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "the 'v' specifier must be followed by a whole number");
-        return 0;
+        _nbonds.add(1);
       }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_V;
     }
