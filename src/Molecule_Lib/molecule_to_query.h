@@ -204,6 +204,9 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     // Nov 2021. Bond type information dropped.
     int _all_bonds_become_type_any;
 
+    // Jul 2022. An isotope designates match any atom type.
+    int _isotope_means_match_any_atom;
+
 //  private functions
 
 //  template <typename T>
@@ -264,6 +267,7 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     int preserve_smallest_ring_size() const { return _preserve_smallest_ring_size;}
     int bonds_preserve_ring_membership() const { return _bonds_preserve_ring_membership;}
     int all_bonds_become_type_any() const { return _all_bonds_become_type_any;}
+    int isotope_means_match_any_atom() const { return _isotope_means_match_any_atom;}
 
     void set_make_embedding(int s) { _make_embedding = s;}
     void set_all_ring_bonds_become_undefined(int s) { _all_ring_bonds_become_undefined = s;}
@@ -289,6 +293,7 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     void set_preserve_smallest_ring_size(int s) { _preserve_smallest_ring_size = s;}
     void set_bonds_preserve_ring_membership(int s) { _bonds_preserve_ring_membership = s;}
     void set_all_bonds_become_type_any(int s) { _all_bonds_become_type_any = s;}
+    void set_isotope_means_match_any_atom(int s) { _isotope_means_match_any_atom = s;}
 
     int parse_directives(const const_IWSubstring &);
 

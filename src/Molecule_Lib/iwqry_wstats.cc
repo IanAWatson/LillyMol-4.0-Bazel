@@ -187,19 +187,19 @@ Substructure_Hit_Statistics::_update_name_if_needed (int nmatches, Molecule * m)
   if (nmatches && _append_match_details_to_molecule_name && nmatches >= _append_match_details_to_molecule_name)
   {
     IWString new_name;
-    new_name.resize (512);    // void excessive mallocing
+    new_name.resize(512);    // void excessive mallocing
 
-    new_name = m->molecule_name ();
+    new_name = m->molecule_name();
 
-    if (_use_vertical_bars_for_query_details)
-    {
-      if (! new_name.ends_with('|'))
+    if (_use_vertical_bars_for_query_details) {
+      if (! new_name.ends_with('|')) {
         new_name << " |";
-      new_name << nmatches << " matches " << Substructure_Query::comment () << "|";
+      }
+      new_name << nmatches << " matches " << Substructure_Query::comment() << "|";
     }
     else
     {
-      new_name << " (" << nmatches << " matches to '" << Substructure_Query::comment () << "')";
+      new_name << " (" << nmatches << " matches to '" << Substructure_Query::comment() << "')";
     }
 
     m->set_name (new_name);

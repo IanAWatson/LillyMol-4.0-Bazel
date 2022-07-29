@@ -169,6 +169,8 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
   _bonds_preserve_ring_membership = 0;
 
   _all_bonds_become_type_any = 0;
+    
+  _isotope_means_match_any_atom = -1;
 
   return;
 }

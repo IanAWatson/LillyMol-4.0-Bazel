@@ -109,6 +109,7 @@ usage(int rc = 1)
   cerr << "  -k             use preference values to resolve symmetric atoms\n";
   cerr << "  -u <smarts>    smarts to specify embedding points\n";
   cerr << "  -f ele=smarts  atoms with element type <ele> should match only\n";
+  cerr << "  -x <iso>       atoms with isotope <iso> means match any atom type\n";
   cerr << "  -h             condense explicit hydrogens to hcount directives on their anchor atoms\n";
   cerr << "                 atoms matching <smarts>\n";
   cerr << "  -R <rx>        atoms of type <rx> specify substitution points\n";
@@ -595,7 +596,7 @@ display_dash_y_options(std::ostream & os)
 
 int
 mol2qry(int  argc, char ** argv) {
-  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:");
+  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:x:");
 
   verbose = cl.option_count('v');
 
@@ -911,6 +912,18 @@ mol2qry(int  argc, char ** argv) {
 
     if (verbose)
       cerr << "Will only include isotopically labelled atoms in the query\n";
+  }
+
+  if (cl.option_present('x')) {
+    int x;
+    if (! cl.value('x', x) || x < 0) {
+      cerr << "The -x option (any atom matched) must be a whole +ve number\n";
+      return 1;
+    }
+    mqs.set_isotope_means_match_any_atom(x);
+    if (verbose) {
+      cerr << "Atoms with isotope " << x << " become a signal for match any atom type\n";
+    }
   }
 
   if (cl.option_present('F')) {
