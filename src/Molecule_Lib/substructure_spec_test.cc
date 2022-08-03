@@ -1624,23 +1624,26 @@ INSTANTIATE_TEST_SUITE_P(TestRangesx, TestRanges, testing::Values(
 
 TEST_P(TestRanges, Testv) {
   const auto params = GetParam();
-//cerr << "Testingv '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  // cerr << "Testingv '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
   ASSERT_TRUE(_m.build_from_smiles(params.smiles));
   ASSERT_TRUE(_query.create_from_smarts(params.smarts));
   EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
 }
 INSTANTIATE_TEST_SUITE_P(TestRangesv, TestRanges, testing::Values(
   SmilesSmartsNhits{"C", "[v]", 0},
-  SmilesSmartsNhits{"CC", "[v]", 2},
-  SmilesSmartsNhits{"C=C", "[v2]", 2},
-  SmilesSmartsNhits{"C#C", "[v3]", 2},
-  SmilesSmartsNhits{"C", "[v0]", 1},
+  SmilesSmartsNhits{"CC", "[v]", 0},
+  SmilesSmartsNhits{"CC", "[v4]", 2},
+  SmilesSmartsNhits{"C=C", "[v2]", 0},
+  SmilesSmartsNhits{"C=C", "[v3]", 0},
+  SmilesSmartsNhits{"C#C", "[v3]", 0},
+  SmilesSmartsNhits{"C#C", "[v4]", 2},
+  SmilesSmartsNhits{"C", "[v0]", 0},
   SmilesSmartsNhits{"C", "[v{0-}]", 1},
   SmilesSmartsNhits{"CC", "[v{0-}]", 2},
   SmilesSmartsNhits{"CC", "[v{1-}]", 2},
   SmilesSmartsNhits{"C=C", "[v{1-}]", 2},
   SmilesSmartsNhits{"C=C", "[v{2-}]", 2},
-  SmilesSmartsNhits{"C=C", "[v{3-}]", 0},
+  SmilesSmartsNhits{"C=C", "[v{3-}]", 2},
   SmilesSmartsNhits{"C#C", "[v{3-}]", 2}
 ));
 
@@ -1750,7 +1753,11 @@ INSTANTIATE_TEST_SUITE_P(TestAnySmarts, TestAnySmarts, testing::Values(
   SmilesSmartsNhits{"C1CN1C", "[#7;R1][#6;!$(c=O)]", 3},
   SmilesSmartsNhits{"C1CN1CF", "[#7;R1]!@[#6;!$(C-F)]", 0},
   SmilesSmartsNhits{"C1CN1CF", "[#7;$([R1])]!@[#6;!$(C-F)]", 0},
-  SmilesSmartsNhits{"C1CN1CF", "[#7;$([R1])][#6;$(C-F)]", 1}
+  SmilesSmartsNhits{"C1CN1CF", "[#7;$([R1])][#6;$(C-F)]", 1},
+  SmilesSmartsNhits{"C=CC#N", "C=[C!r]C#N", 1},
+  SmilesSmartsNhits{"C1=CC1", "[CD2R1Hx2G1!a]", 2},
+  SmilesSmartsNhits{"C1CC1", "[C;!$(F);!$(N);R1r3!+]", 3},
+  SmilesSmartsNhits{"CN1NC(=O)CC1", "[Nv3X3][Nv3X3!H0]", 1}
 ));
 
 }  // namespace

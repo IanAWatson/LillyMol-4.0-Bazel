@@ -534,6 +534,7 @@ class Substructure_Atom_Specifier
     iwmatcher::Matcher<int> _ncon;
     iwmatcher::Matcher<int> _ncon2;
     iwmatcher::Matcher<int> _nbonds;
+    iwmatcher::Matcher<int> _valence;  // From the 'v' directive in smarts.
     Min_Max_Specifier<int> _formal_charge;
     iwmatcher::Matcher<int> _nrings;
     iwmatcher::Matcher<int> _ring_bond_count;
@@ -696,6 +697,10 @@ class Substructure_Atom_Specifier
     int set_nbonds (int);
     int set_min_nbonds (int);
     int set_max_nbonds (int);
+
+    int set_valence (int);
+    int set_min_valence (int);
+    int set_max_valence (int);
 
     int set_nrings (int);
     int set_min_nrings (int i);

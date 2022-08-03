@@ -1,5 +1,5 @@
-#ifndef IW_TARGET_H
-#define IW_TARGET_H
+#ifndef MOLECULE_LIB_TARGET_H
+#define MOLECULE_LIB_TARGET_H
 
 #include <iostream>
 
@@ -88,6 +88,9 @@ class Target_Atom
     // If a query specifies atom typing.
     atom_type_t       _atom_type;
 
+    // Valence always includes implicit Hydrogens.
+    int _valence;
+
     List_of_Ring_Sizes _sssr_ring_sizes;
     List_of_Ring_Sizes _aromatic_ring_sizes;
     List_of_Ring_Sizes _aliphatic_ring_sizes;
@@ -128,8 +131,10 @@ class Target_Atom
 
     int ncon () const { return _ncon;}
     void set_ncon (int s) { _ncon = s;}   // could get out of sync with _number_elements
-    int nbonds ();
+    int nbonds();
     void set_nbonds(int s) { _nbonds = s;}
+    int valence();
+    void set_valence(int s) { _valence = s;}
     int nrings ();
     void set_nrings (int s) { _nrings = s;}
     int ring_bond_count ();
@@ -355,4 +360,4 @@ extern void set_initialise_element_counts (int);
 extern void set_global_setting_nrings_includes_non_sssr_rings(int s);
 extern void set_global_setting_nbonds_includes_implicit_hydrogens(int s);
 
-#endif
+#endif  // MOLECULE_LIB_TARGET_H

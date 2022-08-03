@@ -112,6 +112,7 @@ Target_Atom::_default_values()
   _other = nullptr;
 
   _nbonds                      = TARGET_ATOM_NOT_COMPUTED;
+  _valence                     = TARGET_ATOM_NOT_COMPUTED;
   _formal_charge               = TARGET_ATOM_NOT_COMPUTED;
   _nrings                      = TARGET_ATOM_NOT_COMPUTED;
   _ring_bond_count             = TARGET_ATOM_NOT_COMPUTED;
@@ -267,6 +268,15 @@ Target_Atom::nbonds()
   }
 
   return _nbonds;
+}
+
+int
+Target_Atom::valence() {
+  if (_valence == TARGET_ATOM_NOT_COMPUTED) {
+    _valence = _my_atom->nbonds() + _my_atom->implicit_hydrogens();
+  }
+
+  return _valence;
 }
 
 int

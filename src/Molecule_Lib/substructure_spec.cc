@@ -139,6 +139,8 @@ Substructure_Atom_Specifier::debug_print(std::ostream & os,
     os << indentation << "  ncon " << _ncon << '\n';
   if (_nbonds.is_set())
     os << indentation << "  nbonds " << _nbonds << '\n';
+  if (_valence.is_set())
+    os << indentation << "  valence " << _valence << '\n';
   if (_ncon2.is_set())
     os << indentation << "  ncon2 " << _ncon2 << '\n';
   if (_formal_charge.is_set())
@@ -199,6 +201,8 @@ Substructure_Atom_Specifier::terse_details(std::ostream & os,
     os << indentation << " ncon " << _ncon << '\n';
   if (_nbonds.is_set())
     os << indentation << " nbonds " << _nbonds << '\n';
+  if (_valence.is_set())
+    os << indentation << " valence " << _valence << '\n';
   if (_ncon2.is_set())
     os << indentation << " ncon2 " << _ncon2 << '\n';
   if (_formal_charge.is_set())
@@ -416,6 +420,15 @@ Substructure_Atom_Specifier::set_min_nbonds(int nbonds)
 }
 
 int
+Substructure_Atom_Specifier::set_min_valence(int valence)
+{
+  assert (ok());
+  assert (valence >= 0);
+
+  return _valence.set_min(valence);
+}
+
+int
 Substructure_Atom_Specifier::set_max_nbonds(int nbonds)
 {
   assert (ok());
@@ -425,12 +438,29 @@ Substructure_Atom_Specifier::set_max_nbonds(int nbonds)
 }
 
 int
+Substructure_Atom_Specifier::set_max_valence(int valence)
+{
+  assert (ok());
+  assert (valence >= 0);
+
+  return _valence.set_max(valence);
+}
+
+int
 Substructure_Atom_Specifier::set_nbonds(int nbonds)
 {
   assert (ok());
   assert (nbonds >= 0);
 
   return _nbonds.add(nbonds);
+}
+
+int
+Substructure_Atom_Specifier::set_valence(int valence) {
+  assert (ok());
+  assert (valence >= 0);
+
+  return _valence.add(valence);
 }
 
 int
@@ -775,7 +805,6 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
        return 1;
    }
 
-
 #ifdef DEBUG_ATOM_MATCHES
    if (_formal_charge.is_set())
      cerr << "Check formal charges, target = " << target.formal_charge() << endl;
@@ -1081,14 +1110,24 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
 
   if (_userAtomType != 0)
   {
-    if (_userAtomType != target.userAtomType())
-    {
+    if (_userAtomType != target.userAtomType()) {
       return 0;
     }
       
     attributes_checked++;
     if (attributes_checked == _attributes_specified)
       return 1;
+  }
+
+  if (_valence.is_set()) {
+    if (! _valence.matches(target.valence())) {
+      return 0;
+    }
+
+    attributes_checked++;
+    if (attributes_checked == _attributes_specified) {
+      return 1;
+    }
   }
 
 #ifdef DEBUG_ATOM_MATCHES
@@ -1921,11 +1960,18 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 
       _components.add(a.release());
 
+      // If there is an operator specified use it. If no operator, and we are not the
+      // first specification, add an implicit high priority and.
+      int add_rc = 1;
       if (IW_LOGEXP_UNDEFINED != asc->op()) {
-        if (! _operator.add_operator(asc->op())) {
-          cerr << "Substructure_Atom::construct_from_smarts_token:cannot add op " << asc->op() << '\n';
-          return 0;
-        }
+        add_rc = _operator.add_operator(asc->op());
+      } else if (_components.size() > 1) {
+        add_rc = _operator.add_operator(IW_LOGEXP_AND);
+      }
+
+      if (! add_rc) {
+        cerr << "Substructure_Atom::construct_from_smarts_token:cannot add op " << asc->op() << '\n';
+        return 0;
       }
 
       _operator.set_unary_operator(uopindex, asc->unary_operator());
@@ -2724,13 +2770,13 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     }
     // Unqualified 'v'
     else if (s == 'v' && ! next_char_is_relational && ! next_char_is_digit) {
-      _nbonds.add(1);
+      _valence.add(1);
     }
     else if ('v' == s)     // qualified total valence (nbonds)
     {
-      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _nbonds);
+      nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _valence);
       if (0 == nchars) {
-        _nbonds.add(1);
+        _valence.add(1);
       }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_V;
     }
@@ -3135,6 +3181,14 @@ Substructure_Atom_Specifier::reconcile_and_conditions(const Substructure_Atom_Sp
     _nbonds = s->_nbonds;
   }
 
+  if (s->_valence.is_set()) {
+    if (_valence.is_set()) {
+      cerr << "Substructure_Atom_Specifier::reconcile_and_conditions: valence conflict\n";
+      return 0;
+    }
+    _valence = s->_valence;
+  }
+
   if (s->_formal_charge.is_set())
   {
     if (_formal_charge.is_set())
@@ -3312,6 +3366,8 @@ Substructure_Atom_Specifier::count_attributes_specified()
     rc++;
   if (_nbonds.is_set())
     rc++;
+  if (_valence.is_set())
+    rc++;
   if (_formal_charge.is_set())
     rc++;
   if (_nrings.is_set())
@@ -3376,6 +3432,8 @@ Substructure_Atom_Specifier::count_attributes_specified()
     cerr << "nc2 is specified \n";
   if (_nbonds.is_set())
     cerr << "nb is specified \n";
+  if (_valence.is_set())
+    cerr << "valence is specified \n";
   if (_formal_charge.is_set())
     cerr << "fc is specified \n";
   if (_nrings.is_set())
