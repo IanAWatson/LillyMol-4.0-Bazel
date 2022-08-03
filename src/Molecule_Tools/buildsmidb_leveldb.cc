@@ -22,6 +22,15 @@ namespace molecule_database {
 using std::cerr;
 
 void Usage(int rc) {
+  cerr << " -Q <smi>           kind of smiles to store, 'usmi' or 'kusmi'\n";
+  cerr << " -G ...             if storing a graph form, options for molecular graph formation\n";
+  cerr << " -c                 remove chirality from input molecules\n";
+  cerr << " -l                 strip input molecules to largest fragment\n";
+  cerr << " -r <rpt>           report progress every <rpt> molecules processed\n";
+  cerr << " -A ...             default aromaticity options, enter '-A help' for info\n";
+  cerr << " -E ...             default element options, enter '-A help' for info\n";
+  cerr << " -i <type>          input file type\n";
+  cerr << " -v                 verbose output\n";
   exit(rc);
 }
 

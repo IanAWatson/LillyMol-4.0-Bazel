@@ -270,7 +270,9 @@ class const_IWSubstring
     int split (IWString *, char = ' ') const;
     int split (std::vector<std::string> &, std::string) const;
 
+    // Both of these will fail badly if the string is empty.
     char last_item () const { return *(_data + _nchars - 1);}
+    char back() const { return *(_data + _nchars - 1);}
 
     int balance (char, char) const;   // reports the numeric imbalance - returns 0 if balanced
 

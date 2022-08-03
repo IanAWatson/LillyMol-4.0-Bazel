@@ -213,7 +213,7 @@ int
 Single_Substructure_Query::ok() const
 {
 #ifdef SHOW_SSQ_OK
-  cerr << "Checking ok for query '" << _comment << "' & " << hex << this << dec << endl;
+  cerr << "Checking ok for query '" << _comment << "' & " << hex << this << dec << '\n';
   if (SUBSTRUCTURE_MAGIC_NUMBER != _magic)
     iwabort();
 #endif
@@ -228,12 +228,12 @@ Single_Substructure_Query::ok() const
   }
 
 #ifdef SHOW_SSQ_OK
-  cerr << "Atoms are OK, check embeddings " << _embeddings.number_elements() << " and " << _query_atoms_matched.number_elements() << endl;
+  cerr << "Atoms are OK, check embeddings " << _embeddings.number_elements() << " and " << _query_atoms_matched.number_elements() << '\n';
 #endif
 
   if (_max_matches_to_find > 0 && ! _hits_needed.matches(_max_matches_to_find))
   {
-    cerr << "Inconsistency on max_matches_to_find " << _max_matches_to_find << endl;
+    cerr << "Inconsistency on max_matches_to_find " << _max_matches_to_find << '\n';
     _hits_needed.debug_print(cerr);
     return 0;
   }
@@ -266,24 +266,24 @@ Single_Substructure_Query::debug_print(std::ostream & os, const IWString & inden
     os << indentation << "Query contains " << _environment.number_elements() << " environment members\n";
 
   if (_ncon.is_set())
-    os << indentation << "_ncon " << _ncon << endl;
+    os << indentation << "_ncon " << _ncon << '\n';
   if (_natoms.is_set())
-    os << indentation << "_natoms " << _natoms << endl;
+    os << indentation << "_natoms " << _natoms << '\n';
   if (_nrings.is_set())
-    os << indentation << "_nrings " << _nrings << endl;
+    os << indentation << "_nrings " << _nrings << '\n';
   if (_aromatic_rings.is_set())
-    os << indentation << "_aromatic_rings " << _aromatic_rings << endl;
+    os << indentation << "_aromatic_rings " << _aromatic_rings << '\n';
   if (_non_aromatic_rings.is_set())
-    os << indentation << "_non_aromatic_rings " << _non_aromatic_rings << endl;
+    os << indentation << "_non_aromatic_rings " << _non_aromatic_rings << '\n';
   if (_fused_rings.is_set())
-    os << indentation << "_fused_rings " << _fused_rings << endl;
+    os << indentation << "_fused_rings " << _fused_rings << '\n';
   if (_strongly_fused_rings.is_set())
-    os << indentation << "_strongly_fused_rings " << _strongly_fused_rings << endl;
+    os << indentation << "_strongly_fused_rings " << _strongly_fused_rings << '\n';
   if (_isolated_rings.is_set())
-    os << indentation << "_isolated_rings " << _isolated_rings << endl;
+    os << indentation << "_isolated_rings " << _isolated_rings << '\n';
 
   if (_max_matches_to_find)
-    os << indentation << " max matches to find " << _max_matches_to_find << endl;
+    os << indentation << " max matches to find " << _max_matches_to_find << '\n';
   if (_find_one_embedding_per_start_atom)
     os << indentation << " find one embedding per start atom\n";
   if (_embeddings_do_not_overlap)
@@ -291,11 +291,11 @@ Single_Substructure_Query::debug_print(std::ostream & os, const IWString & inden
   if (_find_unique_embeddings_only)
     os << indentation << " find unique embeddings only\n";
   if (_hits_needed.is_set())
-    os << indentation << " hits_needed " << _hits_needed << endl;
+    os << indentation << " hits_needed " << _hits_needed << '\n';
   if (_all_hits_in_same_fragment)
     os << indentation << " all hits in same fragment\n";
   if (_subtract_from_rc)
-    os << indentation << " substract from hits " << _subtract_from_rc << endl;
+    os << indentation << " substract from hits " << _subtract_from_rc << '\n';
   if (_preferences_present)
     os << indentation << " preferences present\n";
   if (_fragment_ids_present)
@@ -314,7 +314,7 @@ Single_Substructure_Query::debug_print(std::ostream & os, const IWString & inden
 
   for (int i = 0; i < _root_atoms.number_elements(); i++)
   {
-    os << indentation << "Root atom " << i << endl;
+    os << indentation << "Root atom " << i << '\n';
     const Substructure_Atom * r = _root_atoms[i];
     r->recursive_debug_print(os, ind);
   }
@@ -324,7 +324,7 @@ Single_Substructure_Query::debug_print(std::ostream & os, const IWString & inden
     os << indentation << ne << " environment components\n";
   for (int i = 0; i < ne; i++)
   {
-    os << indentation << "Environment  " << i << endl;
+    os << indentation << "Environment  " << i << '\n';
 
     const Substructure_Environment * e = _environment[i];
 
@@ -336,7 +336,7 @@ Single_Substructure_Query::debug_print(std::ostream & os, const IWString & inden
     os << indentation << nr << " environment rejections\n";
   for (int i = 0; i < nr; i++)
   {
-    os << indentation << "Environment Rejection  " << i << endl;
+    os << indentation << "Environment Rejection  " << i << '\n';
 
     const Substructure_Environment * e = _environment_rejections[i];
 
@@ -397,7 +397,7 @@ Single_Substructure_Query::terse_details(std::ostream & os, const IWString & ind
     os << indentation << ne << " environment components\n";
   for (int i = 0; i < ne; i++)
   {
-    os << indentation << "Environment  " << i << endl;
+    os << indentation << "Environment  " << i << '\n';
 
     const Substructure_Environment * e = _environment[i];
 
@@ -409,7 +409,7 @@ Single_Substructure_Query::terse_details(std::ostream & os, const IWString & ind
     os << indentation << nr << " environment rejections\n";
   for (int i = 0; i < nr; i++)
   {
-    os << indentation << "Environment Rejection " << i << endl;
+    os << indentation << "Environment Rejection " << i << '\n';
 
     const Substructure_Environment * r = _environment_rejections[i];
 
@@ -487,7 +487,7 @@ Single_Substructure_Query::_determine_if_unmatched_atom_counts_are_present()
     }
   }
 
-//cerr << "_determine_if_unmatched_atom_counts_are_present found " << _unmatched_atoms_attached_specified << endl;
+//cerr << "_determine_if_unmatched_atom_counts_are_present found " << _unmatched_atoms_attached_specified << '\n';
 
   return;
 }
@@ -541,7 +541,7 @@ Single_Substructure_Query::_determine_if_symmetry_groups_present()
     }
   }
 
-//cerr << "Single_Substructure_Query::_determine_if_symmetry_groups_present " << _first_root_atom_with_symmetry_group << endl;
+//cerr << "Single_Substructure_Query::_determine_if_symmetry_groups_present " << _first_root_atom_with_symmetry_group << '\n';
 
   return;
 }
@@ -762,7 +762,7 @@ Single_Substructure_Query::_fused_system_id_conditions_satisfied(Query_Atoms_Mat
   for (auto i = 0; i < m->nrings(); ++i)
   {
     const Ring * ri = m->ringi(i);
-    cerr << " ring " << i << " " << (*ri) << endl;
+    cerr << " ring " << i << " " << (*ri) << '\n';
   }
 #endif
 
@@ -778,7 +778,7 @@ Single_Substructure_Query::_fused_system_id_conditions_satisfied(Query_Atoms_Mat
     atom_number_t ai = sai->current_hold_atom()->atom_number();
 
 #ifdef DEBUG_CHECK_FUSED_SYSTEM_IDS
-    cerr << "Atom " << ai << " " << m->atomic_symbol(ai) << " fsid " << fsidi << " in a ring? " << m->is_ring_atom(ai) << endl;
+    cerr << "Atom " << ai << " " << m->atomic_symbol(ai) << " fsid " << fsidi << " in a ring? " << m->is_ring_atom(ai) << '\n';
 #endif
 
 //  if (! m->is_ring_atom(ai))     feb 2016. Very important change. fsids are useful to specify an atom that is not in the same ring system as another
@@ -800,7 +800,7 @@ Single_Substructure_Query::_fused_system_id_conditions_satisfied(Query_Atoms_Mat
 
 #ifdef DEBUG_CHECK_FUSED_SYSTEM_IDS
 //    cerr << "atoms " << ai << ' ' << m->atomic_symbol(ai) << " fsidi " << fsidi << " and " << aj << ' ' << m->atomic_symbol(aj) << " fsidj " << fsidj << " checking same ring system\n";
-      cerr << "atoms " << ai << ' ' << m->atomic_symbol(ai) << " fsidi " << fsidi << " and " << aj << ' ' << m->atomic_symbol(aj) << " fsidj " << fsidj << " same ring system " << m->in_same_ring_system(ai, aj) << endl;
+      cerr << "atoms " << ai << ' ' << m->atomic_symbol(ai) << " fsidi " << fsidi << " and " << aj << ' ' << m->atomic_symbol(aj) << " fsidj " << fsidj << " same ring system " << m->in_same_ring_system(ai, aj) << '\n';
 #endif
 
       if (fsidi == fsidj)   // must be in the same ring system
@@ -853,7 +853,7 @@ Single_Substructure_Query::_ring_id_conditions_satisfied(Query_Atoms_Matched & m
       atom_number_t aj = saj->current_hold_atom()->atom_number();
 
 #ifdef DEBUG_CHECK_RING_IDS
-      cerr << "atoms " << ai << " ridi " << ridi << " and " << aj << " ridj " << ridj << " same ring " << m->in_same_ring(ai, aj) << endl;
+      cerr << "atoms " << ai << " ridi " << ridi << " and " << aj << " ridj " << ridj << " same ring " << m->in_same_ring(ai, aj) << '\n';
 #endif
 
       if (ridi == ridj)   // must be in the same ring
@@ -895,7 +895,7 @@ Single_Substructure_Query::_spinach_match_requirements_satisfied(Query_Atoms_Mat
 
 //#define DEBUG_SPINACH_MATCH_REQUIREMENTS_SATISFIED
 #ifdef DEBUG_SPINACH_MATCH_REQUIREMENTS_SATISFIED
-    cerr << "Query atom " << sai->unique_id() << " matched with atom " << matched_to << " spinach? " << target_molecule.is_spinach(matched_to) << endl;
+    cerr << "Query atom " << sai->unique_id() << " matched with atom " << matched_to << " spinach? " << target_molecule.is_spinach(matched_to) << '\n';
 #endif
 
     if (target_molecule.is_spinach(matched_to))
@@ -947,7 +947,7 @@ Single_Substructure_Query::_fragment_id_conditions_satisfied (Query_Atoms_Matche
       int mfj = m->fragment_membership(aj->current_hold_atom()->atom_number());
 
 #ifdef DEBUG_FRAGMENT_ID_CONDITIONS_SATISFIED
-      cerr << " fragment match conditions i = " << i << " atom " << ai->current_hold_atom()->atom_number() << " mfi " << mfi << " fi " << fi << " j = " << j << " atom " << aj->current_hold_atom()->atom_number() << " mfj " << mfj << " fj " << fj << endl;
+      cerr << " fragment match conditions i = " << i << " atom " << ai->current_hold_atom()->atom_number() << " mfi " << mfi << " fi " << fi << " j = " << j << " atom " << aj->current_hold_atom()->atom_number() << " mfj " << mfj << " fj " << fj << '\n';
 #endif
 
       if (fi == fj && mfi == mfj)
@@ -1034,7 +1034,7 @@ Single_Substructure_Query::_attached_heteroatom_count_satisfied (Query_Atoms_Mat
     int acon = a->ncon();
 
 #ifdef DEBUG_ATTACHED_HETEROATOM_COUNT
-    cerr << "Query atom " << q->unique_id() << " matched with atom " << a->atom_number() << " acon = " << acon << endl;
+    cerr << "Query atom " << q->unique_id() << " matched with atom " << a->atom_number() << " acon = " << acon << '\n';
 #endif
 
     for (int j = 0; j < acon; j++)
@@ -1045,7 +1045,7 @@ Single_Substructure_Query::_attached_heteroatom_count_satisfied (Query_Atoms_Mat
       cerr << "  atom " << aj->atom_number() << " z = " << aj->atomic_number() << " is attached";
       if( already_matched[aj->atom_number()])
         cerr << " already matched";
-      cerr << endl;
+      cerr << '\n';
 #endif
 
       if ( already_matched[aj->atom_number()])
@@ -1064,7 +1064,7 @@ Single_Substructure_Query::_attached_heteroatom_count_satisfied (Query_Atoms_Mat
   }
 
 #ifdef DEBUG_ATTACHED_HETEROATOM_COUNT
-  cerr << "Final attached heteroatom count is " << ahc << " match is " << _attached_heteroatom_count.matches(ahc) << endl;
+  cerr << "Final attached heteroatom count is " << ahc << " match is " << _attached_heteroatom_count.matches(ahc) << '\n';
 #endif
 
   return _attached_heteroatom_count.matches(ahc);
@@ -1138,12 +1138,12 @@ Single_Substructure_Query::_global_query_conditions_also_matched(Query_Atoms_Mat
   if (! _embedding_ncon_satisfied(matched_query_atoms, already_matched))
     return 0;
 
-//  cerr << "_fragment_ids_present " << _fragment_ids_present << endl;
+//  cerr << "_fragment_ids_present " << _fragment_ids_present << '\n';
   if (_fragment_ids_present && ! _fragment_id_conditions_satisfied(matched_query_atoms))
     return 0;
 
 #ifdef DEBUG_MATCHED_ATOM_POST_CHECK
-  cerr << "Check ring ids? " << _ring_ids_present << endl;
+  cerr << "Check ring ids? " << _ring_ids_present << '\n';
 #endif
 
   if (_ring_ids_present && ! _ring_id_conditions_satisfied(matched_query_atoms))
@@ -1183,7 +1183,7 @@ Single_Substructure_Query::_global_query_conditions_also_matched(Query_Atoms_Mat
   }
 
 #ifdef DEBUG_MATCHED_ATOM_POST_CHECK
-  cerr << "_unmatched_atoms_attached_specified value " << _unmatched_atoms_attached_specified << endl;
+  cerr << "_unmatched_atoms_attached_specified value " << _unmatched_atoms_attached_specified << '\n';
 #endif
   if (_unmatched_atoms_attached_specified)
   {
@@ -1211,7 +1211,7 @@ Single_Substructure_Query::_global_query_conditions_also_matched(Query_Atoms_Mat
 
     float f = static_cast<float>(matched_query_atoms.number_elements()) / static_cast<float>(m->natoms());
 
-//  cerr << "Fraction atoms matched " << f << endl;
+//  cerr << "Fraction atoms matched " << f << '\n';
 
     if (static_cast<float>(0.0) == _min_fraction_atoms_matched)
       ;
@@ -1292,7 +1292,7 @@ Single_Substructure_Query::_symmetry_group_specifications_matches(const Query_At
      const atom_number_t mi = ai->atom_number_matched();
 
 #ifdef DEBUG_SYMMETRY_GROUP_SPECIFICATIONS_MATCHES
-    cerr << " i = " << i << " symmetry group " << si << ", atom " << mi << " symm " << msim[mi] << endl;
+    cerr << " i = " << i << " symmetry group " << si << ", atom " << mi << " symm " << msim[mi] << '\n';
 #endif
 
     for (int j = i + 1; j < n; ++j)
@@ -1354,8 +1354,8 @@ Single_Substructure_Query::_add_embedding (Query_Atoms_Matched & matched_atoms,
     ;
   else   // too many atoms in the embedding for the number of query atoms matched!
   {
-    cerr << "Adding embedding matched atoms contains " << matched_atoms.number_elements() << " embedding " << new_embedding->number_elements() << endl;
-    cerr << (*new_embedding) << endl;
+    cerr << "Adding embedding matched atoms contains " << matched_atoms.number_elements() << " embedding " << new_embedding->number_elements() << '\n';
+    cerr << (*new_embedding) << '\n';
     return 0;
   }
 
@@ -1385,7 +1385,7 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
   assert (_root_atoms.ok_index(_iroot));
 
 #ifdef DEBUG_FIND_NEXT_ROOT_ATOM_EMBEDDING
-  cerr << "_find_next_root_atom_embedding: iroot = " << _iroot << endl;
+  cerr << "_find_next_root_atom_embedding: iroot = " << _iroot << '\n';
 #endif
 
   Substructure_Atom * r = _root_atoms[_iroot];
@@ -1402,14 +1402,14 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
   assert (istart >= 0 && istart <= istop && istop <= target_molecule.natoms());
 
 #ifdef DEBUG_FIND_NEXT_ROOT_ATOM_EMBEDDING
-  cerr << "Looking between atoms " << istart << " and " << istop << endl;
+  cerr << "Looking between atoms " << istart << " and " << istop << '\n';
 #endif
 
   int rc = 0;
   for (int i = istart; i < istop; i++)
   {
 #ifdef DEBUG_FIND_NEXT_ROOT_ATOM_EMBEDDING
-    cerr << "Testing atom " << i << " already matched = " << already_matched[i] << endl;
+    cerr << "Testing atom " << i << " already matched = " << already_matched[i] << '\n';
 #endif
 
     if (already_matched[i])
@@ -1421,13 +1421,13 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
       continue;
 
 #ifdef DEBUG_FIND_NEXT_ROOT_ATOM_EMBEDDING
-    cerr << "Looking for embedding, root atom " << _iroot << " matched atom " << i << endl;
+    cerr << "Looking for embedding, root atom " << _iroot << " matched atom " << i << '\n';
 #endif
 
     int tmp = _find_embedding(target_molecule, a, matched_atoms, already_matched, r, results);
 
 #ifdef DEBUG_FIND_NEXT_ROOT_ATOM_EMBEDDING
-    cerr << "Found " << tmp << " matches at matched atom " << i << endl;
+    cerr << "Found " << tmp << " matches at matched atom " << i << '\n';
 #endif
 
     if (0 == tmp)    // no matches found this atom
@@ -1443,7 +1443,7 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
   }
 
 #ifdef DEBUG_FIND_NEXT_ROOT_ATOM_EMBEDDING
-  cerr << "_find_next_root_atom_embedding, root " << _iroot << " returning " << rc << endl;
+  cerr << "_find_next_root_atom_embedding, root " << _iroot << " returning " << rc << '\n';
 #endif
 
   _iroot--;
@@ -1471,7 +1471,7 @@ Single_Substructure_Query::_make_new_embedding(const Query_Atoms_Matched& matche
     new_embedding->resize(number_matched_atoms);
 
 #ifdef DEBUG_GOT_EMBEDDING
-  cerr << "Scanning " << number_matched_atoms << " matched atoms, _respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
+  cerr << "Scanning " << number_matched_atoms << " matched atoms, _respect_initial_atom_numbering " << _respect_initial_atom_numbering << '\n';
 #endif
 
   for (int i = 0; i < number_matched_atoms; i++)
@@ -1490,7 +1490,7 @@ Single_Substructure_Query::_make_new_embedding(const Query_Atoms_Matched& matche
       new_embedding->add(ma);
 
 #ifdef DEBUG_GOT_EMBEDDING
-//  cerr << "Processed atom " << ma << " initial " << a->initial_atom_number() << endl;
+//  cerr << "Processed atom " << ma << " initial " << a->initial_atom_number() << '\n';
 #endif
   }
 
@@ -1514,7 +1514,7 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
                                     Substructure_Results & results)
 {
 #ifdef DEBUG_GOT_EMBEDDING
-  cerr << "Got embedding, " << matched_atoms.number_elements () << " atoms,  iroot = " << _iroot << " nroot = " << _root_atoms.number_elements() << endl;
+  cerr << "Got embedding, " << matched_atoms.number_elements () << " atoms,  iroot = " << _iroot << " nroot = " << _root_atoms.number_elements() << '\n';
 #endif
 
   if (_iroot < _root_atoms.number_elements() - 1)
@@ -1532,7 +1532,7 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
   {
     cerr << ' ' << matched_atoms[i]->atom_number_matched();
   }
-  cerr << endl;
+  cerr << '\n';
 #endif
 
   if (! _global_query_conditions_also_matched(matched_atoms, already_matched, target_molecule))
@@ -1581,7 +1581,7 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
   assert (new_embedding->number_elements() > 0);
 
 #ifdef DEBUG_GOT_EMBEDDING
-  cerr << "Got embedding " << *new_embedding << ", find unique? " << _find_unique_embeddings_only << endl;
+  cerr << "Got embedding " << *new_embedding << ", find unique? " << _find_unique_embeddings_only << '\n';
 #endif
 
   if (_find_unique_embeddings_only && ! results.embedding_is_unique(*new_embedding))
@@ -1693,7 +1693,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
 
 #ifdef DEBUG_FIND_EMBEDDING
     cerr << "Atom to process = " << atom_to_process << " id " << a->unique_id() << 
-            " array contains " << matched_atoms.number_elements() << endl;
+            " array contains " << matched_atoms.number_elements() << '\n';
     for (int i = 0; i < matched_atoms.number_elements(); i++)
     {
       const Substructure_Atom * a = matched_atoms[i];
@@ -1701,9 +1701,9 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
       if (a->is_matched())
         cerr << "(" << a->atom_number_matched() << ")";
     }
-    cerr << endl;
+    cerr << '\n';
     if (nullptr == a->parent())
-      cerr << "Returning " << rc << endl;
+      cerr << "Returning " << rc << '\n';
 #endif
 
     if (nullptr == a->parent())    // must be a root atom, done
@@ -1712,7 +1712,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
     if (! a->move_to_next_match_from_current_anchor(already_matched, matched_atoms))
     {
 #ifdef DEBUG_FIND_EMBEDDING
-      cerr << "Move to next failed for atom " << a->unique_id() << endl;
+      cerr << "Move to next failed for atom " << a->unique_id() << '\n';
 #endif
 
       a->remove_your_children(matched_atoms, already_matched);
@@ -1731,7 +1731,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
       cerr << "Move to next match succeeded " << 
               a->unique_id() << "(" << a->atom_number_matched() <<
               "), or = " << a->or_id() <<
-              " atom to process = " << atom_to_process << " matched = " << matched_atoms.number_elements() << endl;
+              " atom to process = " << atom_to_process << " matched = " << matched_atoms.number_elements() << '\n';
 #endif
       if (a->or_id())
         remove_atoms_with_same_or(matched_atoms, atom_to_process + 1, a->or_id());
@@ -1741,7 +1741,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
       if (atom_to_process == matched_atoms.number_elements() - 1)
       {
 #ifdef DEBUG_FIND_EMBEDDING
-        cerr << "AlL query atoms matched, calling _got_embedding, B4 have " << results.number_embeddings() << " rc " << rc << endl;
+        cerr << "AlL query atoms matched, calling _got_embedding, B4 have " << results.number_embeddings() << " rc " << rc << '\n';
 #endif
         if (_got_embedding(matched_atoms, target_molecule, already_matched, results))
         {
@@ -1750,7 +1750,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
 #ifdef DEBUG_FIND_EMBEDDING
           cerr << "Rc incremented to " << rc << " have " << results.number_embeddings() << " embeddings\n";
           if (results.matching_complete() || _find_one_embedding_per_start_atom)
-            cerr << "Returning " << rc << endl;
+            cerr << "Returning " << rc << '\n';
 #endif       
           if (results.matching_complete() || _find_one_embedding_per_start_atom)
             return rc;
@@ -1763,7 +1763,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
 
 
 #ifdef DEBUG_FIND_EMBEDDING
-  cerr << "Single_Substructure_Query::_find_embedding: returning rc = " << rc << endl;
+  cerr << "Single_Substructure_Query::_find_embedding: returning rc = " << rc << '\n';
 #endif
 
   return rc;
@@ -1854,7 +1854,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
   cerr << "Beginning atom matching over " << target_molecule.natoms() << " atoms\n";
-  cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
+  cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << '\n';
 #endif
 
   _iroot = 0;
@@ -1871,7 +1871,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
     return 0;
 
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
-  cerr << "Start atoms " << jstart << " and " << jstop << endl;
+  cerr << "Start atoms " << jstart << " and " << jstop << '\n';
 #endif
 
 //assert (jstart >= 0 && jstop >= jstart && jstop <= matoms);
@@ -1893,7 +1893,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
     results.matched_this_many_query_atoms(1);
 
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
-    cerr << "Atom " << j << " matches query atom 0, " << results.number_embeddings() << " embeddings so far, root " << _iroot << endl;
+    cerr << "Atom " << j << " matches query atom 0, " << results.number_embeddings() << " embeddings so far, root " << _iroot << '\n';
 #endif
 
     const int tmp = _find_embedding(target_molecule, target_atom, matched_atoms, already_matched, r, results);
@@ -1904,13 +1904,13 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
       cerr << "Found embedding starting with atom " << j << ", tmp = " << tmp;
       if (results.number_embeddings())
         cerr << " last embedding " << *results.embedding(results.number_embeddings() - 1);
-      cerr << endl;
+      cerr << '\n';
     }
     else
-      cerr << "No embedding found, tmp = " << tmp << endl;
+      cerr << "No embedding found, tmp = " << tmp << '\n';
     for (int i = 0; i < target_molecule.natoms(); ++i)
     {
-      cerr << " alread matched " << i << ' ' << already_matched[i] << target_molecule.molecule()->smarts_equivalent_for_atom(i) << endl;
+      cerr << " alread matched " << i << ' ' << already_matched[i] << target_molecule.molecule()->smarts_equivalent_for_atom(i) << '\n';
     }
 #endif
 
@@ -1918,7 +1918,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
     {
       int k = target_atom.fragment_membership();
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
-      cerr << "Hit with atom " << target_atom.atom_number() << " in frag " << k << endl;
+      cerr << "Hit with atom " << target_atom.atom_number() << " in frag " << k << '\n';
 #endif
       results.got_hit_in_fragment(k);
     }
@@ -1936,7 +1936,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
   assert (0 == _iroot);
 
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
-  cerr << "_substructure_search: returning " << results.number_embeddings() << endl;
+  cerr << "_substructure_search: returning " << results.number_embeddings() << '\n';
 #endif
 
   return results.return_code();
@@ -2099,7 +2099,7 @@ Single_Substructure_Query::_spinach_atoms_match(Molecule_to_Match & target) cons
 
   int ais = m.identify_spinach(spinach);
 
-//cerr << "Single_Substructure_Query::_spinach_atoms_match:ais " << ais << endl;
+//cerr << "Single_Substructure_Query::_spinach_atoms_match:ais " << ais << '\n';
   if (! _atoms_in_spinach.matches(ais))
     return 0;
 
@@ -2117,7 +2117,7 @@ Single_Substructure_Query::_spinach_atoms_match(Molecule_to_Match & target) cons
       number_inter_ring_atoms++;
   }
 
-//cerr << "Single_Substructure_Query::_spinach_atoms_match:number_inter_ring_atoms " << number_inter_ring_atoms << endl;
+//cerr << "Single_Substructure_Query::_spinach_atoms_match:number_inter_ring_atoms " << number_inter_ring_atoms << '\n';
   return _inter_ring_atoms.matches(number_inter_ring_atoms);
 }
 
@@ -2161,7 +2161,7 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
                 std::unique_ptr<int[]>& matched_by_global_specs)
 {
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
-  cerr << "Checking global specifications: _natoms " << _natoms.is_set() << ", matches? " << _natoms.matches(target_molecule.natoms()) << endl;
+  cerr << "Checking global specifications: _natoms " << _natoms.is_set() << ", matches? " << _natoms.matches(target_molecule.natoms()) << '\n';
   cerr << "Target contains " << target_molecule.natoms() << " atoms\n";
 #endif
 
@@ -2178,7 +2178,7 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
   }
 
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
-  cerr << "Do we need to check heteroatoms " << _heteroatoms_in_molecule.is_set() << endl;
+  cerr << "Do we need to check heteroatoms " << _heteroatoms_in_molecule.is_set() << '\n';
 #endif
 
   if (_heteroatoms_in_molecule.is_set())
@@ -2188,7 +2188,7 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
   }
 
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
-  cerr << "Do we need to check nrings " << _nrings.is_set() << endl;
+  cerr << "Do we need to check nrings " << _nrings.is_set() << '\n';
 #endif
 
   if (_nrings.is_set())
@@ -2198,7 +2198,7 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
   }
 
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
-  cerr << "Check isotopes " << _number_isotopic_atoms.is_set() << endl;
+  cerr << "Check isotopes " << _number_isotopic_atoms.is_set() << '\n';
 #endif
 
   if (_number_isotopic_atoms.is_set())
@@ -2220,7 +2220,7 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
 //}
 
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
-  cerr << "Do we need to check ring specification(s) " << _ring_specification.number_elements() << endl;
+  cerr << "Do we need to check ring specification(s) " << _ring_specification.number_elements() << '\n';
 #endif
 
   if (_ring_specification.number_elements())
@@ -2236,7 +2236,7 @@ Single_Substructure_Query::_match_global_specifications(Molecule_to_Match & targ
   }
 
 #ifdef DEBUG_CHECK_GLOBAL_CONDITIONS
-  cerr << "Check elements needed? " << _elements_needed.number_elements() << endl;
+  cerr << "Check elements needed? " << _elements_needed.number_elements() << '\n';
 #endif
 
   if (_elements_needed.number_elements())
@@ -2296,7 +2296,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 {
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
   cerr << "Begin common _substructure_search code, " << _root_atoms.number_elements() << " root atoms\n";
-  cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << endl;
+  cerr << "_respect_initial_atom_numbering " << _respect_initial_atom_numbering << '\n';
 #endif
 
   // Perhaps one of the global conditions will mark some atoms.
@@ -2342,7 +2342,7 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 #ifdef DEBUG_SUBSTRUCTURE_SEARCH
   cerr << "Return code from _substructure_search " << rc << " results contains " << results.number_embeddings() << " embeddings\n";
   if (results.number_embeddings())
-    cerr << "     last embedding " << *results.embedding(results.number_embeddings() - 1) << endl;
+    cerr << "     last embedding " << *results.embedding(results.number_embeddings() - 1) << '\n';
 #endif
 
   if (_rejection)

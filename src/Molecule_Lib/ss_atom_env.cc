@@ -29,7 +29,6 @@ Substructure_Atom_Environment::Substructure_Atom_Environment()
 int
 Substructure_Atom_Environment::ok() const
 {
-  cerr << "_number_elements " << _number_elements << " _operator.number_results " << _operator.number_results() << '\n';
   if (1 == _number_elements && 0 == _operator.number_operators())
     ;
   else if (_number_elements == _operator.number_operators())    // true during building
@@ -65,6 +64,22 @@ Substructure_Atom_Environment::involves_aromatic_bond_specifications(int & _need
   return 0;
 }
 
+void
+RemoveSquareBracketsIfPresent(const_IWSubstring& smarts) {
+  if (smarts.empty()) {
+    return;
+  }
+
+  if (smarts[0] != '[' || smarts.back() != ']') {
+    return;
+  }
+
+  smarts += 1;
+  smarts.chop();
+
+  return;
+}
+
 //#define DEBUG_SS_ATOM_ENV_CREATE_FROM_SMARTS
 
 int
@@ -78,35 +93,54 @@ Substructure_Atom_Environment::create_from_smarts(const Atomic_Smarts_Component 
   mysmarts.chop();
 
 #ifdef DEBUG_SS_ATOM_ENV_CREATE_FROM_SMARTS
-  cerr << "Substructure_Atom_Environment::create_from_smarts: parsing " << env << endl;
+  cerr << "Substructure_Atom_Environment::create_from_smarts: parsing " << env << " from primitive " << env.from_primitive() << '\n';
+  _operator.debug_print(cerr);
 #endif
 
-  Substructure_Atom * a = new Substructure_Atom;
+  if (env.from_primitive()) {
+    std::unique_ptr<Substructure_Atom_Specifier> spec = std::make_unique<Substructure_Atom_Specifier>();
+    RemoveSquareBracketsIfPresent(mysmarts);
+    if (! spec->construct_from_smarts_token(mysmarts)) {
+      cerr << "Substructure_Atom_Environment::create_from_smarts: cannot parse component '" << mysmarts << "'\n";
+      return 0;
+    }
 
-  if (! a->parse_smarts_specifier(mysmarts))
-  {
-    cerr << "Substructure_Atom_Environment::create_from_smarts: cannot parse '" << env << "'\n";
-    delete a;
-    return 0;
+    Substructure_Atom* a = new Substructure_Atom();
+    a->add_component(spec.release());
+    add(a);
+  } else {
+    std::unique_ptr<Substructure_Atom> a = std::make_unique<Substructure_Atom>();
+    if (! a->parse_smarts_specifier(mysmarts)) {
+      cerr << "Substructure_Atom_Environment::create_from_smarts: cannot parse '" << env << "'\n";
+      return 0;
+    }
+
+    if (a->number_children()) {
+      _all_components_single_atoms = 0;
+    }
+
+    add(a.release());
   }
 
-  add (a);
-
-  if (a->number_children())
-    _all_components_single_atoms = 0;
+#ifdef DEBUG_SS_ATOM_ENV_CREATE_FROM_SMARTS
+  cerr << "ENV _number_elements " << _number_elements << " unary " << env.unary_operator() << " op " << env.op() << " results in operator " << _operator.number_results() << " from " << env << "\n";
+#endif
 
 // Unfortunately complex initialising the operator. Remember that an 
 // environment component comes here with the operator following it
 
-  _operator.set_unary_operator(_operator.number_results() - 1, env.unary_operator());
-
-  if (IW_LOGEXP_UNDEFINED != env.op()) {
+  if (_number_elements == 1) {
+    // No operator with the first condition
+  } else if (IW_LOGEXP_UNDEFINED != env.op()) {
     _operator.add_operator(env.op());
+  } else {
+    _operator.add_operator(IW_LOGEXP_AND);
   }
 
+  _operator.set_unary_operator(_operator.number_results() - 1, env.unary_operator());
+
 #ifdef DEBUG_SS_ATOM_ENV_CREATE_FROM_SMARTS
-  cerr << "After parsing smarts\n";
-  debug_print(cerr);
+  cerr << "ENV: After constructing operator " << _operator.debug_print(cerr);
 #endif
 
   assert(ok());
@@ -161,7 +195,7 @@ Substructure_Atom_Environment::_matches(Target_Atom & target_atom,
       continue;
 
 #ifdef DEBUG_SS_ATOM_ENV_MATCHES
-    cerr << "Substructure_Atom_Environment::_matches: trying to match component " << i << endl;
+    cerr << "Substructure_Atom_Environment::_matches: trying to match component " << i << '\n';
 #endif
 
     set_vector(already_matched, atoms_in_target, 0);
@@ -189,8 +223,9 @@ Substructure_Atom_Environment::_matches(Target_Atom & target_atom,
     _things[i]->recursive_release_hold();
 
     int rc;
-    if (_operator.evaluate(rc))
+    if (_operator.evaluate(rc)) {
       return rc;
+    }
   }
 
   return 0;

@@ -1049,8 +1049,9 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
 // sum any numeric preferences.
 // Any zero preference value means reject the match!
 
-  if (_preferences.number_elements() == 0)
+  if (_preferences.empty()) {
     return 1;
+  }
 
 //#define DEBUG_PREFERENCE_STUFF
 #ifdef DEBUG_PREFERENCE_STUFF
@@ -1261,7 +1262,7 @@ Substructure_Atom::_match_all_ring_ids (Target_Atom * target,
 //#define DEBUG_MOVE_TO_NEXT_FROM_ANCHOR
 
 int
-Substructure_Atom::move_to_next_match_from_current_anchor (int * already_matched,
+Substructure_Atom::move_to_next_match_from_current_anchor(int * already_matched,
                              const Query_Atoms_Matched & matched_atoms)
 {
 //assert (ok());
@@ -1957,7 +1958,7 @@ Substructure_Atom::numeric_value (double & result) const
 }
 
 /*int 
-Substructure_Atom::smarts (IWString & s) const
+Substructure_Atom::smarts(IWString & s) const
 {
   assert (ok ());
 
@@ -2531,4 +2532,15 @@ Substructure_Atom::unmatched_atoms_attached_matches(const Query_Atoms_Matched& m
   const int u = UnmatchedAtomsAttached(m, tmp, matched);
 
   return _unmatched_atoms_attached.matches(u);
+}
+
+int
+Substructure_Atom::add_component(Substructure_Atom_Specifier* spec) {
+  _components.add(spec);
+
+  if (_components.size() > 1) {
+    _operator.add_operator(IW_LOGEXP_AND);
+  }
+
+  return 1;
 }

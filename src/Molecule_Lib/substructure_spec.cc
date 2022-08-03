@@ -1418,7 +1418,7 @@ Substructure_Atom_Specifier::create_atom() const
 }
 
 int
-Substructure_Atom::_parse_smarts_environment (const Atomic_Smarts_Component & env)
+Substructure_Atom::_parse_smarts_environment(const Atomic_Smarts_Component & env)
 {
   if (! env.starts_with("$(") || ! env.ends_with(")"))
   {
@@ -1665,8 +1665,9 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
   cerr << "Atom parsing smarts '" << smarts << "' nchars = " << smarts.length() << "\n";
 #endif
 
-  if ('[' != smarts[0])
+  if ('[' != smarts[0]) {
     return construct_from_smiles_token(smarts);
+  }
 
   int characters_to_process = smarts.length();
 
@@ -1692,26 +1693,22 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 
   for (int i = 1; i < characters_to_process; i++)     // smarts[0] is the opening square bracket
   {
-    if ('[' == smarts[i])
-    {
+    if ('[' == smarts[i]) {
       square_bracket_level++;
       continue;
     }
 
-    if (open_brace == smarts[i])
-    {
+    if (open_brace == smarts[i]) {
       curly_brace_level++;
       continue;
     }
 
-    if ('}' == smarts[i])
-    {
+    if ('}' == smarts[i]) {
       curly_brace_level--;
       continue;
     }
 
-    if (']' == smarts[i])
-    {
+    if (']' == smarts[i]) {
       square_bracket_level--;
       if (0 == paren_level && 0 == square_bracket_level)
       {
@@ -1747,8 +1744,7 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 
   assert (0 == paren_level);
 
-  if (right_square_bracket < 0)
-  {
+  if (right_square_bracket < 0) {
     smiles_error_message(initial_smarts_ptr, characters_to_process, 0,
                   "Unterminated bracket specifier");
     return 0;
@@ -1756,8 +1752,7 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 
 // I guess we could interpret '[]' as match anything....
 
-  if (1 == right_square_bracket)
-  {
+  if (1 == right_square_bracket) {
     smiles_error_message(initial_smarts_ptr, characters_to_process, 0, "Empty bracket specifier");
     return 0;
   }
@@ -1777,8 +1772,7 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 // If the smarts ends with ':nn', that is the atom number. We need to be careful because
 // colon's can be part of an environment [xxx$(a:a)]
 
-  if (ncolon)
-  {
+  if (ncolon) {
     _extract_initial_atom_number(mysmarts);
     ncolon--;
   }
@@ -1868,8 +1862,9 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
     }
   }
 
-  if (0 == mysmarts.length())
+  if (0 == mysmarts.length()) {
     return characters_to_process;
+  }
 
 // If only the ';' operator is present, we can process in place.
 // Apr 2000. WRONG! The smarts '[r4;r5]' fails - both ring sizes get put
@@ -1885,11 +1880,9 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 
   Atomic_Smarts_Component tokens;
 
-  if (! tokens.parse(mysmarts))
-  {
+  if (! tokens.parse(mysmarts)) {
     cerr << "Cannot parse smarts '";
-    for (int i = 0; i < characters_to_process; i++)
-    {
+    for (int i = 0; i < characters_to_process; i++) {
       cerr << smarts[i];
     }
     cerr << "'\n";
@@ -1949,6 +1942,8 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
 #ifdef DEBUG_ATOM_CONSTRUCT_FROM_SMARTS_TOKEN
   cerr << "After building, operator is\n";
   _operator.debug_print(cerr);
+  cerr << "ENV\n";
+  _environment.debug_print(cerr);
 #endif
 
   assert (ok());
@@ -2411,8 +2406,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
   cerr << "Specifier parsing smarts '" << zsmarts << "' " << characters_to_process << " chars\n";
 #endif
 
-  if (0 == characters_to_process)
-  {
+  if (0 == characters_to_process) {
     cerr << "Substructure_Atom_Specifier::construct_from_smarts_token: empty smarts\n";
     return 0;
   }
@@ -2420,8 +2414,9 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
 // Special case of H by itself. Treating it out here keeps the loop below a little
 // simpler
 
-  if (1 == characters_to_process && 'H' == zsmarts[0])
+  if (1 == characters_to_process && 'H' == zsmarts[0]) {
     return _add_element(1);
+  }
 
   const char * initial_smarts_ptr = zsmarts.rawchars();
   const char * smarts = zsmarts.rawchars();
@@ -2722,9 +2717,8 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     else if ('x' == s)     // qualified ring bond count
     {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _ring_bond_count);
-      if (0 == nchars || ! substructure_spec::ValidRingBondCount(_ring_bond_count)) {
-        smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "the 'x' specifier must be followed by a whole number");
-        return 0;
+      if (nchars == 0) {
+        _ring_bond_count.set_min(2);
       }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_RBC;
     }

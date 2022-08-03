@@ -14,9 +14,11 @@ Atomic_Smarts_Component::Atomic_Smarts_Component ()
   _op = IW_LOGEXP_UNDEFINED;   
 
   _next = nullptr;
+      
+  _from_primitive = 0;
 }
 
-Atomic_Smarts_Component::~Atomic_Smarts_Component ()
+Atomic_Smarts_Component::~Atomic_Smarts_Component()
 {
   if (nullptr != _next)
     delete _next;
@@ -25,22 +27,17 @@ Atomic_Smarts_Component::~Atomic_Smarts_Component ()
 }
 
 int
-Atomic_Smarts_Component::ok () const
+Atomic_Smarts_Component::ok() const
 {
-  if (nullptr != _next && IW_LOGEXP_UNDEFINED == _op)
-  {
-    if (! _next->starts_with("$("))       // remember, we squeeze out any operator between the last atom and the first environment
-      return 0;
-  }
-
-  if (IW_LOGEXP_UNDEFINED != _op && nullptr == _next)
+  if (_next != nullptr && _next->empty()) {
     return 0;
+  }
 
   return 1;
 }
 
 static int
-write_operator (std::ostream & os, int op)
+write_operator(std::ostream & os, int op)
 {
   os << ' ';
 
@@ -63,13 +60,17 @@ write_operator (std::ostream & os, int op)
 }
 
 int
-Atomic_Smarts_Component::debug_print (std::ostream & os) const
+Atomic_Smarts_Component::debug_print(std::ostream & os) const
 {
-  if (! ok())
+  if (! ok()) {
     cerr << "NOT OK\n";
+  }
 
-  if (0 == _unary_operator)
+  write_operator(os, _op);
+
+  if (0 == _unary_operator) {
     os << '!';
+  }
 
   os << '\'';
 
@@ -77,10 +78,7 @@ Atomic_Smarts_Component::debug_print (std::ostream & os) const
 
   os << '\'';
 
-  write_operator(os, _op);
-
-  if (nullptr == _next)
-  {
+  if (nullptr == _next) {
     os << '\n';
     return 1;
   }
@@ -91,15 +89,18 @@ Atomic_Smarts_Component::debug_print (std::ostream & os) const
 std::ostream &
 operator << (std::ostream & os, const Atomic_Smarts_Component & rhs)
 {
-  if (0 == rhs.unary_operator())
+  write_operator(os, rhs.op());
+
+  if (0 == rhs.unary_operator()) {
     os << '!';
+  }
 
   os.write (rhs.rawchars(), rhs.nchars());
 
-  if (nullptr == rhs.next())
+  if (nullptr == rhs.next()) {
+    os << " _";
     return os;
-
-  write_operator(os, rhs.op());
+  }
 
   return os << " (next)";
 }
@@ -115,6 +116,9 @@ Atomic_Smarts_Component::ConvertToEnvironment() {
   IWString new_value;
   new_value << kDollarOpenParen << me << ')';
   me = new_value;
+
+  _from_primitive = 1;
+
   return 1;
 }
 
@@ -208,14 +212,18 @@ number_numeric_characters (const const_IWSubstring & smarts,
 */
 
 static int
-characters_in_next_primitive (const const_IWSubstring & smarts,
-                              const int istart)
+characters_in_next_primitive(const const_IWSubstring & smarts,
+                             const int istart)
 {
-  if (istart == smarts.length() - 1)    // just one character
+  // Just one character.
+  if (istart == smarts.length() - 1) {
     return 1;
+  }
 
-  if (isupper (smarts[istart]) && islower(smarts[istart + 1]))     // "Cl" for example
+  // "Cl" for example.
+  if (isupper (smarts[istart]) && islower(smarts[istart + 1])) {
     return 2;
+  }
 
 // All the single character elements
 
@@ -230,17 +238,21 @@ characters_in_next_primitive (const const_IWSubstring & smarts,
 
 //cerr << " contains " << numeric_characters << " numeric characters\n";
 
-  if ('#' == c)
+  if ('#' == c) {
     return 1 + numeric_characters;
+  }
 
-  if ('D' == c)
+  if ('D' == c) {
     return 1 + numeric_characters;
+  }
 
-  if ('G' == c)
+  if ('G' == c) {
     return 1 + numeric_characters;
+  }
 
-  if ('H' == c)
+  if ('H' == c) {
     return 1 + numeric_characters;
+  }
 
   if ('R' == c)
     return 1 + numeric_characters;
@@ -324,18 +336,20 @@ characters_in_next_token(const_IWSubstring & smarts)
       continue;
     }
 
-    if (square_bracket_level)
+    if (square_bracket_level) {
       continue;
+    }
 
-    if (',' == c && curly_brace_level)
+    if (',' == c && curly_brace_level) {
       continue;
+    }
 
-    if (',' == c || ';' == c || '!' == c || '^' == c || '$' == c || ':' == c)
+    if (',' == c || ';' == c || '!' == c || '^' == c || '$' == c || ':' == c) {
       return i;
+    }
   }
 
-  if (square_bracket_level)
-  {
+  if (square_bracket_level) {
     cerr << "Mismatched square brackets\n";
     abort();
   }
@@ -346,7 +360,7 @@ characters_in_next_token(const_IWSubstring & smarts)
 //#define DEBUG_PARSE
 
 int
-Atomic_Smarts_Component::parse (const_IWSubstring smarts)      // our own copy
+Atomic_Smarts_Component::parse(const_IWSubstring smarts)      // our own copy
 {
 //cerr << "Last char to process is '" << smarts[characters_to_process - 1] << "'\n";
 
@@ -360,7 +374,7 @@ Atomic_Smarts_Component::parse (const_IWSubstring smarts)      // our own copy
     return 0;
   }
 
-// If there is a mixture of primitive ahd $() tokens, conver them to the same form.
+// If there is a mixture of primitive and $() tokens, conver them to the same form.
   int dollar_count = 0;
   int primitive_count = 0;
   for (const Atomic_Smarts_Component* asc = this; asc != nullptr; asc = asc->next()) {
@@ -381,6 +395,9 @@ Atomic_Smarts_Component::parse (const_IWSubstring smarts)      // our own copy
     asc->ConvertToEnvironment();
   }
 
+  // THis is no longer needed.
+
+  return rc;
 // Because of limitations of the implentation, we need to "fix" some special
 // cases. Mainly we need to remove any operator which follows an atom and
 // which preceeds an environment. For example, '[N;$(C-O)]'
@@ -391,8 +408,7 @@ Atomic_Smarts_Component::parse (const_IWSubstring smarts)      // our own copy
     if (a->starts_with("$("))    // we assume that all environments follow all the atoms specifications :-(
       return rc;
 
-    if (a->_next->starts_with("$("))
-    {
+    if (a->_next->starts_with("$(")) {
       a->_op = IW_LOGEXP_UNDEFINED;
       return rc;
     }
@@ -416,69 +432,7 @@ Atomic_Smarts_Component::_parse(const_IWSubstring & smarts)
 
   int length_of_our_token;
 
-  if ('!' == smarts[0])
-  {
-    if (1 == smarts.length())
-    {
-      cerr << "Atomic_Smarts_Component::_parse: must have something to negate\n";
-      return 0;
-    }
-
-    _unary_operator = 0;
-
-#ifdef DEBUG_PARSE
-    cerr << "unary operator found in front of '" << smarts << "'\n";
-#endif
-
-    characters_processed++;
-
-// The ! operator binds tightly to a primitive    !#6H   gets treated differently from !$(CC)
-
-    smarts++;
-    if (smarts.starts_with("$("))
-    {
-      length_of_our_token = characters_in_next_token(smarts);
-    }
-    else
-    {
-      length_of_our_token = characters_in_next_primitive(smarts, 0);
-      if (0 == length_of_our_token)
-      {
-        cerr << "Atomic_Smarts_Component::_parse: no recognised primitive following negation - contact LillyMol on github (https://github.com/EliLillyCo/LillyMol)\n";
-        return 0;
-      }
-
-      characters_processed = characters_processed + length_of_our_token;
-    }
-  }
-  else {
-    length_of_our_token = characters_in_next_token(smarts);
-  }
-
-  IWString::operator=(smarts);    // copy the smarts
-
-  if (0 == length_of_our_token) {
-    return 0;
-  }
-
-  iwtruncate(length_of_our_token);     // keep the number we used
-
-#ifdef DEBUG_PARSE
-  cerr << "Consumed " << length_of_our_token << " characters '";
-  cerr.write(rawchars(), nchars());
-  cerr << '\'';
-  if (0 == _unary_operator)
-    cerr << " unary op = " << _unary_operator;
-  cerr << '\n';
-#endif
-
-  smarts += (length_of_our_token);      // get rid of the characters we consume
-
-  characters_processed += length_of_our_token;
-
-  if (0 == smarts.length()) {     // we are done
-    return 1;
-  }
+  // First extract any operator specification.
 
   if ('&' == smarts[0])
   {
@@ -504,9 +458,9 @@ Atomic_Smarts_Component::_parse(const_IWSubstring & smarts)
     smarts++;
     characters_processed++;
   }
-  else           // no operator present, implicit '&'
+  else           // no operator present
   {
-    _op = IW_LOGEXP_AND;
+    _op = IW_LOGEXP_UNDEFINED;
   }
 
 #ifdef DEBUG_PARSE
@@ -514,6 +468,83 @@ Atomic_Smarts_Component::_parse(const_IWSubstring & smarts)
 
   cerr << "Smarts now '" << smarts << "'\n";
 #endif
+
+  if (smarts.empty()) {
+    cerr << "Atomic_Smarts_Component::_parse:just operator with no smarts\n";
+    return 0;
+  }
+
+  if ('!' == smarts[0]) {
+    _unary_operator = 0;
+
+#ifdef DEBUG_PARSE
+    cerr << "unary operator found in front of '" << smarts << "'\n";
+#endif
+
+    ++characters_processed;
+
+    smarts++;
+    if (smarts.empty()) {
+      cerr << "Atomic_Smarts_Component::_parse: must have something to negate\n";
+      return 0;
+    }
+
+// The ! operator binds tightly to a primitive    !#6H   gets treated differently from !$(CC)
+
+    if (smarts.starts_with("$(")) {
+      length_of_our_token = characters_in_next_token(smarts);
+    } else {
+      length_of_our_token = characters_in_next_primitive(smarts, 0);
+      if (0 == length_of_our_token) {
+        cerr << "Atomic_Smarts_Component::_parse: no recognised primitive following negation - contact LillyMol on github (https://github.com/EliLillyCo/LillyMol)\n";
+        return 0;
+      }
+    }
+  } else {
+    length_of_our_token = characters_in_next_token(smarts);
+  }
+
+#ifdef NOLONGERNEEDEEE
+  cerr << "length_of_our_token " << length_of_our_token << " from '" << smarts << "'\n";
+  if (smarts.starts_with("$(")) {
+    length_of_our_token = characters_in_next_token(smarts);
+  } else {
+    length_of_our_token = characters_in_next_primitive(smarts, 0);
+    if (0 == length_of_our_token) {
+      cerr << "Atomic_Smarts_Component::_parse: no recognised primitive following negation - contact LillyMol on github (https://github.com/EliLillyCo/LillyMol)\n";
+      return 0;
+    }
+    cerr << "NEw determination of length_of_our_token " << length_of_our_token << '\n';
+  }
+#endif
+
+  characters_processed = characters_processed + length_of_our_token;
+
+  IWString::operator=(smarts);    // copy the smarts
+
+  if (0 == length_of_our_token) {
+    return 0;
+  }
+
+  iwtruncate(length_of_our_token);     // keep the number we used
+
+#ifdef DEBUG_PARSE
+  cerr << "Consumed " << length_of_our_token << " characters '";
+  cerr.write(rawchars(), nchars());
+  cerr << '\'';
+  if (0 == _unary_operator)
+    cerr << " unary op = " << _unary_operator;
+  cerr << '\n';
+#endif
+
+  smarts += (length_of_our_token);      // get rid of the characters we consume
+
+  characters_processed += length_of_our_token;
+
+  // If empty, we are done.
+  if (smarts.empty()) {
+    return 1;
+  }
 
   assert (nullptr == _next);
 

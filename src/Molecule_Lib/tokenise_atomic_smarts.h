@@ -10,6 +10,10 @@ class Atomic_Smarts_Component : public IWString
     int _op;              // the operator following the token
     Atomic_Smarts_Component * _next;
 
+    // If this has been converted from a primitive to an environment,
+    // this flag will be set.
+    int _from_primitive;
+
 //  private functions
 
     int _parse(const_IWSubstring &);
@@ -25,6 +29,10 @@ class Atomic_Smarts_Component : public IWString
 
     int op() const { return _op;}
     int unary_operator() const { return _unary_operator;}
+
+    int from_primitive() const {
+      return _from_primitive;
+    }
 
     int parse(const_IWSubstring);
 

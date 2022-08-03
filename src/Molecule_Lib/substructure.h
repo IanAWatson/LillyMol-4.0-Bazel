@@ -1261,6 +1261,9 @@ class Substructure_Atom : public Substructure_Atom_Specifier
     int unmatched_atoms_attached_matches(const Query_Atoms_Matched& matched_query_atoms,
                                          const int * already_matched,
                                          const Molecule_to_Match& target);
+
+    // Used when parsing environments. Note that we take ownership of `spec`.
+    int add_component(Substructure_Atom_Specifier* spec);
 };
 
 extern std::ostream & operator << (std::ostream &, const Substructure_Atom &);
