@@ -476,6 +476,11 @@ message SubstructureAtomSpecifier {
 
   // Atom typing specification, done within the query.
   optional uint32 atom_type = 78;
+
+  // This will be instantiated from the 'v' directive in a smarts.
+  repeated uint32 valence = 79;
+  optional uint32 min_valence = 80;
+  optional uint32 max_valence = 81;
 }
 
 message SubstructureAtomEnvironment {

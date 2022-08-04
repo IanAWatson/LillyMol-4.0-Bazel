@@ -334,6 +334,9 @@ Substructure_Atom_Specifier::construct_from_proto(const SubstructureSearch::Subs
   if (!GETVALUES(proto, nbonds, 0, no_limit))
     return 0;
 
+  if (!GETVALUES(proto, valence, 0, no_limit))
+    return 0;
+
   if (!GETVALUES(proto, nrings, 0, no_limit))
     return 0;
 
@@ -1511,6 +1514,7 @@ Substructure_Atom_Specifier::BuildProto(SubstructureSearch::SubstructureAtomSpec
   SetProtoValues(_ncon, "ncon", proto);  // 3
   SetProtoValues(_ncon2, "ncon2", proto);  // 6
   SetProtoValues(_nbonds, "nbonds", proto);  // 9
+  SetProtoValues(_valence, "valence", proto);  // 9
   SetProtoValues(_formal_charge, "formal_charge", proto);  // 12
   SetProtoValues(_nrings, "nrings", proto);  // 15
   SetProtoValues(_ring_bond_count, "ring_bond_count", proto);  // 18

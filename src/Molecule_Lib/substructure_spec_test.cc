@@ -1541,7 +1541,7 @@ INSTANTIATE_TEST_SUITE_P(TestRangesD, TestRanges, testing::Values(
 
 TEST_P(TestRanges, TestR) {
   const auto params = GetParam();
-//cerr << "TestingR '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+  // cerr << "TestingR '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
   ASSERT_TRUE(_m.build_from_smiles(params.smiles));
   ASSERT_TRUE(_query.create_from_smarts(params.smarts));
   EXPECT_EQ(_query.substructure_search(&_m), params.nhits);

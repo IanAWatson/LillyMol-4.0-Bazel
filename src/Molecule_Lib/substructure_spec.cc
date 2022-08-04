@@ -2444,8 +2444,6 @@ Substructure_Atom_Specifier::AddNonOrganicElements() {
 int
 Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring & zsmarts)
 {
-  int not_operator = 0;   // Not being handled here, remove sometime.
-
   const int characters_to_process = zsmarts.length();
 
 #ifdef DEBUG_CONSTRUCT_FROM_SMARTS_TOKEN
@@ -2509,6 +2507,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     int next_char_is_relational = 0;
     int next_char_is_charge = 0;
 
+    // cerr << "characters_processed " << characters_processed << " characters_to_process " << characters_to_process << " char " << s << '\n';
     if (characters_processed < characters_to_process)
     {
       char cnext = smarts[1];
@@ -2522,6 +2521,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       else if ('+' == cnext || '-' == cnext)
         next_char_is_charge = 1;
     }
+//  cerr << "next_char_is_relational " << next_char_is_relational << " next_char_is_digit " << next_char_is_digit << '\n';
 
 //  Oct 97. Change parsing rules for better consistency with Daylight.
 //  Try to consume leading characters as an element specifier
@@ -2715,10 +2715,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       _aromaticity = AROMATIC;
       previous_token_was = SMARTS_PREVIOUS_TOKEN_ELEMENT;
     }
-    else if (s == 'R' && ! next_char_is_relational && ! next_char_is_digit) {
-      _ring_bond_count.set_min(1);  // In a ring.
-    }
-    else if ('R' == s)     // number of rings specifier
+    else if (s == 'R' && (next_char_is_relational || next_char_is_digit))
     {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _nrings);
       if (nchars == 0) {
@@ -2727,18 +2724,16 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_RING;
     }
-
-    // unqualified 'r' means any ring size.
-    else if (s == 'r' && ! next_char_is_relational && ! next_char_is_digit) {
-      _ring_bond_count.set_min(1);
+    else if (s == 'R') {
+      _ring_bond_count.set_min(1);  // In a ring.
+      previous_token_was = SMARTS_PREVIOUS_TOKEN_RING;
     }
-
-//  March 2007. Beware of things like [rR1] and [R1r]
-
-    else if ('r' == s)     // ring size specifier
-    {
+   
+    // 'r' may be followed by a size qualifier, or no qualifier means a ring atom.
+    else if (s == 'r' && (next_char_is_relational || next_char_is_digit)) {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _ring_size);
       if (nchars == 0) {
+        cerr << "next_char_is_relational " << next_char_is_relational << " next_char_is_digit " << next_char_is_digit << '\n';
         smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "Invalid r qualificiaton");
         return 0;
       }
@@ -2748,6 +2743,12 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_RING;
     }
+    else if (s == 'r') 
+    {
+      _ring_bond_count.set_min(1);
+      previous_token_was = SMARTS_PREVIOUS_TOKEN_RING;
+    }
+
     else if ('X' == s)     // connectivity - total connections
     {
       nchars = substructure_spec::SmartsNumericQualifier(smarts + 1, characters_to_process - characters_processed - 1, _daylight_x);
@@ -2865,7 +2866,6 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     else if ('!' == s)     // negation (tight bonding)
     {
       previous_token_was = SMARTS_PREVIOUS_TOKEN_OPERATOR_NOT;
-      not_operator = 1;
       smiles_error_message(initial_smarts_ptr, characters_to_process, characters_processed, "! operator not supported");
       return 0;
     }
