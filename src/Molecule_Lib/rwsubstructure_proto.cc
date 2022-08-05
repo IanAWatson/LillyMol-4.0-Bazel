@@ -325,7 +325,7 @@ Substructure_Atom_Specifier::construct_from_proto(const SubstructureSearch::Subs
     _preference_value = proto.preference_value();
 
   // Should relate these to the min and max reasonable formal charge values.
-  if (!GETVALUESINT(proto, formal_charge, -12, 12))
+  if (!GETVALUES(proto, formal_charge, -12, 12))
     return 0;
 
   if (! GETVALUES(proto, ncon, 0, no_limit))
@@ -2307,7 +2307,7 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
     return 0;
 
   // Need to sync up with reasonable formal charge
-  if (! GETVALUESINT(proto, net_formal_charge, -12, 12))
+  if (! GETVALUES(proto, net_formal_charge, -12, 12))
     return 0;
 
   if (proto.has_min_fraction_atoms_matched())
@@ -3292,6 +3292,10 @@ Link_Atom::BuildProto(SubstructureSearch::LinkAtoms& proto) const {
   return 1;
 }
 
+// There is a flaw with this. If a query was built from a Molecule, then
+// _numeric will be set. But if not built from a molecule, then it will
+// not be set and disaster will ensue.
+// TODO: fix sometime, will entail a deeper look at the object.
 int
 Substructure_Chiral_Centre::BuildProto(SubstructureSearch::SubstructureChiralCenter& proto) const {
   proto.set_center(_numeric->a());
@@ -3330,6 +3334,7 @@ Substructure_Chiral_Centre::BuildProto(SubstructureSearch::SubstructureChiralCen
   } else {
     proto.mutable_right_down()->set_atom_number(rd);
   }
+
   return 1;
 }
 

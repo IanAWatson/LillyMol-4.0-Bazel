@@ -10,6 +10,7 @@
 #include "google/protobuf/text_format.h"
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/tfdatarecord.h"
 #include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/aromatic.h"
@@ -89,6 +90,8 @@ int remove_isotopes_from_input_molecules = 0;
 IWString append_to_comment;
 
 int perform_matching_test = 0;
+
+std::unique_ptr<iw_tf_data_record::TFDataWriter> proto_destination;
 
 void
 usage(int rc = 1)
@@ -363,14 +366,13 @@ mol2qry(MDL_Molecule & m,
     query[0]->set_comment(tmp);
   }
 
-#ifdef FIX_SOMETIME
   if (proto_destination) {
     SubstructureSearch::SubstructureQuery proto = query.BuildProto();
     std::string serialized;
     proto.SerializeToString(&serialized);
     return proto_destination->Write(serialized.data(), serialized.size());
-  } else
-#endif
+  } 
+
   if (! query.write_msi(output)) {
     return 0;
   }
@@ -392,12 +394,10 @@ mol2qry(MDL_Molecule & m,
   if (all_queries_in_one_file)
     return mol2qry(m, mqs, stream_for_all_queries);
 
-#ifdef BINARY_DATA_FIX
   // If writing protos to a binary file, the output stream is not used, so pass anything.
   if (proto_destination) {
     return mol2qry(m, mqs, std::cout);
   }
-#endif
 
   IWString output_fname(output_stem);
 
@@ -719,10 +719,9 @@ mol2qry(int  argc, char ** argv) {
     }
   }
 
-#ifdef FIX_SOMETIME
   if (cl.option_present('P')) {
     IWString fname = cl.string_value('P');
-    proto_destination = std::make_unique<binary_data_file::BinaryDataFileWriter>();
+    proto_destination = std::make_unique<iw_tf_data_record::TFDataWriter>();
     if (! proto_destination->Open(fname)) {
       cerr << "Cannot open binary serialized proto file " << fname << '\n';
       return 1;
@@ -732,8 +731,6 @@ mol2qry(int  argc, char ** argv) {
       cerr << "serialized protos written to " << fname << "'\n";
     }
   }
-#endif
-
 
   FileType input_type = FILE_TYPE_INVALID;
 

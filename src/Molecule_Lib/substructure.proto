@@ -353,9 +353,9 @@ message SubstructureAtomSpecifier {
   optional uint32 max_nbonds = 11;
 
   // Formal charge.
-  repeated int32 formal_charge = 12;
-  optional int32 min_formal_charge = 13;
-  optional int32 max_formal_charge = 14;
+  repeated uint32 formal_charge = 12;
+  optional uint32 min_formal_charge = 13;
+  optional uint32 max_formal_charge = 14;
 
   // Number of SSSR rings.
   repeated uint32 nrings = 15;
@@ -872,9 +872,9 @@ message SingleSubstructureQuery {
 
   // Only search the molecule if the net_formal_charge property
   // is satisfied.
-  repeated int32 net_formal_charge = 89;
-  optional int32 min_net_formal_charge = 90;
-  optional int32 max_net_formal_charge = 91;
+  repeated uint32 net_formal_charge = 89;
+  optional uint32 min_net_formal_charge = 90;
+  optional uint32 max_net_formal_charge = 91;
   // The most common use case is looking for molecules that have
   // any net formal charge, so make that easy.
   // If set, will match if there is any formal charge.

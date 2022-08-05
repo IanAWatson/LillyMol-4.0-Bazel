@@ -25,7 +25,8 @@
 #include "mdl_molecule.h"
 
 template <typename T>
-T * ReadProtoQueryFile(const const_IWSubstring fname)
+T * 
+ReadProtoQueryFile(const const_IWSubstring fname)
 {
   iwstring_data_source input(fname);
 
@@ -53,17 +54,15 @@ T * ReadProtoQueryFile(const const_IWSubstring fname)
     return nullptr;
   }
 
-  T * to_be_returned = new T;
+  std::unique_ptr<T> to_be_returned = std::make_unique<T>();
 
-  if (! to_be_returned->ConstructFromProto(proto)) 
-  {
+  if (! to_be_returned->ConstructFromProto(proto)) {
     std::cerr << "ReadProtoQueryFile:cannot build query from proto\n";
     std::cerr << proto.ShortDebugString() << '\n';
-    delete to_be_returned;
     return nullptr;
   }
 
-  return to_be_returned;
+  return to_be_returned.release();
 }
 
 template <typename T>

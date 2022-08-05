@@ -5,8 +5,6 @@
 
 Substructure_Chiral_Centre::Substructure_Chiral_Centre()
 {
-  _numeric = nullptr;
-
   _centre = nullptr;
   _top_front = nullptr;
   _top_back = nullptr;
@@ -20,9 +18,6 @@ Substructure_Chiral_Centre::Substructure_Chiral_Centre()
 
 Substructure_Chiral_Centre::~Substructure_Chiral_Centre()
 {
-  if (nullptr != _numeric)
-    delete _numeric;
-
   return;
 }
 int
@@ -90,7 +85,7 @@ Substructure_Chiral_Centre::set_right_down(const Substructure_Atom * s)
 }
 
 int
-Single_Substructure_Query::_build_chirality_specification_from_msi_attribute (const IWString & s)
+Single_Substructure_Query::_build_chirality_specification_from_msi_attribute(const IWString & s)
 {
   if (5 != s.nwords())
   {
@@ -636,11 +631,17 @@ Substructure_Chiral_Centre::write_msi (std::ostream & os,
   return os.good();
 }
 
+void
+Substructure_Chiral_Centre::set_numeric(const Chiral_Centre& c) {
+  _numeric = std::make_unique<Chiral_Centre>(c);
+}
+
 int
-Single_Substructure_Query::_add_chiral_centre (const Molecule & m,
-                                               const Chiral_Centre & c)
+Single_Substructure_Query::_add_chiral_centre(const Molecule & m,
+                                              const Chiral_Centre & c)
 {
   Substructure_Chiral_Centre * tmp = new Substructure_Chiral_Centre();
+  // This is not freed if there is an error, needs to be redesigned, see below.
 
   atom_number_t zatom = c.a();
 
@@ -652,18 +653,18 @@ Single_Substructure_Query::_add_chiral_centre (const Molecule & m,
   }
 
   tmp->set_centre(a);
+  tmp->set_numeric(c);
+  // This should be redesigned, I think tmp should be able to instantiate itself given `c`.
 
   zatom = c.top_front();
 
-  if (zatom < 0)
-    ;
-  else if (nullptr == (a = query_atom_with_initial_atom_number(zatom)))
-  {
+  if (zatom < 0) {
+  } else if (nullptr == (a = query_atom_with_initial_atom_number(zatom))) {
     cerr << "Single_Substructure_Query::_add_chiral_centre:no TF atom " << zatom << endl;
     return 0;
-  }
-  else
+  } else {
     tmp->set_top_front(a);
+  }
 
   zatom = c.top_back();
 

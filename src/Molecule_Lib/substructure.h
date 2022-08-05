@@ -86,7 +86,9 @@ class Query_Atoms_Matched : public resizable_array<Substructure_Atom *>
 class Substructure_Chiral_Centre
 {
   private:
-    Chiral_Centre * _numeric;
+    // If this has been created from a molecule, we make a copy of the
+    // chiral centre of the molecule.
+    std::unique_ptr<Chiral_Centre> _numeric;
 
     const Substructure_Atom * _centre;
     const Substructure_Atom * _top_front;
@@ -110,13 +112,15 @@ class Substructure_Chiral_Centre
     void set_left_down(const Substructure_Atom * a);
     void set_right_down(const Substructure_Atom * a);
 
-    const Chiral_Centre * numeric_chiral_centre() const { return _numeric;}
+    // Note that there is no checking for there being a valid value in _numeric.
+    const Chiral_Centre * numeric_chiral_centre() const { return _numeric.get();}
 
     const Substructure_Atom * centre () const { return _centre;}
 
     int invert();
 
-    int copy_chirality(const Chiral_Centre &);   // fills the _numeric object
+    // Fills _numeric with a copy of 'c'.
+    void set_numeric(const Chiral_Centre& c);
   
     int extract_connections(const Chiral_Centre & c);
 
