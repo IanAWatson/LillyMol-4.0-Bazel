@@ -788,7 +788,6 @@ Substructure_Bond::_construct_from_smarts (const char * smarts,
 
     char s = smarts[characters_processed];
 
-//  Substructure_Bond_Specifier_Base * b = nullptr;
     std::unique_ptr<Substructure_Bond_Specifier_Base> b;
 
     unsigned int bt = char_to_btype(s);
