@@ -108,6 +108,9 @@ MultipleQueriesFromTextProto(iwstring_data_source& input,
       std::cerr << *string_proto << '\n';
       return 0;
     }
+    if (query->comment().empty()) {
+      query->set_comment(query->item(0)->comment());
+    }
     queries << query.release();
   }
 

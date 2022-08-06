@@ -1,5 +1,7 @@
 // AFile implementation functions.
 
+#include "Foundational/iwstring/iwstring.h"
+
 #include "proto_support.h"
 
 namespace iwmisc {

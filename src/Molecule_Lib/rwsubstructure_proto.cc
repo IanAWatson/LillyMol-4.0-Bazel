@@ -3436,6 +3436,8 @@ MatchedAtomMatch::BuildProto(SubstructureSearch::MatchedAtomMatch& proto) const 
 }
 
 namespace iwsubstructure {
+constexpr char kCloseBrace = '}';
+
 std::optional<std::string>
 GetNextQueryTextProto(iwstring_data_source& input) {
   std::string result;
@@ -3448,8 +3450,12 @@ GetNextQueryTextProto(iwstring_data_source& input) {
         return std::nullopt;
       }
     }
+
     result.append(buffer.data(), buffer.length());
     result.push_back('\n');
+    if (buffer == kCloseBrace) {
+      return result;
+    }
   }
 
   if (result.empty()) {
