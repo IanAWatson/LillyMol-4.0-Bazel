@@ -1248,24 +1248,60 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   if (_comment.length())
     proto.set_comment(_comment.rawchars(), _comment.length());
 
-  proto.set_one_embedding_per_start_atom(_find_one_embedding_per_start_atom);
-  proto.set_normalise_rc_per_hits_needed(_normalise_rc_per_hits_needed);
-  proto.set_subtract_from_rc(_subtract_from_rc);
-  proto.set_max_matches_to_find(_max_matches_to_find);
-  proto.set_save_matched_atoms(_save_matched_atoms);
-  proto.set_ncon_ignore_singly_connected(_ncon_ignore_singly_connected);
+  if (_find_one_embedding_per_start_atom) {
+    proto.set_one_embedding_per_start_atom(_find_one_embedding_per_start_atom);
+  }
+  if (_normalise_rc_per_hits_needed) {
+    proto.set_normalise_rc_per_hits_needed(_normalise_rc_per_hits_needed);
+  }
+  if (_subtract_from_rc) {
+    proto.set_subtract_from_rc(_subtract_from_rc);
+  }
+  if (_max_matches_to_find) {
+    proto.set_max_matches_to_find(_max_matches_to_find);
+  }
+  if (! _save_matched_atoms) {
+    proto.set_save_matched_atoms(_save_matched_atoms);
+  }
+  if (_ncon_ignore_singly_connected) {
+    proto.set_ncon_ignore_singly_connected(_ncon_ignore_singly_connected);
+  }
   if (_do_not_perceive_symmetry_equivalent_matches) {
     proto.set_perceive_symmetric_equivalents(false);
-  } else {
-    proto.set_perceive_symmetric_equivalents(true);
   }
   if (_implicit_ring_condition >= 0) {
     proto.set_implicit_ring_condition(_implicit_ring_condition);
   }
-  proto.set_all_hits_in_same_fragment(_all_hits_in_same_fragment);
-  proto.set_only_match_largest_fragment(_only_keep_matches_in_largest_fragment);
-  proto.set_embeddings_do_not_overlap(_embeddings_do_not_overlap);
+  if (_all_hits_in_same_fragment) {
+    proto.set_all_hits_in_same_fragment(_all_hits_in_same_fragment);
+  }
+  if (_only_keep_matches_in_largest_fragment) {
+    proto.set_only_match_largest_fragment(_only_keep_matches_in_largest_fragment);
+  }
+  if (_embeddings_do_not_overlap) {
+    proto.set_embeddings_do_not_overlap(_embeddings_do_not_overlap);
+  }
+  if (_sort_by_preference_value) {
   proto.set_sort_by_preference_value(_sort_by_preference_value);
+  }
+  if (_fail_if_embeddings_too_close) {
+    proto.set_fail_if_embeddings_too_close(_fail_if_embeddings_too_close);
+  }
+  if (! _no_matched_atoms_between_exhaustive) {
+    proto.set_no_matched_atoms_between_exhaustive(_no_matched_atoms_between_exhaustive);
+  }
+  if (! _environment_must_match_unmatched_atoms) {
+    proto.set_environment_must_match_unmatched_atoms(_environment_must_match_unmatched_atoms);
+  }
+  if (_find_unique_embeddings_only) {
+    proto.set_unique_embeddings_only(_find_unique_embeddings_only);
+  }
+  if (! _respect_initial_atom_numbering) {
+    proto.set_respect_initial_atom_numbering(_respect_initial_atom_numbering);
+  }
+  if (_compress_embeddings) {
+    proto.set_compress_embeddings(_compress_embeddings);
+  }
 
   ADDREPEATEDFIELD(proto, numeric_value);
 
@@ -1276,13 +1312,11 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
     nmb->BuildProtoNoBond(*p);
   }
 #endif
-  proto.set_no_matched_atoms_between_exhaustive(_no_matched_atoms_between_exhaustive);
 
   for (const auto * lnk : _link_atom) {
     SubstructureSearch::LinkAtoms* p = proto.add_link_atoms();
     lnk->BuildProto(*p);
   }
-  proto.set_fail_if_embeddings_too_close(_fail_if_embeddings_too_close);
 
   if (_matched_atoms_to_check_for_hits_too_close > 0)
     proto.set_distance_between_hits_ncheck(_matched_atoms_to_check_for_hits_too_close);
@@ -1309,12 +1343,11 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
   SetProtoValues(_inter_ring_atoms, "inter_ring_atoms", proto);
   SetProtoValues(_unmatched_atoms, "unmatched_atoms", proto);
   SetProtoValues(_net_formal_charge, "net_formal_charge", proto);
-  proto.set_environment_must_match_unmatched_atoms(_environment_must_match_unmatched_atoms);
 
   if (_min_fraction_atoms_matched > 0.0f) {
     proto.set_min_fraction_atoms_matched(_min_fraction_atoms_matched);
   }
-  if (_max_fraction_atoms_matched > 0.0f) {
+  if (_max_fraction_atoms_matched < 1.0f) {
     proto.set_max_fraction_atoms_matched(_max_fraction_atoms_matched);
   }
 
@@ -1326,7 +1359,6 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
     env->BuildProto(*proto.add_environment_no_match());
   }
 
-  cerr << "Processing " << _ring_system_specification.size() << " ring system specifiers\n";
   for (const auto * ring_sys : _ring_system_specification) {
     SubstructureSearch::SubstructureRingSystemSpecification * p = proto.add_ring_system_specifier();
     ring_sys->BuildProto(*p);
@@ -1341,10 +1373,7 @@ Single_Substructure_Query::BuildProto(SubstructureSearch::SingleSubstructureQuer
     ele->BuildProto(*proto.add_elements_needed());
   }
   SetProtoValues(_aromatic_atoms, "aromatic_atoms", proto);
-  proto.set_unique_embeddings_only(_find_unique_embeddings_only);
   ADDREPEATEDFIELD(proto, heteroatoms);
-  proto.set_respect_initial_atom_numbering(_respect_initial_atom_numbering);
-  proto.set_compress_embeddings(_compress_embeddings);
 
   for (const auto * c: _chirality) {
     c->BuildProto(*proto.add_chiral_centre());
@@ -1394,7 +1423,7 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
     proto.set_text_identifier(_text_identifier.data(), _text_identifier.length());  // 3
   }
 
-  SetProtoIfSet(_atom_map_number, -1, "atom_map_number", proto);  // 4
+  SetProtoIfSet(_atom_map_number, 0, "atom_map_number", proto);  // 4
   SetProtoIfSet(_initial_atom_number, -1, "initial_atom_number", proto);  // 4
 #ifdef OR_ID_NO_LONGER_PROCESSED
   SET_PROTO_IF_SET(proto, or_id, 0);  // 6
@@ -3405,3 +3434,29 @@ MatchedAtomMatch::BuildProto(SubstructureSearch::MatchedAtomMatch& proto) const 
 
   return 1;
 }
+
+namespace iwsubstructure {
+std::optional<std::string>
+GetNextQueryTextProto(iwstring_data_source& input) {
+  std::string result;
+
+  const_IWSubstring buffer;
+  while (input.next_record(buffer)) {
+    if (result.empty()) {
+      if (! buffer.starts_with("query")) {
+        cerr << "GetNextQueryTextProto:First line in textproto must be 'query' '" << buffer << "' invalid\n";
+        return std::nullopt;
+      }
+    }
+    result.append(buffer.data(), buffer.length());
+    result.push_back('\n');
+  }
+
+  if (result.empty()) {
+    return std::nullopt;
+  }
+
+  return result;
+}
+
+}  // namespace iwsubstructure

@@ -91,7 +91,15 @@ IWString append_to_comment;
 
 int perform_matching_test = 0;
 
+// We can write serialized protos to a TFDataRecord file.
 std::unique_ptr<iw_tf_data_record::TFDataWriter> proto_destination;
+
+// Or write textformat protos to a file.
+int write_as_text_proto = 0;
+
+// It can be convenient to append the smiles to the name - just to avoid
+// having to join it up later.
+int append_smiles_to_query_name = 0;
 
 void
 usage(int rc = 1)
@@ -129,6 +137,7 @@ usage(int rc = 1)
   cerr << "  -S <fname>     specify output file name\n";
   cerr << "  -P <fname>     name for serialized proto output\n";
   cerr << "  -b             put all queries in a single file rather than separate file for each\n";
+  cerr << "  -p             write text_format proto queries\n";
   cerr << "  -D ...         create proto query files with GeometricConstraints\n";
   cerr << "  -Y ...         more obscure options, enter '-Y help' for info\n";
   display_standard_aromaticity_options(cerr);
@@ -213,8 +222,16 @@ ToGeometricConstraints(MDL_Molecule& m,
   SubstructureSearch::SingleSubstructureQuery * qry = proto.add_query();
   std::string tmp(smarts.data(), smarts.length());
   qry->set_smarts(tmp);
-  tmp.assign(m.name().data(), m.name().length());
-  qry->set_comment(tmp);
+  if (append_smiles_to_query_name) {
+    IWString name;
+    name << m.name() << ' ' << m.smiles();
+    tmp.assign(name.data(), name.length());
+    qry->set_comment(tmp);
+  } else {
+    tmp.assign(m.name().data(), m.name().length());
+    qry->set_comment(tmp);
+  }
+
   for (int i = 1; i <= HIGHEST_ATOMIC_NUMBER; ++i) {
     if (ecount[i] == 0) {
       continue;
@@ -343,14 +360,12 @@ mol2qry(MDL_Molecule & m,
   }
 
   Substructure_Query query;
-  if (! query.create_from_molecule(m, mqs))   // it inherits the molecule name
-  {
+  if (! query.create_from_molecule(m, mqs)) {   // it inherits the molecule name
     cerr << "cannot create query from molecule '" << m.name() << "'\n";
     return 1;
   }
 
-  if (perform_matching_test)
-  {
+  if (perform_matching_test) {
     cerr << "Performing matching test\n";
     if (0 == query.substructure_search(&m))
     {
@@ -359,10 +374,15 @@ mol2qry(MDL_Molecule & m,
     }
   }
  
-  if (append_to_comment.length())
-  {
+  if (append_to_comment.length()) {
     IWString tmp(m.name());
     tmp.append_with_spacer(append_to_comment);
+    query[0]->set_comment(tmp);
+  }
+
+  if (append_smiles_to_query_name) {
+    IWString tmp(m.name());
+    tmp << ' ' << m.smiles();
     query[0]->set_comment(tmp);
   }
 
@@ -371,7 +391,21 @@ mol2qry(MDL_Molecule & m,
     std::string serialized;
     proto.SerializeToString(&serialized);
     return proto_destination->Write(serialized.data(), serialized.size());
-  } 
+  }
+
+  if (write_as_text_proto) {
+    SubstructureSearch::SubstructureQuery proto = query.BuildProto();
+    // A query comment gets in the way of reading these files.
+    proto.clear_comment();
+
+    std::string data;
+    if (! google::protobuf::TextFormat::PrintToString(proto, &data)) {
+      std::cerr << "mol2qry:cannot write\n";
+      return 0;
+    }
+    output << data;
+    return 1;
+  }
 
   if (! query.write_msi(output)) {
     return 0;
@@ -589,6 +623,7 @@ display_dash_y_options(std::ostream & os)
   os << " -Y ncon=n      matches must have exactly  <n> connections to unmatched atoms\n";
   os << " -Y min_ncon=n  matches must have at least <n> connections to unmatched atoms\n";
   os << " -Y max_ncon=n  matches must have at most  <n> connections to unmatched atoms\n";
+  os << " -Y qnamsmi     append the smiles to the query name\n";
   os << " -Y test        for each query formed, do a match against the starting molecule\n";
 
   exit(1);
@@ -596,7 +631,7 @@ display_dash_y_options(std::ostream & os)
 
 int
 mol2qry(int  argc, char ** argv) {
-  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:x:");
+  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:x:p");
 
   verbose = cl.option_count('v');
 
@@ -676,8 +711,7 @@ mol2qry(int  argc, char ** argv) {
     }
   }
 
-  if (cl.option_present('b'))
-  {
+  if (cl.option_present('b')) {
     if (cl.option_present('F')) {
       cerr << "The -F and -b options don't make sense together\n";
       usage(3);
@@ -690,8 +724,9 @@ mol2qry(int  argc, char ** argv) {
 
     all_queries_in_one_file = 1;
 
-    if (verbose)
+    if (verbose) {
       cerr << "All queries written to a single file\n";
+    }
   }
 
   if (cl.option_present('S'))
@@ -729,6 +764,13 @@ mol2qry(int  argc, char ** argv) {
 
     if (verbose) {
       cerr << "serialized protos written to " << fname << "'\n";
+    }
+  }
+
+  if (cl.option_present('p')) {
+    write_as_text_proto = 1;
+    if (verbose) {
+      cerr << "Will write queries as textproto form\n";
     }
   }
 
@@ -1090,6 +1132,12 @@ mol2qry(int  argc, char ** argv) {
         if (verbose)
           cerr << "Will append '" << append_to_comment << "' to each query name\n";
       }
+      else if (y == "qnamsmi") {
+        append_smiles_to_query_name = 1;
+        if (verbose) {
+          cerr << "Will append the smiles to the query name\n";
+        }
+      }
       else if ("test" == y)
       {
         perform_matching_test = 1;
@@ -1110,9 +1158,7 @@ mol2qry(int  argc, char ** argv) {
 
   if (! cl.option_present('A')) {
     set_global_aromaticity_type (Daylight);
-    cerr << "Using Daylight aromaticity by default\n";
-  }
-  else if (! process_standard_aromaticity_options(cl, verbose)) {
+  } else if (! process_standard_aromaticity_options(cl, verbose)) {
     usage(4);
   }
 

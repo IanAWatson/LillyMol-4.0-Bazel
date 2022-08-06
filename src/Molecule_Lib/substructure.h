@@ -3228,5 +3228,14 @@ int SmartsFetchNumeric(const char * string, int & value,
                      int & qualifier);
 
 }  // namespace substructure_spec
+
+namespace iwsubstructure {
+// Return the contents of the next
+// query {
+// ...
+// }
+// grouping found in `input`.
+std::optional<std::string> GetNextQueryTextProto(iwstring_data_source& input);
+}
 #endif
 

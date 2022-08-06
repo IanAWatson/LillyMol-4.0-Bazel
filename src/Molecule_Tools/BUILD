@@ -300,6 +300,17 @@ cc_binary(
 )
 
 cc_binary(
+    name = "get_bond_angles",
+    srcs = [
+        "get_bond_angles.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "hydrophobic_sections",
     srcs = [
         "hydrophobic_sections.cc",
@@ -489,6 +500,7 @@ cc_binary(
     ],
     deps = [
         "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwtfdata_record",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "@com_google_protobuf//:protobuf",

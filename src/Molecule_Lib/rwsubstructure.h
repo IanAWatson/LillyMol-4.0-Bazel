@@ -3,6 +3,7 @@
 #define RW_SUBSTRUCTURE_H
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "google/protobuf/text_format.h"
@@ -30,8 +31,7 @@ ReadProtoQueryFile(const const_IWSubstring fname)
 {
   iwstring_data_source input(fname);
 
-  if (! input.good())
-  {
+  if (! input.good()) {
     std::cerr << "ReadProtoQueryFile:cannot open '" << fname;
     return nullptr;
   }
@@ -63,6 +63,59 @@ ReadProtoQueryFile(const const_IWSubstring fname)
   }
 
   return to_be_returned.release();
+}
+
+// Normally, if there are multiple "queries {" directives in a file, that
+// means multiple components of a single composite query. But it is also
+// convenient to have multiple textproto queries in a file.
+// Read the contents of `fname` interpreting individual "query" entries
+// as separate queries.
+template <typename T>
+int
+MultipleQueriesFromTextProto(const const_IWSubstring fname,
+                             int verbose,
+                             resizable_array_p<T>& queries) {
+  iwstring_data_source input(fname);
+  if (! input.good()) {
+    std::cerr << "MultipleQueriesFromTextProto:cannot open '" << fname;
+    return 0;
+  }
+
+  return MultipleQueriesFromTextProto(input, verbose, queries);
+}
+
+template <typename T>
+int
+MultipleQueriesFromTextProto(iwstring_data_source& input,
+                             int verbose,
+                             resizable_array_p<T>& queries) {
+  while (true) {
+    std::optional<std::string> string_proto = iwsubstructure::GetNextQueryTextProto(input);
+    if (! string_proto) {
+      break;
+    }
+
+    SubstructureSearch::SubstructureQuery proto;
+    if (! google::protobuf::TextFormat::ParseFromString(*string_proto, &proto)) {
+      std::cerr << "MultipleQueriesFromTextProto:cannot parse proto\n";
+      std::cerr << *string_proto << '\n';
+      return 0;
+    }
+
+    std::unique_ptr<T> query = std::make_unique<T>();
+    if (! query->ConstructFromProto(proto)) {
+      std::cerr << "MultipleQueriesFromTextProto:cannot build query\n";
+      std::cerr << *string_proto << '\n';
+      return 0;
+    }
+    queries << query.release();
+  }
+
+  if (verbose) {
+    std::cerr << "MultipleQueriesFromTextProto::read " << queries.size() << " queries\n";
+  }
+
+  return queries.number_elements();
 }
 
 template <typename T>
@@ -168,7 +221,7 @@ queries_from_file_of_molecules(data_source_and_type<MDL_Molecule> & input,
       return 0;
     }
 
-    if (verbose)
+    if (verbose > 1)
       std::cerr << "Created query from '" << m->name() << "'\n";
   }
 
@@ -551,6 +604,7 @@ read_one_or_more_queries_from_file(resizable_array_p<T> & queries,
     if (! tmp->construct_from_msi_object(msi))
     {
       std::cerr << "process_queries: cannot build query from '" << msi << "'\n";
+      delete tmp;
       return 0;
     }
 
@@ -622,7 +676,7 @@ file_record_is_file(resizable_array_p<T> & queries,
     return 0;
   }
 
-  if (verbose)
+  if (verbose > 1)
     std::cerr << "Created query '" << tmp->comment() << "' from '" << pathname << "'\n";
 
   queries.add(tmp);
@@ -663,6 +717,10 @@ queries_from_file(iwstring_data_source & input, resizable_array_p<T> & queries,
     }
 
     rc++;
+  }
+
+  if (verbose) {
+    cerr << "Read " << queries.size() << " queries\n";
   }
 
   return rc;
@@ -717,7 +775,14 @@ queries_from_file (const const_IWSubstring & fname, resizable_array_p<T> & queri
     }
   }
 
-  return queries_from_file(input, queries, directory_path, verbose);
+  int rc = queries_from_file(input, queries, directory_path, verbose);
+  if (rc == 0) {
+    return 0;
+  }
+  if (verbose) {
+    cerr << "After processing '" << fname << "' have " << queries.size() << " queries\n";
+  }
+  return rc;
 }
 
 template <typename T>
@@ -917,22 +982,19 @@ process_cmdline_token(char option,
   {
     mytoken.remove_leading_chars(7);
 
-    T * q = new T;
-    if (! q->create_from_smarts(mytoken))
-    {
+    std::unique_ptr<T> q = std::make_unique<T>();
+    if (! q->create_from_smarts(mytoken)) {
       std::cerr << "process_queries::invalid smarts '" << mytoken << "'\n";
-      delete q;
       return 0;
     }
 
-    queries.add(q);
+    queries << q.release();
   }
   else if (mytoken.starts_with("PROTO:"))
   {
     mytoken.remove_leading_chars(6);
     T * q = ReadProtoQueryFile<T>(mytoken);
-    if (nullptr == q)
-    {
+    if (nullptr == q) {
       std::cerr << "process_queries::cannot read proto file '" << mytoken << "'\n";
       return 0;
     }
@@ -941,22 +1003,31 @@ process_cmdline_token(char option,
   else if (mytoken.starts_with("PROTOFILE:"))
   {
     mytoken.remove_leading_chars(10);
-    if (!ReadFileOfProtoQueries(mytoken, queries)) 
-    {
+    if (!ReadFileOfProtoQueries(mytoken, queries)) {
       std::cerr << "process_queries:cannot read file of proto files '" << mytoken << "'\n";
       return 0;
     }
-  } else if (mytoken.starts_with("proto:")) {
+  }
+  else if (mytoken.starts_with("proto:"))
+  {
     // for example -q 'proto:query{min_natoms: 4}'
     mytoken.remove_leading_chars(6);
     if (! ReadTextProtoQuery(mytoken, queries)) {
       std::cerr << "process_queries:cannot read text proto option '" << mytoken << "'\n";
       return 0;
     }
-  } else
+  }
+  else if (mytoken.starts_with("MPROTO:"))
   {
-    if (! read_one_or_more_queries_from_file(queries, mytoken, verbose))
-    {
+    mytoken.remove_leading_chars(7);
+    if (! MultipleQueriesFromTextProto(mytoken, verbose, queries)) {
+      std::cerr << "process_queries:cannot read multiple text proto option '" << mytoken << "'\n";
+      return 0;
+    }
+  }
+  else
+  {
+    if (! read_one_or_more_queries_from_file(queries, mytoken, verbose)) {
       std::cerr << "process_queries::cannot read query/queries from '" << mytoken << "'\n";
       return 0;
     }
