@@ -488,8 +488,10 @@ IWString
 FixedBitVector::DaylightAsciiRepresentation() const {
   int nchars = 0;
   const int nbytes = _nwords * kBytesPerWord;
-  const char * b = du_bin2ascii(&nchars, nbytes, reinterpret_cast<char *>(_bits));
-  return IWString(b, nchars);
+  char * b = du_bin2ascii(&nchars, nbytes, reinterpret_cast<char *>(_bits));
+  IWString result;
+  result.set_and_assume_ownership(b, nchars);
+  return result;
 }
 
 IWString

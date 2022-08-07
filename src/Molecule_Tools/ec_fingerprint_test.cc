@@ -4,10 +4,10 @@
 
 #include "Foundational/iwmisc/sparse_fp_creator.h"
 
-#include "ec_fingerprint.h"
+#include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/atom_typing.h"
 
-#include "aromatic.h"
-#include "atom_typing.h"
+#include "ec_fingerprint.h"
 
 namespace ec_fingerprint {
 namespace {

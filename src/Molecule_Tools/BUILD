@@ -1586,7 +1586,7 @@ cc_test(
         ":ec_fingerprint_lib",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculelio",
+        "//Molecule_Lib:moleculeio",
         "@googletest//:gtest_main",
     ],
 )

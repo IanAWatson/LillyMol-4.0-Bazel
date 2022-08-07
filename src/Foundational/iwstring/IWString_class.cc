@@ -5345,9 +5345,7 @@ const_IWSubstring::AsString() const {
     return std::string();
   }
 
-  char * copy = new char[_nchars];
-  std::copy_n(_data, _nchars, copy);
-  return std::string(copy, _nchars);
+  return std::string(_data, _nchars);
 }
 
 bool
