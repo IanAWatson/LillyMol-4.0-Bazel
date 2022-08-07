@@ -17,7 +17,7 @@ message Distance {
   Range range = 3;
 }
 
-// Note that with angles, the Range is interpreted as Radians.
+// Note that with angles, the Range is interpreted as Degrees.
 
 message BondAngle {
   uint32 a1 = 1;

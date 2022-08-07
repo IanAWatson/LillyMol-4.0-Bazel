@@ -12,7 +12,6 @@
 namespace ec_fingerprint {
 
 using std::cerr;
-using std::endl;
 
 ShellInfo::ShellInfo(const Molecule& m, const int* include_atom, const atom_type_t* atom_type) :
        _m(m),
@@ -126,7 +125,7 @@ ECFingerprint::ECFingerprint() {
 atom_type_t
 ECFingerprint::_BondConstant(const Bond& b) const {
 #ifdef DEBUG_EC_FINGERPRINT
-  cerr << "_BondConstant from " << b.a1() << " to " << b.a2() << " aromatic " << b.is_aromatic() << " single " << b.is_single_bond() << endl;
+  cerr << "_BondConstant from " << b.a1() << " to " << b.a2() << " aromatic " << b.is_aromatic() << " single " << b.is_single_bond() << '\n';
 #endif
   if (b.is_aromatic())
     return _bond_magic4;
@@ -154,14 +153,14 @@ ECFingerprint::_AddToRunningSum(ShellInfo& shell_info,
                        atom_type_t& running_sum) const {
 #ifdef DEBUG_EC_FINGERPRINT
   cerr << "_AddToRunningSum from atom " << a1 << " type " << shell_info.atom_type(a1) << 
-          " to " << a2 << " type " << shell_info.atom_type(a2) << endl;
+          " to " << a2 << " type " << shell_info.atom_type(a2) << '\n';
 #endif
 
   atom_type_t b;
   if (_precise) {
     b = shell_info.atom_type(a1) * _magic3 + _magic4 * bond_constant *
                        (_magic5 + shell_info.atom_type(a2));
-//  cerr << "  _precise bond from " << a1 << " to " << a2 << " bond_constant " << bond_constant << " bit " << b << endl;
+//  cerr << "  _precise bond from " << a1 << " to " << a2 << " bond_constant " << bond_constant << " bit " << b << '\n';
   } else {
     b = _magic4 * bond_constant + _magic5 * shell_info.atom_type(a2);
   }
@@ -172,7 +171,7 @@ ECFingerprint::_AddToRunningSum(ShellInfo& shell_info,
     running_sum *= b;
 
 #ifdef DEBUG_EC_FINGERPRINT
-  cerr << "  bond from " << a1 << " to " << a2 << " bond_constant " << bond_constant << " bit " << b << " sum " << running_sum << endl;
+  cerr << "  bond from " << a1 << " to " << a2 << " bond_constant " << bond_constant << " bit " << b << " sum " << running_sum << '\n';
 #endif
 }
 
@@ -210,11 +209,15 @@ ProduceFingerprint::PrepareToProcess(Molecule& m)
 }
 
 int
-ProduceFingerprint::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+ProduceFingerprint::DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                                 IWString_and_File_Descriptor& output)
 {
   if (! job_parameters.produce_output) {
     return 1;
+  }
+
+  if (job_parameters.fp_writer.IsWritingDescriptors()) {
+    return job_parameters.fp_writer.WriteFingerprint(m.name(), _sfc, output);
   }
 
   if (! job_parameters.function_as_tdt_filter) {
@@ -222,6 +225,8 @@ ProduceFingerprint::DoAnyOutput(Molecule& m, const JobParameters& job_parameters
     output << job_parameters.identifier_tag << m.name() << ">\n";
   }
 
+  job_parameters.fp_writer.WriteFingerprint(m.name(), _sfc, output);
+  /*
   if (job_parameters.write_fixed_width_fingerprint > 0) {
     WriteFixedWidthFingerprint(job_parameters, output);
   } else {
@@ -229,6 +234,7 @@ ProduceFingerprint::DoAnyOutput(Molecule& m, const JobParameters& job_parameters
     _sfc.daylight_ascii_form_with_counts_encoded(job_parameters.fingerprint_tag, tmp);
     output << tmp << "\n";
   }
+  */
 
 //if (! job_parameters.function_as_tdt_filter) {
 //  output << "|\n";
@@ -237,6 +243,7 @@ ProduceFingerprint::DoAnyOutput(Molecule& m, const JobParameters& job_parameters
   return 1;
 }
 
+#ifdef NOLONGER_NEEDED_ASDA
 int
 ProduceFingerprint::WriteFixedWidthFingerprint(const JobParameters& job_parameters,
                 IWString_and_File_Descriptor& output) const {
@@ -244,6 +251,7 @@ ProduceFingerprint::WriteFixedWidthFingerprint(const JobParameters& job_paramete
   output << job_parameters.fingerprint_tag << ascii << ">\n";
   return 1;
 }
+#endif
 
 AtomMapCoverage::AtomMapCoverage()
 {
@@ -253,17 +261,18 @@ AtomMapCoverage::AtomMapCoverage()
 
 AtomMapCoverage::~AtomMapCoverage()
 {
-  if (nullptr != _coverage)
+  if (nullptr != _coverage) {
     delete [] _coverage;
+  }
 }
 
 int
 AtomMapCoverage::PrepareToProcess(Molecule& m)
 {
-  if (m.natoms() > _matoms)
-  {
-    if (nullptr != _coverage)
+  if (m.natoms() > _matoms) {
+    if (nullptr != _coverage) {
       delete [] _coverage;
+    }
     _matoms = m.natoms();
     _coverage = new int[_matoms];
   }
@@ -472,7 +481,7 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
   if (f == _precedent.end())
   {
 #ifdef DEBUG_USE_PRECEDENT
-    cerr << "Bit:no match for " << running_sum << ", radius " << radius << endl;
+    cerr << "Bit:no match for " << running_sum << ", radius " << radius << '\n';
 #endif
     _count[radius] = 0;
     _atom[radius] = shell_info.a0();
@@ -481,7 +490,7 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
   }
 
 #ifdef DEBUG_USE_PRECEDENT
-  cerr << "Bit: we have info on " << running_sum << " radius " << radius << " db " << f->second.radius << endl;
+  cerr << "Bit: we have info on " << running_sum << " radius " << radius << " db " << f->second.radius << '\n';
 #endif
   if (f->second.radius != radius)  // collision
     return;
@@ -489,7 +498,7 @@ ECUsePrecedent::Bit(const ShellInfo& shell_info,
   const count_type_t db_count = f->second.count;
 
 #ifdef DEBUG_USE_PRECEDENT
-  cerr << "No collision, count is " << db_count << endl;
+  cerr << "No collision, count is " << db_count << '\n';
 #endif
 
   if (db_count < _count[radius])
@@ -510,7 +519,7 @@ ECUsePrecedent::FingerprintingComplete(Molecule& m)
   atom_number_t rarest_atom = INVALID_ATOM_NUMBER;
   count_type_t lowest_count = std::numeric_limits<count_type_t>::max();
 
-//cerr << "ECUsePrecedent::FingerprintingComplete:radius " << _max_radius << endl;
+//cerr << "ECUsePrecedent::FingerprintingComplete:radius " << _max_radius << '\n';
 
   count_type_t previous_count = std::numeric_limits<count_type_t>::max();
 
@@ -520,7 +529,7 @@ ECUsePrecedent::FingerprintingComplete(Molecule& m)
       result << ',';
 
 #ifdef DEBUG_USE_PRECEDENT
-    cerr << "Radius " << r << " count " << _count[r] << " ationm " << _atom[r] << endl;
+    cerr << "Radius " << r << " count " << _count[r] << " ationm " << _atom[r] << '\n';
 #endif
     result << r << ',';
     if (std::numeric_limits<count_type_t>::max() == _count[r]) {
@@ -538,14 +547,14 @@ ECUsePrecedent::FingerprintingComplete(Molecule& m)
       {
         cerr << "ECUsePrecedent::FingerprintingComplete:unexpected count increase, rad " <<
                 (r-1) << " count " << previous_count <<
-                " radius " << r << " count " << _count[r] << endl;
+                " radius " << r << " count " << _count[r] << '\n';
       }
       previous_count = _count[r];
     }
   }
 
 #ifdef DEBUG_USE_PRECEDENT
-  cerr << "lowest_count " << lowest_count << " rarest_atom " << rarest_atom << endl;
+  cerr << "lowest_count " << lowest_count << " rarest_atom " << rarest_atom << '\n';
 #endif
 
   if (rarest_atom != INVALID_ATOM_NUMBER)
@@ -559,7 +568,7 @@ ECUsePrecedent::FingerprintingComplete(Molecule& m)
 }
 
 int
-ECUsePrecedent::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+ECUsePrecedent::DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                             IWString_and_File_Descriptor& output)
 {
   if (! job_parameters.produce_output)  // No fingerprint output, must output smiles
@@ -738,7 +747,7 @@ ECBitMeanings::Bit(const ShellInfo& shell_info, const atom_type_t running_sum, c
 }
 
 int
-ECBitMeanings::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+ECBitMeanings::DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                             IWString_and_File_Descriptor& output) {
   if (_buffer_current_molecule.empty()) {
     return 1;
@@ -776,7 +785,7 @@ ECFilterByBits::Bit(const ShellInfo& shell_info, const atom_type_t running_sum, 
 }
 
 int
-ECFilterByBits::DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+ECFilterByBits::DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output) {
   if (! _write_current_molecule) {
     return 0;

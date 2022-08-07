@@ -13,12 +13,14 @@ using std::ostream;
 #include "Foundational/iwmisc/sparse_fp_creator.h"
 
 #include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/ec_fingerprint.h"
 #include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/smiles.h"
+
+#include "Molecule_Tools/ec_fingerprint.h"
+#include "Molecule_Tools/fingerprint_writer.h"
 
 const char * prog_name = nullptr;
 
@@ -129,7 +131,9 @@ EcFingerprint(Molecule & m,
 
   op.DoAnyOutput(m, job_parameters, output);
 
-  if (! job_parameters.function_as_tdt_filter) {
+  if (job_parameters.fp_writer.IsWritingDescriptors()) {
+  } else if (job_parameters.function_as_tdt_filter) {
+  } else {
     output << "|\n";
   }
 
@@ -484,14 +488,13 @@ EcFingerprint(int argc, char ** argv)
     usage(1);
   }
 
-  cl.value('J', job_parameters.fingerprint_tag);
-  if (! job_parameters.fingerprint_tag.ends_with('<')) {
-    job_parameters.fingerprint_tag += '<';
+  if (cl.option_present('J')) {
+    if (! job_parameters.fp_writer.Initialise(cl, 'J', verbose)) {
+      cerr << "Cannot initiwlise fingerprint_writer\n";
+      return 1;
+    }
   }
 
-  if (verbose && job_parameters.produce_output)
-    cerr << "Will produce fingerprints with tag " << job_parameters.fingerprint_tag << endl;
-  
   ECFingerprint ec_fp_gen;
   ec_fp_gen.set_min_radius(min_radius);
   ec_fp_gen.set_max_radius(max_radius);
@@ -518,6 +521,8 @@ EcFingerprint(int argc, char ** argv)
   }
 
   IWString_and_File_Descriptor output(1);
+
+  job_parameters.fp_writer.WriteHeaderIfNeeded(output);
 
   auto [directive, fname, args] = DirectiveAnd(cl, 'D');
 

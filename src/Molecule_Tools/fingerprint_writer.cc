@@ -67,6 +67,9 @@ FingerprintWriter::Initialise(Command_Line& cl,
       }
     } else if (opt == "array") {
       _output_type = OutputType::kDescriptor;
+      if (_nbits == 0) {
+        _nbits = 2048;
+      }
     } else if (opt == "fixed") {
       _output_type = OutputType::kFixed;
     } else if (opt == "sparse") {
@@ -84,6 +87,7 @@ FingerprintWriter::Initialise(Command_Line& cl,
         return 0;
       }
       _tag = opt;
+      ChangeOutputTypeIfNeeded(opt);
     }
   }
 
@@ -129,6 +133,22 @@ FingerprintWriter::Initialise(Command_Line& cl,
   if (_nbits > 0 && _output_type == OutputType::kSparse) {
     cerr << "FingerprintWriter::Initialise:sparse fingerprint output incompabitle with nbits " << _nbits << '\n';
     return 0;
+  }
+
+  return 1;
+}
+
+// A new tag has been specified, update the output type to reflect the
+// kind of tag specified.
+int
+FingerprintWriter::ChangeOutputTypeIfNeeded(const IWString& new_tag) {
+  if (new_tag.starts_with("FP")) {
+    _output_type = OutputType::kFixed;
+    if (_nbits == 0) {
+      _nbits = 2048;
+    }
+  } else if (new_tag.starts_with("NC")) {
+    _output_type = OutputType::kSparse;
   }
 
   return 1;

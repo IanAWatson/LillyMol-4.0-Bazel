@@ -462,6 +462,8 @@ do_output(Molecule &m,
 
   if (function_as_filter) {
     fp_writer.WriteFingerprint(m.name(), sfc, output);
+  } else if (fp_writer.IsWritingDescriptors()) {
+    fp_writer.WriteFingerprint(m.name(), sfc, output);
   } else {
     output << smiles_tag << m.smiles() << ">\n";
     output << identifier_tag << m.name() << ">\n";

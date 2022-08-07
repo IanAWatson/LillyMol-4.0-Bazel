@@ -325,7 +325,7 @@ Substructure_Atom_Specifier::construct_from_proto(const SubstructureSearch::Subs
     _preference_value = proto.preference_value();
 
   // Should relate these to the min and max reasonable formal charge values.
-  if (!GETVALUES(proto, formal_charge, -12, 12))
+  if (!GETVALUESINT(proto, formal_charge, -12, 12))
     return 0;
 
   if (! GETVALUES(proto, ncon, 0, no_limit))
@@ -2336,7 +2336,7 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
     return 0;
 
   // Need to sync up with reasonable formal charge
-  if (! GETVALUES(proto, net_formal_charge, -12, 12))
+  if (! GETVALUESINT(proto, net_formal_charge, -12, 12))
     return 0;
 
   if (proto.has_min_fraction_atoms_matched())

@@ -34,6 +34,12 @@ AllowedRange::BuildFromProto(const GeometricConstraints::Range& proto) {
   return 1;
 }
 
+void
+AllowedRange::Scale(float s) {
+  _min_value *= s;
+  _max_value *= s;
+}
+
 int
 ConstraintBaseClass::IsValid() const {
   // Unset is a valid state.
@@ -152,6 +158,8 @@ BondAngleConstraint::BuildFromProto(const GeometricConstraints::BondAngle& proto
     return 0;
   }
 
+  _allowed_range.Scale(M_PI / 180.0);
+
   if (! IsValid()) {
     cerr << "BondAngleConstraint::BuildFromProto:invalid " << *this << '\n';
     return 0;
@@ -170,12 +178,12 @@ operator<< (std::ostream& output, const BondAngleConstraint& constraint) {
 int
 BondAngleConstraint::Matches(const Molecule& m) {
 //std::cerr << "Angle is " << m.bond_angle(_a1, _a2, _a3) << " radians " << _allowed_range << '\n';
-  return _allowed_range.Matches(m.bond_angle(_atoms[0], _atoms[1], _atoms[2]) * RAD2DEG);
+  return _allowed_range.Matches(m.bond_angle(_atoms[0], _atoms[1], _atoms[2]));
 }
 
 int
 BondAngleConstraint::Matches(const Molecule& m, const Set_of_Atoms& embedding) {
-  return _allowed_range.Matches(m.bond_angle(embedding[_atoms[0]], embedding[_atoms[1]], embedding[_atoms[2]]) * RAD2DEG);
+  return _allowed_range.Matches(m.bond_angle(embedding[_atoms[0]], embedding[_atoms[1]], embedding[_atoms[2]]));
 }
 
 int
@@ -184,6 +192,8 @@ TorsionAngleConstraint::BuildFromProto(const GeometricConstraints::TorsionAngle&
     cerr << "DistanceConstraint::BuildFromProto:invalid range " << proto.ShortDebugString() << '\n';
     return 0;
   }
+
+  _allowed_range.Scale(M_PI / 180.0);
 
   if (SetAtoms(proto.a1(), proto.a2(), proto.a3(), proto.a4()) != 4) {
     cerr << "TorsionAngle::BuildFromProto:invalid atom numbers " << proto.ShortDebugString() << '\n';
@@ -206,12 +216,12 @@ operator<< (std::ostream& output, const TorsionAngleConstraint& constraint) {
 }
 int
 TorsionAngleConstraint::Matches(const Molecule& m) {
-  return _allowed_range.Matches(m.dihedral_angle(_atoms[0], _atoms[1], _atoms[2], _atoms[3]) * RAD2DEG);
+  return _allowed_range.Matches(m.dihedral_angle(_atoms[0], _atoms[1], _atoms[2], _atoms[3]));
 }
 
 int
 TorsionAngleConstraint::Matches(const Molecule& m, const Set_of_Atoms& embedding) {
-  return _allowed_range.Matches(m.dihedral_angle(embedding[_atoms[0]], embedding[_atoms[1]], embedding[_atoms[2]], embedding[_atoms[3]]) * RAD2DEG);
+  return _allowed_range.Matches(m.dihedral_angle(embedding[_atoms[0]], embedding[_atoms[1]], embedding[_atoms[2]], embedding[_atoms[3]]));
 }
 
 SetOfGeometricConstraints::SetOfGeometricConstraints() {

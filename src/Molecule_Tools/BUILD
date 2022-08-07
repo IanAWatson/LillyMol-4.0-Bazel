@@ -188,13 +188,11 @@ cc_binary(
         "ec_fingerprint_main.cc",
     ],
     deps = [
+        ":ec_fingerprint_lib",
+        ":fingerprint_writer",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
-        "//Molecule_Lib:ec_fingerprint",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1314,6 +1312,21 @@ cc_library(
 )
 
 cc_library(
+    name = "ec_fingerprint_lib",
+    srcs = [
+        "ec_fingerprint.cc",
+    ],
+    hdrs = [
+        "ec_fingerprint.h",
+    ],
+    deps = [
+        ":fingerprint_writer",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
     name = "extended_pi",
     srcs = [
         "extended_pi.cc",
@@ -1562,6 +1575,19 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
         "//Molecule_Lib:iwmolecule"
+    ],
+)
+
+cc_test(
+    name = "ec_fingerprint_test",
+    srcs = ["ec_fingerprint_test.cc"],
+    timeout = "short",
+    deps = [
+        ":ec_fingerprint_lib",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculelio",
+        "@googletest//:gtest_main",
     ],
 )
 

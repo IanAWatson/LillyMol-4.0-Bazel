@@ -27,6 +27,9 @@ class AllowedRange {
       return 1;
     }
 
+    // Rescale _min_value and _max_value by `s`.
+    void Scale(float s);
+
     int Matches(float x) const {
       return x >= _min_value && x <= _max_value;
     }

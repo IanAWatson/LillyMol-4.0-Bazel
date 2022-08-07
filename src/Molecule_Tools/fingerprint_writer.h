@@ -61,6 +61,8 @@ class FingerprintWriter {
     int WriteSparseFingerprint(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
     int WriteDescriptors(const IWString& mname, const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
 
+    int ChangeOutputTypeIfNeeded(const IWString& new_tag);
+
   public:
     FingerprintWriter();
     ~FingerprintWriter();
@@ -75,6 +77,10 @@ class FingerprintWriter {
 
     int IsWritingDescriptors() const {
       return _output_type == OutputType::kDescriptor;
+    }
+
+    const IWString& FingerprintTag() const {
+      return _tag;
     }
 
     // If we are writing KDescriptor form, then we can write a header.

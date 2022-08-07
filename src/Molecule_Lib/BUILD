@@ -488,20 +488,6 @@ cc_library(
 )
 
 cc_library(
-    name = "ec_fingerprint",
-    srcs = [
-        "ec_fingerprint.cc",
-    ],
-    hdrs = [
-        "ec_fingerprint.h",
-    ],
-    deps = [
-        ":iwmolecule",
-        "//Foundational/iwmisc:sparse_fp_creator",
-    ],
-)
-
-cc_library(
     name = "geometric_constraints",
     srcs = [
         "geometric_constraints.cc",
@@ -575,22 +561,6 @@ cc_test(
     timeout = "short",
     deps = [
         ":linear_fingerprint",
-        ":iwmolecule",
-        ":moleculeio",
-        "@googletest//:gtest_main",
-        "//Foundational/iwmisc:sparse_fp_creator",
-    ],
-    linkopts = [
-        "-lz",
-    ],
-)
-
-cc_test(
-    name = "ec_fingerprint_test",
-    srcs = ["ec_fingerprint_test.cc"],
-    timeout = "short",
-    deps = [
-        ":ec_fingerprint",
         ":iwmolecule",
         ":moleculeio",
         "@googletest//:gtest_main",

@@ -11,6 +11,8 @@
 
 #include "Molecule_Lib/molecule.h"
 
+#include "Molecule_Tools/fingerprint_writer.h"
+
 namespace ec_fingerprint {
 
 #define NOT_PROCESSED 0
@@ -26,7 +28,8 @@ using count_type_t = uint32_t;
 struct JobParameters {
   JobParameters();
 
-  IWString fingerprint_tag;
+  fingerprint_writer::FingerprintWriter fp_writer;
+
   IWString smiles_tag;
   IWString identifier_tag;
 
@@ -123,7 +126,7 @@ class ECFunction
     virtual int FingerprintingComplete(Molecule& m) = 0;
 
     // If the object does any per molecule output.
-    virtual int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    virtual int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                             IWString_and_File_Descriptor& output) = 0;
 };
 
@@ -161,7 +164,7 @@ class ProduceFingerprint : public ECFunction
     int FingerprintingComplete(Molecule& m) override {
       return 1;
     }
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters, 
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters, 
                     IWString_and_File_Descriptor& output) override;
 
     // Mostly for testing
@@ -188,7 +191,7 @@ class AtomMapCoverage : public ECBaseWithOutput, public ECFunction
     }
 
     int FingerprintingComplete(Molecule& m);
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output) {
       return 1;
     }
@@ -211,7 +214,7 @@ class WriteAllBits : public ECBaseWithOutput, public ECFunction
     int FingerprintingComplete(Molecule& m) {
       return 1;
     }
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output) {
       return 1;
     }
@@ -249,7 +252,7 @@ class ECBitMeanings : public ECBaseWithOutput, public ECFunction
     int FingerprintingComplete(Molecule& m) {
       return 1;
     }
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output) ;
 };
 
@@ -282,7 +285,7 @@ class ECCheckCollisions : public ECBaseWithOutput
     int FingerprintingComplete(Molecule& m) {
       return 1;
     }
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output) {
       return 1;
     }
@@ -336,7 +339,7 @@ class ECBuildPrecedent
     int FingerprintingComplete(Molecule& m) {
       return 1;
     }
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output) {
       return 1;
     }
@@ -402,7 +405,7 @@ class ECUsePrecedent : public ECFunction
 
     // Once all bits have been generated, and precedent data has been collected, 
     int FingerprintingComplete(Molecule& m);
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output);
     int Report(std::ostream& output) const;
 };
@@ -434,7 +437,7 @@ class ECFilterByBits : public ECFunction
     int FingerprintingComplete(Molecule& m) {
       return 1;
     }
-    int DoAnyOutput(Molecule& m, const JobParameters& job_parameters,
+    int DoAnyOutput(Molecule& m, JobParameters& job_parameters,
                     IWString_and_File_Descriptor& output);
     int Report(std::ostream& output) const;
 };
