@@ -36,6 +36,14 @@ cc_library(
     ],
 )
 
+cc_library(
+  name = "crc32_fake",
+  srcs = [
+  ],
+  deps = [
+  ]
+)
+
 proto_library(
     name = "proto_for_testing",
     srcs = [

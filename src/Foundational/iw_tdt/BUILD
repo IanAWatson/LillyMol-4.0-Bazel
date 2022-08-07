@@ -19,3 +19,16 @@ cc_library(
         "//Foundational/iwstring:iwstring",
     ],
 )
+
+cc_binary (
+    name = "tdt_stats",
+    srcs = [
+        "tdt_stats.cc",
+    ],
+    deps = [
+        ":iw_tdt",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+    ],
+)
+
