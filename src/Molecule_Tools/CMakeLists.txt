@@ -60,6 +60,12 @@ set(linear_path_fingerprint_srcs
 add_library(linear_path_fingerprint_lib ${linear_path_fingerprint_srcs})
 target_include_directories(linear_path_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(ec_fingerprint_srcs
+  ec_fingerprint.cc
+)
+add_library(ec_fingerprint_lib ${ec_fingerprint_srcs})
+target_include_directories(ec_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 set(unique_molecules_api_srcs
   unique_molecules_api.cc
 )
@@ -765,3 +771,15 @@ set(unique_molecules_libs
 )
 add_executable(unique_molecules ${unique_molecules_srcs})
 target_link_libraries(unique_molecules LINK_PUBLIC ${unique_molecules_libs})
+
+# ec_fingerprint_test
+set(ec_fingerprint_test_srcs
+  ec_fingerprint_test.cc
+)
+set(ec_fingerprint_test_libs
+  ec_fingerprint_lib
+  sparse_fp_creator
+  ${libs_for_tests}
+)
+add_executable(ec_fingerprint_test ${ec_fingerprint_test_srcs})
+target_link_libraries(ec_fingerprint_test LINK_PUBLIC ${ec_fingerprint_test_libs})

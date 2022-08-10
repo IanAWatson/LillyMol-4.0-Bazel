@@ -154,12 +154,6 @@ set(atom_pair_fingerprint_srcs
 )
 add_library(atom_pair_fingerprint_lib ${atom_pair_fingerprint_srcs})
 target_include_directories(atom_pair_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(ec_fingerprint_srcs
-  ec_fingerprint.cc
-)
-add_library(ec_fingerprint_lib ${ec_fingerprint_srcs})
-target_include_directories(ec_fingerprint_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
  
 set(linear_fingerprint_srcs
   linear_fingerprint.cc
@@ -275,18 +269,6 @@ set(misc2_test_libs
 )
 add_executable(misc2_test ${misc2_test_srcs})
 target_link_libraries(misc2_test LINK_PUBLIC ${misc2_test_libs})
-
-# ec_fingerprint_test
-set(ec_fingerprint_test_srcs
-  ec_fingerprint_test.cc
-)
-set(ec_fingerprint_test_libs
-  ec_fingerprint_lib
-  sparse_fp_creator
-  ${libs_for_tests}
-)
-add_executable(ec_fingerprint_test ${ec_fingerprint_test_srcs})
-target_link_libraries(ec_fingerprint_test LINK_PUBLIC ${ec_fingerprint_test_libs})
 
 # iwreaction_test
 set(iwreaction_test_srcs
