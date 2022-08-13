@@ -20,29 +20,28 @@ using std::endl;
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 #define IW_IMPLEMENTATIONS_EXPOSED 1
 
-#include "Foundational/cmdline/cmdline.h"
-#include "Foundational/iwstring/iw_stl_hash_map.h"
-#include "Foundational/iwmisc/iw_time.h"
 #include "Foundational/accumulator/accumulator.h"
-#include "Foundational/iwmisc/sparse_fp_creator.h"
-//#include "accumulator.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iw_time.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iwqsort/iwqsort.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/etrans.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/mdl.h"
 #include "Molecule_Lib/misc2.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/moleculeio.h"
 #include "Molecule_Lib/molecule_to_query.h"
-#include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/path.h"
+#include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/target.h"
 
 //#define SPECIAL_THING_FOR_PARENT_AND_FRAGMENTS
@@ -215,6 +214,8 @@ static int top_level_kekule_forms_switched = 0;
 
 static extending_resizable_array<int> fragments_produced;
 
+static uint64_t report_every_n_fragments = 0;
+
 /*
    One mode of functioning is to just write the bonds to be broken
  */
@@ -294,6 +295,7 @@ reset_variables()
 	 bbrk_tag.resize(0);
      buffered_output = 1;
      check_for_lost_chirality = 0;
+     report_every_n_fragments = 0;
      return;
 }
 
@@ -416,8 +418,7 @@ parse_bond_specification_token (const const_IWSubstring &token,
 {
   int j;
 
-  if (!token.numeric_value(j) || j < 1 || j > matoms)
-  {
+  if (!token.numeric_value(j) || j < 1 || j > matoms) {
     cerr << "Invalid atom specifier '" << token << "'\n";
     return 0;
   }
@@ -673,6 +674,12 @@ class Dicer_Arguments
     int _lower_atom_count_cutoff_current_molecule;
     int _upper_atom_count_cutoff_current_molecule;
 
+    // When dealing with molecules that generate a lot of fragments, it can
+    // be useful to provide information on that.
+
+    uint32_t _report_every_n_fragments;
+    uint32_t _next_report_n_fragments;
+
 // private functions
 
     int _write_fragment_and_complement (Molecule & m, const IW_Bits_Base & b,
@@ -698,6 +705,7 @@ class Dicer_Arguments
     void set_current_molecule (Molecule * m)
     {
       _current_molecule = m;
+      _next_report_n_fragments = _report_every_n_fragments;
     }
 
     int atoms_in_molecule () const
@@ -814,6 +822,11 @@ class Dicer_Arguments
     {
       return _fragments_found_this_molecule.size();
     }
+    
+    void set_report_every_n_fragments(uint32_t s) {
+      _report_every_n_fragments = s;
+      _next_report_n_fragments = std::numeric_limits<uint32_t>::max();
+    }
 };
 
 Dicer_Arguments::Dicer_Arguments(int mrd)
@@ -836,6 +849,9 @@ Dicer_Arguments::Dicer_Arguments(int mrd)
   _ring_splitting_attempted = 0;
 
   _atom_type = nullptr;
+    
+  _report_every_n_fragments = 0;
+  _next_report_n_fragments = std::numeric_limits<uint32_t>::max();
 
   return;
 }
@@ -992,7 +1008,7 @@ class Dicer_Transformation
   protected:
     int _ttype;           // type of transformations, derived classes will fill in
 
-    virtual int _write_bonds_to_be_broken (std::ostream &) const;
+    virtual int _write_bonds_to_be_broken(std::ostream &) const;
 
   public:
     Dicer_Transformation();
@@ -1922,7 +1938,7 @@ Dicer_Arguments::adjust_max_recursion_depth (int bonds_to_break_this_molecule,
 }
 
 void
-Dicer_Arguments::_add_new_smiles_to_global_hashes (const IWString & smiles)
+Dicer_Arguments::_add_new_smiles_to_global_hashes(const IWString & smiles)
 {
   if (!add_new_strings_to_hash)
     return;
@@ -1939,6 +1955,11 @@ Dicer_Arguments::_add_new_smiles_to_global_hashes (const IWString & smiles)
   _fragments_found_this_molecule[s] = 1;
 
   molecules_containing[smiles]++;
+
+  if (_fragments_found_this_molecule.size() > _next_report_n_fragments) {
+    cerr << _current_molecule->name() << " generated " << _fragments_found_this_molecule.size() << " fragments\n";
+    _next_report_n_fragments += _report_every_n_fragments;
+  }
 
   return;
 }
@@ -2035,18 +2056,21 @@ Dicer_Arguments::contains_fragment(Molecule & m)
 {
   //cerr << "Found fragment '" << smiles << "'\n";
 
-  if (! contains_user_specified_queries(m))
+  if (! contains_user_specified_queries(m)) {
     return 0;
+  }
 
   if (! ok_atom_count(m.natoms())) {
     return 0;
   }
 
-  if (fragments_must_contain_heteroatom && ! ok_heteromatom_count(m, fragments_must_contain_heteroatom))
+  if (fragments_must_contain_heteroatom && ! ok_heteromatom_count(m, fragments_must_contain_heteroatom)) {
     return 0;
+  }
 
-  if (check_for_lost_chirality)
-    do_check_for_lost_chirality (m);
+  if (check_for_lost_chirality) {
+    do_check_for_lost_chirality(m);
+  }
 
   const IWString & smiles = m.unique_smiles();
 
@@ -2054,12 +2078,12 @@ Dicer_Arguments::contains_fragment(Molecule & m)
 
   IW_STL_Hash_Map_uint::iterator f1 = smiles_to_id.find(smiles);
 
-  if (f1 == smiles_to_id.end())         // fragment never been seen before
-  {
-    if (! add_new_strings_to_hash)
+  if (f1 == smiles_to_id.end())  {        // fragment never been seen before
+    if (! add_new_strings_to_hash) {
       return 0;
+    }
 
-    _add_new_smiles_to_global_hashes (smiles);
+    _add_new_smiles_to_global_hashes(smiles);
 
     //  cerr << "New fragment generated from '" << _current_molecule->name() << "', acc " << accumulate_starting_parent_information <<endl;
     if (accumulate_starting_parent_information)
@@ -4470,7 +4494,7 @@ atom_number_in_current_molecule (const Molecule & m,
 #endif
 
 static int
-dicer (Molecule & m, Dicer_Arguments & dicer_args, Breakages & breakages, Breakages_Iterator bi);
+dicer(Molecule & m, Dicer_Arguments & dicer_args, Breakages & breakages, Breakages_Iterator bi);
 
 
 
@@ -4750,8 +4774,7 @@ Ring_Bond_Breakage::_do_ring_breaking (Molecule & m,
     cerr << "Generated " << mcopy.smiles() << endl;
 #endif
 
-    if (i > 1)
-    {
+    if (i > 1) {
       initialise_xref(mcopy, dicer_args, xref);
       (void) convert_to_atom_numbers_in_child(rbb, xref, r);                     // expected that not all items present
     }
@@ -4819,10 +4842,10 @@ atoms_in_two_aromatic_rings (Molecule & m,
 }
 
 int
-Ring_Bond_Breakage::_process (Molecule & m,
-                             Dicer_Arguments & dicer_args,
-                             Breakages & breakages,
-                             Breakages_Iterator & bi) const
+Ring_Bond_Breakage::_process(Molecule & m,
+                            Dicer_Arguments & dicer_args,
+                            Breakages & breakages,
+                            Breakages_Iterator & bi) const
 {
   int n = this->number_elements();
 
@@ -6102,17 +6125,24 @@ do_number_by_initial_atom_number(Molecule & m)
 }
 
 static int
-write_fully_broken_parent (const Molecule & m,
-                           const Breakages &breakages,
-                           Molecule_Output_Object & stream_for_fully_broken_parents)
+write_fully_broken_parent(const Molecule & m,
+                          const Breakages &breakages,
+                          Molecule_Output_Object & stream_for_fully_broken_parents)
 {
   Molecule mcopy(m);
+  mcopy.set_name(m.name());
 
-  for (int i = 0; i < breakages.number_transformations(); ++i)
-  {
+  for (int i = 0; i < breakages.number_transformations(); ++i) {
     const auto t = breakages.transformation(i);
 
     t->break_bonds(mcopy);
+#ifdef IMPLEMENT_SOMETIME
+    // likely need a method, label_atoms_if_appropriate...
+    if (isotope_for_join_points) {
+      mcopy.set_isotope(t->a1(), isotope_for_join_points);
+      mcopy.set_isotope(t->a2(), isotope_for_join_points);
+    }
+#endif
   }
 
   return stream_for_fully_broken_parents.write(mcopy);
@@ -6146,11 +6176,13 @@ dicer(Molecule & m,
   preprocess(m);
   // std::cerr << "####" << m.name() << std::endl;
 
-  if (number_by_initial_atom_number)
+  if (number_by_initial_atom_number) {
     do_number_by_initial_atom_number(m);
+  }
 
-  if (accumulate_starting_parent_information)
+  if (accumulate_starting_parent_information) {
     add_parent_atom_count_to_global_array(m.name(), m.natoms(), atoms_in_parent);
+  }
 
   Breakages breakages;
 
@@ -6161,8 +6193,9 @@ dicer(Molecule & m,
   else
     bonds_to_break_this_molecule = breakages.identify_bonds_to_break(m);
 
-  if (queries_for_bonds_to_not_break.number_elements())
+  if (queries_for_bonds_to_not_break.number_elements()) {
     bonds_to_break_this_molecule = breakages.identify_bonds_to_not_break(m);
+  }
 
   if (break_fused_rings || break_ring_bonds)
   {
@@ -6173,17 +6206,21 @@ dicer(Molecule & m,
     //  cerr << "After toggling bonds for preferred Kekule form '" << m.smiles() << "'\n";
   }
 
-  if (break_ring_bonds)
+  if (break_ring_bonds) {
     bonds_to_break_this_molecule += breakages.identify_ring_bonds_to_be_broken(m);
+  }
 
-  if (break_fused_rings)
+  if (break_fused_rings) {
     bonds_to_break_this_molecule += breakages.identify_cross_ring_bonds_to_be_broken(m);
+  }
 
-  if (break_spiro_rings)
+  if (break_spiro_rings) {
     bonds_to_break_this_molecule += breakages.identify_spiro_ring_bonds_to_be_broken(m);
+  }
 
-  if (dearomatise_aromatic_rings)
+  if (dearomatise_aromatic_rings) {
     bonds_to_break_this_molecule += breakages.identify_aromatic_rings_to_de_aromatise(m);
+  }
 
   Dicer_Arguments dicer_args(max_recursion_depth);
 
@@ -6203,16 +6240,19 @@ dicer(Molecule & m,
 
   int max_recursion_depth_this_molecule = max_recursion_depth;
 
-  if (max_fragments_per_molecule > 0)
+  if (max_fragments_per_molecule > 0) {
     breakages.lower_numbers_if_needed(m, bonds_to_break_this_molecule, max_recursion_depth_this_molecule);
+  }
 
-  if (bbrk_file.active())
+  if (bbrk_file.active()) {
     return breakages.write_bonds_to_be_broken(m, bbrk_file);
+  }
 
   global_counter_bonds_to_be_broken[bonds_to_break_this_molecule]++;
 
-  if (verbose > 1)
+  if (verbose > 1) {
     cerr << "In '" << m.name() << "', identified " << bonds_to_break_this_molecule << " bonds to break\n";
+  }
 
   /*if (bonds_to_break_this_molecule > max_bonds_allowed_in_input)
      {
@@ -6224,21 +6264,23 @@ dicer(Molecule & m,
   else if (write_parent_smiles)
     output << m.smiles() << ' ' << m.name() << " B=" << bonds_to_break_this_molecule << '\n';
 
-  if (0 == bonds_to_break_this_molecule)
-  {
-    if (fingerprint_tag.length())
+  if (0 == bonds_to_break_this_molecule) {
+    if (fingerprint_tag.length()) {
       dicer_args.produce_fingerprint(m, output);
+    }
 
     return 1;
   }
 
-  if (stream_for_fully_broken_parents.active())
+  if (stream_for_fully_broken_parents.active()) {
     write_fully_broken_parent(m, breakages, stream_for_fully_broken_parents);
+  }
 
   dicer_args.set_current_molecule(&m);
 
-  if (change_element_for_heteroatoms_with_hydrogens)
+  if (change_element_for_heteroatoms_with_hydrogens) {
     do_change_element_for_heteroatoms_with_hydrogens(m);
+  }
 
   if (atom_typing_specification.active())
     (void) dicer_args.store_atom_types(m, atom_typing_specification);
@@ -6250,8 +6292,11 @@ dicer(Molecule & m,
 
   dicer_args.set_array_size(m.natoms());
 
-  if (break_fused_rings)
+  dicer_args.set_report_every_n_fragments(report_every_n_fragments);
+
+  if (break_fused_rings) {
     dicer_args.initialise_parent_molecule_aromaticity(m);
+  }
 
 //USPVPTR * uspvptr = new USPVPTR[m.natoms()]; std::unique_ptr<USPVPTR[]> free_uspvptr(uspvptr);
 
@@ -6262,42 +6307,48 @@ dicer(Molecule & m,
 
   initialise_atom_pointers(m, atom_numbers);
 
-  if (work_like_recap)
-  {
+  if (work_like_recap) {
     breakages.do_recap(m, dicer_args);
 
-    if (write_smiles)
+    if (write_smiles) {
       dicer_args.write_fragments_found_this_molecule(m, output);
+    }
 
     return 1;
   }
 
-  if (m.number_fragments() > 1)
-    cerr << m.smiles() << ' ' << m.name() << endl;
+  if (m.number_fragments() > 1) {
+    cerr << m.smiles() << ' ' << m.name() << '\n';
+  }
 
   assert (1 == m.number_fragments());
 
   Breakages_Iterator bi(breakages);
 
-  if (! dicer(m, dicer_args, breakages, bi))
+  if (! dicer(m, dicer_args, breakages, bi)) {
     return 0;
+  }
 
   // verbose is checked here because we only produce the count summary if verbose
 
   //if (write_smiles || || verbose)
   //  dicer_args.sort_fragments_found_this_molecule();
 
-  if (write_smiles)
+  if (write_smiles) {
     dicer_args.write_fragments_found_this_molecule(m, output);
+  }
 
-  if (fingerprint_tag.length())
+  if (fingerprint_tag.length()) {
     dicer_args.produce_fingerprint(m, output);
+  }
 
-  if (write_smiles_and_complementary_smiles)
+  if (write_smiles_and_complementary_smiles) {
     dicer_args.write_fragments_and_complements(m, output);
+  }
 
-  if (verbose)
+  if (verbose) {
     fragments_produced[dicer_args.fragments_found()]++;
+  }
 
   return 1;
 }
@@ -6410,7 +6461,7 @@ display_misc_B_options (std::ostream & os)
   os << " -B atype=<tag>    Calculate atom type and dump it in frag/comp pairs\n";
   os << " -B term           perceive terminal groups\n";
   os << " -B bscb           allow Carbon-Carbon single bonds to break\n";
-  os << " -B eH             change O,N and S with Hydrogens to other elements\n";
+//os << " -B eH             change O,N and S with Hydrogens to other elements\n";
   os << " -B xsub           do not report fragments that are exact subsets of others\n";
   os << " -B nosmi          suppress output of fragment smiles\n";
   os << " -B noparent       suppress output of parent smiles\n";
@@ -6436,6 +6487,7 @@ display_misc_B_options (std::ostream & os)
   os << " -B flush          flush output after each molecule\n";
   os << " -B lostchiral     check each fragment for lost chirality\n";
   os << " -B recap          work like Recap - break all breakable bonds at once\n";
+  os << " -B freport=<n>    report fragment creation every <n> fragments for a molecule\n";
   os << " -B help           this message\n";
 
   exit(3);
@@ -6663,7 +6715,7 @@ dicer (int argc, char ** argv)
         }
 
         if (verbose)
-          cerr << "Attachment points indicated with isotope " << isotope_for_join_points << endl;
+          cerr << "Attachment points indicated with isotope " << isotope_for_join_points << '\n';
       }
     }
 
@@ -7040,6 +7092,16 @@ dicer (int argc, char ** argv)
         if (verbose)
           cerr << "Will work like Recap\n";
       }
+      else if (b.starts_with("freport=")) {
+        b.remove_leading_chars(8);
+        if (! b.numeric_value(report_every_n_fragments)) {
+          cerr << "Invalid report fragments '" << b << "'\n";
+          return 1;
+        }
+        if (verbose) {
+          cerr << "Will report fragment formation every " << report_every_n_fragments << " fragments formed\n";
+        }
+      }
       else if("help" == b)
       {
         display_misc_B_options(cerr);
@@ -7387,32 +7449,29 @@ dicer (int argc, char ** argv)
       stream_for_fully_broken_parents.add_output_type(FILE_TYPE_SDF);
     }
 
-    if (stream_for_fully_broken_parents.would_overwrite_input_files(cl, z))
-    {
+    if (stream_for_fully_broken_parents.would_overwrite_input_files(cl, z)) {
       cerr << "Stream for fully broken parent molecules '" << z << "' would overwrite input file(s)\n";
       return 1;
     }
 
-    if (! stream_for_fully_broken_parents.new_stem(z))
-    {
+    if (! stream_for_fully_broken_parents.new_stem(z)) {
       cerr << "Cannot open stream for fully broken parent molecules '" << z << "'\n";
       return 1;
     }
 
-    if (verbose)
+    if (verbose) {
       cerr << "Will write fully broken parent molecules to '" << z << "'\n";
+    }
   }
 
   IW_Time tstart;
 
   IWString_and_File_Descriptor * output;
-  if (cl.option_present('S'))
-  {
+  if (cl.option_present('S')) {
     output = new IWString_and_File_Descriptor;
     const char * s = cl.option_value('S');
 
-    if (! output->open(s))
-    {
+    if (! output->open(s)) {
       cerr << "Cannot open output file '" << s << "'\n";
       return 1;
     }
@@ -7425,74 +7484,75 @@ dicer (int argc, char ** argv)
   std::unique_ptr<IWString_and_File_Descriptor> free_output(output);
 
   int rc = 0;
-  for (int i = 0; i < cl.number_elements(); i++)
-  {
+  for (int i = 0; i < cl.number_elements(); i++) {
     if (function_as_filter)
       rc = dicer_tdt_filter(cl[i], *output);
     else
       rc = dicer(cl[i], input_type, *output);
 
-    if (0 == rc)
-    {
+    if (0 == rc) {
       rc = i + 1;
       break;
-    }
-    else
+    } else {
       rc = 0;
+    }
   }
 
-  if (output->size())
+  if (output->size()) {
     output->flush();
+  }
 
-  if (eliminate_fragment_subset_relations)
+  if (eliminate_fragment_subset_relations) {
     do_eliminate_fragment_subset_relations();
+  }
 
-  if (verbose)
-  {
+  if (verbose) {
     cerr << "Read " << molecules_read << " molecules\n";
 
-    for (int i = 0; i < global_counter_bonds_to_be_broken.number_elements(); i++)
-    {
+    for (int i = 0; i < global_counter_bonds_to_be_broken.number_elements(); i++) {
       if (global_counter_bonds_to_be_broken[i])
         cerr << global_counter_bonds_to_be_broken[i] << " molecules had " << i << " bonds to be broken\n";
     }
 
-    if (smiles_to_id.size())
+    if (smiles_to_id.size()) {
       cerr << smiles_to_id.size() << " unique fragments encountered\n";
+    }
 
-    if (break_fused_rings)
+    if (break_fused_rings) {
       cerr << top_level_kekule_forms_switched << " top level Kekule forms switched\n";
+    }
   }
 
-  if (collect_time_statistics)
-  {
+  if (collect_time_statistics) {
     cerr << "Processing took between " << time_acc.minval() << " and " << time_acc.maxval() << ", ave " << time_acc.average() << endl;
   }
 
   cerr.flush();
 
-  if (bit_smiles_cross_reference.is_open())
+  if (bit_smiles_cross_reference.is_open()) {
     write_hash_data(bit_smiles_cross_reference, smiles_to_id);
+  }
 
   IW_Time tend;
 
-  if (verbose)
+  if (verbose) {
     cerr << "Computation took " << (tend - tstart) << " seconds\n";
+  }
 
-  if (0 == molecules_containing.size())
+  if (0 == molecules_containing.size()) {
     ;
-  else if (name_for_fragment_statistics_file.length())
+  } else if (name_for_fragment_statistics_file.length()) {
     write_fragment_statistics (molecules_containing, fsrss, name_for_fragment_statistics_file);
+  }
 
   if (stream_for_post_breakage.is_open())
     stream_for_post_breakage.close();
 
-  if (verbose)
-  {
-    for (int i = 0; i < fragments_produced.number_elements(); i++)
-    {
-      if (fragments_produced[i])
+  if (verbose) {
+    for (int i = 0; i < fragments_produced.number_elements(); i++) {
+      if (fragments_produced[i]) {
         cerr << fragments_produced[i] << " molecules produced " << i << " fragments\n";
+      }
     }
   }
 
