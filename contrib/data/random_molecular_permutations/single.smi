@@ -4,12 +4,22 @@ CC ethyl
 C(C)C iso propyl
 N amine
 O Hydroxy
+OC methoxy
+C(=O)C ketone
+S(=O)(=O)C sulfone
+C(F)(F)F cf3
 C(=O)O acid
 NC(=O)C amide1
 C(=O)N amide2
 S(=O)(=O)N sulfonamide1
 NS(=O)(=O)C sulfonamide2
-c1ccccc1 benzene
 C1CC1 cyclopropane
 N1CCNCC1 piperazine
 C#N cyano
+N(=O)=O nitro
+NC(=O)N urea
+NC(=N)N guanidine
+OC=O ester1
+C(=O)O ester2
+NC methyl amine
+N(C)C dimethyl amine

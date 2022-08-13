@@ -1,0 +1,5 @@
+scaffold {
+  id: 0
+  smarts: "[$(A);!$(A=a)]"
+  remove_atom: 0
+}
