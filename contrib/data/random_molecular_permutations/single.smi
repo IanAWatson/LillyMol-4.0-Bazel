@@ -1,0 +1,15 @@
+F Fluorine
+C methyl
+CC ethyl
+C(C)C iso propyl
+N amine
+O Hydroxy
+C(=O)O acid
+NC(=O)C amide1
+C(=O)N amide2
+S(=O)(=O)N sulfonamide1
+NS(=O)(=O)C sulfonamide2
+c1ccccc1 benzene
+C1CC1 cyclopropane
+N1CCNCC1 piperazine
+C#N cyano

@@ -79,6 +79,7 @@ target_include_directories(memoized_floats PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(IWTEST)
 enable_testing()
+include(GoogleTest)
 
 set(iwdigits_test_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/iwdigits_test.cc
@@ -121,7 +122,6 @@ add_test(
   NAME memoized_floats_test
   COMMAND memoized_floats_test
 )
-
 gtest_discover_tests(memoized_floats_test)
 
 set(iwre2_test_srcs

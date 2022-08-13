@@ -2006,7 +2006,7 @@ ok_heteromatom_count (const Molecule & m,
 }
 
 static int
-contains_user_specified_queries (Molecule & m)
+contains_user_specified_queries(Molecule & m)
 {
   int nq = user_specified_queries_that_fragments_must_contain.number_elements();
 
@@ -2107,7 +2107,7 @@ Dicer_Arguments::contains_fragment(Molecule & m)
 //#define DEBUG_BIT_COMPARISONS
 
 int
-Dicer_Arguments::is_unique (Molecule & m)
+Dicer_Arguments::is_unique(Molecule & m)
 {
 #ifdef DEBUG_BIT_COMPARISONS
   cerr << "Examining '" << m.smiles() << "'\n";

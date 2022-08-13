@@ -1,13 +1,13 @@
 # Dicer
 
-Dicer is a tool that fragments molecules, producing fragments.
+Dicer is a tool that breaks bonds in molecules, generating fragments.
 
-This can be useful when loking for "privileged frgaments" within a
+This can be useful when looking for "privileged frgaments" within a
 dataset.
 
 Dicer starts by examining the bonds in the molecule, and deciding which ones
 can be broken. Generally, ring and multiple bonds will NOT be broken, although the 
-precise behaviour can be changed via command line options.
+precise behavior can be changed via command line options.
 
 Dicer generates **all** fragments, including overlapping, although it can
 be run in a way that mimics recap, without overlapping fragments.
@@ -30,8 +30,9 @@ actual number of fragments generated will likely exceed the limit.
 For example, CHEMBL4524052 contains 636 atoms and 360 rotatable bonds. If dicer
 is allowed to process this with no constraints, after 3 hours of processing
 it has generated 85k fragments, with no real indication of how much remains.
+After 13 hours it had generated 170k fragments.
 
-Enable this reporting with `-B freport=10000` to have it report every 10k 
+Enable this periodic reporting with `-B freport=10000` to have it report every 10k 
 fragments formed for any particular molecule.
 
 The `-k` option, the number of bonds that can be simultaneously broken,
@@ -104,7 +105,7 @@ atom types can be assigned and saved with the fragments.
 As dicer evolved, it was called upon to do more and more things, and the
 number of optional behaviours became quite unwieldy. It should be re-cast to
 operate from a Protocol Buffer file, and that may happen. In order to deal
-with the abundance of functionality, a variety of optional behaviours are
+with the abundance of functionality, a variety of optional behaviors are
 bundled in the `-B` option. Enter `-B help` for a list of those.
 
 A more complete explanation of those sub-options follows.
@@ -228,7 +229,7 @@ that parent.
 
 With the `-I` option, it will place an isotope on the attachment points
 ```
-dicer -m 3 -M 10 -v /home/ian/aspirin.smi
+dicer -m 3 -M 10 -I 1 -v /home/ian/aspirin.smi
 ```
 ```
 CC(=O)OC1=CC=CC=C1C(=O)O aspirin B=5
@@ -254,10 +255,12 @@ this can be time consuming.
 dicer -m 3 -M 10 -Z zfile.smi -v file.smi
 ```
 will create `zfile.smi` that contains each molecule with all breakable
-bonds simultaneously broken. Isotopic labels are not applied - that might 
-be a bug...
+bonds simultaneously broken. Isotopic labels are not applied - will fix...
 
 Here is an invocation that exercises a lot of options.
 ```
-dicer -B nbfts -B nbamide -B 'FMC:SMARTS:2[#7H0]' -B fragstat=fragstat.smi -B fstsp=0.01 -Z zfile.smi -m 5 -M 15 ~/rand.smi
+dicer -B nbfts -B nbamide -B 'FMC:SMARTS:2[#7H0]' -B fragstat=fragstat.smi -B fstsp=0.01 -X 500 -k 3 -Z zfile.smi -m 5 -M 15 ~/rand.smi
 ```
+
+### Complementary Fragments
+The `-C` option writes extra records to the output that are fragments and their complements. 
