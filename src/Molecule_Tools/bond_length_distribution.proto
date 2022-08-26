@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package BondLengthDistribution;
+
+enum BondType {
+  SS_INVALID_BOND = 0;
+  // Single bond.
+  SS_SINGLE_BOND = 1;
+  // Double bond.
+  SS_DOUBLE_BOND = 2;
+  // Triple bond.
+  SS_TRIPLE_BOND = 3;
+  // Aromatic Bond.
+  SS_AROMATIC_BOND = 4;
+  // Any kind of bond.
+  SS_BOND = 5;
+}
+
+// An empirical bond length distribution.
+message Distribution {
+  // The atomic numbers for this distribution.
+  int32 atomic_number1 = 1;
+  int32 atomic_number2 = 2;
+  // the bond type.
+  BondType btype = 3;
+  // Distances are characterised by a minimum distance and a delta. The
+  // number of entries in `count` then determines the longest distance.
+  float min_distance = 4;
+  float dx = 5;
+  repeated uint32 count = 6;
+}
+
+message Distributions {
+  string name = 1;
+  repeated Distribution distribution = 2;
+}

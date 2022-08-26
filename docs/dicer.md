@@ -30,7 +30,8 @@ actual number of fragments generated will likely exceed the limit.
 For example, CHEMBL4524052 contains 636 atoms and 360 rotatable bonds. If dicer
 is allowed to process this with no constraints, after 3 hours of processing
 it has generated 85k fragments, with no real indication of how much remains.
-After 13 hours it had generated 170k fragments.
+After 13 hours it had generated 170k fragments. After 5 days it has generated
+520k fragments. After 7 days it generated 595k fragments.
 
 Enable this periodic reporting with `-B freport=10000` to have it report every 10k 
 fragments formed for any particular molecule.

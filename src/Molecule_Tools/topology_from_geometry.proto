@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package = TopologyFromGeometry;
+
+message Parameters {
+  float _sp2_tolerance = 1;
+  float _max_bond_length = 2;
+}

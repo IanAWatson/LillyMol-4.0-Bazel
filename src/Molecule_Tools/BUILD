@@ -1,5 +1,21 @@
 
 proto_library(
+    name = "bond_length_distribution_proto",
+    srcs = [
+        "bond_length_distribution.proto",
+    ],
+    deps = [
+    ],
+)
+
+cc_proto_library(
+    name = "bond_length_distribution_cc_proto",
+    deps = [
+        ":bond_length_distribution_proto",
+    ],
+)
+
+proto_library(
     name = "embedded_fragment_proto",
     srcs = [
         "embedded_fragment.proto",
@@ -1154,6 +1170,20 @@ cc_binary(
     linkopts = [
         "-lz",
     ],
+)
+
+cc_binary(
+    name = "topology_from_geometry",
+    srcs = [
+        "topology_from_geometry.cc",
+    ],
+    deps = [
+        ":bond_length_distribution_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:proto_support",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ]
 )
 
 cc_binary(
