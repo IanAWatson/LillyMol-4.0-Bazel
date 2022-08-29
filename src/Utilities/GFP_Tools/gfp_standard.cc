@@ -434,3 +434,43 @@ standard_fingerprints_present()
 
   return 1;
 }
+
+namespace gfp {
+int
+GetStandardFingerprintIndices(std::array<int, 3>& xref) {
+  if (number_fingerprints() < 3) {
+    return 0;
+  }
+
+  int seen_fpiw = 0;
+  int seen_mk = 0;
+  int seen_mk2 = 0;
+
+  for (int i = 0; i < number_fingerprints(); ++i) {
+    const auto & tag = fixed_fingerprint_tag(i);
+    if (tag.starts_with("FPIW")) {
+      xref[StdFpIndex::kIWfp] = i;
+      ++seen_fpiw;
+    } else if (tag.starts_with("FPMK2")) {
+      xref[StdFpIndex::kMK2] = i;
+      ++seen_mk2;
+    } else if (tag.starts_with("FPMK")) {
+      xref[StdFpIndex::kMK] = i;
+      seen_mk++;
+    }
+  }
+
+  if (seen_fpiw != 1 || seen_mk != 1 || seen_mk2 != 1) {
+    cerr << "standard_fingerprints_present::not all fingerprints present, only processes -MPR -IW -MK -MK2\n";
+    return 0;
+  }
+
+  if (! property_tag().starts_with("MPR")) {
+    cerr << "GetStandardFingerprintIndices::property tag invalid '" << property_tag() << "'\n";
+    return 0;
+  }
+
+  return 1;
+}
+
+} //  namespace gfp

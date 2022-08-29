@@ -1,6 +1,7 @@
 #ifndef GFP_STANDARD_H
 #define GFP_STANDARD_H
 
+#include <array>
 #include <optional>
 
 /*
@@ -56,6 +57,24 @@ class GFP_Standard
 
 extern int can_be_compared (const GFP_Standard & fp1, const GFP_Standard & fp2);
 extern int standard_fingerprints_present ();
+
+namespace gfp {
+// Fingerprints can be present in any order in the input, and
+// we need a mapping from fixed fingerprint number to the
+// components of a GFP_Standard.
+// function GetStandardFingerprintIndices fills an std::array
+// and this enum describes which index holds what.
+// Deliberately not an enum class because the primary
+// purpose of this is to use as an array index.
+enum StdFpIndex {
+  kIWfp = 0,
+  kMK = 1,
+  kMK2 = 2
+};
+
+extern int GetStandardFingerprintIndices(std::array<int, 3>& xref);
+}  // namespace gfp
+
 extern void set_bits_in_mk (int s);
 
 #endif

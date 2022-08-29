@@ -326,6 +326,18 @@ do_previously_selected(const char * fname,
   return do_previously_selected(input, threshold);
 }
 
+void
+TransferSmilesAndId(const IW_TDT& tdt,
+                    Leader_Item& destination) {
+  IWString tmp;
+
+  tdt.dataitem_value(smiles_tag, tmp);
+  destination.set_smiles(tmp);
+
+  tdt.dataitem_value(identifier_tag, tmp);
+  destination.set_id(tmp);
+}
+
 static int
 read_pool(iwstring_data_source & input)
 {
@@ -335,39 +347,33 @@ read_pool(iwstring_data_source & input)
 
   int ndx = 0;
 
-  for (;tdt.next(input) && ndx < pool_size; ndx++)
-  {
+  std::array<int, 3> stdfp_index;
+  int fatal;
+
+  using gfp::StdFpIndex;
+
+  for (;tdt.next(input) && ndx < pool_size; ndx++) {
     leader_item[ndx].set_gfp(fingerprints+ndx);
 
-    tdt.dataitem_value(smiles_tag, tmp);
-    leader_item[ndx].set_smiles(tmp);
-
-    tdt.dataitem_value(identifier_tag, tmp);
-    leader_item[ndx].set_id(tmp);
+    TransferSmilesAndId(tdt, leader_item[ndx]);
 
     IW_General_Fingerprint gfp;
-
-    int fatal;
-    if (! gfp.construct_from_tdt(tdt, fatal))
-    {
+    if (! gfp.construct_from_tdt(tdt, fatal)) {
       cerr << "Cannot read fingerprint\n";
       return 0;
     }
 
-    if (0 == ndx)
-    {
-      if (! standard_fingerprints_present())
+    if (0 == ndx && ! gfp::GetStandardFingerprintIndices(stdfp_index)) {
         return 0;
     }
 
     fingerprints[ndx].build_molecular_properties(gfp.molecular_properties_integer());
-    fingerprints[ndx].build_mk(gfp[1]);
-    fingerprints[ndx].build_mk2(gfp[2]);
-    fingerprints[ndx].build_iw(gfp[0]);
+    fingerprints[ndx].build_mk(gfp[stdfp_index[StdFpIndex::kMK]]);
+    fingerprints[ndx].build_mk2(gfp[stdfp_index[StdFpIndex::kMK2]]);
+    fingerprints[ndx].build_iw(gfp[stdfp_index[StdFpIndex::kIWfp]]);
   }
 
-  if (ndx < 2)
-  {
+  if (ndx < 2) {
     cerr << "Yipes, did not read enough fingerprints\n";
     return 0;
   }
@@ -580,28 +586,28 @@ gfp_leader_standard(int argc, char ** argv)
 
   int clusters_formed;
 
-  if (cl.option_present('p'))
-  {
+  if (cl.option_present('p')) {
     int p;
-    if (! cl.value('p', p) || p <= 0 || p > 2)
-    {
+    if (! cl.value('p', p) || p <= 0 || p > 2) {
       cerr << "The only valid values for the -p option are 1 and 2\n";
       usage(2);
     }
 
-    if (verbose)
+    if (verbose) {
       cerr << "Will process " << p << " leaders at each step\n";
+    }
 
     int * leaders = new int[p]; std::unique_ptr<int[]> free_leaders(leaders);
     float * cand_distances = new float[p]; std::unique_ptr<float[]> free_cand_distances(cand_distances);
 
     clusters_formed = leader(leaders, p, cand_distances);
-  }
-  else
+  } else {
     clusters_formed = leader();
+  }
 
-  if (verbose)
+  if (verbose) {
     cerr << "Clustered " << pool_size << " fingerprints into " << clusters_formed << " clusters\n";
+  }
 
   std::unique_ptr<IWString_and_File_Descriptor> ascii_proto_output;
   std::unique_ptr<TFDataWriter> binary_proto_output;
@@ -619,9 +625,10 @@ gfp_leader_standard(int argc, char ** argv)
     }
   }
 
+  extending_resizable_array<int> cluster_sizes;
+
   int start = 0;
-  for (int c = 1; c <= clusters_formed; c++)
-  {
+  for (int c = 1; c <= clusters_formed; c++) {
     int items_in_cluster = 0;
 
     std::unique_ptr<NearNeighbors::Neighbors> proto;
@@ -629,16 +636,19 @@ gfp_leader_standard(int argc, char ** argv)
       proto.reset(new NearNeighbors::Neighbors());
     }
 
-    for (int j = start; j < pool_size; j++)
-    {
-      if (selected[j] != c)
+    for (int j = start; j < pool_size; j++) {
+      if (selected[j] != c) {
         continue;
+      }
 
-      if (0  == items_in_cluster)
+      if (0  == items_in_cluster) {
         start = j;
+      }
 
       items_in_cluster++;
     }
+
+    ++cluster_sizes[items_in_cluster];
 
     if (proto) {
       proto->set_id(leader_item[start].id().AsString());
@@ -653,18 +663,17 @@ gfp_leader_standard(int argc, char ** argv)
 
     start++;
 
-    if (start == pool_size)
-    {
+    if (start == pool_size) {
       if (! proto) {
         cout << "|\n";
       }
       break;
     }
 
-    for (int j = start; j < pool_size; j++)
-    {
-      if (c != selected[j])
+    for (int j = start; j < pool_size; j++) {
+      if (c != selected[j]) {
         continue;
+      }
 
       if (proto) {
         NearNeighbors::Neighbor * n = proto->add_neighbor();
@@ -684,6 +693,14 @@ gfp_leader_standard(int argc, char ** argv)
         WriteBinaryProto(*proto, *binary_proto_output);
     } else {
       cout << "|\n";
+    }
+  }
+
+  if (verbose) {
+    for (uint32_t i = 0; i < cluster_sizes.size(); ++i) {
+      if (cluster_sizes[i]) {
+        cerr << cluster_sizes[i] << " clusters of size " << i << '\n';
+      }
     }
   }
 
