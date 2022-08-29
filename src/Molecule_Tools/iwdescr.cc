@@ -3870,7 +3870,7 @@ compute_ring_descriptors(Molecule & m,
   descriptor[iwdescr_excydscon].set(static_cast<float>(singly_connected_attachments));
   descriptor[iwdescr_excydsconh].set(static_cast<float>(singly_connected_heteroatoms));
   descriptor[iwdescr_excydscondon].set(static_cast<float>(singly_connected_donors));
-
+  
   int offset = iwdescr_nrings3;    // dangerous case from enumeration to int
 
   for (int i = 3; i < MAX_RING_SIZE; i++)
@@ -3891,6 +3891,37 @@ compute_ring_descriptors(Molecule & m,
 
   const int nr = m.nrings();
 
+  // Initialise ring descriptors, missing values do not make sense.
+  descriptor[iwdescr_trmnlrng].set(0.0);
+  descriptor[iwdescr_intrnlrng].set(0.0);
+  descriptor[iwdescr_rng2spch].set(0.0);
+  descriptor[iwdescr_rng2bridge].set(0.0);
+
+  // Various fused ring descriptors do not get computed
+  // if there is only 1 ring in the molecule.
+  if (nr < 2) {
+    descriptor[iwdescr_fsdrng5l5l].set(0.0);
+    descriptor[iwdescr_fsdrng5l5r].set(0.0);
+    descriptor[iwdescr_fsdrng5r5r].set(0.0);
+    descriptor[iwdescr_fsdrng5l6l].set(0.0);
+    descriptor[iwdescr_fsdrng5l6r].set(0.0);
+    descriptor[iwdescr_fsdrng5r6l].set(0.0);
+    descriptor[iwdescr_fsdrng5r6r].set(0.0);
+    descriptor[iwdescr_fsdrng6r6r].set(0.0);
+    descriptor[iwdescr_fsdrng6l6r].set(0.0);
+    descriptor[iwdescr_fsdrng6l6l].set(0.0);
+
+    descriptor[iwdescr_fsdrngarar].set(0.0);
+    descriptor[iwdescr_fsdrngalar].set(0.0);
+    descriptor[iwdescr_fsdrngalal].set(0.0);
+
+    descriptor[iwdescr_nsfsdsys].set(0.0);
+    descriptor[iwdescr_rnginsfs].set(0.0);
+    descriptor[iwdescr_lgstrfsy].set(0.0);
+    descriptor[iwdescr_htrcsfsy].set(0.0);
+    descriptor[iwdescr_mxhtsfsy].set(0.0);
+  }
+
   if (0 == nr) {
     descriptor[iwdescr_mhr].set(0.0);
     descriptor[iwdescr_mxhrf].set(0.0);
@@ -3909,6 +3940,38 @@ compute_ring_descriptors(Molecule & m,
     descriptor[iwdescr_excydscon].set(0.0);
     descriptor[iwdescr_excydsconh].set(0.0);
     descriptor[iwdescr_excydscondon].set(0.0);
+
+    descriptor[iwdescr_nrings3].set(0.0);
+    descriptor[iwdescr_nrings4].set(0.0);
+    descriptor[iwdescr_nrings5].set(0.0);
+    descriptor[iwdescr_nrings6].set(0.0);
+    descriptor[iwdescr_nrings7].set(0.0);
+    descriptor[iwdescr_nrings8].set(0.0);
+  
+    descriptor[iwdescr_rsarom1].set(0.0);
+    descriptor[iwdescr_rsarom2].set(0.0);
+    descriptor[iwdescr_rsarom3].set(0.0);
+
+    descriptor[iwdescr_rsaliph1].set(0.0);
+    descriptor[iwdescr_rsaliph2].set(0.0);
+    descriptor[iwdescr_rsaliph3].set(0.0);
+    descriptor[iwdescr_rsaliph4].set(0.0);
+
+
+    descriptor[iwdescr_rssys1].set(0.0);
+    descriptor[iwdescr_rssys2].set(0.0);
+    descriptor[iwdescr_rssys3].set(0.0);
+    descriptor[iwdescr_rssys4].set(0.0);
+    descriptor[iwdescr_rssys5].set(0.0);
+    descriptor[iwdescr_rssys6].set(0.0);
+    descriptor[iwdescr_rssys7].set(0.0);
+    descriptor[iwdescr_rssys8].set(0.0);
+    descriptor[iwdescr_rssys9].set(0.0);
+
+    descriptor[iwdescr_ar5].set(0.0);
+    descriptor[iwdescr_ar6].set(0.0);
+    descriptor[iwdescr_al5].set(0.0);
+    descriptor[iwdescr_al6].set(0.0);
 
     return 1;
   }
@@ -6339,16 +6402,19 @@ compute_non_planar_fused_rings(Molecule & m,
 
   for (int i = 0; i < nr; i++)
   {
-    if (ring_already_done[i])
+    if (ring_already_done[i]) {
       continue;
+    }
 
     const Ring * ri = m.ringi(i);
 
-    if (! ri->is_fused())
+    if (! ri->is_fused()) {
       continue;
+    }
 
-    if (ri->largest_number_of_bonds_shared_with_another_ring() < 2)
+    if (ri->largest_number_of_bonds_shared_with_another_ring() < 2) {
       continue;
+    }
 
     if (0 == max_difference_in_ring_size_for_strongly_fused)
       ;
@@ -6367,29 +6433,31 @@ compute_non_planar_fused_rings(Molecule & m,
 
     set_vector(atmp, matoms, 0);
 
-    for (int j = 0; j < nr; j++)
-    {
-      if (flag != ring_already_done[j])
+    for (int j = 0; j < nr; j++) {
+      if (flag != ring_already_done[j]) {
         continue;
+      }
 
       const Ring * rj = m.ringi(j);
       rj->set_vector(atmp, 1);
 
       int h = heteroatoms_in_ring(rj, z);
 
-      if (h)
+      if (h) {
         heterocycles_in_strongly_fused_systems++;
+      }
     }
 
     int heteroatoms_in_system = 0;
-    for (int j = 0; j < matoms; j++)
-    {
-      if (atmp[j] && 6 != z[j])
+    for (int j = 0; j < matoms; j++) {
+      if (atmp[j] && 6 != z[j]) {
         heteroatoms_in_system++;
+      }
     }
 
-    if (heteroatoms_in_system > max_heteroatoms_in_system)
+    if (heteroatoms_in_system > max_heteroatoms_in_system) {
       max_heteroatoms_in_system = heteroatoms_in_system;
+    }
   }
 
   descriptor[iwdescr_nsfsdsys].set(static_cast<float>(number_strongly_fused_systems_found));
@@ -6407,8 +6475,9 @@ compute_fused_rings(Molecule & m,
 {
   int nr = m.nrings();
 
-  if (nr < 2)
+  if (nr < 2) {
     return 1;
+  }
 
   int * rtmp = new_int(nr); std::unique_ptr<int[]> free_rtmp(rtmp);
 
