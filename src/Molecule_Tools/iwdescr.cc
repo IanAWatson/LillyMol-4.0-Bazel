@@ -3718,59 +3718,61 @@ compute_ring_descriptors(Molecule & m,
     else
       aliphatic_rings++;
 
-    if (! ri->is_fused())
-    {
+    if (! ri->is_fused()) {
       float tmp = compute_ring_isolation(m, ncon, *ri);
       ring_isolation_score += tmp;
     }
 
     int hac = heteroatoms_in_ring(ri, z);
-    if (hac > max_heteroatoms_in_ring)
+    if (hac > max_heteroatoms_in_ring) {
       max_heteroatoms_in_ring = hac;
+    }
 
     exocyclic_bonds += compute_exocyclic_bonds(m, z, *ri, ncon, double_bond_attachments, 
                                                singly_connected_attachments, singly_connected_heteroatoms,
                                                singly_connected_donors);
 
-    if (! ri->is_fused())
-    {
+    if (! ri->is_fused()) {
       isolated_rings++;
-      if (hac > 0)
+      if (hac > 0) {
         isolated_heterocycles++;
+      }
     }
 
     int rs = ri->number_elements();
 
-    if (rs > largest_ring_size)
+    if (rs > largest_ring_size) {
       largest_ring_size = rs;
+    }
 
-    float tmp = static_cast<float>(hac) / static_cast<float>(rs);
-    if (tmp > max_ring_heteroatom_fraction)
+    float tmp = iwmisc::Fraction<float>(hac, rs);
+    if (tmp > max_ring_heteroatom_fraction) {
       max_ring_heteroatom_fraction = tmp;
+    }
 
-    if (tmp < min_ring_heteroatom_fraction)
+    if (tmp < min_ring_heteroatom_fraction) {
       min_ring_heteroatom_fraction = tmp;
+    }
 
-    if (rs < MAX_RING_SIZE)
+    if (rs < MAX_RING_SIZE) {
       nrings[rs]++;
+    }
 
-    if (ring_already_done[i])
+    if (ring_already_done[i]) {
       continue;
+    }
 
     int system_size = 1;
     int atoms_in_system = ri->number_elements();
 
-    if (ri->is_fused())
-    {
+    if (ri->is_fused()) {
       set_vector(atom_already_done, matoms, 0);
 
       ri->set_vector(atom_already_done, 1);
 
-      for (int j = i + 1; j < nr; j++)
-      {
+      for (int j = i + 1; j < nr; j++) {
         const Ring * rj = m.ringi(j);
-        if (rj->fused_system_identifier() == ri->fused_system_identifier())
-        {
+        if (rj->fused_system_identifier() == ri->fused_system_identifier()) {
           system_size++;
           atoms_in_system += atoms_not_already_marked(*rj, atom_already_done);
           ring_already_done[j] = 1;
@@ -3783,26 +3785,31 @@ compute_ring_descriptors(Molecule & m,
     cerr << "System contains " << system_size << " rings and " << atoms_in_system << " atoms\n";
 #endif
 
-    if (system_size > rings_in_largest_system)
+    if (system_size > rings_in_largest_system) {
       rings_in_largest_system = system_size;
+    }
 
-    if (system_size > 1)
+    if (system_size > 1) {
       ring_systems_containing_multiple_rings++;
+    }
 
-    if (atoms_in_system > atoms_in_largest_system)
+    if (atoms_in_system > atoms_in_largest_system) {
       atoms_in_largest_system = atoms_in_system;
+    }
   }
 
 #ifdef NOW_DONE_ABOVE
   for (auto i = 0; i < matoms; ++i)
   {
-    if (1 != m.ncon(i))
+    if (1 != m.ncon(i)) {
       continue;
+    }
 
     const auto r = m.other(i, 0);
 
-    if (0 == m.nrings(r))
+    if (0 == m.nrings(r)) {
       continue;
+    }
 
     cerr << "Atom " << i << ' ' << m.smarts_equivalent_for_atom(i) << " adjacent to ring\n";
 
@@ -3819,19 +3826,20 @@ compute_ring_descriptors(Molecule & m,
 
 // for some descriptors, examine the non sssr rings too
 
-  for (int i = 0; i < m.non_sssr_rings(); i++)
-  {
+  for (int i = 0; i < m.non_sssr_rings(); i++) {
     const Ring * ri = m.non_sssr_ring(i);
 
     int hac = heteroatoms_in_ring(ri, z);
-    if (hac > max_heteroatoms_in_ring)
+    if (hac > max_heteroatoms_in_ring) {
       max_heteroatoms_in_ring = hac;
+    }
 
     int rs = ri->number_elements();
 
     float tmp = static_cast<float>(hac) / static_cast<float>(rs);
-    if (tmp > max_ring_heteroatom_fraction)
+    if (tmp > max_ring_heteroatom_fraction) {
       max_ring_heteroatom_fraction = tmp;
+    }
 
 //  if (tmp < min_ring_heteroatom_fraction)
 //    min_ring_heteroatom_fraction = tmp;
@@ -3881,10 +3889,9 @@ compute_ring_descriptors(Molecule & m,
 {
   assert (m.ok());
 
-  int nr = m.nrings();
+  const int nr = m.nrings();
 
-  if (0 == nr)
-  {
+  if (0 == nr) {
     descriptor[iwdescr_mhr].set(0.0);
     descriptor[iwdescr_mxhrf].set(0.0);
     descriptor[iwdescr_mnhrf].set(0.0);
@@ -3895,6 +3902,13 @@ compute_ring_descriptors(Molecule & m,
     descriptor[iwdescr_ringisol].set(0.0);
     descriptor[iwdescr_isolrc].set(0.0);
     descriptor[iwdescr_isolhtrc].set(0.0);
+    descriptor[iwdescr_arring].set(0.0);
+    descriptor[iwdescr_alring].set(0.0);
+    descriptor[iwdescr_excybond].set(0.0);
+    descriptor[iwdescr_excydbond].set(0.0);
+    descriptor[iwdescr_excydscon].set(0.0);
+    descriptor[iwdescr_excydsconh].set(0.0);
+    descriptor[iwdescr_excydscondon].set(0.0);
 
     return 1;
   }
