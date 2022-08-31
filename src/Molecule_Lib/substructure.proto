@@ -648,6 +648,11 @@ message MatchedAtomMatch {
 
   // Smarts that must match at that atom.
   // First query atom must match the matched atom.
+  // If the first character of the smarts is '!' that becomes
+  // part of a rejection list, any match causes a rejection (any).
+  // If it does not start with '!', then it is a positive
+  // match, and we then require at least one of the positive
+  // matches to match (or).
   repeated string smarts = 2;
 
   // Many of these can be combined in a logical expression.
