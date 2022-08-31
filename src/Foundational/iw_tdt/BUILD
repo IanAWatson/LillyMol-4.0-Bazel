@@ -21,6 +21,22 @@ cc_library(
 )
 
 cc_binary (
+    name = "tdt_sort",
+    srcs = [
+        "tdt_sort.cc",
+    ],
+    deps = [
+        ":iw_tdt",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwqsort:iwqsort",
+    ],
+)
+
+
+cc_binary (
     name = "tdt_stats",
     srcs = [
         "tdt_stats.cc",

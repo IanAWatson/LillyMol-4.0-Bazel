@@ -3,16 +3,21 @@
 */
 
 #include <stdlib.h>
+#include <iostream>
 #include <memory>
 
 //#include <pair.h>
 
-#include "cmdline_v2.h"
-#include "iwstring_data_source.h"
-#include "set_or_unset.h"
-#include "iw_tdt.h"
 #define IWQSORT_FO_IMPLEMENTATION
-#include "iwqsort.h"
+
+#include "Foundational/cmdline_v2/cmdline_v2.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/set_or_unset.h"
+#include "Foundational/iwmisc/iwre2.h"
+#include "Foundational/iwqsort/iwqsort.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
+
+using std::cerr;
 
 static int verbose = 0;
 
@@ -33,7 +38,7 @@ static int default_global_sort_order = 1;
 
 static int default_global_column_for_sort_key = 0;
 
-static IW_Regular_Expression sort_by_grepc;
+static std::unique_ptr<RE2> sort_by_grepc;
 
 /*
   We are often called upon to sort things that look like 'D100' of 'A3'
@@ -175,7 +180,7 @@ TAG_and_Direction::construct_from_command_line_token(const const_IWSubstring & t
     ;
   else
   {
-    cerr << "TAG_and_Direction::construct_from_command_line_token:invalid index " << _which_one_to_retrieve << endl;
+    cerr << "TAG_and_Direction::construct_from_command_line_token:invalid index " << _which_one_to_retrieve << '\n';
     return 0;
   }
 
@@ -341,7 +346,7 @@ Offset_Value_Float::build(off_t offset,
   {
     if (! tag_and_direction[i].build(tdt, _value[i]))
     {
-      cerr << "Offset_Value_Float:build:invalid tdt " << tdt << endl;
+      cerr << "Offset_Value_Float:build:invalid tdt " << tdt << '\n';
       return 0;
     }
   }
@@ -367,7 +372,7 @@ Offset_Value_String::build(off_t offset,
   {
     if (! tag_and_direction[i].build(tdt, _value[i]))
     {
-      cerr << "Offset_Value_Float:build:invalid tdt " << tdt << endl;
+      cerr << "Offset_Value_Float:build:invalid tdt " << tdt << '\n';
       return 0;
     }
   }
@@ -432,7 +437,7 @@ TDT_Comparitor_Float::operator ()(const Offset_Value_Float & ov1,
 
   for (int i = 0; i < ntags; i++)
   {
-//  cerr << "i = " << i << " comparing " << v1[i] << " and " << v2[i] << endl;
+//  cerr << "i = " << i << " comparing " << v1[i] << " and " << v2[i] << '\n';
     int tmp = tag_and_direction[i].do_comparison(v1[i], v2[i]);
 
     if (0 != tmp)
@@ -527,7 +532,7 @@ TDT_Comparitor_int::operator()(const Offset_Value_Int & ov1,
 static void
 usage(int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Sorts a TDT file based on values of a tag\n";
   cerr << " -T <tag>       specify the sort field tag\n";
   cerr << " -T +tag        sort on tag in ascending order\n";
@@ -630,7 +635,7 @@ read_the_tdts (iwstring_data_source & input,
   {
     if (! ov[ntdts].build(offset, tdt, missing_values_found))
     {
-      cerr << "Cannot process tdt " << ntdts << endl;
+      cerr << "Cannot process tdt " << ntdts << '\n';
       cerr << tdt;
       return 0;
     }
@@ -656,19 +661,19 @@ template int read_the_tdts(iwstring_data_source &, Offset_Value_String *, int &)
 
 static int
 do_grepc(const IW_TDT & tdt,
-         IW_Regular_Expression & rx)
+         std::unique_ptr<RE2> & rx)
 {
   int n = tdt.number_elements();
 
   int rc = 0;
 
-  for (int i = 0; i < n; i++)
-  {
+  for (int i = 0; i < n; i++) {
     const_IWSubstring s;
     tdt.item(i, s);
 
-    if (rx.matches(s))
-      rc++;
+    if (iwre2::RE2PartialMatch(s, *rx)) {
+      ++rc;
+    }
   }
 
   return rc;
@@ -781,17 +786,15 @@ tdt_sort (iwstring_data_source & input,
     return echo_the_tdts(input, ov, ntdts, output_fd);
   }
 
-  if (sort_by_grepc.active())
+  if (sort_by_grepc)
   {
     Offset_Value_Int * ov = new Offset_Value_Int[ntdts];
-    if (NULL == ov)
-    {
+    if (NULL == ov) {
       cerr << "Very bad news, cannot allocate " << ntdts << " offset/value pairs\n";
       return 0;
     }
 
-    if (! read_the_tdts_grepc_version(input, ov, ntdts))
-    {
+    if (! read_the_tdts_grepc_version(input, ov, ntdts)) {
       cerr << "Cannot read the TDT's\n";
       return 0;
     }
@@ -919,42 +922,37 @@ tdt_sort(int argc, char ** argv)
   {
     const_IWSubstring rx = cl.string_value("grepc");
 
-    if (! sort_by_grepc.set_pattern(rx))
-    {
+    if (! iwre2::RE2Reset(sort_by_grepc, rx)) {
       cerr << "Invalid sort by count rx '" << rx << "'\n";
       return 4;
     }
 
-    if (verbose)
-      cerr << "Will sort by number of matches to '" << sort_by_grepc.source() << "'\n";
+    if (verbose) {
+      cerr << "Will sort by number of matches to '" << sort_by_grepc->pattern() << "'\n";
+    }
   }
   else
   {
     ntags = cl.option_count('T');
 
-    if (0 == ntags)
-    {
+    if (0 == ntags) {
       cerr << "Must specify sort field via the -T option\n";
       usage(3);
     }
 
     tag_and_direction = new TAG_and_Direction[ntags];
-    if (NULL == tag_and_direction)
-    {
+    if (NULL == tag_and_direction) {
       cerr << "Cannot allocate " << ntags << " tags\n";
       return 4;
     }
   }
 
-  if (ntags)
-  {
+  if (ntags) {
     int i = 0;
     const_IWSubstring t;
 
-    while (cl.value('T', t, i))
-    {
-      if (! tag_and_direction[i].construct_from_command_line_token(t))
-      {
+    while (cl.value('T', t, i)) {
+      if (! tag_and_direction[i].construct_from_command_line_token(t)) {
         cerr << "Invalid sort criterion '" << t << "'\n";
         return i + 1;
       }
@@ -963,8 +961,7 @@ tdt_sort(int argc, char ** argv)
     }
   }
 
-  if (cl.option_present('z'))
-  {
+  if (cl.option_present('z')) {
     strip_leading_non_numerics_from_strings = 1;
     if (verbose)
       cerr << "Will strip leading non-numeric chars from identifiers\n";
@@ -984,29 +981,25 @@ tdt_sort(int argc, char ** argv)
     which_one_to_retrieve--;
   }*/
 
-  if (cl.option_present('s'))
-  {
+  if (cl.option_present('s')) {
     numeric_sort = 0;
     if (verbose)
       cerr << "Sort based on string comparisons\n";
   }
 
-  if (cl.option_present('m'))
-  {
+  if (cl.option_present('m')) {
     IWString m = cl.string_value('m');
 
-    if (numeric_sort)
-    {
+    if (numeric_sort) {
       float tmp;
-      if (! m.numeric_value(tmp))
-      {
+      if (! m.numeric_value(tmp)) {
         cerr << "The -m (missing value) option must be followed by a valid number\n";
         usage(4);
       }
 
       missing_value_float.set(tmp);
       if (verbose)
-        cerr << "Missing values will be set to " << tmp << endl;
+        cerr << "Missing values will be set to " << tmp << '\n';
     }
     else
     {
@@ -1017,22 +1010,22 @@ tdt_sort(int argc, char ** argv)
     }
   }
 
-  if (0 == cl.number_elements())
-  {
+  if (cl.empty()) {
     cerr << "Insufficient arguments\n";
     usage(2);
   }
 
-  if (cl.number_elements() > 1)
-  {
+  if (cl.number_elements() > 1) {
     cerr << "Extra arguments ignored\n";
   }
 
-  if (! tdt_sort(cl[0], 1))
-    return 31;
+  if (! tdt_sort(cl[0], 1)) {
+    return 1;
+  }
 
-  if (NULL != tag_and_direction)
+  if (NULL != tag_and_direction) {
     delete [] tag_and_direction;
+  }
 
   return 0;
 }
