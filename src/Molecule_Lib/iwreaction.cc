@@ -4136,15 +4136,14 @@ Reaction_Site::do_makes_breaks(Molecule & result,
 //  same bond - and that bond was removed. The second time we tried to remove
 //  the bond we got a fatal error. Therefore only try the removal if the atoms are bonded
 
-    if (! result.are_bonded(a1, a2))
-    {
-      cerr << "Reaction_Site::do_makes_breaks: atoms " << a1 << " and " << a2 << " are not bonded. IGNORED. " << _comment << endl;
-      cerr << result.smiles() << endl;
-      cerr << result.smarts_equivalent_for_atom(a1) << ' ' << result.smarts_equivalent_for_atom(a2) << endl;
-      abort();
+    if (! result.are_bonded(a1, a2)) {
+      cerr << "Reaction_Site::do_makes_breaks: atoms " << a1 << " and " << a2 << " are not bonded. IGNORED. " << _comment << '\n';
+      cerr << result.smiles() << '\n';
+      cerr << result.smarts_equivalent_for_atom(a1) << ' ' << result.smarts_equivalent_for_atom(a2) << '\n';
     }
-    else
+    else {
       result.remove_bond_between_atoms(a1, a2);
+    }
   }
 
 #ifdef PRINT_SAVED_CHIRAL_CENTRES
@@ -4212,7 +4211,7 @@ Reaction_Site::do_makes_breaks(Molecule & result,
 
   for (int i = 0; i < na; i++)
   {
-//  cerr << "Embedding contains " << embedding.number_elements() << " items, remove atom " << _atoms_to_be_removed[i] << endl;
+//  cerr << "Embedding contains " << embedding.number_elements() << " items, remove atom " << _atoms_to_be_removed[i] << '\n';
     assert (embedding.ok_index(_atoms_to_be_removed[i]));
 
     const atom_number_t a = embedding[_atoms_to_be_removed[i]] + offset;
@@ -4237,7 +4236,7 @@ Reaction_Site::do_makes_breaks(Molecule & result,
     {
       atom_number_t j = embedding[_fragments_to_be_removed[i]] + offset;
 
-//    cerr << "Fragment being removed anchored at atom " << j << ' ' << result.smarts_equivalent_for_atom(j) << endl;
+//    cerr << "Fragment being removed anchored at atom " << j << ' ' << result.smarts_equivalent_for_atom(j) << '\n';
 
       fragments_to_be_removed.add(result.atomi(j));
     }
@@ -4334,7 +4333,7 @@ Reaction_Site::_discern_chiral_centres_to_be_saved_around_removed_atoms(Molecule
 {
   const int n = _atoms_to_be_removed.number_elements();
 
-//cerr << "Reaction_Site::_discern_chiral_centres_to_be_saved_around_removed_atoms:checking " << n << " atoms to be remove, offset " << offset << endl;
+//cerr << "Reaction_Site::_discern_chiral_centres_to_be_saved_around_removed_atoms:checking " << n << " atoms to be remove, offset " << offset << '\n';
 
   for (int i = 0; i < n; i++)
   {
@@ -4348,7 +4347,7 @@ Reaction_Site::_discern_chiral_centres_to_be_saved_around_removed_atoms(Molecule
 
     int kcon = ak->ncon();
 
-//  cerr << "Embedding member " << j << " becomes atom " << k << " ncon = " << kcon << endl;
+//  cerr << "Embedding member " << j << " becomes atom " << k << " ncon = " << kcon << '\n';
 
     for (int l = 0; l < kcon; l++)
     {
@@ -4389,7 +4388,7 @@ Reaction_Site::_do_invert_stereo_centres (Molecule & result,
 
     atom_number_t a = embedding[m] + offset;
 
-//  cerr << "Embedding member " << m << " is atom " << a << " present " << result.chiral_centre_at_atom(a) << " offset = " << offset << endl;
+//  cerr << "Embedding member " << m << " is atom " << a << " present " << result.chiral_centre_at_atom(a) << " offset = " << offset << '\n';
 
     if (nullptr != result.chiral_centre_at_atom(a))
       result.invert_chirality_on_atom(a);
@@ -4532,7 +4531,7 @@ Sidechain_Reaction_Site::add_reagent(Molecule_and_Embedding * m,
   }
   else if (nhits > smc.suppress_if_more_than_this_many_substructure_search_hits())
   {
-    cerr << "Sidechain_Reaction_Site::add_reagent::too many hits " << nhits << " (max " << smc.suppress_if_more_than_this_many_substructure_search_hits() << ") for reagent " << m->name() << endl;
+    cerr << "Sidechain_Reaction_Site::add_reagent::too many hits " << nhits << " (max " << smc.suppress_if_more_than_this_many_substructure_search_hits() << ") for reagent " << m->name() << '\n';
     reagent_is_ok = 0;
   }
 
@@ -4550,7 +4549,7 @@ Sidechain_Reaction_Site::add_reagent(Molecule_and_Embedding * m,
     return 0;
   }
 
-  //cerr << "Sidechain_Reaction_Site::add_reagent:_matched_atom_changed? " << _matched_atom_changed << endl;
+  //cerr << "Sidechain_Reaction_Site::add_reagent:_matched_atom_changed? " << _matched_atom_changed << '\n';
 
   if (nullptr != _matched_atom_changed)
   {
@@ -4569,7 +4568,7 @@ Sidechain_Reaction_Site::add_reagent(Molecule_and_Embedding * m,
     }
   }
 
-// cerr << "What about Kekule shifts " << _toggle_kekule_form.active() << endl;;
+// cerr << "What about Kekule shifts " << _toggle_kekule_form.active() << '\n';;
 
   if (1 == nhits)    // hopefully the most common case
   {  
@@ -4590,7 +4589,7 @@ Sidechain_Reaction_Site::add_reagent(Molecule_and_Embedding * m,
         cerr << "Sidechain_Reaction_Site::add_reagent: ";
         if (_comment.length())
           cerr << "'" << _comment << "' ";
-        cerr << "hit number to process (" << smc.process_hit_number() << ") is out of range - #hits= " << nhits << endl;
+        cerr << "hit number to process (" << smc.process_hit_number() << ") is out of range - #hits= " << nhits << '\n';
 
         return 0;
     }    
@@ -4614,7 +4613,7 @@ Sidechain_Reaction_Site::add_reagent(Molecule_and_Embedding * m,
 
 // If we are making regio-isomers, make NHITS - 1 copies of the reagent
 
-//cerr << "make_new_reagent_for_each_hit? " <<  (smc.make_new_reagent_for_each_hit()) << endl;
+//cerr << "make_new_reagent_for_each_hit? " <<  (smc.make_new_reagent_for_each_hit()) << '\n';
 
   if (smc.make_new_reagent_for_each_hit())    
   {
@@ -4643,13 +4642,13 @@ Sidechain_Reaction_Site::add_reagent(Molecule_and_Embedding * m,
 // Looks like multiple hits, but we have no instructions on how to deal with that
 
   cerr << "Sidechain_Reaction_Site::add_reagent: " << nhits << " hits to query, fatal\n";
-  cerr << "Molecule " << m->name() << endl;
+  cerr << "Molecule " << m->name() << '\n';
 
 #ifdef ECHO_MULTIPLE_MATCHES
   for (int i = 0; i < sresults.number_embeddings(); i++)
   {
     const Set_of_Atoms * e = sresults.embedding(i);
-    cerr << (*e) << endl;
+    cerr << (*e) << '\n';
   }
 #endif
 
@@ -4704,7 +4703,7 @@ determine_atom_number(const Set_of_Atoms & scaffold_embedding,
 //const Molecule_and_Embedding * sc = etmp.reagent()[c];
 
 #ifdef DEBUG_MAKE_INTER_PARTICLE_BONDS
-  cerr << "The atom is in component " << c << endl;
+  cerr << "The atom is in component " << c << '\n';
   cerr << "Reagent contains " << etmp.reagent()[c]->natoms() << " atoms\n";
 #endif
 
@@ -4738,7 +4737,7 @@ IWReaction::_make_inter_particle_bond(Molecule & result,
                                       const Enumeration_Temporaries & etmp) const
 {
 #ifdef DEBUG_MAKE_INTER_PARTICLE_BONDS
-  cerr << "IWReaction::_make_inter_particle_bond: bond " << b.a1() << " to " << b.a2() << " embedding " << *scaffold_embedding << endl;
+  cerr << "IWReaction::_make_inter_particle_bond: bond " << b.a1() << " to " << b.a2() << " embedding " << *scaffold_embedding << '\n';
 #endif
 
   atom_number_t a1;
@@ -4750,12 +4749,12 @@ IWReaction::_make_inter_particle_bond(Molecule & result,
     return 0;
 
 #ifdef DEBUG_MAKE_INTER_PARTICLE_BONDS
-  cerr << "Making " << b << " atoms " << a1 << " and " << a2 << endl;
+  cerr << "Making " << b << " atoms " << a1 << " and " << a2 << '\n';
 #endif
 
   if (! result.add_bond(a1, a2, b.btype()))
   {
-    cerr << "IWReaction::_make_inter_particle_bond:cannot make bond between " << a1 << " and " << a2 << endl;
+    cerr << "IWReaction::_make_inter_particle_bond:cannot make bond between " << a1 << " and " << a2 << '\n';
     return 0;
   }
 
@@ -4835,7 +4834,7 @@ IWReaction::_set_bond_length(Molecule & result,
                              const Enumeration_Temporaries & etmp) const
 {
 #ifdef DEBUG_SET_BOND_LENGTH
-  cerr << "set bond length atoms are " << b.a1() << " and " << b.a2() << endl;
+  cerr << "set bond length atoms are " << b.a1() << " and " << b.a2() << '\n';
   b.write_msi(cerr, "  ", "bond_process");
 #endif
 
@@ -4848,15 +4847,15 @@ IWReaction::_set_bond_length(Molecule & result,
     return 0;
 
 #ifdef DEBUG_SET_BOND_LENGTH
-  cerr << "IWReaction::_set_bond_length:setting bond between " << a1 << " and " << a2 << " to length " << b.desired_length() << endl;
-  cerr << result.smarts_equivalent_for_atom(a1) << " and " << result.smarts_equivalent_for_atom(a2) << endl;
-  cerr << "Before setting length " << result.distance_between_atoms(a1, a2) << endl;
+  cerr << "IWReaction::_set_bond_length:setting bond between " << a1 << " and " << a2 << " to length " << b.desired_length() << '\n';
+  cerr << result.smarts_equivalent_for_atom(a1) << " and " << result.smarts_equivalent_for_atom(a2) << '\n';
+  cerr << "Before setting length " << result.distance_between_atoms(a1, a2) << '\n';
 #endif
 
   result.set_bond_length(a1, a2, b.desired_length());
 
 #ifdef DEBUG_SET_BOND_LENGTH
-  cerr << "After setting length " << result.distance_between_atoms(a1, a2) << endl;
+  cerr << "After setting length " << result.distance_between_atoms(a1, a2) << '\n';
 #endif
 
   return 1;
@@ -5041,7 +5040,7 @@ Scaffold_Reaction_Site::_do_intra_particle_replacements(Molecule & result,
     const Matched_Atom_in_Component & a1 = r->a1();
     const Matched_Atom_in_Component & a2 = r->a2();
 
-//  cerr << "in scaffold? " << a1.in_scaffold() << ' ' << a2.in_scaffold() << endl;
+//  cerr << "in scaffold? " << a1.in_scaffold() << ' ' << a2.in_scaffold() << '\n';
     if (a1.in_scaffold() || a2.in_scaffold())    // HUH, appears exactly wrong!
       continue;
 
@@ -5070,7 +5069,7 @@ IWReaction::_do_replacement(Molecule & result,
                             const Enumeration_Temporaries & etmp) const
 {
   if (!r.DoReplacement(result, scaffold_embedding, etmp)) {
-    cerr << "IWReaction::_do_replacement:replacement failed " << r << endl;
+    cerr << "IWReaction::_do_replacement:replacement failed " << r << '\n';
     return 0;
   }
 
@@ -5095,7 +5094,7 @@ Replace_Atom::DoReplacement(Molecule& result,
   if (! determine_atom_number(*scaffold_embedding, _a2, etmp, "Replace_Atom::DoReplacement:a2", a2))
     return 0;
 
-//cerr << "Atoms are " << a1 << " and " << a2 << endl;
+//cerr << "Atoms are " << a1 << " and " << a2 << '\n';
   if (! result.stereo_preserving_substitute(a1, a2))
   {
     cerr << "Replace_Atom::DoReplacement:failed, scaffold embedding " << (*scaffold_embedding) << endl;

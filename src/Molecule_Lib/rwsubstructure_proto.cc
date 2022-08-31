@@ -2146,18 +2146,15 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
 
   // The smiles and smarts directives scramble the _unique_id.
   if (_respect_initial_atom_numbering &&
-      (proto.has_smiles() || proto.has_smarts()))
-  {
+      (proto.has_smiles() || proto.has_smarts())) {
     cerr << "SingleSubstructureQuery::construct_from_proto:cannot use respect_initial_atom_numbering with smiles or smarts directives\n";
     return 0;
   }
 
-  if (proto.has_smiles())
-  {
+  if (proto.has_smiles()) {
     const IWString smiles = proto.smiles();
     Substructure_Atom * a = new Substructure_Atom;
-    if (! a->parse_smiles_specifier(smiles))
-    {
+    if (! a->parse_smiles_specifier(smiles)) {
       delete a;
       cerr << "Single_Substructure_Query::_construct_from_proto: cannot parse '" << smiles << "'\n";
       return 0;
@@ -2166,12 +2163,10 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
     _root_atoms.add(a);
   }
 
-  if (proto.has_smarts())
-  {
+  if (proto.has_smarts()) {
     const_IWSubstring smarts = proto.smarts();
 
-    if (! create_from_smarts(smarts))
-    {
+    if (! create_from_smarts(smarts)) {
       cerr << "Single_Substructure_Query::_construct_from_proto: cannot parse '" << smarts << "'\n";
       return 0;
     }
@@ -2546,6 +2541,7 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
   return 1;
 }
 
+
 int
 Single_Substructure_Query::_atom_numbers_in_geometric_constraints_ok(const geometric_constraints::SetOfGeometricConstraints* constraints) const {
   const resizable_array<int> atom_numbers_present = constraints->AtomNumbersPresent();
@@ -2566,8 +2562,7 @@ Single_Substructure_Query::ConstructFromProto(const SubstructureSearch::SingleSu
 {
   assert (ok());
 
-  if (! _construct_from_proto(proto))
-  {
+  if (! _construct_from_proto(proto)) {
     cerr << "SingleSubstructureQuery::ConstructFromProto:cannot build from proto\n";
     cerr << proto.ShortDebugString() << "\n";
     return 0;
@@ -2575,10 +2570,8 @@ Single_Substructure_Query::ConstructFromProto(const SubstructureSearch::SingleSu
 
 // Now that all the atoms have been defined, we can read in any chirality
 
-  for (const auto& chiral : proto.chiral_centre())
-  {
-    if (! _build_chirality_specification_from_proto(chiral))
-    {
+  for (const auto& chiral : proto.chiral_centre()) {
+    if (! _build_chirality_specification_from_proto(chiral)) {
       cerr << "Single_Substructure_Query::ConstructFromProto:invalid chirality '" << chiral.ShortDebugString() << "'\n";
       return 0;
     }
@@ -3209,8 +3202,9 @@ Substructure_Query::ConstructFromProto(const SubstructureSearch::SubstructureQue
     return 0;
   }
 
-  if (0 == proto.logexp_size())
+  if (0 == proto.logexp_size()) {
     return _number_elements;
+  }
 
   if (_each_component_search && proto.logexp_size() > 0)
   {

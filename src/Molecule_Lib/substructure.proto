@@ -630,6 +630,17 @@ message SubstructureEnvironment {
 // with a logical operator, but that seems too complex.
 // The assumption is that the first atom in the smarts
 // matches a matched atom from the main query.
+// Also useful for specifying exclusions. 
+// We have an amine group that should NOT be certain types.
+// Here the and operator is desirable.
+//  
+//  smarts: "[ND2H1]a@aC(=O)[OH]"
+//  matched_atom_must_be {
+//    atom: 0
+//    smarts: "!N-C=[O,S]"
+//    smarts: "!N[SD4](=*)(=*)"
+//    smarts: "!N[#6H0X4]"
+
 message MatchedAtomMatch {
   // The matched atom number. required.
   // If repeated, ALL such atoms must match. Should allow or conditions...

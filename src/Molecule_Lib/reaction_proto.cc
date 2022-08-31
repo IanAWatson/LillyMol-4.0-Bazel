@@ -1,5 +1,7 @@
 #include <memory>
 
+#include "Foundational/iwmisc/proto_support.h"
+
 // Expose public member function in toggle_kekule_form for reading protobuf
 #define COMPILING_TOGGLE_KEKULE_FORM_PROTO
 
@@ -736,13 +738,30 @@ Scaffold_Reaction_Site::ConstructFromProto(const ReactionProto::ScaffoldReaction
 
   _unique_id = proto.id();
 
-  if (!Reaction_Site::ConstructFromProto(proto))
+  if (!Reaction_Site::ConstructFromProto(proto)) {
       return WriteError("ScaffoldReactionSite::ConstructFromProto:invalid Reaction_Site", proto);
+  }
 
   if (proto.has_smarts()) {
     const IWString smarts = proto.smarts();
     if (! Substructure_Query::create_from_smarts(smarts))
       return WriteError("Scaffold_Reaction_Site::ConstructFromProto:invalid smarts", proto);
+  }
+
+  if (proto.has_query_file()) {
+    IWString fname = proto.query_file();
+    std::optional<SubstructureSearch::SubstructureQuery> maybe_proto = 
+        iwmisc::ReadTextProto<SubstructureSearch::SubstructureQuery>(fname);
+
+    if (! maybe_proto) {
+      cerr << "Scaffold_Reaction_Site::ConstructFromProto:cannot parse query file '" << fname << "'\n";
+      return 0;
+    }
+    if (! Substructure_Query::ConstructFromProto(*maybe_proto)) {
+      cerr << "Scaffold_Reaction_Site::ConstructFromProto:cannot parse query file '" << fname << "'\n";
+      cerr << maybe_proto->ShortDebugString() << '\n';
+      return 0;
+    }
   }
 
   return 1;
