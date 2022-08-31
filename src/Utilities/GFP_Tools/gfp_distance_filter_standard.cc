@@ -400,31 +400,28 @@ Build(const IW_General_Fingerprint& gfp,
       GFP_Standard& destination) {
   destination.build_molecular_properties(gfp.molecular_properties_integer());
 
-  static int mk_ndx = -1;
-  static int mk2_ndx = -1;
-  static int iw_ndx = -1;
-  if (mk_ndx < 0) {
-    for (int i = 0; i < number_fingerprints(); ++i) {
-      const IWString& tag = fixed_fingerprint_tag(i);
-      if (tag.starts_with("FPMK2")) {
-        mk2_ndx = i;
-      } else if (tag.starts_with("FPMK")) {
-        mk_ndx = i;
-      } else if (tag.starts_with("FPIW")) {
-        iw_ndx = i;
-      }
-    }
+  static bool first_call = true;
+  static std::array<int, 3> stdfp_index;
 
+  using gfp::StdFpIndex;
+
+  if (first_call) {
+    if (! gfp::GetStandardFingerprintIndices(stdfp_index)) {
+      return 0;
+    }
+    first_call = false;
   }
+
 #ifdef DEBUG_BUILD
   cerr << "FP 0 " << gfp[0].nbits() << '\n';
   cerr << "FP 1 " << gfp[1].nbits() << '\n';
   cerr << "FP 2 " << gfp[2].nbits() << '\n';
   cerr << "FP 3 " << gfp[3].nbits() << '\n';
 #endif
-  destination.build_iw(gfp[iw_ndx]);
-  destination.build_mk(gfp[mk_ndx]);
-  destination.build_mk2(gfp[mk2_ndx]);
+  destination.build_molecular_properties(gfp.molecular_properties_integer());
+  destination.build_mk(gfp[stdfp_index[StdFpIndex::kMK]]);
+  destination.build_mk2(gfp[stdfp_index[StdFpIndex::kMK2]]);
+  destination.build_iw(gfp[stdfp_index[StdFpIndex::kIWfp]]);
 
   return 1;
 }

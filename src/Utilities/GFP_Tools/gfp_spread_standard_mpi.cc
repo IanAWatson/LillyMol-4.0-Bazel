@@ -503,6 +503,10 @@ int
 Options::ReadPool(iwstring_data_source& input) {
   IW_TDT tdt;
 
+  std::array<int, 3> stdfp_index;
+
+  using gfp::StdFpIndex;
+
   int ndx = 0;
 
   for (; tdt.next(input) && ndx < _pool_size; ndx++) {
@@ -521,15 +525,14 @@ Options::ReadPool(iwstring_data_source& input) {
       return 0;
     }
 
-    if (0 == ndx) {
-      if (!standard_fingerprints_present())
-        return 0;
+    if (0 == ndx && ! gfp::GetStandardFingerprintIndices(stdfp_index)) {
+      return 0;
     }
 
     _pool[ndx].build_molecular_properties(gfp.molecular_properties_integer());
-    _pool[ndx].build_iw(gfp[0]);
-    _pool[ndx].build_mk(gfp[1]);
-    _pool[ndx].build_mk2(gfp[2]);
+    _pool[ndx].build_mk(gfp[stdfp_index[StdFpIndex::kMK]]);
+    _pool[ndx].build_mk2(gfp[stdfp_index[StdFpIndex::kMK2]]);
+    _pool[ndx].build_iw(gfp[stdfp_index[StdFpIndex::kIWfp]]);
   }
 
   for (int i = 0; i < ndx; ++i) {

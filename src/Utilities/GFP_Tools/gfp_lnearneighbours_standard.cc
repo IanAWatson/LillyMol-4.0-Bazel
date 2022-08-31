@@ -216,35 +216,40 @@ static int verbose = 0;
 static const_IWSubstring output_identifier("PCN<");
 
 static int
-build_fingerprint (IW_TDT & tdt,
-                   GFP_Standard & fp,
-                   int check_tags = 0)
+build_fingerprint(IW_TDT & tdt,
+                  GFP_Standard & fp)
 {
   IW_General_Fingerprint gfp;
 
   int fatal;
-  if (! gfp.construct_from_tdt(tdt, fatal))
-  {
+  if (! gfp.construct_from_tdt(tdt, fatal)) {
     cerr << "Cannot read fingerprint\n";
     return 0;
   }
 
-  if (check_tags)
-  {
-    if (! standard_fingerprints_present())
+  // Will be initialised on the first call.
+  static bool first_call = true;
+  static std::array<int, 3> stdfp_index;
+
+  using gfp::StdFpIndex;
+
+  if (first_call) {
+    if (! gfp::GetStandardFingerprintIndices(stdfp_index)) {
       return 0;
+    }
+    first_call = false;
   }
 
   fp.build_molecular_properties(gfp.molecular_properties_integer());
-  fp.build_iw(gfp[0]);
-  fp.build_mk(gfp[1]);
-  fp.build_mk2(gfp[2]);
+  fp.build_mk(gfp[stdfp_index[StdFpIndex::kMK]]);
+  fp.build_mk2(gfp[stdfp_index[StdFpIndex::kMK2]]);
+  fp.build_iw(gfp[stdfp_index[StdFpIndex::kIWfp]]);
 
   return 1;
 }
 
 static int
-build_pool (iwstring_data_source & input)
+build_pool(iwstring_data_source & input)
 {
   IW_TDT tdt;
 
@@ -254,15 +259,18 @@ build_pool (iwstring_data_source & input)
 
   for (;tdt.next(input), ndx < pool_size; ndx++)
   {
-    if (! needle[ndx].build(tdt))
+    if (! needle[ndx].build(tdt)) {
       return 0;
+    }
 
-    if (! build_fingerprint(tdt, pool[ndx], 0 == ndx))
+    if (! build_fingerprint(tdt, pool[ndx])) {
       return 0;
+    }
   }
 
-  if (verbose)
+  if (verbose) {
     cerr << ndx << " fingerprint objects added to pool\n";
+  }
 
   pool_size = ndx;
 
@@ -369,8 +377,9 @@ nearneighbours (iwstring_data_source & input,
     }
 
     GFP_Standard fp;
-    if (! build_fingerprint(tdt, fp))
+    if (! build_fingerprint(tdt, fp)) {
       return 0;
+    }
 
     fingerprints_processed++;
 

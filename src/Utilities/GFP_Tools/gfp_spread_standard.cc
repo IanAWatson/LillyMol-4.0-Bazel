@@ -1178,6 +1178,10 @@ read_pool(iwstring_data_source& input, F* pool, int& pool_size)
 {
   IW_TDT tdt;
 
+  std::array<int, 3> stdfp_index;
+
+  using gfp::StdFpIndex;
+
   int ndx = 0;
 
   for (; tdt.next(input) && ndx < pool_size; ndx++) {
@@ -1195,15 +1199,14 @@ read_pool(iwstring_data_source& input, F* pool, int& pool_size)
       return 0;
     }
 
-    if (0 == ndx) {
-      if (!standard_fingerprints_present())
+    if (0 == ndx && ! gfp::GetStandardFingerprintIndices(stdfp_index)) {
         return 0;
     }
 
     fingerprints[ndx].build_molecular_properties(gfp.molecular_properties_integer());
-    fingerprints[ndx].build_iw(gfp[0]);
-    fingerprints[ndx].build_mk(gfp[1]);
-    fingerprints[ndx].build_mk2(gfp[2]);
+    fingerprints[ndx].build_mk(gfp[stdfp_index[StdFpIndex::kMK]]);
+    fingerprints[ndx].build_mk2(gfp[stdfp_index[StdFpIndex::kMK2]]);
+    fingerprints[ndx].build_iw(gfp[stdfp_index[StdFpIndex::kIWfp]]);
 
     if (previously_computed_nn_distance_tag.length()) {
       if (!get_previously_computed_nearest_neighbour(tdt,
