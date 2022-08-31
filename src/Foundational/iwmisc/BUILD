@@ -40,6 +40,7 @@ cc_library(
         "_set_or_unset_float.cc",
     ],
     hdrs = [
+        "combinations.h",
         "fetch_via_regexp.h",
         "iwarchive.h",
         "iwdigits.h",
@@ -175,6 +176,17 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_test(
+    name = "combinations_test",
+    srcs = [
+        "combinations_test.cc",
+    ],
+    deps = [
+        ":iwmisc",
+        "@googletest//:gtest_main",
     ],
 )
 
