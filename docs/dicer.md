@@ -32,7 +32,7 @@ is allowed to process this with no constraints, after 3 hours of processing
 it has generated 85k fragments, with no real indication of how much remains.
 After 13 hours it had generated 170k fragments. After 5 days it has generated
 520k fragments. After 7 days it generated 595k fragments. After 13 days it had
-generated 690k fragments.
+generated 690k fragments. After 21 days it had generated 715k fragments.
 
 Enable this periodic reporting with `-B freport=10000` to have it report every 10k 
 fragments formed for any particular molecule.
@@ -87,7 +87,7 @@ a lower and an upper atom count for fragments produced. Unfortunately
 the fragments are generated and then checked for violations, which is not
 efficient. Work is under way to fix this.
 
-Within the -B optino (see below) there are options for selecting
+Within the -B option (see below) there are options for selecting
 fragments based on what fraction of the whole molecule they comprise.
 
 ### Chirality
@@ -99,7 +99,7 @@ Experience tells us that differentiating I, Cl, and Br is seldom useful in an SA
 Add `-T I=Cl -T Br=Cl` to translate all heavy halogens to `Cl`.
 
 ### Atom Typing
-Dicer fragmentation can be veru useful in *de-novo* molecule construction and
+Dicer fragmentation can be very useful in *de-novo* molecule construction and
 atom types can be assigned and saved with the fragments.
 
 ### The `-B` option.
@@ -148,6 +148,7 @@ Read bonds to be broken from sdf tag \<tag\> (def DICER_BBRK).  Use case lost in
 #### nbamide
 Do NOT break amide and amide-like bonds.
 #### nbfts
+**This is currently not working properly, do not use.**
 Do NOT break bonds that would yield fragments too small. This is generally a good idea for
 performance - should be a default.
 #### appnatoms
