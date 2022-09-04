@@ -295,8 +295,9 @@ popcount_2fp(const unsigned* bufA,const unsigned* bufB,const int nwords)
 // Could possibly be made more efficient with loop unrolling, see gfp_standard.cc
 int
 FixedBitVector::BitsInCommon(const FixedBitVector& rhs) const {
+  // 32 64-bit words, multiply by 2 for popcount_2fp.
   if (_nwords == 32) {
-    return popcount_2fp((const unsigned*) _bits, (const unsigned*)rhs._bits, _nwords);
+    return popcount_2fp((const unsigned*) _bits, (const unsigned*)rhs._bits, _nwords * 2);
   }
 
   int rc = 0;
