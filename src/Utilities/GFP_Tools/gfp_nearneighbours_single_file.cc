@@ -56,8 +56,6 @@ static int write_minimal_histogram = 0;
 
 static extending_resizable_array<int> neighbour_count;
 
-static int fingerprints_read = 0;
-
 static Tversky tversky;
 
 static IWString smiles_tag("$SMI<");
@@ -559,21 +557,21 @@ nearneighbours(IW_GFP_D_ID & fp,
 
   neighbours_found = 0;
 
-  for (int i = 0; i < pool_size; i++)
-  {
-    if (! can_be_compared(fp, pool[i]))
+  for (int i = 0; i < pool_size; i++) {
+    if (! can_be_compared(fp, pool[i])) {
       continue;
+    }
 
     similarity_type_t t;
-    if (abandon_distance_threshold > static_cast<similarity_type_t>(0.0))
-    {
+    if (abandon_distance_threshold > static_cast<similarity_type_t>(0.0)) {
       if (! fp.IW_General_Fingerprint::tanimoto(pool[i], abandon_distance_threshold, t))
         continue;
 
       t = static_cast<similarity_type_t>(1.0) - t;
     }
-    else 
+    else  {
       t = compute_the_distance(fp, pool[i], tversky);
+    }
 
 //#define DEBUG_NN
 #ifdef DEBUG_NN
@@ -1041,7 +1039,7 @@ nearneighbours(int argc, char ** argv)
 
   if (verbose)
   {
-    cerr << "Read " << fingerprints_read << " fingerprints\n";
+    cerr << "Read " << pool_size << " fingerprints\n";
     cerr << "Neighbour distances for " << distance_stats.n() << " neighbours between " << distance_stats.minval() << " and " << distance_stats.maxval() << endl;
     if (distance_stats.n() > 1)
       cerr << "Average " << distance_stats.average() << " variance " << distance_stats.variance();
