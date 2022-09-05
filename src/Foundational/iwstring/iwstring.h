@@ -1050,7 +1050,8 @@ class IWString_and_File_Descriptor : public IWString
     int active () const { return _fd > 0 || nullptr != _gzfile;}
     int is_open() const { return _fd > 0 || nullptr != _gzfile;}
 
-    int open(const char *);
+    // If fname starts with '>>' then the file is opened for append.
+    int open(const char * fname);
     int close();
 };
 
