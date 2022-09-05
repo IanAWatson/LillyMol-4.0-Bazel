@@ -492,6 +492,24 @@ class Molecular_Abstraction_Spinach : public Molecular_Abstraction_Base_Class
     int process(Molecule_With_Info_About_Parent &, IWString_and_File_Descriptor &);
 };
 
+class Molecular_Abstraction_Arom : public Molecular_Abstraction_Base_Class
+{
+  private:
+
+    const Element * _aromatic_element_replacement;
+
+// private functions
+
+  public:
+    Molecular_Abstraction_Arom();
+
+    int debug_print(std::ostream &) const;
+
+    int build(const Molecular_Abstraction_Directives_Node &);
+
+    int process(Molecule_With_Info_About_Parent &, IWString_and_File_Descriptor &);
+};
+
 
 class Set_of_Molecular_Abstractions
 {

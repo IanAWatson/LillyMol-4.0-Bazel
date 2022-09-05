@@ -3529,6 +3529,7 @@ Molecular_Abstraction_Ring_Systems::process(Molecule_With_Info_About_Parent & m,
 
   return _do_any_writing_needed(m, 1, output);
 }
+
 int
 Molecular_Abstraction_Remove_Bond::process(Molecule_With_Info_About_Parent & m,
                                            IWString_and_File_Descriptor & output)
@@ -3699,6 +3700,8 @@ Set_of_Molecular_Abstractions::build(const Molecular_Abstraction_Directives_Node
       _a[i] = new Molecular_Abstraction_Spinach();
     else if (MAD_TYPE_RMSCAFFOLD == t)
       _a[i] = new Molecular_Abstraction_Inverse_Scaffold();
+    else if (t == MAD_TYPE_AROM)
+      _a[i] = new Molecular_Abstraction_Arom();
     else
     {
       cerr << "Set_of_Molecular_Abstractions::build:unrecognised form " << t << endl;
@@ -4385,8 +4388,8 @@ Molecular_Abstraction_Substructure_Search::process (Molecule_With_Info_About_Par
 }
 
 int
-Molecular_Abstraction_Spinach::process (Molecule_With_Info_About_Parent & m,
-                                        IWString_and_File_Descriptor & output)
+Molecular_Abstraction_Spinach::process(Molecule_With_Info_About_Parent & m,
+                                       IWString_and_File_Descriptor & output)
 {
   if (0 == m.nrings())
     return _handle_no_match_to_query(empty_molecule, output);
@@ -4451,6 +4454,71 @@ Molecular_Abstraction_Spinach::process (Molecule_With_Info_About_Parent & m,
         m.set_formal_charge_if_different(i, 0);
       }
     }
+  }
+
+  return _do_any_writing_needed(m, 1, output);
+}
+
+Molecular_Abstraction_Arom::Molecular_Abstraction_Arom() {
+  _aromatic_element_replacement = get_element_from_atomic_number(18);
+}  
+
+int
+Molecular_Abstraction_Arom::build(const Molecular_Abstraction_Directives_Node & madn)
+{
+  const IWString & s = madn.args();
+
+  int i = 0;
+  const_IWSubstring token;
+
+//cerr << "Building spinach from '" << s << "'\n";
+
+  while (s.nextword(token, i))
+  {
+    int fatal;
+    if (Molecular_Abstraction_Base_Class::_process(token, "AROM", fatal))  // great
+      continue;
+    else if (fatal)
+    {
+      cerr << "Molecular_Abstraction_Arom::build:cannot process '" << token << "'\n";
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int
+Molecular_Abstraction_Arom::process(Molecule_With_Info_About_Parent & m,
+                                           IWString_and_File_Descriptor & output)
+{
+  if (m.aromatic_ring_count() == 0) {
+    return _do_any_writing_needed(m, 0, output);
+  }
+
+  const int matoms = m.natoms();
+
+  // An array of atoms, and an array of pairs of atoms.
+  Set_of_Atoms atoms, bonds;
+  std::unique_ptr<int[]> arom(new_int(matoms));
+  for (const Bond* b : m.bond_list()) {
+    if (! b->is_aromatic()) {
+      continue;
+    }
+    bonds << b->a1();
+    bonds << b->a2();
+    arom[b->a1()] = 1;
+    arom[b->a2()] = 1;
+  }
+
+  for (int i = 0; i < matoms; ++i) {
+    if (arom[i]) {
+      m.set_element(i, _aromatic_element_replacement);
+    }
+  }
+
+  for (int i = 0; i < bonds.number_elements(); i += 2) {
+    m.set_bond_type_between_atoms(bonds[i], bonds[i + 1], SINGLE_BOND);
   }
 
   return _do_any_writing_needed(m, 1, output);

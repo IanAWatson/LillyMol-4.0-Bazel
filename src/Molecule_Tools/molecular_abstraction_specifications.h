@@ -108,6 +108,11 @@ class Molecule_With_Info_About_Parent : public Molecule
 #define MAD_SPINACH "spinach"
 #define MAD_TYPE_SPINACH 23
 
+// All aromatic atoms become one type, all aromatic
+// bonds become single.
+#define MAD_AROM "arom"
+#define MAD_TYPE_AROM 24
+
 class Molecular_Abstraction_Directives_Node
 {
   private:
