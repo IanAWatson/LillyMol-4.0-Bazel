@@ -1266,7 +1266,7 @@ IW_General_Fingerprint::tanimoto(IW_General_Fingerprint & rhs)
     IWDYFP & fp2 = rhs._fingerprint[i];
 
 #ifdef DEBUG_TANIMOTO
-    cerr << "Metric " << _dense_fingerprint_distance_metric[i] << " weight " << _fingerprint_weight[i] << endl;
+    cerr << i << " metric " << _dense_fingerprint_distance_metric[i] << " weight " << _fingerprint_weight[i] << endl;
 #endif
 
     if (DENSE_DISTANCE_METRIC_TANIMOTO == _dense_fingerprint_distance_metric[i])
@@ -1290,7 +1290,7 @@ IW_General_Fingerprint::tanimoto(IW_General_Fingerprint & rhs)
     cerr << endl;
     fp2.PrintOn(cerr);
     cerr << endl;
-    cerr << " FP " << i << " similarity " <<  _fingerprint[i].tanimoto(fp2) << " weight " << _fingerprint_weight[i] << " bic " << _fingerprint[i].bits_in_common (rhs._fingerprint[i]) << endl;
+    cerr << " FP " << i << " similarity " <<  _fingerprint[i].tanimoto(fp2) << " weight " << _fingerprint_weight[i] << " bic " << _fingerprint[i].BitsInCommon(rhs._fingerprint[i]) << endl;
 #endif
 
 #ifdef DEBUG_TANIMOTO
@@ -1477,7 +1477,7 @@ IW_General_Fingerprint::distance(IW_General_Fingerprint & rhs, const float must_
     IWDYFP & fp2 = rhs._fingerprint[i];
 
 #ifdef DEBUG_TANIMOTO
-    cerr << "Metric " << _dense_fingerprint_distance_metric[i] << " weight " << _fingerprint_weight[i] << endl;
+    cerr << i << " metric " << _dense_fingerprint_distance_metric[i] << " weight " << _fingerprint_weight[i] << endl;
 #endif
 
     if (DENSE_DISTANCE_METRIC_TANIMOTO == _dense_fingerprint_distance_metric[i])
@@ -1501,7 +1501,7 @@ IW_General_Fingerprint::distance(IW_General_Fingerprint & rhs, const float must_
     cerr << endl;
     fp2.PrintOn(cerr);
     cerr << endl;
-    cerr << " FP " << i << " similarity " <<  _fingerprint[i].tanimoto(fp2) << " weight " << _fingerprint_weight[i] << " bic " << _fingerprint[i].bits_in_common (rhs._fingerprint[i]) << endl;
+    cerr << " FP " << i << " similarity " <<  _fingerprint[i].tanimoto(fp2) << " weight " << _fingerprint_weight[i] << " bic " << _fingerprint[i].BitsInCommon (rhs._fingerprint[i]) << endl;
 #endif
     --components_remaining;
     if ((result + components_remaining) / components < similarity_needed) {
@@ -1601,8 +1601,9 @@ IW_General_Fingerprint::distance(IW_General_Fingerprint & rhs, const float must_
   }
 
   // Not handled here.
-  if (_molecular_properties_continuous.active())
+  if (_molecular_properties_continuous.active()) {
     result = result + _property_weight_continuous * _molecular_properties_continuous.similarity (rhs._molecular_properties_continuous);
+  }
 
 #ifdef DEBUG_TANIMOTO
   if (_molecular_properties_continuous.active())
