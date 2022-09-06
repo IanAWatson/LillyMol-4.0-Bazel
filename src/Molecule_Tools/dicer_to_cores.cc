@@ -14,8 +14,10 @@
 
 #include <algorithm>
 #include <iostream>
+#include <filesystem>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "google/protobuf/text_format.h"
@@ -51,9 +53,20 @@ Usage(int rc) {
 class SameAtomType {
   private:
     IW_STL_Hash_Map<IWString, dicer::SmilesIdCount> _usmi_to_data;
+
+  // private functions.
+    int Add(const const_IWSubstring& buffer);
   public:
     int Extra(const IWString& smiles,
               const IWString& id);
+
+    int NumberFragments() const {
+      return _usmi_to_data.size();
+    }
+
+
+    int Read(const char* fname);
+    int Read(iwstring_data_source& input);
 
     // `fname` is non const because we use null_terminated_chars();
     int Write(IWString& fname) const;
@@ -113,6 +126,55 @@ SameAtomType::Write(IWString_and_File_Descriptor& output) const {
   return 1;
 }
 
+int
+SameAtomType::Read(const char* fname) {
+  iwstring_data_source input;
+  if (! input.open(fname)) {
+    cerr << "SameAtomType::Read:cannot open '" << fname << "'\n";
+    return 0;
+  }
+  return Read(input);
+}
+
+int
+SameAtomType::Read(iwstring_data_source& input) {
+  const_IWSubstring buffer;
+  while (input.next_record(buffer)) {
+    if (! Add(buffer)) {
+      cerr << "SameAtomType::Read:cannot process '" << buffer << "'\n";
+      return 0;
+    }
+  }
+
+  return _usmi_to_data.size();
+}
+
+// Parse a record that looks like
+// O=[3CH]CN1CC(c2[1cH]cccc2)[2CH2]C1 smiles: "O=[3CH]CN1CC(c2[1cH]cccc2)[2CH2]C1" id: "CHEMBL3484615" n: 1 
+// The first token is the key, and the rest is a textproto.
+int
+SameAtomType::Add(const const_IWSubstring& buffer) {
+  int i = buffer.index(' ');
+  IWString key;
+  key.set(buffer.data(), i - 1);
+
+  std::string txtproto(buffer.data() + i + 1, buffer.length() - 1);
+  cerr << "Txtproto '" << txtproto << "'\n";
+  dicer::SmilesIdCount proto;
+  if (! google::protobuf::TextFormat::ParseFromString(txtproto, &proto)) {
+    cerr << "SameAtomType::Add:cannot parse '" << txtproto << "'\n";
+    return 0;
+  }
+
+  auto [_, inserted] = _usmi_to_data.try_emplace(key, std::move(proto));
+  if (! inserted) {
+    cerr << "SameAtomType::Add:cannot insert '" << key << "'\n";
+    return 0;
+  }
+
+  return 1;
+}
+
 // For each bond separation, 6,8,9, this class is a map from
 // different atomtype tuples to examplars.
 // The examplars are stored as a map from unique smiles
@@ -133,6 +195,11 @@ class SameBondSeparation {
     int Extra(const IWString& atype, const IWString& smiles,
               const IWString& id);
 
+    int NumberFragments() const;
+
+    // Read all the files in a directory.
+    int Read(const char* dirname);
+
     // Within a given directory, we create individual files per atom type.
     int Write(const IWString& dirname) const;
 };
@@ -147,6 +214,15 @@ SameBondSeparation::Extra(const IWString& atype,
   }
 
   return iter->second.Extra(smiles, id);
+}
+
+int
+SameBondSeparation::NumberFragments() const {
+  int rc = 0;
+  for (const auto& [_, value] : _atype_to) {
+    rc += value.NumberFragments();
+  }
+  return rc;
 }
 
 // A new atom type combination has been encountered.
@@ -181,12 +257,48 @@ SameBondSeparation::Write(const IWString& dirname) const {
   return 1;
 }
 
+// Parse something that starts with 'at,' and return the part after 'at.'
+std::optional<IWString>
+ExtractAtomTypes(const std::string& fname) {
+  IWString result(fname);
+  if (! result.starts_with("at.")) {
+    cerr << "ExtractAtomTypes:invalid file name '" << fname << "'\n";
+    return std::nullopt;
+  }
+
+  result.remove_leading_chars(3);
+  return result;
+}
+
+int
+SameBondSeparation::Read(const char* dirname) {
+  const std::filesystem::path dir(dirname);
+  for (auto const& dir_entry : std::filesystem::directory_iterator{dir})  {
+    std::string path_name = dir_entry.path();
+    SameAtomType same_atom_type;
+    if (! same_atom_type.Read(path_name.c_str())) {
+      cerr << "SameBondSeparation::Read:cannot read '" << path_name << "'\n";
+      return 0;
+    }
+    std::optional<IWString> atype = ExtractAtomTypes(dir_entry.path().filename());
+    if (! atype) {
+      continue;
+    }
+    auto [_, inserted] = _atype_to.try_emplace(*atype, std::move(same_atom_type));
+    if (! inserted) {
+      cerr << "SameBondSeparation::Read:cannot insert '" << *atype << '\n';
+      return 0;
+    }
+  }
+  return _atype_to.size();
+}
+
 class Options {
   private:
     int _verbose;
 
     // the number of lines in the input that contain COMP that we examine.
-    int _liness_examined;
+    int _lines_examined;
 
     // After the line has been processed, now many molecules do we process.
     int _molecules_processed;
@@ -205,6 +317,10 @@ class Options {
 
     int Write(const IWString& distance_string, const SameBondSeparation& value) const;
 
+    // Recursively cound the number of fragments.
+    // The accumulatorA
+    int NumberFragments() const;
+
   public:
     Options();
 
@@ -220,7 +336,7 @@ class Options {
 Options::Options() {
   _verbose = 0;
   _molecules_processed = 0;
-  _liness_examined = 0;
+  _lines_examined = 0;
 }
 
 int
@@ -254,7 +370,7 @@ Options::Initialise(Command_Line& cl) {
 int
 GetAtomType(const const_IWSubstring& buffer,
             extending_resizable_array<uint32_t>& destination) {
-  static std::unique_ptr<RE2> rx = std::make_unique<RE2>("^([0-9])\.([0-9]+)$");
+  static std::unique_ptr<RE2> rx = std::make_unique<RE2>("^([0-9])\\.([0-9]+)$");
 
   int ndx;
   uint32_t value;
@@ -311,7 +427,7 @@ AtomTypes(const_IWSubstring buffer) {
 int
 Options::Process(const Molecule& parent,
                  const const_IWSubstring& buffer) {
-  ++_liness_examined;
+  ++_lines_examined;
 
   static IWString comp("COMP");
 
@@ -504,9 +620,19 @@ Options::Write(const IWString& distance_string,
 }
 
 int
+Options::NumberFragments() const {
+  int rc = 0;
+  for (const auto& [_, value] : _distances) {
+    rc += value.NumberFragments();
+  }
+  return rc;
+}
+
+int
 Options::Report(std::ostream& output) const {
-  output << _liness_examined << " lines of dicer output examined\n";
+  output << _lines_examined << " lines of dicer output examined\n";
   output << "Processed " << _molecules_processed << " molecules\n";
+  output << NumberFragments() << " fragments\n";
   return 1;
 }
 
