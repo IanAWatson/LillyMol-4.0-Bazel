@@ -297,6 +297,14 @@ class Options {
   private:
     int _verbose;
 
+    // This class can function in one of two ways, both of which involve
+    // reading the output from dicer, with complementary fragments.
+    // In the first mode, the dicer output is scanned, and the universe of
+    // fragments discovered is accumulated and written to files.
+    // In the fragment replacement mode, those files are read, and the
+    // input is parsed looking for replacement fragments.
+    int _doing_fragment_replacement;
+
     // the number of lines in the input that contain COMP that we examine.
     int _lines_examined;
 
@@ -321,6 +329,14 @@ class Options {
     // The accumulatorA
     int NumberFragments() const;
 
+    // From a previous run, read the fragment data.
+    int Read(IWString& dirname);
+
+    int ReplaceFragments(const Molecule& parent,
+                Molecule& fragment,
+                const const_IWSubstring& complementary_smiles,
+                const const_IWSubstring& atypes);
+
   public:
     Options();
 
@@ -335,6 +351,7 @@ class Options {
 
 Options::Options() {
   _verbose = 0;
+  _doing_fragment_replacement = 1;
   _molecules_processed = 0;
   _lines_examined = 0;
 }
@@ -345,6 +362,11 @@ Options::Initialise(Command_Line& cl) {
 
   if (! cl.option_present('S')) {
     cerr << "Must specify the output file stem via the -S option\n";
+    return 0;
+  }
+
+  if (cl.option_present('R') && cl.option_present('S')) {
+    cerr << "Options::Initialise:can specify just one of -R or -S options\n";
     return 0;
   }
 
@@ -360,6 +382,16 @@ Options::Initialise(Command_Line& cl) {
     if (_verbose) {
       cerr << "Data written to '" << _file_name_stem << "'\n";
     }
+    _doing_fragment_replacement = 0;
+  } else if (cl.option_present('R')) {
+    IWString dirname;
+    for (int i = 0; cl.value('R', dirname, i); ++i) {
+      if (! Read(dirname)) {
+        cerr << "Options::Initialise:cannot read '" << dirname << "'\n";
+        return 0;
+      }
+    }
+    _doing_fragment_replacement = 1;
   }
 
   return 1;
@@ -460,8 +492,8 @@ Options::Process(const Molecule& parent,
     return 0;
   }
 
-  // The complementary smiles.
-  buffer.nextword(token, i);
+  const_IWSubstring complementary_smiles;
+  buffer.nextword(complementary_smiles, i);
 
   buffer.nextword(token, i);
   if (token != comp) {
@@ -483,7 +515,11 @@ Options::Process(const Molecule& parent,
     return 0;
   }
 
-  return Process(parent, fragment, token);
+  if (_doing_fragment_replacement) {
+    return ReplaceFragments(parent, fragment, complementary_smiles, token);
+  } else {
+    return Process(parent, fragment, token);
+  }
 }
 
 int
@@ -619,6 +655,68 @@ Options::Write(const IWString& distance_string,
   return value.Write(dirname);
 }
 
+// Ok file names are of the form 1.2.5.10
+int
+OkBondSeparation(const std::string& fname) {
+  const_IWSubstring buffer;
+  const_IWSubstring token;
+  int i = 0;
+  int prev_value = -1;
+  while (buffer.nextword(token, i, '.')) {
+    int value;
+    if (! token.numeric_value(value) || value < prev_value) {
+      return 0;
+    }
+    prev_value = value;
+  }
+
+  return 1;
+}
+
+int
+Options::Read(IWString& dirname) {
+  const std::filesystem::path dir(dirname.null_terminated_chars());
+  for (auto const& dir_entry : std::filesystem::directory_iterator{dir})  {
+    std::string path_name = dir_entry.path();
+    if (! OkBondSeparation(path_name)) {
+      continue;
+    }
+    SameBondSeparation sbs;
+    if (! sbs.Read(path_name.c_str())) {
+      cerr << "Options::Read:fatal error processing '" << path_name << "'\n";
+      return 0;
+    }
+    IWString key(dir_entry.path().filename());
+    auto [_, inserted] =  _distances.try_emplace(key, std::move(sbs));
+    if (! inserted) {
+      cerr << "Options::Read:cannot emplace '" << key << "'\n";
+      return 0;
+    }
+  }
+
+  if (_distances.empty()) {
+    cerr << "Options::Read:no files in '" << dirname << "'\n";
+    return 0;
+  }
+
+  return _distances.size();
+}
+
+int
+Options::ReplaceFragments(const Molecule& parent,
+                Molecule& fragment,
+                const const_IWSubstring& complementary_smiles,
+                const const_IWSubstring& atypes) {
+  IWString key = CanonicalDistanceString(fragment);
+  auto iter = _distances.find(key);
+  // Should be unusual to not have a distance combination.
+  if (iter == _distances.end()) {
+    return 0;
+  }
+
+  return 1;
+}
+
 int
 Options::NumberFragments() const {
   int rc = 0;
@@ -739,7 +837,7 @@ DicerToCores(const char* fname,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vS:");
+  Command_Line cl(argc, argv, "vS:R:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
