@@ -39,10 +39,19 @@ using std::cerr;
 constexpr char kCloseBrace = ']';
 constexpr char kDirSeparator = '/';
 
+// Being lazy, file scope variables.
+
+int remove_isotopes_from_products = 1;
+
 void
 Usage(int rc) {
   ::exit(rc);
 }
+
+struct ParentData {
+  const Molecule& parent;
+  IWString parent_usmi;
+};
 
 // Fragments are stored in a heirarchy.
 // The the top level they are stored by distances between the attachment points.
@@ -71,6 +80,11 @@ class SameAtomType {
     // `fname` is non const because we use null_terminated_chars();
     int Write(IWString& fname) const;
     int Write(IWString_and_File_Descriptor& fname) const;
+
+    int ReplaceFragments(const Molecule& parent,
+                         Molecule& fragment,
+                         const const_IWSubstring& complementary_smiles,
+                         IWString_and_File_Descriptor& output);
 };
 
 int
@@ -149,6 +163,84 @@ SameAtomType::Read(iwstring_data_source& input) {
   return _usmi_to_data.size();
 }
 
+// Return a map from atom number to isotope for those
+// atoms that have an isotope.
+std::unordered_map<int, int>
+GetIsotopicAtoms(const Molecule& m) {
+  std::unordered_map<int, int> result;
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    const int iso = m.isotope(i);
+    if (iso) {
+      result[iso] = i;
+    }
+  }
+
+  return result;
+}
+
+int
+SameAtomType::ReplaceFragments(const Molecule& parent,
+                         Molecule& fragment,
+                         const const_IWSubstring& complementary_smiles,
+                         IWString_and_File_Descriptor& output) {
+  auto iter = _usmi_to_data.find(fragment.unique_smiles());
+  if (iter == _usmi_to_data.end()) {
+    return 0;
+  }
+
+  Molecule replacement;
+  if (! replacement.build_from_smiles(iter->second.smiles())) {
+    cerr << "SameAtomType::ReplaceFragments:cannot parse db smiles '" << iter->second.smiles() << "'\n";
+    return 0;
+  }
+
+  Molecule complement;
+  if (! complement.build_from_smiles(complementary_smiles)) {
+    cerr << "SameAtomType::ReplaceFragments:invalid complementary smiles " << complementary_smiles << '\n';
+    return 0;
+  }
+
+  const std::unordered_map<int, int> replacement_isotopes = GetIsotopicAtoms(replacement);
+  const std::unordered_map<int, int> complement_isotopes = GetIsotopicAtoms(complement);
+  if (replacement_isotopes.size() != complement_isotopes.size()) {
+    cerr << "SameAtomType::ReplaceFragments:isotope count mismatch\n";
+    return 0;
+  }
+
+  const int initial_natoms = replacement.natoms();
+
+  Molecule mcopy(parent);
+  cerr << "From " << mcopy.smiles() << " frag " << fragment.smiles() << " complement " << complement.smiles()
+       << " replacement " << replacement.smiles() << '\n';
+
+  replacement.add_molecule(&complement);
+
+  for (auto [iso, atom] : replacement_isotopes) {
+    cerr << "isotope " << iso << " on atom " << atom << '\n';
+    auto iter = complement_isotopes.find(iso);
+    if (iter == complement_isotopes.end()) {
+      cerr << "SameAtomType::ReplaceFragments:no isotope " << iso << " in complement\n";
+      return 0;
+    }
+    replacement.set_implicit_hydrogens_known(atom, 0);
+    int a2 = initial_natoms + iter->second;
+    replacement.set_implicit_hydrogens_known(a2, 0);
+
+    replacement.add_bond(atom, a2, SINGLE_BOND);
+  }
+
+  constexpr char kSep = ' ';
+
+  replacement.transform_to_non_isotopic_form();
+
+  output << replacement.smiles() << kSep << parent.name() << kSep << "%%" << iter->second.id() << "%%\n";
+
+  output.write_if_buffer_holds_more_than(4096);
+
+  return 1;
+}
+
 // Parse a record that looks like
 // O=[3CH]CN1CC(c2[1cH]cccc2)[2CH2]C1 smiles: "O=[3CH]CN1CC(c2[1cH]cccc2)[2CH2]C1" id: "CHEMBL3484615" n: 1 
 // The first token is the key, and the rest is a textproto.
@@ -156,10 +248,10 @@ int
 SameAtomType::Add(const const_IWSubstring& buffer) {
   int i = buffer.index(' ');
   IWString key;
-  key.set(buffer.data(), i - 1);
+  key.set(buffer.data(), i);
 
-  std::string txtproto(buffer.data() + i + 1, buffer.length() - 1);
-  cerr << "Txtproto '" << txtproto << "'\n";
+  std::string txtproto(buffer.data() + i + 1, buffer.length() - i - 2);
+  // cerr << "Txtproto '" << txtproto << "'\n";
   dicer::SmilesIdCount proto;
   if (! google::protobuf::TextFormat::ParseFromString(txtproto, &proto)) {
     cerr << "SameAtomType::Add:cannot parse '" << txtproto << "'\n";
@@ -186,23 +278,43 @@ class SameBondSeparation {
     // The value is a map from unique smiles to a proto.
     IW_STL_Hash_Map<IWString, SameAtomType> _atype_to;
 
+    // When we are doing core replacements, we can either respect the atom
+    // types, or just replace everything with a plausible geometry.
+    int _must_match_atom_types;
+
   // private functions.
     int AddNewAtype(const IWString& atype,
                 const IWString& smiles,
                 const IWString& id);
 
   public:
+    SameBondSeparation();
+
     int Extra(const IWString& atype, const IWString& smiles,
               const IWString& id);
 
     int NumberFragments() const;
+
+    void set_must_match_atom_types(int s) {
+      _must_match_atom_types = s;
+    }
 
     // Read all the files in a directory.
     int Read(const char* dirname);
 
     // Within a given directory, we create individual files per atom type.
     int Write(const IWString& dirname) const;
+  
+    int ReplaceFragments(const Molecule& parent,
+                         Molecule& fragment,
+                         const const_IWSubstring& complementary_smiles,
+                         const const_IWSubstring& atypes,
+                         IWString_and_File_Descriptor& output);
 };
+
+SameBondSeparation::SameBondSeparation() {
+  _must_match_atom_types = 1;
+}
 
 int
 SameBondSeparation::Extra(const IWString& atype,
@@ -276,6 +388,7 @@ SameBondSeparation::Read(const char* dirname) {
   for (auto const& dir_entry : std::filesystem::directory_iterator{dir})  {
     std::string path_name = dir_entry.path();
     SameAtomType same_atom_type;
+    // cerr << "Reading " << dir_entry.path() << '\n';
     if (! same_atom_type.Read(path_name.c_str())) {
       cerr << "SameBondSeparation::Read:cannot read '" << path_name << "'\n";
       return 0;
@@ -291,6 +404,31 @@ SameBondSeparation::Read(const char* dirname) {
     }
   }
   return _atype_to.size();
+}
+
+int
+SameBondSeparation::ReplaceFragments(const Molecule& parent,
+                         Molecule& fragment,
+                         const const_IWSubstring& complementary_smiles,
+                         const const_IWSubstring& atypes,
+                         IWString_and_File_Descriptor& output) {
+  if (_must_match_atom_types) {
+    IWString key(atypes);
+    key.remove_leading_chars(3);
+    const auto iter = _atype_to.find(key);
+    if (iter == _atype_to.end()) {
+      cerr << "No match for atom type '" << key << "\n";
+      return 0;
+    }
+
+    return iter->second.ReplaceFragments(parent, fragment, complementary_smiles, output);
+  }
+
+  for (auto& [_, same_atom_type] : _atype_to) {
+    same_atom_type.ReplaceFragments(parent, fragment, complementary_smiles, output);
+  }
+
+  return 1;
 }
 
 class Options {
@@ -318,6 +456,10 @@ class Options {
     // The directory into which we write directories.
     IWString _file_name_stem;
 
+    // when doing lookups, the number of molecules for which we cannot find the
+    // canonical distance.
+    int _distance_mismatch;
+
   // Private functions.
     int Process(const Molecule& parent,
                  Molecule& fragment,
@@ -335,14 +477,15 @@ class Options {
     int ReplaceFragments(const Molecule& parent,
                 Molecule& fragment,
                 const const_IWSubstring& complementary_smiles,
-                const const_IWSubstring& atypes);
+                const const_IWSubstring& atypes,
+                IWString_and_File_Descriptor& output);
 
   public:
     Options();
 
     int Initialise(Command_Line& cl);
 
-    int Process(const Molecule& parent, const const_IWSubstring& buffer);
+    int Process(const Molecule& parent, const const_IWSubstring& buffer, IWString_and_File_Descriptor& output);
 
     int Write();
 
@@ -354,16 +497,12 @@ Options::Options() {
   _doing_fragment_replacement = 1;
   _molecules_processed = 0;
   _lines_examined = 0;
+  _distance_mismatch = 0;
 }
 
 int
 Options::Initialise(Command_Line& cl) {
   _verbose = cl.option_count('v');
-
-  if (! cl.option_present('S')) {
-    cerr << "Must specify the output file stem via the -S option\n";
-    return 0;
-  }
 
   if (cl.option_present('R') && cl.option_present('S')) {
     cerr << "Options::Initialise:can specify just one of -R or -S options\n";
@@ -392,6 +531,9 @@ Options::Initialise(Command_Line& cl) {
       }
     }
     _doing_fragment_replacement = 1;
+    if (_verbose) {
+      cerr << "Read " << NumberFragments() << " fragments from '" << dirname << "'\n";
+    }
   }
 
   return 1;
@@ -458,7 +600,8 @@ AtomTypes(const_IWSubstring buffer) {
 // clang-format on
 int
 Options::Process(const Molecule& parent,
-                 const const_IWSubstring& buffer) {
+                 const const_IWSubstring& buffer,
+                 IWString_and_File_Descriptor& output) {
   ++_lines_examined;
 
   static IWString comp("COMP");
@@ -516,7 +659,7 @@ Options::Process(const Molecule& parent,
   }
 
   if (_doing_fragment_replacement) {
-    return ReplaceFragments(parent, fragment, complementary_smiles, token);
+    return ReplaceFragments(parent, fragment, complementary_smiles, token, output);
   } else {
     return Process(parent, fragment, token);
   }
@@ -706,15 +849,22 @@ int
 Options::ReplaceFragments(const Molecule& parent,
                 Molecule& fragment,
                 const const_IWSubstring& complementary_smiles,
-                const const_IWSubstring& atypes) {
+                const const_IWSubstring& atypes,
+                IWString_and_File_Descriptor& output) {
+  ++_molecules_processed;
+
   IWString key = CanonicalDistanceString(fragment);
   auto iter = _distances.find(key);
   // Should be unusual to not have a distance combination.
   if (iter == _distances.end()) {
+    ++_distance_mismatch;
+    if (_verbose > 2) {
+      cerr << "Options::ReplaceFragments:no match for distance '" << key << "'\n";
+    }
     return 0;
   }
 
-  return 1;
+  return iter->second.ReplaceFragments(parent, fragment, complementary_smiles, atypes, output);
 }
 
 int
@@ -731,6 +881,9 @@ Options::Report(std::ostream& output) const {
   output << _lines_examined << " lines of dicer output examined\n";
   output << "Processed " << _molecules_processed << " molecules\n";
   output << NumberFragments() << " fragments\n";
+  if (_doing_fragment_replacement) {
+    output << _distance_mismatch << " canonical distances not matched\n";
+  }
   return 1;
 }
 
@@ -811,9 +964,8 @@ DicerToCores(iwstring_data_source& input,
       continue;
     }
 
-    if (! options.Process(parent, buffer)) {
-      cerr << "Fatal error processing '" << buffer << "'\n";
-      return 0;
+    if (! options.Process(parent, buffer, output)) {
+      continue;
     }
 
     output.write_if_buffer_holds_more_than(4096);
@@ -869,7 +1021,9 @@ Main(int argc, char** argv) {
     options.Report(cerr);
   }
 
-  options.Write();
+  if (cl.option_present('S')) {
+    options.Write();
+  }
 
   return 0;
 }
