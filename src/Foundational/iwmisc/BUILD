@@ -33,6 +33,7 @@ cc_library(
         "new_double.cc",
         "new_float.cc",
         "new_int.cc",
+        "new_unsigned_int.cc",
         "report_progress.cc",
         "write_space_suppressed_string.cc",
         "_numeric_data_from_file_int.cc",

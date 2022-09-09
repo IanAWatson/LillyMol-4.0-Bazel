@@ -16,6 +16,20 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "diced_molecule_proto",
+    srcs = [
+        "diced_molecule.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "diced_molecule_cc_proto",
+    deps = [
+        ":diced_molecule_proto",
+    ],
+)
+
+proto_library(
     name = "embedded_fragment_proto",
     srcs = [
         "embedded_fragment.proto",
@@ -195,6 +209,18 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "dicer_to_cores",
+    srcs = [
+        "dicer_to_cores.cc",
+    ],
+    deps = [
+        ":diced_molecule_cc_proto",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
     ],
 )
 
@@ -1055,6 +1081,18 @@ cc_binary(
 #        "-lz",
 #    ]
 #)
+
+cc_binary(
+    name = "separated_atoms",
+    srcs = [
+        "separated_atoms.cc",
+    ],
+    deps = [
+        "//Foundational/iwbits:iwbits",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ]
+)
 
 cc_binary(
     name = "smiles_mutation",

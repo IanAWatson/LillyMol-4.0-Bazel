@@ -43,15 +43,68 @@ constexpr char kDirSeparator = '/';
 
 int remove_isotopes_from_products = 1;
 
+IWString_and_File_Descriptor stream_for_transformations;
+
+int products_generated = 0;
+
 void
 Usage(int rc) {
   ::exit(rc);
 }
 
-struct ParentData {
-  const Molecule& parent;
-  IWString parent_usmi;
+#ifdef NOT_USED_NOW
+// We need to pass various pieces of information
+// down to the classes that do the work.
+struct Args {
+  Molecule* parent;
+
+  // Isotopes can be removed from products.
+  int unset_isotopes;
+
+  // It can be helpful to be able to view the parent, the
+  // fragments, the replacement and product.
+  IWString_and_File_Descriptor stream_for_transformations;
+
+  int products_generated;
+
+  public:
+    Args();
+
+    void set_parent(Molecule& m) {
+      parent = &m;
+    }
+
+    int MaybeWriteDetails(Molecule& fragment, Molecule& complement,
+                          const IWString& replacement_smiles, Molecule& replacement);
 };
+
+Args::Args() {
+  parent = nullptr;
+  unset_isotopes = 0;
+  products_generated = 0;
+}
+#endif
+
+// Increment some namespace scope variables, and if the stream
+// for detailed information is active, write to it.
+int
+MaybeWriteDetails(Molecule& parent, Molecule& fragment, Molecule& complement,
+                  const IWString& replacement_smiles, Molecule& replacement) {
+  ++products_generated;
+  if (! stream_for_transformations.active()) {
+    return 1;
+  }
+
+  constexpr char kSep = ' ';
+
+  stream_for_transformations << parent.smiles() << kSep << parent.name() << kSep << "parent\n";
+  stream_for_transformations << fragment.smiles() << kSep << "frag\n";
+  stream_for_transformations << complement.smiles() << kSep << "complement\n";
+  stream_for_transformations << replacement_smiles << kSep << "replacement\n";
+  stream_for_transformations << replacement.smiles() << kSep << "product\n";
+
+  return 1;
+}
 
 // Fragments are stored in a heirarchy.
 // The the top level they are stored by distances between the attachment points.
@@ -81,7 +134,7 @@ class SameAtomType {
     int Write(IWString& fname) const;
     int Write(IWString_and_File_Descriptor& fname) const;
 
-    int ReplaceFragments(const Molecule& parent,
+    int ReplaceFragments(Molecule& parent,
                          Molecule& fragment,
                          const const_IWSubstring& complementary_smiles,
                          IWString_and_File_Descriptor& output);
@@ -180,20 +233,20 @@ GetIsotopicAtoms(const Molecule& m) {
 }
 
 int
-SameAtomType::ReplaceFragments(const Molecule& parent,
-                         Molecule& fragment,
-                         const const_IWSubstring& complementary_smiles,
-                         IWString_and_File_Descriptor& output) {
-  auto iter = _usmi_to_data.find(fragment.unique_smiles());
-  if (iter == _usmi_to_data.end()) {
+CompatibleIsotopes(const std::unordered_map<int, int>& iso1, const std::unordered_map<int, int>& iso2) {
+  if (iso1.size() != iso2.size()) {
     return 0;
   }
 
-  Molecule replacement;
-  if (! replacement.build_from_smiles(iter->second.smiles())) {
-    cerr << "SameAtomType::ReplaceFragments:cannot parse db smiles '" << iter->second.smiles() << "'\n";
-    return 0;
-  }
+  return 1;
+}
+
+int
+SameAtomType::ReplaceFragments(Molecule& parent,
+                         Molecule& fragment,
+                         const const_IWSubstring& complementary_smiles,
+                         IWString_and_File_Descriptor& output) {
+  constexpr char kSep = ' ';
 
   Molecule complement;
   if (! complement.build_from_smiles(complementary_smiles)) {
@@ -201,42 +254,53 @@ SameAtomType::ReplaceFragments(const Molecule& parent,
     return 0;
   }
 
-  const std::unordered_map<int, int> replacement_isotopes = GetIsotopicAtoms(replacement);
   const std::unordered_map<int, int> complement_isotopes = GetIsotopicAtoms(complement);
-  if (replacement_isotopes.size() != complement_isotopes.size()) {
-    cerr << "SameAtomType::ReplaceFragments:isotope count mismatch\n";
-    return 0;
-  }
 
-  const int initial_natoms = replacement.natoms();
-
-  Molecule mcopy(parent);
-  cerr << "From " << mcopy.smiles() << " frag " << fragment.smiles() << " complement " << complement.smiles()
-       << " replacement " << replacement.smiles() << '\n';
-
-  replacement.add_molecule(&complement);
-
-  for (auto [iso, atom] : replacement_isotopes) {
-    cerr << "isotope " << iso << " on atom " << atom << '\n';
-    auto iter = complement_isotopes.find(iso);
-    if (iter == complement_isotopes.end()) {
-      cerr << "SameAtomType::ReplaceFragments:no isotope " << iso << " in complement\n";
-      return 0;
+  for (const auto [usmi, value] : _usmi_to_data) {
+    if (usmi == parent.unique_smiles()) {
+      continue;
     }
-    replacement.set_implicit_hydrogens_known(atom, 0);
-    int a2 = initial_natoms + iter->second;
-    replacement.set_implicit_hydrogens_known(a2, 0);
 
-    replacement.add_bond(atom, a2, SINGLE_BOND);
+    Molecule replacement;
+    if (! replacement.build_from_smiles(value.smiles())) {
+      cerr << "SameAtomType::ReplaceFragments:cannot parse db smiles '" << value.smiles() << "'\n";
+     continue;
+    }
+
+    const std::unordered_map<int, int> replacement_isotopes = GetIsotopicAtoms(replacement);
+    if (! CompatibleIsotopes(replacement_isotopes, complement_isotopes)) {
+      cerr << "SameAtomType::ReplaceFragments:isotope count mismatch\n";
+      continue;
+    }
+
+    const int initial_natoms = replacement.natoms();
+
+    replacement.add_molecule(&complement);
+
+    for (auto [iso, atom] : replacement_isotopes) {
+      //cerr << "isotope " << iso << " on atom " << atom << '\n';
+      auto iter = complement_isotopes.find(iso);
+      if (iter == complement_isotopes.end()) {
+        cerr << "SameAtomType::ReplaceFragments:no isotope " << iso << " in complement\n";
+        return 0;
+      }
+      replacement.set_implicit_hydrogens_known(atom, 0);
+      int a2 = initial_natoms + iter->second;
+      replacement.set_implicit_hydrogens_known(a2, 0);
+
+      replacement.add_bond(atom, a2, SINGLE_BOND);
+    }
+
+    MaybeWriteDetails(parent, fragment, complement, value.smiles(), replacement);
+    if (remove_isotopes_from_products) {
+      replacement.transform_to_non_isotopic_form();
+    }
+
+    output << parent.smiles() << kSep << replacement.smiles() <<
+              kSep << parent.name() << kSep << "%%" << value.id() << "%%\n";
+
+    output.write_if_buffer_holds_more_than(4096);
   }
-
-  constexpr char kSep = ' ';
-
-  replacement.transform_to_non_isotopic_form();
-
-  output << replacement.smiles() << kSep << parent.name() << kSep << "%%" << iter->second.id() << "%%\n";
-
-  output.write_if_buffer_holds_more_than(4096);
 
   return 1;
 }
@@ -305,7 +369,7 @@ class SameBondSeparation {
     // Within a given directory, we create individual files per atom type.
     int Write(const IWString& dirname) const;
   
-    int ReplaceFragments(const Molecule& parent,
+    int ReplaceFragments(Molecule& parent,
                          Molecule& fragment,
                          const const_IWSubstring& complementary_smiles,
                          const const_IWSubstring& atypes,
@@ -407,7 +471,7 @@ SameBondSeparation::Read(const char* dirname) {
 }
 
 int
-SameBondSeparation::ReplaceFragments(const Molecule& parent,
+SameBondSeparation::ReplaceFragments(Molecule& parent,
                          Molecule& fragment,
                          const const_IWSubstring& complementary_smiles,
                          const const_IWSubstring& atypes,
@@ -474,7 +538,7 @@ class Options {
     // From a previous run, read the fragment data.
     int Read(IWString& dirname);
 
-    int ReplaceFragments(const Molecule& parent,
+    int ReplaceFragments(Molecule& parent,
                 Molecule& fragment,
                 const const_IWSubstring& complementary_smiles,
                 const const_IWSubstring& atypes,
@@ -485,7 +549,8 @@ class Options {
 
     int Initialise(Command_Line& cl);
 
-    int Process(const Molecule& parent, const const_IWSubstring& buffer, IWString_and_File_Descriptor& output);
+    // `parent` is never changed, but we do ask for its unique smiles, so it is not const.
+    int Process(Molecule& parent, const const_IWSubstring& buffer, IWString_and_File_Descriptor& output);
 
     int Write();
 
@@ -599,7 +664,7 @@ AtomTypes(const_IWSubstring buffer) {
 // [3cH]1[2cH]cc[1cH]c1 CHEMBL4553639 [1ClH].[2OH2].Fc1ccc(CN[3CH]=O)cc1 COMP CHEMBL4553639 at.1:3502|2:3502|3:3502
 // clang-format on
 int
-Options::Process(const Molecule& parent,
+Options::Process(Molecule& parent,
                  const const_IWSubstring& buffer,
                  IWString_and_File_Descriptor& output) {
   ++_lines_examined;
@@ -846,7 +911,7 @@ Options::Read(IWString& dirname) {
 }
 
 int
-Options::ReplaceFragments(const Molecule& parent,
+Options::ReplaceFragments(Molecule& parent,
                 Molecule& fragment,
                 const const_IWSubstring& complementary_smiles,
                 const const_IWSubstring& atypes,
@@ -989,7 +1054,7 @@ DicerToCores(const char* fname,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vS:R:");
+  Command_Line cl(argc, argv, "vS:R:D:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
@@ -1006,6 +1071,18 @@ Main(int argc, char** argv) {
   if (cl.empty()) {
     cerr << "Insufficient arguments\n";
     Usage(1);
+  }
+
+  if (cl.option_present('D')) {
+    IWString fname = cl.string_value('D');
+    if (! stream_for_transformations.open(fname.null_terminated_chars())) {
+      cerr << "Cannot open stream for detailed transformation info '" << fname << "'\n";
+      return 1;
+    }
+
+    if (verbose) {
+      cerr << "Transformation details written to '" << fname << "'\n";
+    }
   }
 
   IWString_and_File_Descriptor output(1);

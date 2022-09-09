@@ -468,6 +468,7 @@ cc_library(
         ":reaction_cc_proto",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:proto_support",
         "@com_google_protobuf//:protobuf",
     ],
 )
