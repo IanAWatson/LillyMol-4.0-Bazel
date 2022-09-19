@@ -612,6 +612,21 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "tanimoto_float",
+    srcs = [
+        "tanimoto_float.cc",
+    ],
+    hdrs = [
+        "tanimoto_float.h",
+    ],
+    deps = [
+    ],
+    copts = [
+        "-mavx512vl -mavx -mssse3"
+    ]
+)
+
 cc_binary(
     name = "sparsefp_benchmark",
     srcs = [
@@ -633,6 +648,17 @@ cc_test(
     timeout="short",
     deps = [
         ":gfp",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test (
+    name = "tanimoto_float_test",
+    srcs = [
+        "tanimoto_float_test.cc",
+    ],
+    deps = [
+        ":tanimoto_float",
         "@googletest//:gtest_main",
     ],
 )
