@@ -723,7 +723,7 @@ iwsplit (int argc, char ** argv)
         ;
       else if (rx_starts_chunks_and_rx_matches_buffer)  // definitely a boundary
         ;
-      else if (const re2::StringPiece string_piece(buffer.data(), buffer.length()); RE2::PartialMatch(string_piece, *rx))  // not an item boundary
+      else if (const re2::StringPiece string_piece(buffer.data(), buffer.length()); ! RE2::PartialMatch(string_piece, *rx))  // not an item boundary
         continue;
 
       if (split_by_size > 0)
