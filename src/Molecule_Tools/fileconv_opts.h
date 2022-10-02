@@ -370,6 +370,11 @@ struct FileconvConfig {
   // will be stored in the result.
   int return_smiles_before_filters = 0;
 
+  // If directed, we can accumulate the number of molecules that contain
+  // each element, together with non periodic table elements.
+  int* _ecount;
+  int _non_periodic_table_element_count;
+
   // Private functions.
   private:
   void DefaultValues();
@@ -464,9 +469,13 @@ struct FileconvConfig {
   int ValenceCheckOk(Molecule& m);
   int TooManyLargeFragments(Molecule& m);
 
+  int InitialiseElementCounts();
+  int AccumulateElementCounts(const Molecule& m);
+
  public:
   // By default, nothing will be set. Useless in default state.
   FileconvConfig();
+  ~FileconvConfig();
 
   // Use default command line options to initialise.
   int Build(Command_Line& cl);

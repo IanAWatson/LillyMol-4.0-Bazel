@@ -39,13 +39,17 @@
 #include "fileconv_opts.h"
 #include "remove_duplicate_fragments.h"
 
-static const char* prog_name;
-
 namespace fileconv {
 
 using std::cerr;
 
 FileconvConfig::FileconvConfig() { DefaultValues(); }
+
+FileconvConfig::~FileconvConfig() {
+  if (_ecount != nullptr) {
+    delete [] _ecount;
+  }
+}
 
 void
 FileconvConfig::DefaultValues() {
@@ -280,13 +284,18 @@ FileconvConfig::DefaultValues() {
 
   atom_number_to_atom_map_number = 0;
 
+  _ecount = nullptr;
+  _non_periodic_table_element_count = 0;
+
   return;
 }
 
 void
 Usage(int rc = 1) {
+  cerr << "In usage\n";
+  cerr.flush();
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << "\n";
-  cerr << "usage: " << prog_name << " -i <input type> -o <output type> file1 file2...\n";
+  cerr << "usage: fileconv -i <input type> -o <output type> file1 file2...\n";
   cerr << "The following options are recognised\n";
   cerr << "  -f <directive> fragment selection, enter '-f help' for details\n";
   cerr << "  -F <number>    exclude molecules having more than <number> fragments\n";
@@ -2940,6 +2949,12 @@ FileconvConfig::Process(Molecule& m) {
       atom_count[matoms]++;
   }
 
+  // By convention, element counts are done on the initial molecule.
+  // Likely to be more interesting than what is left after changes.
+  if (_ecount != nullptr) {
+    AccumulateElementCounts(m);
+  }
+
   if (audit_input) {
     if (appends_to_be_done) {
       DoAppends(m);
@@ -3428,6 +3443,14 @@ FileconvConfig::GetChargeCalculation(Command_Line& cl, char flag) {
 }
 
 int
+FileconvConfig::InitialiseElementCounts() {
+  _ecount = new_int(HIGHEST_ATOMIC_NUMBER + 1);
+  _non_periodic_table_element_count = 0;
+
+  return 1;
+}
+
+int
 FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
   if (!cl.option_present(flag)) {
     return 1;
@@ -3608,6 +3631,11 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       atom_number_to_atom_map_number = 1;
       if (verbose) {
         cerr << "Will write atom numbers as atom map numbers\n";
+      }
+    } else if (y == "ecount") {
+      InitialiseElementCounts();
+      if (verbose) {
+        cerr << "Will report element counts\n";
       }
     } else if ("help" == y) {
       DisplayDashYOptions(cerr, 'Y', 2);
@@ -4442,6 +4470,18 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
     }
   }
 
+  if (_ecount != nullptr) {
+    for (int i = 0; i <= HIGHEST_ATOMIC_NUMBER; ++i) {
+      if (_ecount[i]) {
+        const Element*e = get_element_from_atomic_number(i);
+        cerr << _ecount[i] << " molecules contained " << e->symbol() << '\n';
+      }
+    }
+    if (_non_periodic_table_element_count) {
+      cerr << _non_periodic_table_element_count << " molecules contained non periodic table elements\n";
+    }
+  }
+
   if (audit_input) {
     return 1;
   }
@@ -4773,6 +4813,40 @@ FileconvConfig::Build(Command_Line& cl) {
 
   if (!GatherAppendSpecifications(cl, 'p')) {
     return 1;
+  }
+
+  return 1;
+}
+
+int
+FileconvConfig::AccumulateElementCounts(const Molecule& m) {
+  if (_ecount == nullptr) {
+    return 0;
+  }
+
+  static int local_ecount[HIGHEST_ATOMIC_NUMBER + 1];
+  std::fill_n(local_ecount, HIGHEST_ATOMIC_NUMBER + 1, 0);
+  int local_non_periodic_table = 0;
+
+  int highest_atomic_number = 0;
+  for (const Atom* a : m) {
+    const Element* e = a->element();
+    if (e->is_in_periodic_table()) {
+      const atomic_number_t z = e->atomic_number();
+      ++local_ecount[z];
+      if (z > highest_atomic_number) {
+        highest_atomic_number = z;
+      }
+    } else {
+      ++local_non_periodic_table;
+    }
+  }
+
+  _non_periodic_table_element_count += local_non_periodic_table;
+  for (int i = 0; i <= highest_atomic_number; ++i) {
+    if (local_ecount[i]) {
+      ++_ecount[i];
+    }
   }
 
   return 1;
