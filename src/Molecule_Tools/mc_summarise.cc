@@ -650,7 +650,7 @@ Parameters::ProcessBad12(const const_IWSubstring &buffer,
               IW_STL_Hash_Map_int &reasons,
               IWString_and_File_Descriptor &output) {
   if (! matches_to) {
-    matches_to = std::make_unique<RE2>("^\\S+ +(\\S+)..* \\(([0-9]) matches to '([^']+)'\\)");
+    matches_to = std::make_unique<RE2>("^\\S+ +(\\S+).* \\(([0-9]+) matches to '([^']+)'\\)");
   }
 
   re2::StringPiece tmp(buffer.data(), buffer.length());
@@ -658,7 +658,7 @@ Parameters::ProcessBad12(const const_IWSubstring &buffer,
   int nhits;
   std::string reason;
   if (! RE2::FullMatch(tmp, *matches_to, &id, &nhits, &reason)) {
-    cerr << "Parameters::ProcessBad12:no matches to in '" << buffer << "'\n";
+    cerr << "Parameters::ProcessBad12:no matches to '" << matches_to->pattern() << "' in\n'" << buffer << "'\n";
     return 0;
   }
 
