@@ -33,10 +33,6 @@ typedef float iwproperty_t;
   their destructors are never called!
 */
 
-//#define FB_ENTROPY_WEIGHTED_FPS
-#ifdef FB_ENTROPY_WEIGHTED_FPS
-#endif
-
 template <typename T>
 class Molecular_Properties
 {
@@ -112,8 +108,9 @@ Molecular_Properties<T>::build_from_contiguous_storage (const void * p,
     _property = new T[_nproperties];
     copy_vector(_property, reinterpret_cast<const T *>(p), _nproperties);
   }
-  else
+  else {
     _property = (T *) (p);   // dangerous cast
+  }
 
   p = reinterpret_cast<const T *>(p) + _nproperties;
 
@@ -142,9 +139,6 @@ class Molecular_Properties_Integer : public Molecular_Properties<int>
     similarity_type_t dice_coefficient (const Molecular_Properties_Integer &) const;
 
     int bits_in_common (const Molecular_Properties_Integer &) const;
-#ifdef FB_ENTROPY_WEIGHTED_FPS
-    int construct_from_bit_vector (const IWDYFP &);
-#endif
 };
 
 class Molecular_Properties_Continuous : public Molecular_Properties<float>
@@ -155,6 +149,9 @@ class Molecular_Properties_Continuous : public Molecular_Properties<float>
 
     int construct_from_tdt_record (const const_IWSubstring &);
     int construct_from_descriptor_record (const const_IWSubstring & buffer);
+
+    // If we are converting the integer molecular properties to float forms.
+    int ConstructFromTdtFp(const const_IWSubstring& buffer);
 
     similarity_type_t similarity  (const Molecular_Properties_Continuous &) const;
     similarity_type_t cartesian_distance (const Molecular_Properties_Continuous &) const;
@@ -203,6 +200,8 @@ class IW_General_Fingerprint
 
     int _convert_sparse_fingerprints_to_bits (const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp);
     int _convert_sparse_fingerprints_to_fixed_width_counted (const Set_of_Sparse_Fingerprint_Collection_Profile & sfpcp);
+
+    int ContinuousPropertiesFromFp(IW_TDT& tdt, const IWString& tag);
 
 //  similarity_type_t _property_distance (const IW_General_Fingerprint & rhs) const;
 
@@ -294,9 +293,6 @@ class IW_General_Fingerprint
     void * copy_to_contiguous_storage_gpu (void *) const;
     const void * build_from_contiguous_storage (const void * p, int);
 
-#ifdef FB_ENTROPY_WEIGHTED_FPS
-  int convert_01_fingerprint_to_integer_molecular_properties();
-#endif
   int fixed_fingerprints_as_hex (IWString &) const;
 };
 
@@ -392,11 +388,9 @@ extern const IWString & property_tag();
 
 extern void delete_gfp_file_scope_static_objects ();
 
-#ifdef FB_ENTROPY_WEIGHTED_FPS
-extern int initialise_entropy_weighting_for_fingerprints (Command_Line &, char, int);
-#endif
-
 extern int property_based_windows_present();
+
+extern void set_transfer_integer_molecular_properties_to_float(int s);
 
 #define WINDOW_MAX_NATOMS 256
 #define WINDOW_MAX_RINGS 20

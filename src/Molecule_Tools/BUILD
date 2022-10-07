@@ -219,6 +219,8 @@ cc_binary(
     ],
     deps = [
         ":diced_molecule_cc_proto",
+        "//Foundational/iwmisc:proto_support",
+        "//Foundational/iwqsort:iwqsort",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
     ],

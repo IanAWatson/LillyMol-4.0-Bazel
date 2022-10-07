@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "Foundational/accumulator/accumulator.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 #include "Molecule_Lib/allowed_elements.h"
 #include "Molecule_Lib/charge_assigner.h"
@@ -375,6 +376,17 @@ struct FileconvConfig {
   int* _ecount;
   int _non_periodic_table_element_count;
 
+  // If directed, we can accumulate the unique smiles of the small fragments
+  // encountered in the input.
+  int _accumulate_small_fragments;
+
+  // From small fragment unique smiles to count.
+  IW_STL_Hash_Map_int _small_fragment;
+
+  // Only write small fragments if there are this many occurrences or more
+  // in the input.
+  int _threshold_for_small_fragment_report = 1;
+
   // Private functions.
   private:
   void DefaultValues();
@@ -471,6 +483,8 @@ struct FileconvConfig {
 
   int InitialiseElementCounts();
   int AccumulateElementCounts(const Molecule& m);
+
+  int AccumulateSmallFragments(Molecule& m);
 
  public:
   // By default, nothing will be set. Useless in default state.

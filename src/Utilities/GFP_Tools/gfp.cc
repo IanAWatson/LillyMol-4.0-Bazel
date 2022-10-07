@@ -2,6 +2,10 @@
 #include <math.h>
 #include <string.h>
 
+#include <iostream>
+#include <memory>
+#include <new>
+
 //#include "tbb/scalable_allocator.h"
 
 #include "Foundational/cmdline/cmdline.h"
@@ -13,20 +17,9 @@
 #include "tversky.h"
 #include "various_distance_metrics.h"
 
-#ifdef FB_ENTROPY_WEIGHTED_FPS
-#include "fb_bits_and_weights.h"
+using std::cerr;
+using std::endl;
 
-static FB_Bits_and_Weights_Fixed_Width ffbwfw;
-
-int
-initialise_entropy_weighting_for_fingerprints (Command_Line & cl,
-                                char flag,
-                                int verbose)
-{
-  return ffbwfw.construct_from_command_line(cl, flag, verbose);
-}
-
-#endif
 
 /*
   All fingerprints must have the same number of fingerprints.
@@ -528,6 +521,15 @@ static IWString molecular_property_continuous_tag;
 static float _property_weight_integer = -1.0;
 static float _property_weight_continuous = -1.0;
 
+// In order to use AVX instructions for molecular properties, we need
+// to transfer the integer molecular properies in MPR to the
+// continuous properties.
+static int transfer_integer_molecular_properties_to_float = 0;
+void
+set_transfer_integer_molecular_properties_to_float(int s) {
+  transfer_integer_molecular_properties_to_float = s;
+}
+
 const IWString &
 property_tag()
 {
@@ -944,17 +946,39 @@ Molecular_Properties_Integer::similarity(const Molecular_Properties_Integer & rh
 
   similarity_type_t rc = static_cast<similarity_type_t>(0.0);
   
+  static const int n = file_scope_number_integer_molecular_properties;
+  for (int i = 0; i < n; ++i) {
+#ifdef PROPERTIES_COMPUTED
+    if (_property[i] < rhs._property[i]) {
+      rc += static_cast<float>(_property[i]) / static_cast<float>(rhs._property[i]);
+    } else {
+      rc += static_cast<float>(rhs._property[i]) / static_cast<float>(_property[i]);
+    }
+#else
+    const int j = (_property[i] <<8) + rhs._property[i];
+
+    rc += precomputed_ratio[j];
+#endif
+  }
+  return rc;
+
+#ifdef OLD
   int j;
   for (int i = 0; i < file_scope_number_integer_molecular_properties; i++)
   {
-    j = _property[i] * 256 + rhs._property[i];
-
-    rc += precomputed_ratio[j];
+    if (_property[i] < rhs._property[i]) {
+      rc += _property[i] / rhs._property[i];
+    } else if (_property[i]> rhs._property[i]) {
+      rc += rhs._property[i] / _property[i];
+    } else {
+      rc += 1.0f;
+    }
   }
 
 /*assert (rc >= 0.0 && rc <= 1.0);*/
 
   return rc;
+#endif
 }
 
 #ifdef VERSION_WITHOUT_PRECOMPUTED_RATIOS
@@ -2179,6 +2203,18 @@ IW_General_Fingerprint::_read_molecular_properties_integer (IW_TDT & tdt,
 }
 
 int
+IW_General_Fingerprint::ContinuousPropertiesFromFp(IW_TDT& tdt, const IWString& tag) {
+  const_IWSubstring mpr;
+
+  if (! tdt.dataitem(tag, mpr)) {
+    cerr << "IW_General_Fingerprint::ContinuousPropertiesFromFp: no property tag '" << tag << "'\n";
+    return 0;
+  }
+
+  return _molecular_properties_continuous.ConstructFromTdtFp(mpr);
+}
+
+int
 Molecular_Properties_Continuous::construct_from_tdt_record (const const_IWSubstring & buffer)
 {
   const_IWSubstring p(buffer);
@@ -2186,6 +2222,44 @@ Molecular_Properties_Continuous::construct_from_tdt_record (const const_IWSubstr
   p.chop(1);
 
   return construct_from_descriptor_record(p);
+}
+
+int
+Molecular_Properties_Continuous::ConstructFromTdtFp(const const_IWSubstring& buffer) {
+  IWDYFP fp;
+
+  if (! fp.construct_from_tdt_record(buffer)) {
+    cerr << "Molecular_Properties_Continuous::const_IWSubstring: cannot parse '" << buffer << "' as FP\n";
+    return 0;
+  }
+
+  if (0 == _nproperties) {
+    _nproperties = fp.nbits() / IW_BITS_PER_BYTE;
+
+    set_number_continuous_molecular_properties(_nproperties);
+  } else if (fp.nbits() / IW_BITS_PER_BYTE != _nproperties) {
+    cerr << "Molecular_Properties_Continuous::ConstructFromTdtFp:property count mismatch\n";
+    return 0;
+  }
+
+  // AVX needs 32 byte alignment.
+  static constexpr int kAlignment = 32;
+
+  // I think it might be possible to use the c++17 new operator, but
+  // the solution was not obvious.
+  if (nullptr == _property) {
+    _property = static_cast<float*>(aligned_alloc(kAlignment, _nproperties * sizeof(float)));
+  }
+
+//const unsigned char * b = static_cast<const unsigned char *> (fp.bits());
+  const unsigned char * b = (const unsigned char *) fp.bits();
+
+  for (int i = 0; i < _nproperties; i++)
+  {
+    _property[i] = static_cast<float>(b[i]) + 1.0f;
+  }
+
+  return 1;
 }
 
 int
@@ -2511,8 +2585,13 @@ IW_General_Fingerprint::_construct_from_tdt(IW_TDT & tdt,
     }
   }
 
-  if (molecular_property_integer_tag.length())
-  {
+  if (molecular_property_integer_tag.length() &&
+      transfer_integer_molecular_properties_to_float) {
+    if (! ContinuousPropertiesFromFp(tdt, molecular_property_integer_tag)) {
+      fatal = 1;
+      return 0;
+    }
+  } else if (molecular_property_integer_tag.length()) {
     if (nullptr == precomputed_ratio)
     {
       cerr << "Properties present '" << molecular_property_integer_tag << "', but not specified on command line, suppressed\n";
@@ -3724,6 +3803,9 @@ initialise_fingerprints(Command_Line & cl, int verbose)
       else if ("dice" == p)
       {
         _integer_property_distance_metric = INTEGER_PROPERTY_DISTANCE_METRIC_DICE;
+      }
+      else if (p == "float") {
+        transfer_integer_molecular_properties_to_float = 1;
       }
       else if (0 == p.length())
       {

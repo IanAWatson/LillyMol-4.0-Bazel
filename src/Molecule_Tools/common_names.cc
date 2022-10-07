@@ -109,7 +109,7 @@ static void
 do_conversions_needed_for_unique_smiles_generation(Molecule & m,
                         int & hcount) {
   if (reduce_to_largest_fragment) {
-    m.reduce_to_largest_fragment();
+    m.reduce_to_largest_fragment_carefully();
   }
 
   if (compare_as_graph) {

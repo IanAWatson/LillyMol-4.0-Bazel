@@ -287,6 +287,9 @@ FileconvConfig::DefaultValues() {
   _ecount = nullptr;
   _non_periodic_table_element_count = 0;
 
+  _accumulate_small_fragments = 0;
+  _threshold_for_small_fragment_report = 1;
+
   return;
 }
 
@@ -383,6 +386,8 @@ DisplayfOptions(int rc) {
           "atoms\n";
   cerr << "  -f klf=<d>     discard all but the <n> largest fragments\n";
   cerr << "  -f RMF=<tag>   when processing TDT forms, write removed fragments to <tag>\n";
+  cerr << "  -f accf        accumulate small fragments\n";
+  cerr << "  -f accf=nn     accumulate small fragments and only write if <nn> or more instances\n";
 
   exit(rc);
 }
@@ -448,6 +453,7 @@ DisplayDashYOptions(std::ostream& os, char flag, int rc) {
   os << dash_flag << "iso2amap      convert isotopes to atom map numbers\n";
   os << dash_flag << "amap2iso      convert atom map numbers to isotopes\n";
   os << dash_flag << "num2amap      the atom map number will be the atom number\n";
+  os << dash_flag << "ecount        accumulate the number of molecules containing each kind of atom\n";
   os << dash_flag << "help          this message\n";
 
   exit(rc);
@@ -2955,6 +2961,10 @@ FileconvConfig::Process(Molecule& m) {
     AccumulateElementCounts(m);
   }
 
+  if (_accumulate_small_fragments && m.number_fragments() > 1) {
+    AccumulateSmallFragments(m);
+  }
+
   if (audit_input) {
     if (appends_to_be_done) {
       DoAppends(m);
@@ -3003,8 +3013,9 @@ FileconvConfig::Process(Molecule& m) {
     }
   }
 
-  if (reset_atom_map_numbers)
+  if (reset_atom_map_numbers) {
     m.reset_all_atom_map_numbers();
+  }
 
   // Jan 2004. Invalid directional bonds on guanidine C(/N)(\N)=N/N=C/c(ccc(c1Cl)O)c1
   // Need do clean those up before trying to standardise a guanidine
@@ -3864,7 +3875,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         f.remove_leading_chars(8);
         if (!f.numeric_value(remove_largest_fragment) || remove_largest_fragment < 1) {
           cerr << "The rmlarge= directive must be followed by a whole +ve integer\n";
-          return 5;
+          return 0;
         }
 
         if (verbose)
@@ -3913,7 +3924,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         if (!f.numeric_value(remove_fragments_this_size_or_smaller) ||
             remove_fragments_this_size_or_smaller < 1) {
           cerr << "The rmle= qualifier must be a whole positive number\n";
-          return 11;
+          return 0;
         }
 
         if (verbose)
@@ -3935,13 +3946,13 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         f.remove_leading_chars(9);
         if (!known_fragment_data.read_known_salts(f)) {
           cerr << "Cannot read known salts '" << f << "'\n";
-          return 9;
+          return 0;
         }
       } else if (f.starts_with("parentfile=")) {
         f.remove_leading_chars(11);
         if (!known_fragment_data.read_known_parents(f)) {
           cerr << "Cannot read known parents '" << f << "'\n";
-          return 9;
+          return 0;
         }
       } else if ("kmfok" == f) {
         known_fragment_data.set_only_check_molecular_formula(1);
@@ -3955,7 +3966,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         if (!f.numeric_value(discard_molecule_if_multiple_fragments_larger_than) ||
             discard_molecule_if_multiple_fragments_larger_than < 1) {
           cerr << "The rmxt qualifier must be followed by a whole +ve number\n";
-          return 3;
+          return 0;
         }
 
         if (verbose)
@@ -3972,7 +3983,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         if (!f.numeric_value(mixture_if_largest_frags_differ_by) ||
             mixture_if_largest_frags_differ_by < 0) {
           cerr << "The delta for mixture (dmxt=) specifier must be a whole non-negative number\n";
-          return 3;
+          return 0;
         }
 
         if (verbose)
@@ -3984,7 +3995,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
             remove_molecules_with_non_largest_fragment_natoms < 0) {
           cerr << "The max atoms in non-largest fragment directive (manlf) must be a whole +ve "
                   "number\n";
-          return 2;
+          return 0;
         }
 
         if (verbose)
@@ -3995,7 +4006,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
         if (!f.numeric_value(strip_to_n_largest_fragments) || strip_to_n_largest_fragments < 1) {
           cerr << "The strip to N largest fragments 'klf=' directive must have a whole +ve "
                   "integer\n";
-          return 2;
+          return 0;
         }
 
         if (verbose)
@@ -4011,8 +4022,23 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
 
         if (0 == tag_for_removed_fragments.length()) {
           cerr << "The tag for removed fragments (RMF=) must be non zero length\n";
-          return 2;
+          return 0;
         }
+      } else if (f == "accf") {
+        _accumulate_small_fragments = 1;
+        if (verbose) {
+          cerr << "Will accumulate the unique smiles of small fragaments\n";
+        }
+      } else if (f.starts_with("accf=")) {
+        f.remove_leading_chars(5);
+        if (! f.numeric_value(_threshold_for_small_fragment_report)) {
+          cerr << "Invalid accf= qualifier '" << f << "'\n";
+          return 0;
+        }
+        if (verbose) {
+          cerr << "Will write small fragments with support " << _threshold_for_small_fragment_report << '\n';
+        }
+        _accumulate_small_fragments = 1;
       } else if ("help" == f) {
         DisplayfOptions(1);
       } else {
@@ -4054,9 +4080,10 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
       ;
     else if (discard_molecule_if_multiple_fragments_larger_than > 0 && 2 == nsel)
       ;
-    else
+    else {
       cerr << "You have specified more than one fragment selection criterion " << nsel
            << " beware of problems...\n";
+    }
 
     if (nsel || known_fragment_data.active() ||
         remove_molecules_with_non_largest_fragment_natoms >= 0 || sort_by_fragment_size) {
@@ -4066,7 +4093,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
     if (tag_for_removed_fragments.length() && !reduce_to_largest_organic_fragment) {
       cerr << "Sorry, the tag for removed fragments option 'RMF=' only works with the 'lo' "
               "fragment selection qualifier\n";
-      return 1;
+      return 0;
     }
 
     //  if (known_fragment_data.active())
@@ -4101,7 +4128,7 @@ FileconvConfig::GetFragmentSpecifications(Command_Line& cl) {
                << " fragments will be skipped\n";
       } else {
         cerr << "Unrecognised -F qualitifier '" << f << "'\n";
-        return 3;
+        return 0;
       }
     }
 
@@ -4482,6 +4509,14 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
     }
   }
 
+  if (_accumulate_small_fragments) {
+    for (const auto& [usmi, count] : _small_fragment) {
+      if (count >= _threshold_for_small_fragment_report) {
+        cerr << usmi << " count " << count << '\n';
+      }
+    }
+  }
+
   if (audit_input) {
     return 1;
   }
@@ -4846,6 +4881,38 @@ FileconvConfig::AccumulateElementCounts(const Molecule& m) {
   for (int i = 0; i <= highest_atomic_number; ++i) {
     if (local_ecount[i]) {
       ++_ecount[i];
+    }
+  }
+
+  return 1;
+}
+
+int
+FileconvConfig::AccumulateSmallFragments(Molecule& m) {
+  resizable_array_p<Molecule> frags;
+  m.create_components(frags);
+
+  // Note that if there are two fragments of roughly the same size,
+  // both will be designated the largest, and perhaps nothing will
+  // be written. OK.
+  int atoms_in_largest_fragment = 0;
+  for (const Molecule* f : frags) {
+    const int fatoms = f->natoms();
+    if (fatoms > atoms_in_largest_fragment) {
+      atoms_in_largest_fragment = fatoms;
+    }
+  }
+
+  for (Molecule* f : frags) {
+    if (f->natoms() == atoms_in_largest_fragment) {
+      continue;
+    }
+    const IWString& usmi = f->unique_smiles();
+    auto iter = _small_fragment.find(usmi);
+    if (iter == _small_fragment.end()) {
+      _small_fragment.emplace(usmi, 1);
+    } else {
+      ++iter->second;
     }
   }
 
