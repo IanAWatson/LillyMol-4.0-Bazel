@@ -1555,7 +1555,7 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
     return 0;
 
 #ifdef DEBUG_GOT_EMBEDDING
-  cerr << "_got_embedding: environment also matched\n";
+  cerr << "_got_embedding: env matches: save " << _save_matched_atoms << " so far " << results.hits_found() << " cmp " << _max_matches_to_find << '\n';
 #endif
 
   if (! _save_matched_atoms) {
@@ -1567,8 +1567,10 @@ Single_Substructure_Query::_got_embedding(Query_Atoms_Matched & matched_atoms,
 //  if (results.hits_found() > 40000000)
 //    exit(0);
 
-    if (_max_matches_to_find > 0 && results.number_embeddings() >= _max_matches_to_find)
+    if (_max_matches_to_find > 0 && results.hits_found() >= _max_matches_to_find) {
+      results.set_complete();
       return _max_matches_to_find;
+    }
 
     return 1;
   }

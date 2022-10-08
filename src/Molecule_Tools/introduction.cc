@@ -74,13 +74,24 @@ DemoAtomicNumbers() {
   cerr << "Element's atomic number " << e->atomic_number() << '\n';
 }
 
+// Return a newly created molecule build from `smiles`.
+// The molecule name is not set.
+// If smiles interpretation failes, an empty molecule is returned.
+// A better approach would be to use std::optional.
+Molecule
+MolFromSmiles(const char* smiles) {
+  Molecule result;
+  if (!result.build_from_smiles(smiles)) {
+    cerr << "Invalid smiles '" << smiles << "'\n";
+    return Molecule();
+  }
+
+  return result;
+}
+
 void
 DemoAtomIteration() {
-  Molecule mol;
-  if (! mol.build_from_smiles("CCC")) {
-    cerr << "Cannot parse propane\n";
-    return;
-  }
+  Molecule mol = MolFromSmiles("CCC");
 
   // Loop through the atoms in `mol`, writing the atomic number.
   // Note that the iterator returns a pointer to an Atom.
@@ -101,8 +112,7 @@ DemoAtomIteration() {
 // The each_atom method requires a struct that responds to operator()(const Atom&);
 void
 DemoEachAtom() {
-  Molecule mol;
-  mol.build_from_smiles("OCN");
+  Molecule mol = MolFromSmiles("OCN");
 
   struct SumNcon {
     int sum = 0;
@@ -118,8 +128,7 @@ DemoEachAtom() {
 
 void
 DemoEachAtomLambda() {
-  Molecule mol;
-  mol.build_from_smiles("OCN");
+  Molecule mol = MolFromSmiles("OCN");
 
   int max_atomic_number = 0;
   mol.each_atom_lambda([&max_atomic_number] (const Atom& atom) {
@@ -128,10 +137,10 @@ DemoEachAtomLambda() {
   cerr << "highest atomic number " << max_atomic_number << '\n';
 }
 
+// Iterate through all bonds(edges) in the molecule.
 void
 DemoEachBond() {
-  Molecule mol;
-  mol.build_from_smiles("CC=CC");
+  Molecule mol = MolFromSmiles("CC=CC");
 
   struct CountSingleBonds {
     int single_bonds = 0;
@@ -156,10 +165,10 @@ DemoEachBond() {
   }
 }
 
+// Iterators through rings.
 void
 DemoEachRing() {
-  Molecule mol;
-  mol.build_from_smiles("C1CC1C1CCC1C1CCCC1");
+  Molecule mol = MolFromSmiles("C1CC1C1CCC1C1CCCC1");
 
   struct LargestRingSize {
     int largest_ring = 0;
@@ -182,14 +191,13 @@ DemoEachRing() {
   }
 }
 
-// Apply a member function to each atom.
+// Apply a Molecule member function to each atom.
 // This particular demo is quite unusual, normally some
 // kind of numeric accumulation would be done. THis
 // works because IWString has a += operator.
 void
 DemoEachIndex() {
-  Molecule mol;
-  mol.build_from_smiles("OCN");
+  Molecule mol = MolFromSmiles("OCN");
 
   Molecule::const_member_fn<const IWString&> fn = &Molecule::atomic_symbol;
   IWString result = mol.each_index<IWString>(fn);
@@ -198,8 +206,7 @@ DemoEachIndex() {
 
 void
 Demoisotopes() {
-  Molecule mol;
-  mol.build_from_smiles("CC");
+  Molecule mol = MolFromSmiles("CC");
   mol.set_isotope(0, 1);
   mol.set_isotope(1, 2);
 
@@ -212,8 +219,8 @@ Demoisotopes() {
 
 void
 DemoFormalCharges() {
-  Molecule mol;
-  mol.build_from_smiles("CC[N+H3]");
+  Molecule mol = MolFromSmiles("CC[N+H3]");
+
   cerr << "Does the molecule have formal charges " << mol.has_formal_charges() <<
           " net " << mol.net_formal_charge() << '\n';
   cerr << "Charge " << mol.formal_charge(2) << '\n';
@@ -225,8 +232,7 @@ DemoFormalCharges() {
 
 void
 DemoNcon() {
-  Molecule mol;
-  mol.build_from_smiles("CC(C)(C)C");
+  Molecule mol = MolFromSmiles("CC(C)(C)C");
 
   // The molecule is
   //              [C:2]
@@ -253,8 +259,7 @@ DemoNcon() {
 
 void
 DemoBondIteration() {
-  Molecule mol;
-  mol.build_from_smiles("CC(C)(C)C");
+  Molecule mol = MolFromSmiles("CC(C)(C)C");
 
   // For each atom, enumerate the connected atoms.
   // Iteration is over Bond objects associated with each atom.
@@ -272,12 +277,12 @@ DemoBondIteration() {
 }
 
 // It is possible to iterate through the connections to an atom
-// by iterating through the Molecule. More efficient and elegant
-// to iterate via the Atom.
+// by iterating through the Molecule. It is more efficient and elegant
+// to iterate via the Atom rather than via the Molecule.
 void
 DemoBondIterationMolecule() {
-  Molecule mol;
-  mol.build_from_smiles("CO");
+  Molecule mol = MolFromSmiles("CO");
+
   int ncon = mol.ncon(0);
   for (int i = 0; i < ncon; ++i) {
     atom_number_t j = mol.other(0, i);
@@ -291,8 +296,8 @@ DemoBondIterationMolecule() {
 // Set_of_Atoms object.
 void
 DemoConnections() {
-  Molecule mol;
-  mol.build_from_smiles("C(C)O");
+  Molecule mol = MolFromSmiles("C(C)O");
+
   const Set_of_Atoms connected = mol.connections(0);
   cerr  << " atoms connected to 0 " << connected << '\n';
 }
@@ -301,8 +306,7 @@ DemoConnections() {
 // to generate two methanes.
 void
 DemoFragments() {
-  Molecule mol;
-  mol.build_from_smiles("CC");
+  Molecule mol = MolFromSmiles("CC");
 
   cerr << "Methane has " << mol.number_fragments() << " fragments\n";
   cerr << "Ethane contains only one edge " << mol.nedges() << '\n';
@@ -344,9 +348,8 @@ DemoFragments() {
 
 void
 DemoRing() {
-  Molecule mol;
   // Adjacent three and four membered rings.
-  mol.build_from_smiles("C1CCC1C1CC1");
+  Molecule mol = MolFromSmiles("C1CCC1C1CC1");
 
   // We should get two rings.
   cerr << "Molecule contains " << mol.nrings() << " rings\n";
@@ -377,15 +380,14 @@ DemoRing() {
 
 void
 DemoRingSystem() {
-  Molecule mol;
   // Fused 3 and 4 membered rings.
   //    C ---- C
   //    |      |  \
   //    |      |   C
   //    |      |  /
   //    C ---- C
-  // 
-  mol.build_from_smiles("C12CCC1C2");
+
+  Molecule mol = MolFromSmiles("C12CCC1C2");
 
   // Contains 2 rings. 
   cerr << "Molecule contains " << mol.nrings() << " rings\n";
@@ -424,8 +426,7 @@ DemoRingSystem() {
 
 void
 DemoAreBonded() {
-  Molecule mol;
-  mol.build_from_smiles("CC.C");
+  Molecule mol = MolFromSmiles("CC.C");
 
   const int matoms = mol.natoms();
   for (int i = 0; i < matoms; ++i) {
@@ -439,10 +440,14 @@ DemoAreBonded() {
   }
 }
 
+// A LillyMol smiles extension is to allow coordinates in smiles.
+// {{x,y,z}} is appended after each atom.
+// This is more compact than a .sdf representation, and allows
+// molecules to be processed one per line.
 void
 DemoCoordinatesInAtoms() {
-  Molecule mol;
-  mol.build_from_smiles("C{{-1,1,0}}C{{0,0,0}}C{{1,0,0}}C{{2,1,1}}");
+  Molecule mol = MolFromSmiles("C{{-1,1,0}}C{{0,0,0}}C{{1,0,0}}C{{2,1,1}}");
+
   cerr << "Distance between 0 1 " << mol.distance_between_atoms(0, 1) << '\n';
   cerr << "Bond angle 0 1 2 " << (mol.bond_angle(0, 1, 2) * RAD2DEG) << '\n';
   cerr << "Dihedral angle 0 1 2 3 " << (mol.dihedral_angle(0, 1, 2, 3) * RAD2DEG) << '\n';
@@ -463,27 +468,75 @@ DemoCoordinatesInAtoms() {
   cerr << "Atom 0 at " << atom.x() << ',' << atom.y() << ',' << atom.z() << '\n';
 }
 
+// Performing a substructure search requires instantiation of
+// a Substructure_Query object. That is then constructed
+// from smarts, a query file, a proto, or other means.
+// Once the Substructure_Query is built, use it to perform
+// substructure searches on Molecule's.
 void
 DemoSubstuctureSearch() {
-  Molecule mol;
-  mol.build_from_smiles("OCN");
+  Molecule mol = MolFromSmiles("OCN");
+
+  Substructure_Query qry;
+  qry.create_from_smarts("OCN");
+
+  // For historical reasons, this method takes a pointer.
+  const int nhits = qry.substructure_search(&mol);
+  cerr << "Query makes " << nhits << " matches\n";
+}
+
+// The example above did not save the matched atoms. If we need
+// the matched atoms, pass a Substructure_Results to the search.
+void
+DemoSubstuctureSearchSaveResults() {
+  Molecule mol = MolFromSmiles("OCN");
 
   Substructure_Query qry;
   qry.create_from_smarts("OCN");
 
   Substructure_Results sresults;
   const int nhits = qry.substructure_search(mol, sresults);
-  cerr << "Query makes " << nhits << " matches\n";
 
-  // Loop over the hits - one in this case
+  // Loop over the hits - one in this case. There is an iterator
+  // for shown below.
   for (int i = 0; i < nhits; ++i) {
     const Set_of_Atoms* e = sresults.embedding(i);
     cerr << " atoms " << *e << '\n';
   }
 }
 
+// If all we care about is whether or not a query matches
+// and we do not care about how many matches there might 
+// be, and we do not want to save the matched atoms, we
+// can limit the scope of the search.
+// The initial molecule/smarts generates 559872 query
+// matches. Every 10,000 matches found, there will be
+// a message to stderr informing you of a potentially
+// catastrophic matching.
+// 559872 is 2^8 * 3^7
+void
+DemoParsimoniousSearch() {
+  const char* smiles = "C(C)(C)(C)c1c(C(C)(C)(C))c(C(C)(C)(C))c(C(C)(C)(C))c(C(C)(C)(C))c1C(C)(C)(C)";
+  Molecule mol = MolFromSmiles(smiles);
+
+  Substructure_Query qry;
+  qry.create_from_smarts(smiles);
+
+  Substructure_Results sresults;
+  int nhits = qry.substructure_search(mol, sresults);
+  cerr << "Without constraints, find " << nhits << " substructure matches\n";
+
+  qry.set_max_matches_to_find(1);
+  qry.set_save_matched_atoms(0);
+
+  nhits = qry.substructure_search(mol, sresults);
+  cerr << "With constraints find " << nhits << " substructure matches\n";
+}
+
 // Using a Molecule_to_Match as the target for the query
 // can be more efficient because computed properties are cached.
+// Definitely recommended if the same molecule is being searched
+// by multiple queries.
 void
 DemoSubstuctureSearchWithTarget() {
   Molecule mol;
@@ -514,6 +567,39 @@ DemoSubstuctureSearchWithTarget() {
   qry.set_perceive_symmetry_equivalent_matches(1);
   nhits = qry.substructure_search(target, sresults);
   cerr << "Got " << nhits << " hits to phenol (back to default)\n";
+}
+
+// Set up a vector of Substructure_Query objects.
+// A resizable_array_p is a vector that contains pointers
+// to objects. The resizable_array_p manages ownership of
+// the objects.
+void
+DemoMultipleQueries() {
+  resizable_array_p<Substructure_Query> queries;
+  constexpr int kNqueries = 10;
+
+  // Build up a set of smarts that are C, CC, CCC ...
+  IWString smarts = 'C';
+  for (int i = 0; i < kNqueries; ++i) {
+    std::unique_ptr<Substructure_Query> qry = std::make_unique<Substructure_Query>();
+    qry->create_from_smarts(smarts);
+    // The name of the query is the same as the smarts.
+    qry->set_comment(smarts);
+    queries << qry.release();
+
+    smarts += 'C';
+  }
+
+  Molecule mol = MolFromSmiles("CCCCC");
+  Molecule_to_Match target(&mol);
+
+  // It is interesting to contemplate the number of matches found
+  // to each of these queries.
+  Substructure_Results sresults;
+  for (Substructure_Query* qry : queries) {
+    int nhits = qry->substructure_search(target, sresults);
+    cerr << nhits << " matches to query " << qry->comment() << '\n';
+  }
 }
 
 void
@@ -609,7 +695,13 @@ Main(int argc, char** argv) {
   cerr << '\n';
   DemoSubstuctureSearch();
   cerr << '\n';
+  DemoSubstuctureSearchSaveResults();
+  cerr << '\n';
+  DemoParsimoniousSearch();
+  cerr << '\n';
   DemoSubstuctureSearchWithTarget();
+  cerr << '\n';
+  DemoMultipleQueries();
   cerr << '\n';
   DemoQueryFromProto();
   cerr << '\n';
