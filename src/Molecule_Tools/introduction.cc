@@ -89,6 +89,44 @@ MolFromSmiles(const char* smiles) {
   return result;
 }
 
+// In LillyMol, there is a periodic table datastructure which contains
+// an Element object for all elements known to the system. We can
+// fetch pointers to those elements via various means.
+
+// For historical reasons, to get an element from a two letter element
+// we must use get_element_from_symbol_no_case_conversion. This should
+// be fixed. We had some early mdl files where the symbols were all
+// uppercase.
+void
+DemoElements() {
+  const Element* carbon = get_element_from_atomic_number(6);
+  const Element* uranium = get_element_from_symbol_no_case_conversion("U");
+  const Element* chlorine = get_element_from_symbol_no_case_conversion("Cl");
+  const Element* iron = get_element_from_atomic_number(26);
+
+  cerr << "Carbon is " << carbon->symbol() << " atnum " << carbon->atomic_number() << '\n';
+  cerr << "normal isotope " << carbon->normal_isotope() << '\n';
+  cerr << "atomic_mass " << carbon->atomic_mass() << '\n';
+  cerr << "exact_mass " << carbon->exact_mass() << '\n';
+  cerr << "normal_valence " << carbon->normal_valence() << '\n';
+  cerr << "number_alternate_valences " << carbon->number_alternate_valences() << '\n';
+  cerr << "carbon organic " << carbon->organic() << '\n';
+  cerr << "uranium organic " << uranium->organic() << '\n';
+  cerr << "carbon needs_square_brackets " << carbon->needs_square_brackets() << '\n';
+  cerr << "uranium needs_square_brackets " << uranium->needs_square_brackets() << '\n';
+  cerr << "carbon is_halogen " << carbon->is_halogen() << '\n';
+  cerr << "uranium is_halogen " << uranium->is_halogen() << '\n';
+  cerr << "chlorine is_halogen " << chlorine->is_halogen() << '\n';
+  cerr << "carbon is_in_periodic_table " << carbon->is_in_periodic_table() << '\n';
+  cerr << "uranium is_in_periodic_table " << uranium->is_in_periodic_table() << '\n';
+  cerr << "carbon is_metal " << carbon->is_metal() << '\n';
+  cerr << "iron is_metal " << iron->is_metal() << '\n';
+
+  // Computing the number of pi electrons and lone pairs from an element is
+  // complex and you are better off asking a Molecule for the pi electron
+  // or lone pair count on a given atom.
+}
+
 void
 DemoAtomIteration() {
   Molecule mol = MolFromSmiles("CCC");
@@ -206,7 +244,7 @@ DemoEachIndex() {
 }
 
 void
-Demoisotopes() {
+DemoIsotopes() {
   Molecule mol = MolFromSmiles("CC");
   mol.set_isotope(0, 1);
   mol.set_isotope(1, 2);
@@ -215,6 +253,134 @@ Demoisotopes() {
   cerr << "Isotope on atom 0 " << mol.isotope(0) << '\n';
   for (const Atom* atom : mol) {
     cerr << " isotope on atom " << atom->isotope() << '\n';
+  }
+
+  // Isotopes are arbitrary numbers.
+  mol.set_isotope(0, 999);
+  mol.set_isotope(1, std::numeric_limits<int>::max());
+  cerr << "Ridiculous isotopes " << mol.smiles() << '\n';
+
+  // We should be able to build a new molecule from `mol`
+  // and their unique smiles should be the same.
+  Molecule round_trip;
+  round_trip.build_from_smiles(mol.smiles());
+  cerr << "Same? " << (mol.unique_smiles() == round_trip.unique_smiles()) << '\n';
+}
+
+void
+DemoIsotopesMolecularWeight() {
+  Molecule mol = MolFromSmiles("OCN");
+  float amw = mol.molecular_weight();
+  cerr << "Non isotopic molecular weight " << amw << '\n';
+  mol.set_isotope(0, 1);
+  amw = mol.molecular_weight();
+  cerr << "With isotopes, molecular weight is zero " << amw << '\n';
+
+  amw = mol.molecular_weight_ignore_isotopes();
+  cerr << "If isotopes are ignored, amw " << amw << '\n';
+
+  // Isotope 1 gets counted as contributing 1.0 to the amw.
+  amw = mol.molecular_weight_count_isotopes();
+  cerr << "If isotopes included " << amw << '\n';
+}
+
+void
+DemoImplicitAndExplicitHydrogens() {
+  Molecule mol = MolFromSmiles("OCN");
+
+  // Note that the ncon method, the number of connections to
+  // an atom, does NOT reflect implicit Hydrogens.
+  int matoms = mol.natoms();
+  cerr << "Molecule begins with " << matoms << " atoms\n";
+  for (int i = 0; i < matoms; ++i) {
+    cerr << "Atom " << i << " ncon " << mol.ncon(i) << " connections has " << mol.hcount(i) << " Hydrogens\n";
+  }
+
+  // Convert implicit Hydrogens to explicit.
+  // Note that the hcount for the existing atoms, natoms, should
+  // be unchaged, because the hcount() method includes both
+  // explicit and implicit Hydrogens.
+  // but now that the formerly implicit Hydrogens are now
+  // explicit members of the connection table, the ncon values
+  // for the existing atoms will change.
+
+  cerr << "After implicit Hydrogens become explicit\n";
+  mol.make_implicit_hydrogens_explicit();
+  for (int i = 0; i < matoms; ++i) {
+    cerr << "Atom " << i << " ncon " << mol.ncon(i) << " connections has " << mol.hcount(i) << " Hydrogens\n";
+  }
+
+  cerr << "Molecule now contains " << mol.natoms() << " atoms\n";
+}
+
+// One of the most troublesome parts of LillyMol is the
+// implicit hydrogens known attribute. If a smiles begins with
+// C-[CH]-C where the centre Carbon is deficient one Hydrogen
+// what happens when we add a Carbon atom to it, thereby
+// satisfying the valence.
+void 
+DemoImplicitHydrogensKnown() {
+  Molecule mol = MolFromSmiles("C-[CH]-C");
+  cerr << "Valence? " << mol.valence_ok() << '\n';
+
+  // Indeed the problem is with atom 1.
+  for (int i = 0; i < mol.natoms(); ++i) {
+    cerr << " atom " << i << " valence " << mol.valence_ok(i) << '\n';
+  }
+
+  // Add a carbon atom.
+  // First fetch a pointer to the Element with atomic number 6.
+  // Then call mol.add() with a pointer to the Element.
+  // Internally, mol will instantiate an Atom which has
+  // that element.
+  const Element* carbon = get_element_from_atomic_number(6);
+  mol.add(carbon);
+
+  // The molecule now has two fragments.
+  cerr << "Molecule has " << mol.number_fragments() << " fragments\n";
+
+  // Add a bond fromthis last atom added to the middle atom to satisfy the valence.
+  // The newly added atom will always have the highest atom number.
+  mol.add_bond(1, 3, SINGLE_BOND);
+  cerr << "Now " << mol.number_fragments() << " fragments\n";
+
+  // Is the valence ok now?
+  cerr << "After atom addition valence? " << mol.valence_ok() << '\n';
+
+  // But the smiles shows that the centre atom still has its
+  // implicit Hydrogens known attribute set. Even though it
+  // is no longer necessary.
+  cerr << "Smiles now " << mol.smiles() << '\n';
+  cerr << "Is the value fixed " << mol.implicit_hydrogens_known(1) << '\n';
+
+  // Remove the implicit Hydrogen known attribute.
+  // Now the smiles does not have the square brackets.
+  mol.set_implicit_hydrogens_known(1, 0);
+  cerr << "Smiles now " << mol.smiles() << '\n';
+  cerr << "Is the value fixed " << mol.implicit_hydrogens_known(1) << '\n';
+}
+
+// Random smiles are useful for testing. Algorithms should not
+// depend on the order of the smiles.
+void
+DemoRandomSmiles() {
+  // Caffeine
+  Molecule mol = MolFromSmiles("CN1C=NC2=C1C(=O)N(C(=O)N2C)C");
+
+  // Note that we make a copy of the unique smiles.
+  // Generally we get a reference to the unique smiles,
+  //   IWString& starting_unique_smiles = mol.unique_smiles()
+  // But in this case the smiles of `mol` will be destroyed when the
+  // random smiles are formed below, and the reference would
+  // be invalid.
+
+  const IWString starting_unique_smiles = mol.unique_smiles();
+
+  for (int i = 0; i < 10; ++i) {
+    cerr << " random smiles " << mol.random_smiles() << '\n';
+    Molecule hopefully_the_same;
+    hopefully_the_same.build_from_smiles(mol.random_smiles());
+    cerr << "Same? " << (starting_unique_smiles == hopefully_the_same.unique_smiles()) << '\n';
   }
 }
 
@@ -345,6 +511,34 @@ DemoFragments() {
   mol.add_bond(0, 1, SINGLE_BOND);
   cerr << "After recreating nfrag " << mol.number_fragments() << '\n';
   cerr << "Same frag " << (mol.fragment_membership(0) == mol.fragment_membership(1)) << '\n';
+}
+
+// when we have a multi-fragment molecule, we can create
+// molecules from each fragment.
+void
+DemoCreateComponents() {
+  Molecule mol = MolFromSmiles("C.C.C.C.C.C.C.C.C");
+  resizable_array_p<Molecule> fragments;
+  mol.create_components(fragments);
+  cerr << "Created " << fragments.size() << " fragments from " << mol.smiles() << '\n';
+
+  // The fragments should all have the same smiles.
+  // Note that we cannot use 'const Molecule* m' here because generating
+  // a smiles is a potentially non-const operation - see lazy evaluation.
+  for (Molecule* m : fragments) {
+    if (m->unique_smiles() != "C") {
+      cerr << "Invalid fragment unique smiles\n";
+    }
+  }
+}
+
+// Normally getting the largest fragment is straightforward and
+// yields the expected result.
+void
+DemoReduceToLargestFragment() {
+  Molecule mol = MolFromSmiles("CC.C");
+  mol.reduce_to_largest_fragment();
+  cerr << "after reduce_to_largest_fragment have " << mol.natoms() << " atoms " << mol.smiles() << '\n';
 }
 
 void
@@ -708,7 +902,15 @@ Main(int argc, char** argv) {
   cerr << '\n';
   DemoAtomicNumbers();
   cerr << '\n';
-  Demoisotopes();
+  DemoIsotopes();
+  cerr << '\n';
+  DemoIsotopesMolecularWeight();
+  cerr << '\n';
+  DemoImplicitAndExplicitHydrogens();
+  cerr << '\n';
+  DemoImplicitHydrogensKnown();
+  cerr << '\n';
+  DemoRandomSmiles();
   cerr << '\n';
   DemoFormalCharges();
   cerr << '\n';
@@ -719,6 +921,8 @@ Main(int argc, char** argv) {
   DemoBondIterationMolecule();
   cerr << '\n';
   DemoConnections();
+  cerr << '\n';
+  DemoElements();
   cerr << '\n';
   DemoAtomIteration();
   cerr << '\n';
@@ -737,6 +941,10 @@ Main(int argc, char** argv) {
   DemoCoordinatesInAtoms();
   cerr << '\n';
   DemoFragments();
+  cerr << '\n';
+  DemoCreateComponents();
+  cerr << '\n';
+  DemoReduceToLargestFragment();
   cerr << '\n';
   DemoRing();
   cerr << '\n';

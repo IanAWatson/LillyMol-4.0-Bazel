@@ -137,8 +137,8 @@ class Element {
 
     int is_halogen () const;
 
-    int pi_electrons (int, formal_charge_t, int &) const;
-    int lone_pairs   (int, formal_charge_t, int &) const;
+    int pi_electrons (int ncon, formal_charge_t, int & result) const;
+    int lone_pairs   (int ncon, formal_charge_t, int & result) const;
 
     int outer_shell_electrons (int &) const;
 
