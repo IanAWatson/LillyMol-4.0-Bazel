@@ -637,7 +637,7 @@ parse_smiles_token(const char * smiles,
     if (nullptr == e)
     {
       if (file_scope_display_smiles_interpretation_error_messages)
-        cerr << "parse_smiles_token:invalid element specification '" << c << "'\n";
+        cerr << "parse_smiles_token:invalid element specification '" << static_cast<char>(c) << "'\n";
       return 0;
     }
 
