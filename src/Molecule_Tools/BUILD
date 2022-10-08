@@ -370,6 +370,17 @@ cc_binary(
 
 
 cc_binary(
+    name = "introduction",
+    srcs = [
+        "introduction.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_binary(
     name = "in_database_leveldb",
     srcs = [
         "in_database_leveldb.cc",
