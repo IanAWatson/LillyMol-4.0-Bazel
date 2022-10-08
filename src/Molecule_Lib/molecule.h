@@ -786,7 +786,7 @@ class Molecule : private resizable_array_p<Atom>
     template <typename F> void each_atom(F &) const;
     template <typename F> void each_atom_lambda(F) const;
     template <typename F> void each_bond(F &) const;
-    template <typename F> void each_ring(F &) const;
+    template <typename F> void each_ring(F &);
 
     // Functions for iterating a member function where the first/only argument
     // is the atom number. Assumes the member function returns something which
@@ -2141,6 +2141,18 @@ Molecule::each_bond(F & f) const
   assert (ok());
 
   _bond_list.each(f);
+}
+
+template <typename F>
+void
+Molecule::each_ring(F & f) {
+  const int nr = nrings();
+  if (nr == 0) {
+    return;
+  }
+  for (int i = 0; i < nr; ++i) {
+    f(*ringi(i));
+  }
 }
 
 template <typename M>

@@ -2498,6 +2498,7 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
     }
   }
 
+  // TODO:ianwatson implement this.
   if (proto.no_matched_atoms_between().size() > 0) {
   }
 
