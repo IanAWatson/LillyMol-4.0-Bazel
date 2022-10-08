@@ -126,6 +126,7 @@ DemoEachAtom() {
   cerr << "Sum of ncon " << sum_ncon.sum << '\n';
 }
 
+// Find the highest atomic number in the molecule.
 void
 DemoEachAtomLambda() {
   Molecule mol = MolFromSmiles("OCN");
@@ -402,7 +403,7 @@ DemoRingSystem() {
     cerr << "is_fused " << r->is_fused() << '\n';
   }
 
-  // For each ring, we can fetch the Ring's attached.
+  // For each ring, we can fetch pointers to the Ring's attached.
   // In this case, where will be two atoms in common between the two rings.
   for (int i = 0; i < nr; ++i) {
     const Ring* ri = mol.ringi(i);
@@ -640,6 +641,54 @@ query {
   }
 }
 
+// If enabled, arbitrary two character combinations are valid elements.
+void
+DemoStrangeElements() {
+  set_auto_create_new_elements(1);
+  Molecule mol = MolFromSmiles("[Th][Eq][U]IC[K][Br]O[W]NFO[X][Ju][Mp]SO[Ve][Rt][La][Zy][D]O[G]");
+  cerr << "Smiles " << mol.smiles() << '\n';
+
+  cerr << "contains_non_periodic_table_elements " << mol.contains_non_periodic_table_elements() << '\n';
+  cerr << "organic " << mol.organic_only() << '\n';
+
+  Substructure_Query qry;
+  qry.create_from_smarts("[Th][Eq][U]IC[K]");
+
+  Substructure_Results sresults;
+  int nhits = qry.substructure_search(mol, sresults);
+  cerr << nhits << " hits to '[Th][Eq][U]'\n";
+
+  // But if there are element names that might collide with smarts
+  // directives, we can enclose that in #{}
+  qry.create_from_smarts("[#{Rt}][La]");
+  nhits = qry.substructure_search(mol, sresults);
+  cerr << nhits << " hits to '[Rt][La]'\n";
+
+  set_auto_create_new_elements(0);
+}
+
+// If enabled, any sequence of letters is an ok element
+void
+DemoAnyLengthElement() {
+  set_auto_create_new_elements(1);
+  set_atomic_symbols_can_have_arbitrary_length(1);
+
+  Molecule mol = MolFromSmiles("[Ala]1[Arg][Asn][Asp]1");
+
+  cerr << "Peptide " << mol.smiles() << '\n';
+
+  // All regular smarts directives are available.
+  Substructure_Query qry;
+  qry.create_from_smarts("[#{Ala}D2R]1[#{Arg}D2x2][#{Asn}][#{Asp}D2]1");
+
+  Substructure_Results sresults;
+  const int nhits = qry.substructure_search(mol, sresults);
+  cerr << nhits << " hits to Ala-Arg-Asn-Asp\n";
+
+  set_atomic_symbols_can_have_arbitrary_length(0);
+  set_auto_create_new_elements(0);
+}
+
 void
 DemoOutput() {
   Molecule mol;
@@ -706,6 +755,10 @@ Main(int argc, char** argv) {
   DemoQueryFromProto();
   cerr << '\n';
   DemoOutput();
+  cerr << '\n';
+  DemoStrangeElements();
+  cerr << '\n';
+  DemoAnyLengthElement();
   cerr << '\n';
 
   return 0;
