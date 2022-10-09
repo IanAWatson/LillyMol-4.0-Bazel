@@ -91,8 +91,6 @@ Set_of_Atoms::each(V * v, O o) const
 }
 
 std::ostream & operator << (std::ostream &, const Set_of_Atoms &);
-//std::ostream & operator << (std::ostream &, const Set_of_Atoms *);    bad idea
-
 
 template <typename T>
 int

@@ -705,6 +705,7 @@ class Molecule : private resizable_array_p<Atom>
 
     int  print_ring_info(std::ostream &) const;
 
+    // Atom numbers must both be in range and distinct.
     int ok_atom_number(atom_number_t) const;
     int ok_2_atoms(atom_number_t, atom_number_t) const;
     int ok_3_atoms(atom_number_t, atom_number_t, atom_number_t) const;
@@ -1160,16 +1161,34 @@ class Molecule : private resizable_array_p<Atom>
 //  Partial charges and atom types behave in similar ways
                   
     int     has_charges() const;
+    int     has_partial_charges() const {
+      return has_charges();
+    }
     void    allocate_charges();
+    void    allocate_partial_charges() {
+      allocate_charges();
+    }
     void    invalidate_charges();
+    void    invalidate_partial_charges() {
+      invalidate_charges();
+    }
 
 //  Set_of_Charges * partial_charges() const;
 
+    // If one of the built-in methods are used to calculate partial charges
+    // that will be known. This should be an enum.
     const IWString & partial_charge_type() const;
 
-    charge_t charge_on_atom(atom_number_t) const;
-    int    copy_charges(const Molecule &);      // copy charges from another MOL
+    charge_t charge_on_atom(atom_number_t a) const;
+    charge_t partial_charge(atom_number_t a) const {
+      return charge_on_atom(a);
+    }
     int    set_charge(atom_number_t, charge_t);
+    int    set_partial_charge(atom_number_t a, charge_t q) {
+      return set_charge(a, q);
+    }
+
+    int    copy_charges(const Molecule &);      // copy charges from another MOL
     void   set_charges(const charge_t [], const const_IWSubstring &);
 
     int    has_atom_types() const;
@@ -1189,15 +1208,14 @@ class Molecule : private resizable_array_p<Atom>
     int    compute_Del_Re_partial_charges();
     int    compute_Pullman_partial_charges();
 
-    formal_charge_t formal_charge(atom_number_t) const;  // Same as net_formal_charge();
-//  formal_charge_t formal_charge_on_atom(atom_number_t) const;
+    formal_charge_t formal_charge(atom_number_t) const;
     void   set_formal_charge(atom_number_t, formal_charge_t);
 
 //  We don't want to bother first asking if the charge is already the value we want
 
     int    set_formal_charge_if_different(atom_number_t, formal_charge_t);
 
-    int    formal_charge() const;    // whole molecule charge
+    int    formal_charge() const;    // whole molecule charge, same as net_formal_charge();
 
     int transform_atoms(const Element *, const Element *);    // all H's become C
 
@@ -1462,6 +1480,10 @@ class Molecule : private resizable_array_p<Atom>
 //  Functions for stereo centres
 
     int chiral_centres() const { return _chiral_centres.number_elements();}
+
+    const resizable_array_p<Chiral_Centre>& ChiralCentres() const {
+      return _chiral_centres;
+    }
 
     int stereo_centre_hydrogens_become_implicit();
 

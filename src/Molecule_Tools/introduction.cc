@@ -13,7 +13,25 @@
 // Similariy, removing a bond between atoms would need to invalidate
 // fragment membership, ring membership, symmetry, aromaticity...
 
+// One question that comes up is why is there so little use of
+// standard data structures like std::string, std::vector etc.
+// LillyMol began development in 1995, and at that time these
+// concepts either did not exist or were poorly standardized.
+// Over many years we fought with incompatible implementations
+// of various things and in order to preserve sanity, implemented
+// our own versions of things that offered cross-platform
+// stability. Today the C++ world is in better shape.
+
+// Nothing here raises exceptions. Generally LillyMol is
+// thread safe. There are a great many optional settings that
+// are stored in file scope static variables. Those are
+// clearly not thread safe. LillyMol has been successfully used
+// in several multi-threaded applications.
+
+#include <algorithm>
 #include <iostream>
+#include <memory>
+#include <vector>
 
 #include "google/protobuf/text_format.h"
 
@@ -223,10 +241,8 @@ DemoEachRing() {
 
   // This is the same as.
   int big_ring = 0;
-  const int nrings = mol.nrings();
-  for (int i = 0; i < nrings; ++i) {
-    const Ring* ri = mol.ringi(i);
-    big_ring = std::max(ri->number_elements(), big_ring);
+  for (const Ring* r : mol.sssr_rings()) {
+    big_ring = std::max(r->number_elements(), big_ring);
   }
 }
 
@@ -243,6 +259,41 @@ DemoEachIndex() {
   cerr << "Concatenated symbols '" << result << "'\n";
 }
 
+// Molecules have an operator= overload and operator ==
+void
+DemoAssignment() {
+  Molecule mol1 = MolFromSmiles("Oc1ccccc1");
+  Molecule mol2 = mol1;
+  cerr << "Smiles " << mol1.unique_smiles() << ' ' << mol2.unique_smiles() << '\n';
+
+  // The operator == method is efficient, in that it only computes
+  // the unique smiles if needed.
+  cerr << "Same? " << (mol1 == mol2) << '\n';
+
+  mol1.add(get_element_from_atomic_number(6));
+  cerr << "Same after adding " << (mol1 == mol2) << '\n';
+
+  mol2.add(get_element_from_atomic_number(6));
+  cerr << "Same after adding to both " << (mol1 == mol2) << '\n';
+}
+
+// The natoms method is overloaded so that if an atomic number, or
+// Element, is given the number of atoms of that type is returned.
+void
+DemoNatoms() {
+  Molecule mol = MolFromSmiles("OCN");
+
+  cerr << "Molecule contains " << mol.natoms() << " atoms\n";
+
+  cerr << "Oxygen atoms " << mol.natoms(8) << '\n';
+
+  const Element* fluorine = get_element_from_atomic_number(9);
+
+  cerr << "Molecule does not contain F " << mol.natoms(fluorine) << '\n';
+}
+
+// There are a wide variety of Molecule member functions for
+// getting and setting isotopes.
 void
 DemoIsotopes() {
   Molecule mol = MolFromSmiles("CC");
@@ -265,6 +316,10 @@ DemoIsotopes() {
   Molecule round_trip;
   round_trip.build_from_smiles(mol.smiles());
   cerr << "Same? " << (mol.unique_smiles() == round_trip.unique_smiles()) << '\n';
+
+  // Remove all isotopes.
+  // unset_isotopes() does the same thing.
+  mol.transform_to_non_isotopic_form();
 }
 
 void
@@ -282,6 +337,40 @@ DemoIsotopesMolecularWeight() {
   // Isotope 1 gets counted as contributing 1.0 to the amw.
   amw = mol.molecular_weight_count_isotopes();
   cerr << "If isotopes included " << amw << '\n';
+}
+
+// Not all atoms need to have an atom map number. It is
+// really just another arbitrary number that can be attached
+// to an atom. They have particular meaning when dealing with
+// reactions.
+void
+DemoAtomMapNumbers() {
+  Molecule mol = MolFromSmiles("[CH3:5]-C");
+
+  // Atom map numbers are not shown in a unique smiles. Atom map numbers
+  // do not affect unique smiles formation.
+  // Isotopes do and so they are included.
+  cerr << "Smiles " << mol.smiles() << " usmi " << mol.unique_smiles() << '\n';
+
+  // THe atom map number is a property of the Atom, so can be queried at
+  // that level.
+
+  for (const Atom* atom : mol) {
+    cerr << "Atom map " << atom->atom_map() << '\n';
+  }
+
+  mol.reset_all_atom_map_numbers();
+  // Note that removing the atom map numbers also removes the
+  // implicit hydrogens known flag if possible - if the valence
+  // is OK.
+  cerr << "After removing atom map numbers " << mol.smiles() << '\n';
+
+  // For many functions which return an atom number, returning INVALID_ATOM_NUMBER
+  // is a common failure mode.
+  atom_number_t twelve = mol.atom_with_atom_map_number(12);
+  if (twelve != INVALID_ATOM_NUMBER) {
+    cerr << "HUH, found atom map number 12\n";
+  }
 }
 
 void
@@ -358,6 +447,65 @@ DemoImplicitHydrogensKnown() {
   mol.set_implicit_hydrogens_known(1, 0);
   cerr << "Smiles now " << mol.smiles() << '\n';
   cerr << "Is the value fixed " << mol.implicit_hydrogens_known(1) << '\n';
+
+  // This function can also be used, it examines all atoms and if possible
+  // unsets the implicit hydrogen known flag.
+  // In this case, the Carbon naturally has 3 Hydrogens, so the square
+  // brackets are not necessary.
+  Molecule mol2 = MolFromSmiles("C[CH3]");
+  cerr << "Before removing unnecessary square brackets " << mol2.smiles() << '\n';
+  mol2.unset_unnecessary_implicit_hydrogens_known_values();
+  cerr << "After removing unnecessary square brackets " << mol2.smiles() << '\n';
+
+  // If an implicit hydrogen flag is causing a valence error, this can
+  // alleviate that problem.
+  mol.build_from_smiles("C[C]C");
+  cerr << "Before removing valence problem hydrogens known " << mol.smiles() << 
+        " valence? " << mol.valence_ok() << '\n';
+  mol.remove_hydrogens_known_flag_to_fix_valence_errors();
+  cerr << "After removing valence problem hydrogens known " << mol.smiles() << 
+        " valence? " << mol.valence_ok() << '\n';
+}
+
+// A data structure commonly encountered in LillyMol is a
+// Set_of_Atoms. Despite the name, it is a vector of atom
+// numbers, and there is no enforcement of uniqueness.
+// It was a poor choice of name.
+// Several Molecule member functions either consume or
+// return Set_of_Atoms.
+// Generally the ordering of the atoms in a Set_of_Atoms is
+// unimportant. With an important exception.
+// Rings inherit from a Set_of_Atoms, but they have the
+// extra property that the atoms are ordered in a way
+// that describes a circuit around the ring.
+void
+DemoSetOfAtoms() {
+  Set_of_Atoms s{0, 5, 2};
+
+  cerr << "Set contains " << s.size() << " atoms " << s << '\n';
+
+  // Duplicate atom numbers are OK in a Set_of_Atoms, but
+  // functions consuming them may be unhappy with duplicate
+  // entries.
+  s << 2;
+  cerr << "See the dup " << s << '\n';
+
+  // Remove the dup.
+  s.chop();
+
+  s.add_if_not_already_present(2);
+  cerr << "Dup not added " << s << '\n';
+
+  // These have a convenient `scatter` operation.
+
+  std::unique_ptr<int[]> arbitrary = std::make_unique<int[]>(10);
+  std::fill_n(arbitrary.get(), 10, 0);
+  // For every atom number in `s`, set the corresponding array index to '2'.
+  s.set_vector(arbitrary.get(), 2);
+  // this also works with a std::vector.
+
+  // There are many gather type operations associated with the
+  // Set_of_Atoms class. See the header for info.
 }
 
 // Random smiles are useful for testing. Algorithms should not
@@ -384,6 +532,39 @@ DemoRandomSmiles() {
   }
 }
 
+//
+void
+DemoRemoveAtom() {
+  Molecule mol = MolFromSmiles("CCCCCCCCCCCCC");
+
+  cerr << "Before atom removals, molecule contains " << mol.natoms() << ' ' << mol.smiles() << '\n';
+  // Any atom can be removed with remove_atom.
+  mol.remove_atom(0);
+  cerr << "Molecule now contains " << mol.natoms() << " atoms " << mol.smiles() << "\n";
+
+  // Atom removal may lead to multiple fragments
+  mol.remove_atom(1);
+  cerr << "Molecule now contains " << mol.natoms() << " atoms " << mol.smiles() << "\n";
+
+  // If you wish to remove multiple atoms, that can be done one at a time.
+  // It will be most efficient if you iterate from high to low atom numbers.
+  // for (int i = mol.natoms() - 1; i >= 0; --i) {
+  //   if (some condition) {
+  //     mol.remove_atom(i);
+  //   }
+  // }
+
+  // If you have an array with the atoms to be removed set, use that.
+  const int matoms = mol.natoms();
+  std::unique_ptr<int[]> to_remove = std::make_unique<int[]>(matoms);
+  std::fill_n(to_remove.get(), matoms, 0);
+  for (int i = 0; i < matoms; i += 2) {
+    to_remove[i] = 1;
+  }
+  mol.remove_atoms(to_remove.get());
+  cerr << "After removing every second atom " << mol.smiles() << '\n';
+}
+
 void
 DemoFormalCharges() {
   Molecule mol = MolFromSmiles("CC[N+H3]");
@@ -395,6 +576,33 @@ DemoFormalCharges() {
 
   mol.set_formal_charge(2, 0);
   cerr << "After reset " << mol.formal_charge(2) << '\n';
+}
+
+// Partial charges are a property of the molecule only.
+// The molecule starts with the partial charge being null.
+// The first time you set the partial charge on any atom,
+// the partial charge array is allocated and set to zero.
+void
+DemoPartialCharges() {
+  Molecule mol = MolFromSmiles("CC");
+  cerr << "Should be no partial charges " << mol.has_partial_charges() << '\n';
+  mol.set_partial_charge(1, 0.22);
+  cerr << "After setting charge on atom 1 charge on 0 " << mol.partial_charge(0) << '\n';
+
+  // Removing an atom will preserve partial charges.
+  mol.remove_atom(0);
+  cerr << "Charges present now? " << mol.has_partial_charges() << '\n';
+
+  // Adding an atom will see that atom enter with zero partial charge.
+  mol.add(get_element_from_atomic_number(6));
+  cerr << "Partial charge on newly added atom " << mol.partial_charge(1) << '\n';
+
+  // Partial charges can be dropped.
+  mol.invalidate_partial_charges();
+
+  // Some partial charge types are available.
+  mol.compute_Abraham_partial_charges();
+  cerr <<"Partial charge type " << mol.partial_charge_type() << '\n';
 }
 
 void
@@ -469,6 +677,55 @@ DemoConnections() {
   cerr  << " atoms connected to 0 " << connected << '\n';
 }
 
+// A common operation is the need to add all atoms and bonds
+// from one molecule to another.
+// There are variants of add_molecule that allow for
+// excluding certain atoms from the added Molecule.
+void
+DemoAddMolecule() {
+  Molecule mol1 = MolFromSmiles("CC");
+  Molecule mol2 = MolFromSmiles("NN");
+
+  cerr << "mol1 contains " << mol1.natoms() << " atoms\n";
+  mol1.add_molecule(&mol2);
+  cerr << "mol1 contains " << mol1.natoms() << " atoms and " <<
+           mol1.number_fragments() << " fragments\n";
+
+  mol1.add_bond(1, 2, SINGLE_BOND);
+  cerr << "After bond addition " << mol1.number_fragments() << " fragments\n";
+}
+
+// An existing bond type can be changed.
+// Note that the symbols SINGLE_BOND, DOUBLE_BOND, DOUBLE_BOND
+// should not be interpreted as ints. The bits in these
+// are used by LillyMol for various internal purposes.
+void
+DemoChangeBond() {
+  Molecule mol = MolFromSmiles("CC");
+
+  cerr << "Initial smiles " << mol.smiles() << '\n';
+
+  const std::vector<int> bonds{SINGLE_BOND, DOUBLE_BOND, TRIPLE_BOND};
+  for (auto btype : bonds) {
+    mol.set_bond_type_between_atoms(0, 1, btype);
+    cerr << "New bond " << mol.smiles() << '\n';
+  }
+}
+
+// It is possible to change the element associated with an atom.
+// Existing bonds are preserved.
+// It is up to you to ensure that the resulting chemistry is valid.
+void
+DemoChangeElement() {
+  Molecule mol = MolFromSmiles("CCC");
+
+  // Change second atom to Fluorine!
+  mol.set_atomic_number(1, 9);
+
+  cerr << "Doubly bonded Fluorine! " << mol.smiles() << '\n';
+  cerr << "ok valence? " << mol.valence_ok() << '\n';
+}
+
 // Start with ethane, verify one fragment, then remove the bond
 // to generate two methanes.
 void
@@ -530,6 +787,12 @@ DemoCreateComponents() {
       cerr << "Invalid fragment unique smiles\n";
     }
   }
+
+  // We can remove a fragment by fragment number
+  mol.delete_fragment(2);
+
+  // Or remove whatever fragment contains atom 3
+  mol.remove_fragment_containing_atom(3);
 }
 
 // Normally getting the largest fragment is straightforward and
@@ -539,6 +802,52 @@ DemoReduceToLargestFragment() {
   Molecule mol = MolFromSmiles("CC.C");
   mol.reduce_to_largest_fragment();
   cerr << "after reduce_to_largest_fragment have " << mol.natoms() << " atoms " << mol.smiles() << '\n';
+
+  // There are however cases where just choosing the largest
+  // fragment is not the best choice. Prefer using
+  // reduce_to_largest_fragment_carefully() which has
+  // heuristics that help avoid some common problems.
+}
+
+// create_subset creates a new molecule that contains
+// just some of the atoms in the starting molecule.
+// Pass an int* 
+void
+DemoCreateSubset() {
+  Molecule mol = MolFromSmiles("c1ccccc1OC");
+
+  const int matoms = mol.natoms();
+
+  std::unique_ptr<int[]> subset = std::make_unique<int[]>(matoms);
+  std::fill_n(subset.get(), matoms, 0);
+
+  // The first 6 atoms are the benzene ring. That is the subset.
+  // Mark the first 6 entries with a non-zero integer.
+  constexpr int kOne = 1;
+  std::fill_n(subset.get(), 6, kOne);
+
+  Molecule benzene;
+  mol.create_subset(benzene, subset.get(), kOne);
+  cerr << "Should be benzene " << benzene.unique_smiles() << '\n';
+}
+
+void
+DemoDistanceMatrix() {
+  Molecule mol = MolFromSmiles("CCCCCCCCCC");
+
+  cerr << "Longest path " << mol.longest_path() << '\n';
+
+  const int matoms = mol.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    for (int j = i + 1; j < matoms; ++j) {
+      int d = mol.bonds_between(i, j);
+      if (d == 1) {
+        cerr << " atoms " << i << " and " << j << " are bonded\n";
+      } else {
+        cerr << " atoms " << i << " and " << j << " are " << d << " bonds apart\n";
+      }
+    }
+  }
 }
 
 void
@@ -571,11 +880,50 @@ DemoRing() {
     cerr << " Atom " << i << ' ' << mol.smarts_equivalent_for_atom(i) <<
          " in " << mol.nrings(i) << " rings, ring bond count " << mol.ring_bond_count(i) << '\n';
   }
+
+  // Sometimes it is convenient to just get all the ring membership values in
+  // an array - saves the overhead of querying the Molecule multiple times.
+  // If `mol` is changed however, this pointer becomes invalid.
+  const int * ring_membership = mol.ring_membership();
+
+  // Querying the molecule for each atom is however safe if the molecule is
+  // being altered.
+  int ring_atoms = 0;
+  for (int i = 0; i < matoms; ++i) {
+    if (ring_membership[i] > 0) {
+      ++ring_atoms;
+    }
+  }
+  cerr << ring_atoms << " of " << matoms << " atoms in a ring\n";
+
+  // If you have your own array, you can call mol.ring_membership(your_array) and
+  // it will be filled with the ring membership of each atom. Here if the
+  // molecule gets changed, you are on your own.
+}
+
+// There is a convenient Ring iterator.
+void
+DemoRingIteration () {
+  // Cubane has 6 faces, but 5 sssr rings.
+  Molecule mol = MolFromSmiles("C12C3C4C1C5C2C3C45");
+
+  cerr << "Cubane has " << mol.nrings() << " SSSR rings\n";
+  cerr << "Cubane has " << mol.non_sssr_rings() << " non SSSR rings\n";
+
+  for (const Ring* r : mol.sssr_rings()) {
+    cerr << " cubane ring " << *r << '\n';
+  }
+
+  int non_ssr_rings = mol.non_sssr_rings();
+  for (int i = 0; i < non_ssr_rings; ++i) {
+    cerr << " cubane NON SSSR " << *mol.non_sssr_ring(i) << '\n';
+  }
 }
 
 void
 DemoRingSystem() {
   // Fused 3 and 4 membered rings.
+
   //    C ---- C
   //    |      |  \
   //    |      |   C
@@ -589,16 +937,27 @@ DemoRingSystem() {
 
   // The two rings must have the same fused system identifier
   // Generally rings are sorted by size so the smallest rings should be first.
-  const int nr = mol.nrings();
-  for (int i = 0; i < nr; ++i) {
-    const Ring* r = mol.ringi(i);
+  for (const Ring* r : mol.sssr_rings()) {
     cerr << *r << '\n';
     cerr << "fused rings:fused_system_identifier " << r->fused_system_identifier() << '\n';
     cerr << "is_fused " << r->is_fused() << '\n';
   }
 
+  cerr << "Atoms in same ring system " << mol.in_same_ring_system(1, 2) << '\n';
+
+  // only write a failure - cut down on uninteresting output.
+  const int matoms = mol.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    for (int j = i + 1; j < matoms; ++j) {
+      if (! mol.in_same_ring_system(i, j)) {
+        cerr << "Atoms " << i << " and " << j << " not in same ring system\n";
+      }
+    }
+  }
+
   // For each ring, we can fetch pointers to the Ring's attached.
   // In this case, where will be two atoms in common between the two rings.
+  const int nr = mol.nrings();
   for (int i = 0; i < nr; ++i) {
     const Ring* ri = mol.ringi(i);
     const int nfused = ri->fused_ring_neighbours();
@@ -608,12 +967,10 @@ DemoRingSystem() {
     }
   }
 
-
   // Two separated rings will have different fused_system_identifier
 
   mol.build_from_smiles("C1CC1C1CC1");
-  for (int i = 0; i < 2; ++i) {
-    const Ring* r = mol.ringi(i);
+  for (const Ring* r : mol.sssr_rings()) {
     cerr << "separated rings: fused_system_identifier " <<r->fused_system_identifier() << '\n';
     cerr << "is_fused " << r->is_fused() << '\n';
   }
@@ -639,6 +996,12 @@ DemoAreBonded() {
 // {{x,y,z}} is appended after each atom.
 // This is more compact than a .sdf representation, and allows
 // molecules to be processed one per line.
+
+// Now shown here are the member functions
+// set_bond_length, set_bond_angle and set_dihedral which are used
+// to alter the geometry of a Molecule.
+
+// rotate_atoms can rotate the whole molecule.
 void
 DemoCoordinatesInAtoms() {
   Molecule mol = MolFromSmiles("C{{-1,1,0}}C{{0,0,0}}C{{1,0,0}}C{{2,1,1}}");
@@ -661,6 +1024,34 @@ DemoCoordinatesInAtoms() {
   cerr << "Atom 0 at " << mol.x(0) << ',' << mol.y(0) << ',' << mol.z(0) << '\n';
   const Atom& atom = mol.atom(0);
   cerr << "Atom 0 at " << atom.x() << ',' << atom.y() << ',' << atom.z() << '\n';
+
+  // We can get the spatial extremities of the molecule.
+  coord_t xmin, xmax, ymin, ymax, zmin, zmax;
+  mol.spatial_extremeties(xmin, xmax, ymin, ymax, zmin, zmax);
+  cerr << "X btw " << xmin << " and " << xmax << '\n';
+
+  // Move the molecule to a quadrant of space.
+  mol.translate_atoms(-xmin, -ymin, -zmin);
+}
+
+// The spinach is the complement of the scaffold.
+void
+DemoScaffold() {
+  Molecule mol = MolFromSmiles("Fc1ccc(cc1)CC(=O)Nc1oncc1");
+
+  const int matoms = mol.natoms();
+  std::unique_ptr<int[]> spinach = std::make_unique<int[]>(matoms);
+  mol.identify_spinach(spinach.get());
+
+  // Invert the spinach so we get the scaffold.
+  for (int i = 0; i < matoms; ++i) {
+    spinach[i] = ! spinach[i];
+  }
+
+  Molecule scaffold;
+  mol.create_subset(scaffold, spinach.get(), 1);
+
+  cerr << "Scaffold is " << scaffold.unique_smiles() << '\n';
 }
 
 // Performing a substructure search requires instantiation of
@@ -883,6 +1274,242 @@ DemoAnyLengthElement() {
   set_auto_create_new_elements(0);
 }
 
+// Aromaticity is only computed if requested. In the rings demo
+// we saw that if the rings are requested, without aromaticity
+// having been queried, it was not comptuted.
+void
+DemoAromaticity() {
+  Molecule mol = MolFromSmiles("c1ccccc1");
+
+  cerr << "Is the molecule aromatic " << mol.contains_aromatic_atoms() << '\n';
+  cerr << "Count the aromatic atoms " << mol.aromatic_atom_count() << '\n';
+
+  cerr << "First atom aromatic? " << mol.is_aromatic(0) << '\n';
+  cerr << "Ring is now aromatic " << mol.ringi(0) << '\n';
+  cerr << "We can ask if a ring is aromatic " << mol.ringi(0)->is_aromatic() << '\n';
+
+  // If you are going to be querying rings for aromaticity,
+  // call compute_aromaticity_if_needed which will be a no-op
+  // if aromaticity is already computed.
+  mol.compute_aromaticity_if_needed();
+
+  // Beware: if you alter the molecule, all pointers
+  // and references to internal structures, like rings,
+  // fragments and smiles, are invalidated.
+}
+
+// During unique smiles determination, symmetry is perceived.
+void
+DemoSymmetry() {
+  Molecule mol = MolFromSmiles("Oc1c(C)cc(O)cc1C");
+
+  cerr << "Symmetric molecule contains " << mol.number_symmetry_classes() << " groups of symmetric atoms\n";
+
+  // It can be convenient to see which atom number is which
+  cerr << mol.isotopically_labelled_smiles() << '\n';
+
+  // THe two methyls are the same
+  cerr << "Methyl symmetry " << mol.symmetry_class(3) << " and " << mol.symmetry_class(9) << '\n';
+  // and the two atoms in the ring adjacent to the methyls.
+  cerr << "Methyl symmetry " << mol.symmetry_class(2) << " and " << mol.symmetry_class(8) << '\n';
+
+  // But the two oxygens are not symmetric.
+  cerr << "Oxygens not equivalent " << mol.symmetry_class(0) << " and " << mol.symmetry_class(6) << '\n';
+
+  // We can get the symmetry equivalent atoms.
+  // Note that the starting atom is not included - not sure if that was a good idea,
+  // but that is how it works today.
+  Set_of_Atoms same_as_3;
+  mol.symmetry_equivalents(3, same_as_3);
+  cerr << "Same as 3 " << same_as_3 << '\n';
+}
+
+// Generally we think of symmetry in terms of the atoms, but it can also
+// be useful to examine symmetry as it relates to bonds.
+void
+DemoBondSymmetry() {
+  Molecule mol = MolFromSmiles("FC(F)(F)Cl");
+
+  const int nedges = mol.nedges();
+
+  std::unique_ptr<int[]> bond_symm = std::make_unique<int[]>(nedges);
+
+  // There are two variations on this function that make different
+  // trade-offs
+  mol.bond_symmetry_class_small_memory(bond_symm.get());
+
+  // We should see that all the C-F bonds are one type
+  // the the C-Cl bond is different.
+  for (int i = 0; i < nedges; ++i) {
+    const Bond* b = mol.bondi(i);
+    const atom_number_t a1 = b->a1();
+    const atom_number_t a2 = b->a2();
+    cerr << " bond btw " << mol.smarts_equivalent_for_atom(a1) << " and " << 
+            mol.smarts_equivalent_for_atom(a2) << " symm " << bond_symm[i] << '\n';
+  }
+}
+
+// A common operation is to ask how many heteroatoms are
+// attached to an atom.
+void
+DemoAttachedHeteroatomCount() {
+  Molecule mol = MolFromSmiles("CC(F)(F)F");
+
+  const int matoms = mol.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    cerr << " atom " << i << ' ' << mol.atomic_symbol(i) << " has " <<
+             mol.attached_heteroatom_count(i) << " heteroatoms attached\n";
+  }
+}
+
+// A common operation is to ask whether or not an atom
+// is multiply bonded to a heteroatom.
+// Note that it is a yes/no, so the Nitrogen that
+// is part of the Nitro group reports 1.
+// Note that there is a doubly_bonded_oxygen_count() member
+// function.
+void
+DemoMultipleBondToHeteroatom() {
+  Molecule mol = MolFromSmiles("OC(=O)CN(=O)=O");
+
+  const int matoms = mol.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    cerr << " atom " << i << ' ' << mol.smarts_equivalent_for_atom(i) << ' ' <<
+            mol.multiple_bond_to_heteroatom(i) << " multiple bond to heteroatom\n";
+  }
+}
+
+// Only tetrahedral chirality is supported.
+void
+DemoChirality() {
+  Molecule mol = MolFromSmiles("F[C@H](C)N");
+
+  const int nchiral = mol.chiral_centres();
+  cerr << mol.smiles() << " contains " << nchiral << " chiral centres\n";
+
+  // The chiral centre is described by up to 5 atoms.
+  // The centre atom, top front and top back,
+  // Then left down, and right down. Any of these atoms
+  // may be an implicit hydrogen, or a pi electron.
+  cerr << "initial smiles " << mol.unique_smiles() << '\n';
+  for (const Chiral_Centre* c : mol.ChiralCentres()) {
+    // Currently no operator<< for a Chiral_Centre object.
+    c->debug_print(cerr);
+  }
+
+  mol.invert_chirality_on_atom(1);
+  cerr << "After inversion " << mol.unique_smiles() << '\n';
+  for (const Chiral_Centre* c : mol.ChiralCentres()) {
+    c->debug_print(cerr);
+  }
+
+  // Get the chiral centre on a particular atom. If no chiral
+  // centre on that atom, will be nullptr.
+  // const Chiral_Centre* c = mol.chiral_centre_at_atom(1);
+
+  // Chiral_Centre's can be added and removed.
+}
+
+// There are times when it is convenient to have an atom
+// in a given position in the molecule.
+void
+DemoSwapAtoms() {
+  Molecule mol = MolFromSmiles("CN");
+
+  cerr << mol.unique_smiles() << " initial atomic numbers\n";
+  for (const Atom* a : mol) {
+    cerr << a->atomic_number() << '\n';
+  }
+
+  mol.swap_atoms(0, 1);
+  cerr << mol.unique_smiles() << " after swap atomic numbers\n";
+  for (const Atom* a : mol) {
+    cerr << a->atomic_number() << '\n';
+  }
+
+  // It is possible to move an individual atom to the end of the
+  // connection table,
+  mol.move_atom_to_end_of_atom_list(0);
+  // which is the same as mol.swap_atoms(i, mol.natoms() - 1);
+
+  // It is also possible to move all atoms of a given type to the
+  // end of the connection table. 
+  mol.move_hydrogens_to_end_of_connection_table();
+}
+
+// A common task when breaking molecules is to need to know which atoms
+// are on either side of a bond breakage.
+
+void
+DemoIdentifySideOfBond() {
+  Molecule mol = MolFromSmiles("H[He][Li][Be]BCNOF[Ne]");
+
+  const int matoms = mol.natoms();
+  std::unique_ptr<int[]> sides = std::make_unique<int[]>(matoms);
+  std::fill_n(sides.get(), matoms, 0);
+
+  // We define two sides of the bond. In this case, the Boron and the
+  // Carbon atoms.
+
+  atom_number_t a1 = 4;
+  atom_number_t a2 = 5;
+
+  mol.identify_side_of_bond(sides.get(), a1, 1, a2);
+
+  Molecule mol1, mol2;
+  mol.create_subset(mol1, sides.get(), 0);
+  mol.create_subset(mol2, sides.get(), 1);
+  cerr << "Parent " << mol.smiles() << '\n';
+  cerr << "Parts " << mol1.smiles() << ' ' << mol2.smiles() << '\n';
+}
+
+// An atom has a user specified pointer that can point to anything.
+// Most of the time, it is not necessary to store information with atoms,
+// but during complex processing, where atom numbers might be changing
+// or where the provenance of atoms might be needed, storing something
+// with the atom can be convenient. This keeps the Atom lightweight.
+
+// The Molecule/Atom does NOT assume ownership of these pointers.
+// Today this would likely be implemeted as a shared_ptr<void>.
+
+// The molecule also has its own user_specified_void_ptr, not shown here.
+void
+DemoUserSpecifiedVoidPointer() {
+  // Structures of arbitrary complexity can be used.
+  // Or just a pointer to a numeric value that is retained in scope.
+  struct Something {
+    float number;
+  };
+
+  // Allocate a couple of these, and assign arbitrary numbers.
+  std::unique_ptr<Something> s1 = std::make_unique<Something>();
+  std::unique_ptr<Something> s2 = std::make_unique<Something>();
+  s1->number = 1.0;
+  s2->number = 2.0;
+
+  Molecule mol = MolFromSmiles("CC");
+
+  mol.set_user_specified_atom_void_ptr(0, reinterpret_cast<void*>(s1.get()));
+  mol.set_user_specified_atom_void_ptr(1, reinterpret_cast<void*>(s2.get()));
+
+  mol.swap_atoms(0, 1);
+
+  // Since the atomic user
+  for (const Atom* atom : mol) {
+    const Something* s = reinterpret_cast<const Something*>(atom->user_specified_void_ptr());
+    cerr << "Value is " << s->number << '\n';
+  }
+
+  // Note that during copy constructors, the user_specified void pointers are copied.
+
+  Molecule mol2(mol);
+  cerr << "In a copy\n";
+  for (const Atom* atom : mol2) {
+    const Something* s = reinterpret_cast<const Something*>(atom->user_specified_void_ptr());
+    cerr << "Value is " << s->number << '\n';
+  }
+}
+
 void
 DemoOutput() {
   Molecule mol;
@@ -902,17 +1529,29 @@ Main(int argc, char** argv) {
   cerr << '\n';
   DemoAtomicNumbers();
   cerr << '\n';
+  DemoAssignment();
+  cerr << '\n';
+  DemoNatoms();
+  cerr << '\n';
   DemoIsotopes();
   cerr << '\n';
   DemoIsotopesMolecularWeight();
+  cerr << '\n';
+  DemoAtomMapNumbers();
   cerr << '\n';
   DemoImplicitAndExplicitHydrogens();
   cerr << '\n';
   DemoImplicitHydrogensKnown();
   cerr << '\n';
+  DemoSetOfAtoms();
+  cerr << '\n';
   DemoRandomSmiles();
   cerr << '\n';
+  DemoRemoveAtom();
+  cerr << '\n';
   DemoFormalCharges();
+  cerr << '\n';
+  DemoPartialCharges();
   cerr << '\n';
   DemoNcon();
   cerr << '\n';
@@ -921,6 +1560,8 @@ Main(int argc, char** argv) {
   DemoBondIterationMolecule();
   cerr << '\n';
   DemoConnections();
+  cerr << '\n';
+  DemoAddMolecule();
   cerr << '\n';
   DemoElements();
   cerr << '\n';
@@ -940,15 +1581,27 @@ Main(int argc, char** argv) {
   cerr << '\n';
   DemoCoordinatesInAtoms();
   cerr << '\n';
+  DemoChangeBond();
+  cerr << '\n';
+  DemoChangeElement();
+  cerr << '\n';
   DemoFragments();
   cerr << '\n';
   DemoCreateComponents();
   cerr << '\n';
   DemoReduceToLargestFragment();
   cerr << '\n';
+  DemoCreateSubset();
+  cerr << '\n';
+  DemoDistanceMatrix();
+  cerr << '\n';
   DemoRing();
   cerr << '\n';
+  DemoRingIteration();
+  cerr << '\n';
   DemoRingSystem();
+  cerr << '\n';
+  DemoScaffold();
   cerr << '\n';
   DemoSubstuctureSearch();
   cerr << '\n';
@@ -962,11 +1615,29 @@ Main(int argc, char** argv) {
   cerr << '\n';
   DemoQueryFromProto();
   cerr << '\n';
-  DemoOutput();
-  cerr << '\n';
   DemoStrangeElements();
   cerr << '\n';
+  DemoAromaticity();
+  cerr << '\n';
+  DemoSymmetry();
+  cerr << '\n';
+  DemoBondSymmetry();
+  cerr << '\n';
+  DemoAttachedHeteroatomCount();
+  cerr << '\n';
+  DemoMultipleBondToHeteroatom();
+  cerr << '\n';
   DemoAnyLengthElement();
+  cerr << '\n';
+  DemoChirality();
+  cerr << '\n';
+  DemoSwapAtoms();
+  cerr << '\n';
+  DemoIdentifySideOfBond();
+  cerr << '\n';
+  DemoUserSpecifiedVoidPointer();
+  cerr << '\n';
+  DemoOutput();
   cerr << '\n';
 
   return 0;
