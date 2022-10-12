@@ -7,7 +7,7 @@ extend self
 def initial_command_stem(executable, first_in_pipeline:, extra_qualifiers:)
   cmd = "#{executable}"
   if first_in_pipeline
-    cmd << " -g all -l"
+    cmd << " -A 2 -g all -l"
   else
     cmd << " -f"
   end
