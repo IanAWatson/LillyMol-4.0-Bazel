@@ -10,8 +10,9 @@ using std::endl;
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwbits/iwbits.h"
-#include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/sparse_fp_creator.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/charge_assigner.h"
@@ -294,7 +295,7 @@ do_write_non_zero_bits(const Molecule & m,
                        const IWMFingerprint & fp,
                        IWString & output_buffer)
 {
-  output_buffer << m.name();
+  append_first_token_of_name(m.name(), output_buffer);
 
   int * b = const_cast<int *>(fp.vector());     // loss of const OK
 
@@ -318,12 +319,12 @@ do_output_numbers (const Molecule & m,
                    const IWMFingerprint & fp,
                    IWString & output_buffer)
 {
-  IWString buffer = m.name();
+  IWString buffer;
+  append_first_token_of_name(m.name(), output_buffer);
 
+  // Not sure these are ncessary.
   buffer.strip_leading_blanks();
   buffer.strip_trailing_blanks();
-
-//buffer.gsub (' ', '_');
 
   output_buffer << buffer << ' ';
 
