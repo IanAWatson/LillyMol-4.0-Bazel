@@ -1,0 +1,29 @@
+# Started with https://www.sciencedirect.com/topics/chemistry/counterion
+Cl
+OS(=O)(=O)O
+[Br]
+S(=O)(=O)(C)-O Mesylate
+O=C(=O)C=CC(=O)-O Maleic acid
+C(C(=O)O)C(CC(=O)O)(C(=O)O)O Citrate
+C(C(C(=O)O)O)(C(=O)O)O Tartrate
+P(-O)(-O)(-O)=O Phosphate
+C-C(=O)O Acetate
+[I] Iodide
+[F]
+
+# Positively charged
+
+N
+[Na]
+[Ca]
+[K]
+[Mg]
+CNCC(C(C(C(CO)O)O)O)O
+N
+[Al]
+[Zn]
+[ND2]1CC[ND2]CC1
+C(C(CO)(CO)N)O Tromethamine
+OCC(N)(CO)CO
+O=S(O)(=O)C1=CC=C(C)C=C1
+Nc1c(N(=O)=O)cc(N(=O)=O)cc1N(=O)O
