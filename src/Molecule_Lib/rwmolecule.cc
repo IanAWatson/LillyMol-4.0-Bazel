@@ -237,6 +237,10 @@ suffix_for_file_type(FileType file_type)
         return "csv";
         break;
 
+    case FILE_TYPE_XYZ:
+        return "xyz";
+        break;
+
     default:
       return nullptr;
       break;
@@ -518,6 +522,8 @@ discern_file_type_from_name(const IWString & file_name)
     return FILE_TYPE_CIF;
   if (file_name.ends_with(".csv"))
     return FILE_TYPE_CSV;
+  if (file_name.ends_with(".xyz"))
+    return FILE_TYPE_XYZ;
 
   return FILE_TYPE_INVALID;
 }
@@ -583,6 +589,8 @@ _string_to_file_type(const const_IWSubstring & file_type)
     return FILE_TYPE_INCHI;
   if ("csv" == file_type)
     return FILE_TYPE_CSV;
+  if ("xyz" == file_type)
+    return FILE_TYPE_XYZ;
   
   return FILE_TYPE_INVALID;
 }
@@ -742,6 +750,10 @@ valid_file_type(int ftype)
       return 1;
       break;
 
+    case FILE_TYPE_XYZ:
+      return 1;
+      break;
+
     default:
       return 0;
       break;
@@ -846,6 +858,10 @@ Molecule::read_molecule_ds(iwstring_data_source & input, FileType input_type)
   else if (FILE_TYPE_CSV == input_type)
     rc = read_molecule_csv_ds(input);
 
+  else if (FILE_TYPE_XYZ == input_type) {
+    rc = read_molecule_xyz_ds(input);
+  }
+
   else
   {
     cerr << "read_molecule_ds: Unknown type " << input_type << "\n";
@@ -925,6 +941,8 @@ Molecule::write_molecule(std::ostream & os, FileType output_type,
     rc = write_molecule_inchi(os);
   else if (FILE_TYPE_CSV == output_type)
     rc = write_molecule_csv(os);
+  else if (FILE_TYPE_XYZ == output_type)
+    rc = write_molecule_xyz(os);
   else
     cerr << "Molecule::write_molecule: unrecognised type " << output_type << "\n";
     

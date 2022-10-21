@@ -570,6 +570,8 @@ class Molecule : private resizable_array_p<Atom>
     int _read_mrk_atom_record(const const_IWSubstring & buffer);
     int _read_mrk_bond_record(const const_IWSubstring & buffer, int na);
 
+    int AddXYZAtom(const const_IWSubstring& buffer);
+
     int _final_processing_of_aromatic_mdl_input(int * aromatic_atoms, int * aromatic_bonds);
 
 //  By convention, molecule names are standardised, no leading spaces, etc..
@@ -1053,6 +1055,8 @@ class Molecule : private resizable_array_p<Atom>
     int write_molecule_mrv(std::ostream &);
     int write_molecule_inchi(std::ostream &);
 
+    int write_molecule_xyz(std::ostream &) const;
+
     int read_molecule_mrv_molecule(XMLNode & cml);
 
     template <typename T> int write_connection_table_mdl(T &) const;
@@ -1081,6 +1085,7 @@ class Molecule : private resizable_array_p<Atom>
     int read_molecule_inchi_ds(iwstring_data_source &);
     int read_molecule_cif_ds(iwstring_data_source &);
     int read_molecule_csv_ds(iwstring_data_source &);
+    int read_molecule_xyz_ds(iwstring_data_source &);
 
     int build_from_smiles(const char *);
     int build_from_smiles(const char *, int);

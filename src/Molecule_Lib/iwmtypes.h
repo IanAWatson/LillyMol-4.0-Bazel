@@ -296,6 +296,7 @@ enum FileType
   // Smiles and ID header.
   FILE_TYPE_CSV,
   // A special value used internally.
+  FILE_TYPE_XYZ,
   FILE_TYPE_NO_ARG_CONSTRUCTOR,
 };
 

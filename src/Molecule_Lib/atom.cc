@@ -470,13 +470,16 @@ angle_between_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Ato
   assert(a3.ok());
   assert(a4.ok());
 
-  Coordinates v21(a1.x() - a2.x(), a1.y() - a2.y(), a1.z() - a2.z());
-  Coordinates v32(a2.x() - a3.x(), a2.y() - a3.y(), a2.z() - a3.z());
-  Coordinates v43(a3.x() - a4.x(), a3.y() - a4.y(), a3.z() - a4.z());
+  Space_Vector<double> v21(a1.x() - a2.x(), a1.y() - a2.y(), a1.z() - a2.z());
+  Space_Vector<double> v32(a2.x() - a3.x(), a2.y() - a3.y(), a2.z() - a3.z());
+  Space_Vector<double> v43(a3.x() - a4.x(), a3.y() - a4.y(), a3.z() - a4.z());
 
   v21.normalise();
   v32.normalise();
   v43.normalise();
+  cerr << "v21 " << v21 << '\n';
+  cerr << "v32 " << v32 << '\n';
+  cerr << "v43 " << v43 << '\n';
 
   v21.cross_product(v32);
   v43.cross_product(v32);

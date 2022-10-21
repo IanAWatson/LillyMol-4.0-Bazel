@@ -426,6 +426,7 @@ cc_library(
         "smi.cc",
         "tdt.cc",
         "tripos.cc",
+        "xyz.cc",
     ],
     hdrs = [
         "readmdl.h",
@@ -556,19 +557,15 @@ cc_test(
     ],
 )
 
+
 cc_test(
-    name = "linear_fingerprint_test",
-    srcs = ["linear_fingerprint_test.cc"],
+    name = "dihedral_test",
+    srcs = ["dihedral_test.cc"],
     timeout = "short",
     deps = [
-        ":linear_fingerprint",
         ":iwmolecule",
         ":moleculeio",
         "@googletest//:gtest_main",
-        "//Foundational/iwmisc:sparse_fp_creator",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -631,6 +628,22 @@ cc_test(
     timeout="short",
 )
 
+
+cc_test(
+    name = "linear_fingerprint_test",
+    srcs = ["linear_fingerprint_test.cc"],
+    timeout = "short",
+    deps = [
+        ":linear_fingerprint",
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+        "//Foundational/iwmisc:sparse_fp_creator",
+    ],
+    linkopts = [
+        "-lz",
+    ],
+)
 
 cc_test(
     name = "molecule_each_index_test",
