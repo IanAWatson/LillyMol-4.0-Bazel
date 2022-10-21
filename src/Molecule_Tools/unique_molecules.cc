@@ -387,7 +387,7 @@ usage(int rc)
 static int
 unique_molecule(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "T:tag:D:vS:A:E:X:i:o:lczfG:p:Ir:n:K:R:jh");
+  Command_Line cl(argc, argv, "T:tag:D:vS:A:E:X:i:o:lczfG:p:Ir:n:K:R:jhU:");
 
   const int verbose = cl.option_count('v');
 
@@ -419,6 +419,18 @@ unique_molecule(int argc, char** argv)
   if (! um.Initialise(cl)) {
     cerr << "Cannot initialise unique molecules\n";
     usage(1);
+  }
+
+  IWString fname_for_usmi_counts;
+  if (cl.option_present('U')) {
+    cl.value('U', fname_for_usmi_counts);
+    if (! fname_for_usmi_counts.ends_with(".smi")) {
+      fname_for_usmi_counts << ".smi";
+    }
+    um.set_accumulate_unique_smiles_counts(1);
+    if (verbose) {
+      cerr << "Will write unique smiles counts to '" << fname_for_usmi_counts << "'\n";
+    }
   }
 
   int function_as_filter = 0;
@@ -494,6 +506,10 @@ unique_molecule(int argc, char** argv)
   if (verbose) {
     cerr << "Read " << options.molecules_read() << " molecules\n";
     um.Report(cerr);
+  }
+
+  if (! fname_for_usmi_counts.empty()) {
+    um.WriteUsmiHash(fname_for_usmi_counts.null_terminated_chars());
   }
 
   return 0;

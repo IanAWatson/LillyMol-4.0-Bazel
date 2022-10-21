@@ -23,6 +23,8 @@ UniqueMoleculesImplementation::UniqueMoleculesImplementation() {
 
   _molecules_changed_by_reactions = 0;
 
+  _accumulate_unique_smiles_counts = 0;
+
   return;
 }
 
@@ -203,6 +205,13 @@ UniqueMoleculesImplementation::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('e')) {
+    _accumulate_unique_smiles_counts = 1;
+    if (_verbose) {
+      cerr << "Unique smiles and counts accumulated\n";
+    }
+  }
+
   for (int i = 0; i < 200; i++) {
     _smiles_hash.add(new UMHash());
 
@@ -372,12 +381,52 @@ UniqueMoleculesImplementation::IsUniqueInner(Molecule& m) {
 
   auto f = h->find(usmi);
 
+  MaybeUpdateGlobalUsmiCounters(usmi);
+
   if (f == h->end()) {
     h->insert(usmi);
     return 1;
   } else {
     return 0;
   }
+}
+
+// If we have been requested to accumulate _usmi_count, add `usmi`.
+int
+UniqueMoleculesImplementation::MaybeUpdateGlobalUsmiCounters(const IWString& usmi) {
+  if (! _accumulate_unique_smiles_counts) {
+    return 0;
+  }
+
+  auto iter = _usmi_count.find(usmi);
+  if (iter != _usmi_count.end()) {
+    ++iter->second;
+    return 1;
+  }
+
+  _usmi_count.emplace(usmi, 1);
+  return 1;
+}
+
+int
+UniqueMoleculesImplementation::WriteUsmiHash(const char* fname) const {
+  IWString_and_File_Descriptor output;
+  if (! output.open(fname)) {
+    cerr << "UniqueMoleculesImplementation::WriteUsmiHash:cannot open '" << fname << "'\n";
+    return 0;
+  }
+
+  return WriteUsmiHash(output);
+}
+
+int
+UniqueMoleculesImplementation::WriteUsmiHash(IWString_and_File_Descriptor& output) const {
+  for (const auto& [usmi, count] : _usmi_count) {
+    output << usmi << ' ' << count << '\n';
+    output.write_if_buffer_holds_more_than(4096);
+  }
+
+  return 1;
 }
 
 // We should have a better way of communicating back a smiles failure.

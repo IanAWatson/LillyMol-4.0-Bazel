@@ -12,6 +12,8 @@
 #include "Foundational/iwstring/iw_stl_hash_set.h"
 #endif  // UNIQUE_MOLECULES_USES_ABSL
 
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+
 #include "Molecule_Lib/etrans.h"
 #include "Molecule_Lib/iwreaction.h"
 #include "Molecule_Lib/molecule.h"
@@ -97,12 +99,17 @@ class UniqueMoleculesImplementation {
     // if the name field also matches.
     int _only_same_if_structure_and_name_the_same;
 
+    // If requested, we can accumulate the unique smiles and counts.
+    int _accumulate_unique_smiles_counts;
+    IW_STL_Hash_Map_int _usmi_count;
+
     // private functions
     int PerformReactions(Molecule& m);
     int Preprocess(Molecule& m);
     int IsUniqueInner(Molecule& m);
     void FormUniqueSmiles(Molecule& m, IWString& usmi) const;
     void FormUniqueSmilesInner(Molecule& m, IWString& usmi) const;
+    int MaybeUpdateGlobalUsmiCounters(const IWString& usmi);
 
   public:
     UniqueMoleculesImplementation();
@@ -144,6 +151,14 @@ class UniqueMoleculesImplementation {
 
     // Interpret `smiles` as a molecule and call IsUnique(m).
     int SmilesIsUnique(const std::string& smiles);
+
+    void set_accumulate_unique_smiles_counts(int s) {
+      _accumulate_unique_smiles_counts = s;
+    }
+
+    // If we have been asked to accumulate unique smiles and counts, write that data.
+    int WriteUsmiHash(const char* fname) const;
+    int WriteUsmiHash(IWString_and_File_Descriptor& output) const;
 
     int Report(std::ostream& output) const;
 };

@@ -3715,37 +3715,37 @@ Molecule::rotate_atoms(const Coordinates & axis, angle_t theta)
 
 // The direction cosines for the vector
  
-  const coord_t dc1 = axis.x();
-  const coord_t dc2 = axis.y();
-  const coord_t dc3 = axis.z();
+  const double dc1 = axis.x();
+  const double dc2 = axis.y();
+  const double dc3 = axis.z();
 //cerr << "Dc's are " << dc1 << "," << dc2 << "," << dc3 << " sum = " <<
 //     dc1 * dc1 + dc2 * dc2 + dc3 * dc3 << ", angle " << theta << endl;
   
 // Rather than deal properly with a matrix, just use individual variables
 
-  coord_t rotmat11 = static_cast<coord_t>(cos(theta) + dc1 * dc1 * (1.0 - cos(theta)) );
-  coord_t rotmat12 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(theta)) - dc3 * sin(theta) );
-  coord_t rotmat13 = static_cast<coord_t>(dc1 * dc3 * (1.0 - cos(theta)) + dc2 * sin(theta) );
-  coord_t rotmat21 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(theta)) + dc3 * sin(theta) );
-  coord_t rotmat22 = static_cast<coord_t>(cos(theta) + dc2 * dc2 * (1.0 - cos(theta)) );
-  coord_t rotmat23 = static_cast<coord_t>(dc2 * dc3 * (1.0 - cos(theta)) - dc1 * sin(theta) );
-  coord_t rotmat31 = static_cast<coord_t>(dc3 * dc1 * (1.0 - cos(theta)) - dc2 * sin(theta) );
-  coord_t rotmat32 = static_cast<coord_t>(dc3 * dc2 * (1.0 - cos(theta)) + dc1 * sin(theta) );
-  coord_t rotmat33 = static_cast<coord_t>(cos(theta) + dc3 * dc3 * (1.0 - cos(theta)) );
+  double rotmat11 = static_cast<coord_t>(cos(theta) + dc1 * dc1 * (1.0 - cos(theta)) );
+  double rotmat12 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(theta)) - dc3 * sin(theta) );
+  double rotmat13 = static_cast<coord_t>(dc1 * dc3 * (1.0 - cos(theta)) + dc2 * sin(theta) );
+  double rotmat21 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(theta)) + dc3 * sin(theta) );
+  double rotmat22 = static_cast<coord_t>(cos(theta) + dc2 * dc2 * (1.0 - cos(theta)) );
+  double rotmat23 = static_cast<coord_t>(dc2 * dc3 * (1.0 - cos(theta)) - dc1 * sin(theta) );
+  double rotmat31 = static_cast<coord_t>(dc3 * dc1 * (1.0 - cos(theta)) - dc2 * sin(theta) );
+  double rotmat32 = static_cast<coord_t>(dc3 * dc2 * (1.0 - cos(theta)) + dc1 * sin(theta) );
+  double rotmat33 = static_cast<coord_t>(cos(theta) + dc3 * dc3 * (1.0 - cos(theta)) );
 
   for (int i = 0; i < _number_elements; i++)
   {
     Atom * a = _things[i];
   
-    coord_t x0 = a->x();
-    coord_t y0 = a->y();
-    coord_t z0 = a->z();
+    double x0 = a->x();
+    double y0 = a->y();
+    double z0 = a->z();
 
-    coord_t xx = rotmat11 * x0 + rotmat12 * y0 + rotmat13 * z0;
-    coord_t yy = rotmat21 * x0 + rotmat22 * y0 + rotmat23 * z0;
-    coord_t zz = rotmat31 * x0 + rotmat32 * y0 + rotmat33 * z0;
+    double xx = rotmat11 * x0 + rotmat12 * y0 + rotmat13 * z0;
+    double yy = rotmat21 * x0 + rotmat22 * y0 + rotmat23 * z0;
+    double zz = rotmat31 * x0 + rotmat32 * y0 + rotmat33 * z0;
 
-    a->setxyz(xx, yy, zz);
+    a->setxyz(static_cast<coord_t>(xx), static_cast<coord_t>(yy), static_cast<coord_t>(zz));
   }
 
   return 1;
