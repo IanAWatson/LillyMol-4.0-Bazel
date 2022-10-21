@@ -22,13 +22,20 @@
 
 #include "google/protobuf/text_format.h"
 
+#define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
+
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/proto_support.h"
+#include "Foundational/iwqsort/iwqsort.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwstring/iw_stl_hash_set.h"
 
 #include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/substructure.h"
+#include "Molecule_Lib/target.h"
 
 #include "Molecule_Tools/diced_molecule.pb.h"
 
@@ -495,6 +502,16 @@ SameBondSeparation::ReplaceFragments(Molecule& parent,
   return 1;
 }
 
+// a common operation is to break a parent molecule into a core
+// and one or more substituents.
+// The core will have isotopic labels that allow matching the
+// substituents.
+struct Decomponsition {
+  Molecule& parent;
+  Molecule core;
+  resizable_array_p<Molecule> substituents;
+};
+
 class Options {
   private:
     int _verbose;
@@ -517,12 +534,23 @@ class Options {
     // fragments that have the same bond distance strings.
     IW_STL_Hash_Map<IWString, SameBondSeparation> _distances;
 
+    IW_STL_Hash_Set _distances_to_find;
+
     // The directory into which we write directories.
     IWString _file_name_stem;
+
+    // During lookups, we have a set of queries that define the
+    // bonds to be broken.
+    resizable_array_p<Substructure_Query> _bond_break_queries;
 
     // when doing lookups, the number of molecules for which we cannot find the
     // canonical distance.
     int _distance_mismatch;
+
+    dicer::Query _query;
+    // Some query sets that get instantiated based on items in `_query`.
+    resizable_array_p<Substructure_Query> _fragment_must_have;
+    resizable_array_p<Substructure_Query> _fragment_must_not_have;
 
   // Private functions.
     int Process(const Molecule& parent,
@@ -535,6 +563,9 @@ class Options {
     // The accumulatorA
     int NumberFragments() const;
 
+    int LookingForDistances(const std::string& fname) const;
+    int AddDistancesToFind(const const_IWSubstring& input);
+
     // From a previous run, read the fragment data.
     int Read(IWString& dirname);
 
@@ -543,6 +574,9 @@ class Options {
                 const const_IWSubstring& complementary_smiles,
                 const const_IWSubstring& atypes,
                 IWString_and_File_Descriptor& output);
+    int MakeCoreAndSubstituents(Molecule& m,
+                int& fatal,
+                Decomponsition& decomposition);
 
   public:
     Options();
@@ -574,6 +608,16 @@ Options::Initialise(Command_Line& cl) {
     return 0;
   }
 
+  if (cl.option_present('d')) {
+    const_IWSubstring d;
+    for (int i = 0; cl.value('d', d, i); ++i) {
+      if (! AddDistancesToFind(d)) {
+        cerr << "Options::Initialise:invalid distance '" << d << "'\n";
+        return 0;
+      }
+    }
+  }
+
   if (cl.option_present('S')) {
     cl.value('S', _file_name_stem);
     // Bad if it already exists and is not a directory.
@@ -587,7 +631,21 @@ Options::Initialise(Command_Line& cl) {
       cerr << "Data written to '" << _file_name_stem << "'\n";
     }
     _doing_fragment_replacement = 0;
-  } else if (cl.option_present('R')) {
+
+    return 1;
+  } 
+
+  if (! cl.option_present('R')) {
+    cerr << "When doing fragment replacement must specify -R for directory of existing fragments\n";
+    return 0;
+  }
+
+  if (!cl.option_present('B')) {
+    cerr << "When doing fragment replacement must specify -B for proto directives\n";
+    return 0;
+  }
+
+  if (cl.option_present('R')) {
     IWString dirname;
     for (int i = 0; cl.value('R', dirname, i); ++i) {
       if (! Read(dirname)) {
@@ -600,6 +658,85 @@ Options::Initialise(Command_Line& cl) {
       cerr << "Read " << NumberFragments() << " fragments from '" << dirname << "'\n";
     }
   }
+
+  if (cl.option_present('B')) {
+    IWString fname = cl.string_value('B');
+    std::optional<dicer::Query> maybe_query = iwmisc::ReadTextProto<dicer::Query>(fname);
+    if (! maybe_query) {
+      cerr << "Cannot read query options (-B) '" << fname << "'\n";
+      return 0;
+    }
+    _query = std::move(*maybe_query);
+  }
+
+  return 1;
+}
+
+// Take an unordered set of distances and return a canonical string.
+// canonical just means sorted by value.
+IWString
+CanonicalDistanceString(resizable_array<int>& distances) {
+  distances.iwqsort_lambda([](int d1, int d2) {
+    if (d1 < d2) {
+      return -1;
+    } else if (d1 == d2) {
+      return 0;
+    } else {
+      return 1;
+    }
+  });
+#ifdef DEBUG_CANONICAL_DISTANCE_STRING
+  cerr << "Have " << distances.size() << " distances\n";
+  for (auto d : distances) {
+    cerr << " dist " << d << '\n';
+  }
+#endif
+
+  IWString result;
+
+  bool needs_separator = false;
+
+  for (int d : distances) {
+    if (needs_separator) {
+      result << '.';
+    } else {
+      needs_separator = true;
+    }
+    result << d;
+  }
+
+  return result;
+}
+
+// The caller is requesting processing of a specific set of
+// distances. Convert to canonical form and set _distances_to_find.
+int
+Options::AddDistancesToFind(const const_IWSubstring& input) {
+  resizable_array<int> distances;
+  int i = 0;
+  const_IWSubstring token;
+  while(input.nextword(token, i, ',')) {
+    int tmp;
+    if (! token.numeric_value(tmp) || tmp < 1) {
+      cerr << "Options::AddDistancesToFind:invalid distance '" << token << "'\n";
+      return 0;
+    }
+    distances << tmp;
+  }
+
+  if (distances.empty()) {
+    cerr << "Options::AddDistancesToFind:no values\n";
+    return 0;
+  }
+
+  if (distances.size() == 1) {
+    IWString key(input);
+    _distances_to_find.insert(key);
+    return 1;
+  }
+
+  IWString key = CanonicalDistanceString(distances);
+  _distances_to_find.insert(key);
 
   return 1;
 }
@@ -657,6 +794,160 @@ AtomTypes(const_IWSubstring buffer) {
   }
 
   return result;
+}
+
+// Return the atom if there is a single atom attached to `in_center[ndx]`
+// that is further away from all the other atoms in `in_center` than
+// in_center[ndx]. This is trying to see if there is a single connection
+// from the core to a substituent.
+std::optional<atom_number_t>
+GetSingleConnection(Molecule& m,
+                    const Set_of_Atoms& in_center,
+                    int ndx) {
+  int n = in_center.size();
+
+  atom_number_t zatom = in_center[ndx];
+  const Atom* a = m.atomi(zatom);
+  atom_number_t result = INVALID_ATOM_NUMBER;
+  for (const Bond* b : *a) {
+    if (! b->is_single_bond()) {
+      continue;
+    }
+    if (b->nrings()) {
+      continue;
+    }
+    atom_number_t maybe_outside = b->other(zatom);
+
+    for (int j = 0; j < n; ++j) {
+      if (j == ndx) {
+        continue;
+      }
+
+      if (m.bonds_between(zatom, in_center[j]) <
+          m.bonds_between(maybe_outside, in_center[j])) {
+        if (result == INVALID_ATOM_NUMBER) {
+          result = maybe_outside;
+        } else {
+          return std::nullopt;
+        }
+      }
+    }
+  }
+
+  if (result == INVALID_ATOM_NUMBER) {
+    return std::nullopt;
+  }
+
+  return result;
+}
+
+// Given a set of atoms `in_center`, can we identify a unique set
+// of atoms, one per atom in `in_center`, that constitute the
+// substituents around the center.
+std::optional<Set_of_Atoms>
+GetAtomsInSubstituents(Molecule& m,
+                       const Set_of_Atoms& in_center) {
+  Set_of_Atoms result;
+
+  const int n = in_center.size();
+  for (int i = 0; i < n; ++i) {
+    std::optional<int> conn = GetSingleConnection(m, in_center, i);
+    if (! conn) {
+      return 0;
+    }
+    result << *conn;
+  }
+
+  return result;
+}
+
+// Recursively visit all atoms attached to `zatom` and mark their
+// presence in `to_remove`.
+void
+IdentifyAtomsBeingRemoved(const Molecule& m, atom_number_t zatom, int * to_remove) {
+  to_remove[zatom] = 1;
+  const Atom* a = m.atomi(zatom);
+  for (const Bond* b : *a) {
+    atom_number_t j = b->other(zatom);
+    if (to_remove[j]) {
+      continue;
+    }
+    IdentifyAtomsBeingRemoved(m, j, to_remove);
+  }
+}
+
+// Given a molecule and the queries in `_bond_break_queries`,
+// break `m` into a core, which is to be replaced, and substituents
+// which are to be preserved. The substituents will each have an isotopic
+// label. Store these in `decomponsition`.
+// If things fail, return 0, and if a fatal error has occurred, set `fatal`.
+// Note that `decomposition` already holds a reference to `m`, but we do
+// not bother using that.
+// atom typing...
+int
+Options::MakeCoreAndSubstituents(Molecule& m,
+                int& fatal,
+                Decomponsition& decomposition) {
+  // Force sssr determination.
+  m.ring_membership();
+
+  fatal = 0;
+
+  Molecule_to_Match target(&m);
+
+  Set_of_Atoms matched_atoms(_bond_break_queries.size());
+  for (Substructure_Query* q : _bond_break_queries) {
+    Substructure_Results sresults;
+    const int nhits = q->substructure_search(target, sresults);
+    if (nhits == 1) {
+      matched_atoms << sresults.embedding(0)->front();
+    } else if (nhits == 0) {
+      if (_query.ignore_molecules_not_hitting_query()) {
+        return 0;
+      }
+      cerr << "Options::MakeCoreAndSubstituents:no match to query " << q->comment() << '\n';
+      fatal = 1;
+      return 0;
+    } else {
+      //silently take the first of multiple matches
+      matched_atoms << sresults.embedding(0)->front();
+    }
+  }
+
+  assert(matched_atoms.size() == _bond_break_queries.size());
+
+  std::optional<Set_of_Atoms> atoms_in_substituents = GetAtomsInSubstituents(m, matched_atoms);
+  if (! atoms_in_substituents) {
+    cerr << "Options::MakeCoreAndSubstituents:cannot identify substituent atoms '" << m.name() << '\n';
+    fatal = 1;
+    return 0;
+  }
+
+  // Now that for each matched atom, we know the adjacent atom that will be
+  // retained, break those bonds.
+
+  if (atoms_in_substituents.size() != matched_atoms.size()) {
+    cerr << "Size mismatch btw atoms and attachments\n";
+    return 0;
+  }
+
+  Molecule mcopy(m);
+  int n = atoms_in_substituents.number_elements();
+  for (int i = 0; i < n; ++i) {
+    atom_number_t a1 = matched_atoms[i];
+    atom_number_t a2 = atoms_in_substituents[i];
+    if (! mcopy.remove_bond_between_atoms(a1, a2)) {
+      cerr << "Cannot remove bond btw " << a1 << " and " << a2 << " in " << mcopy.smiles() << '\n';
+      return 0;
+    }
+  }
+
+  std::unique_ptr<int> to_remove(new_int(mcopy.natoms()));
+  matched_atoms.set_vector(to_remove.get());
+
+  IdentifyAtomsBeingRemoved(mcopy, matched_atoms[0], to_remove.get());
+
+  return 1;
 }
 
 // clang-format off
@@ -776,6 +1067,8 @@ CanonicalDistanceString(Molecule& m) {
     }
   }
 
+  return CanonicalDistanceString(distances);
+
   std::sort(distances.begin(), distances.end(), [](int d1, int d2) {
     return d1 < d2;
   });
@@ -881,12 +1174,27 @@ OkBondSeparation(const std::string& fname) {
   return 1;
 }
 
+// We are scanning a directory of distances and need to know
+// if we should get the data out of `fname`. Check _distances_to_find.
+int
+Options::LookingForDistances(const std::string& fname) const {
+  if (_distances_to_find.empty()) {
+    return 1;
+  }
+  IWString key(fname);
+  key.remove_leading_chars(3);
+  return _distances_to_find.contains(key);
+}
+
 int
 Options::Read(IWString& dirname) {
   const std::filesystem::path dir(dirname.null_terminated_chars());
   for (auto const& dir_entry : std::filesystem::directory_iterator{dir})  {
     std::string path_name = dir_entry.path();
     if (! OkBondSeparation(path_name)) {
+      continue;
+    }
+    if (!LookingForDistances(dir_entry.path().filename())) {
       continue;
     }
     SameBondSeparation sbs;
@@ -1054,7 +1362,7 @@ DicerToCores(const char* fname,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vS:R:D:");
+  Command_Line cl(argc, argv, "vS:R:D:d:");
 
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
