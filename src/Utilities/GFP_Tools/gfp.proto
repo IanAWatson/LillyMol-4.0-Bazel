@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package gfp;
+
+message Fingerprint {
+  optional string smiles = 1;
+  optional string id = 2;
+  // A mapping from tag to Daylight Ascii encoded strings.
+  map<string, bytes> fp = 3;
+
+  // The fingerprint text can be compressed with snappy.
+  optional bool compressed = 4;
+}
