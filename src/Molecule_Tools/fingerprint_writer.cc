@@ -209,7 +209,7 @@ FingerprintWriter::WriteDescriptors(const IWString& mname,
   std::fill_n(_output_vector, _nbits, 0);
 
   for (const auto& [bit, count] : sfc.bits_found()) {
-    _output_vector[bit % _nbits] = count;
+    _output_vector[bit % _nbits] += count;
   }
 
   append_first_token_of_name(mname, output);
