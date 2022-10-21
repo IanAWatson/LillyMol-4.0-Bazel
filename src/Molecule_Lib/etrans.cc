@@ -108,7 +108,7 @@ Element_Transformation::build(const IWString & esource)
     return 0;
   }
 
-  cerr << "Element is " << ee << "'\n";
+  //cerr << "Element is " << ee << "'\n";
 
   _to = get_element_from_symbol_no_case_conversion(ee);
 
@@ -264,7 +264,7 @@ Element_Transformations::construct_from_command_line(Command_Line & cl,
     }
 
     Element_Transformation * tmp = new Element_Transformation;
-    cerr << "Element_Transformation::construct_from_command_line:building " << c << endl;
+    // cerr << "Element_Transformation::construct_from_command_line:building " << c << endl;
     if (! tmp->build(c))
     {
       cerr << "Cannot process option '" << eflag << "' number " << i << " '" << c << "'\n";
