@@ -1,4 +1,18 @@
 proto_library(
+    name = "gfp_proto",
+    srcs = [
+        "gfp.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "gfp_cc_proto",
+    deps = [
+        ":gfp_proto",
+    ],
+)
+
+proto_library(
     name = "gfp_model_proto",
     srcs = [
         "gfp_model.proto",
@@ -300,6 +314,20 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "gfp_to_proto",
+    srcs = [
+        "gfp_to_proto.cc",
+    ],
+    deps = [
+        ":gfp",
+        ":gfp_cc_proto",
+        "//Foundational/data_source:iwtfdata_record",
+        "//Foundational/iwmisc:iwmisc",
+        "@snappy//:snappy",
     ],
 )
 
