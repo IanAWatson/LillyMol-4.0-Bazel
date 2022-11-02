@@ -1,4 +1,4 @@
-build --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz
+build --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lz
 build:asan --strip=never
 build:asan --copt -fsanitize=address
 build:asan --copt -DADDRESS_SANITIZER

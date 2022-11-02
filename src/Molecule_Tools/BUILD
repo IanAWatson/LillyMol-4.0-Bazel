@@ -1553,6 +1553,9 @@ cc_library(
     deps = [
         "//Molecule_Lib:iwmolecule",
     ],
+    visibility = [
+        "//visibility:public",
+    ],
 )
 
 cc_library(
@@ -1579,6 +1582,9 @@ cc_library(
     ],
     deps = [
         "//Molecule_Lib:iwmolecule",
+    ],
+    visibility = [
+        "//visibility:public",
     ],
 )
 

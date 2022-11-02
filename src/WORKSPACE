@@ -258,7 +258,7 @@ new_local_repository(
     build_file_content = """
 cc_library(
     name = "crc32",
-    srcs = ["build/libcrc32c.so"],
+    srcs = ["build/libcrc32c.a"],
     strip_include_prefix = "include",
     hdrs = ["include/crc32c/crc32c.h"],
     visibility = ["//visibility:public"],
@@ -274,6 +274,22 @@ cc_library(
     name = "highwayhash",
     srcs = ["lib/libhighwayhash.a"],
     hdrs = glob(["highwayhash/*.h"]),
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+new_local_repository(
+    name = "snappy",
+    path = "/home/ian/third_party",
+    build_file_content = """
+cc_library(
+    name = "snappy",
+    srcs = [
+       "lib/libsnappy.a",
+    ],
+    hdrs = glob(["include/snappy*.h"]),
+    strip_include_prefix = "include",
     visibility = ["//visibility:public"],
 )
 """,
