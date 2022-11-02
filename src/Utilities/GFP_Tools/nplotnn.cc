@@ -111,6 +111,8 @@ static int three_column_output = 0;
 
 static int tabular_with_smiles = 0;
 
+static int narrow_tabular = 0;
+
 /*
   In addition to the smiles, the ID and the distance, we need a unique identifier for each neighbour.
   It may be just the ID, or it may be the unique smiles of the molecule
@@ -193,6 +195,7 @@ display_dash_x_options(std::ostream & os)
   os << " -X table           produce tabular output of near neighbour distances\n";
   os << " -X table1          produce tabular output of nearest neighbour distances\n";
   os << " -X tsmiles         produce tabular output including smiles\n";
+  os << " -x narrow_tabular  tabular form with each molecule on a separate line (Excel, Spotfire..)\n";
   os << " -X osep=<char>     tabular data output separator\n";
   os << " -X normh           normalise the -H file to largest count\n";
   os << " -X allh            include all distances in the -H file (not just nearest)\n";
@@ -697,6 +700,38 @@ do_three_column_output(const IWString & id,
   return output.good();
 }
 
+// Each target gets a record, followed by neighbours.
+// In order to faciliate studying the results, the smiles of the
+// needle is repeated on each neighbour record.
+// smiles,id,nbrs
+// smiles,id,ndx,smiles,id,dist
+// smiles,id,ndx,smiles,id,dist
+
+static int 
+NarrowTabular(const IWString& smiles,
+              const IWString& id,
+              const resizable_array_p<Smiles_ID_Dist_UID>& neighbours,
+              IWString_and_File_Descriptor& output) {
+
+  // There is a constant prefix on each line.
+  IWString prefix;
+  prefix << smiles << output_separator << id << output_separator;
+  output << prefix << neighbours.size() << output_separator << output_separator << output_separator;
+  output << '\n';
+  output.write_if_buffer_holds_more_than(8192);
+
+  for (int i = 0; i < neighbours.number_elements(); ++i) {
+    const Smiles_ID_Dist_UID* nbr = neighbours[i];
+    output << prefix << i << output_separator << nbr->smiles() <<
+              output_separator << nbr->id() << output_separator << nbr->distance() << '\n';
+    output.write_if_buffer_holds_more_than(8192);
+  }
+
+  output.write_if_buffer_holds_more_than(8192);
+
+  return 1;
+}
+
 static int
 process_molecule(const IWString & smiles,
                  const IWString & id,
@@ -739,6 +774,10 @@ process_molecule(const IWString & smiles,
 
   if (tabular_with_smiles) {
     return do_tabular_with_smiles(smiles, id, neighbours, output);
+  }
+
+  if (narrow_tabular) {
+    return NarrowTabular(smiles, id, neighbours, output);
   }
 
   if (number_needed_within_distance >= 0 && ! passes_number_needed_within_distance(neighbours)) {
@@ -1613,7 +1652,6 @@ write_normalised_histogram(const IWHistogram & nearest_neighbour_histogram,
   return 1;
 }
 
-// Remove?
 static int
 do_create_julia_file_for_histogram_plot(const IWHistogram & nearest_neighbour_histogram,
                                   const int normalise_h_file,
@@ -2370,6 +2408,13 @@ plotnn (int argc, char ** argv)
           cerr << "Tabular output with smiles\n";
         }
       }
+      else if (x == "narrow_table") {
+        narrow_tabular = 1;
+        if (verbose) {
+          cerr << "Narrow tabular output (DataWarrior, Excel...)\n";
+        }
+        output_separator = ',';
+      }
       else if (x.starts_with("osep=")) {
         x.remove_leading_chars(5);
         IWString tmp(x);
@@ -2568,6 +2613,9 @@ plotnn (int argc, char ** argv)
       output << output_separator << "Smiles." << i << output_separator << "Id." << i << output_separator << "Dist." << i;
     }
     output << '\n';
+  } else if (narrow_tabular) {
+    output << "Smiles" << output_separator << "Id" << output_separator << "ndx"
+           << output_separator << "smiles" << output_separator << "id" << output_separator << "dist" << '\n';
   }
 
   int rc = 0;
