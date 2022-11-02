@@ -18,7 +18,7 @@ def usage(retcod)
   $stderr << " -gfp ... -gfp fingerprint specification (to gfp_make)\n"
   $stderr << " -p <support>  support level for bit inclusion\n"
   $stderr << " -flatten      flatten sparse fingerprint counts to 1\n"
-  $stderr << " -loghtgbm ... -lightgbm build a lightgbm model\n"
+  $stderr << " -lightgbm ... -lightgbm build a lightgbm model\n"
   $stderr << " -catboost ... -catboost build a catboost model\n"
   $stderr << " -v            verbose output\n"
 
