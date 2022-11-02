@@ -3224,7 +3224,7 @@ int SmartsNumericQualifier(const char * input,
 int SmartsNumericQualifier(const char * input,
                        int max_chars,
                        iwmatcher::Matcher<int>& result);
-int SmartsFetchNumeric(const char * string, int & value, 
+int SmartsFetchNumeric(const char * string, int max_chars, int & value, 
                      int & qualifier);
 
 }  // namespace substructure_spec

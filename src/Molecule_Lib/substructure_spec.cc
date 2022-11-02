@@ -777,6 +777,7 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
 #ifdef DEBUG_ATOM_MATCHES
    if (_ncon.is_set())
      cerr << "Check ncon, target is " << target.ncon() << " match = " << _ncon.matches(target.ncon()) << endl;
+   _ncon.debug_print(cerr);
 #endif
 
    if (_ncon.is_set())
@@ -2119,7 +2120,7 @@ ValidNcon(const Min_Max_Specifier<int>& min_max_spec) {
 */
 
 int
-SmartsFetchNumeric(const char * string, int & value, 
+SmartsFetchNumeric(const char * string, int nchars, int & value, 
                      int & qualifier)
 {
   int rc;
@@ -2128,12 +2129,14 @@ SmartsFetchNumeric(const char * string, int & value,
   {
     qualifier = -1;
     string++;
+    --nchars;
     rc = 1;
   }
   else if ('>' == *string)
   {
     qualifier = 1;
     string++;
+    --nchars;
     rc = 1;
   }
   else
@@ -2143,7 +2146,7 @@ SmartsFetchNumeric(const char * string, int & value,
   }
 
   value = 0;
-  while (isdigit(*string))
+  while (isdigit(*string) && nchars > 0)
   {
     int tmp = *string - '0';
 
@@ -2152,6 +2155,7 @@ SmartsFetchNumeric(const char * string, int & value,
     rc++;
 
     string++;
+    --nchars;
   }
 
   if (1 == rc && 0 != qualifier)    // just a '>' or '<' by itself is an error
@@ -2223,7 +2227,7 @@ SmartsNumericQualifier(const char * input,
   if (*input == '<' || *input == '>') {
     int value;
     int ltgt;
-    int chars_consumed = substructure_spec::SmartsFetchNumeric(input, value, ltgt);
+    int chars_consumed = substructure_spec::SmartsFetchNumeric(input, max_chars, value, ltgt);
     if (ltgt < 0) {
       result.set_max(value - 1);
     } else if (ltgt > 0) {
@@ -2267,7 +2271,7 @@ SmartsNumericQualifier(const char * input,
   if (*input == '<' || *input == '>') {
     int value;
     int ltgt;
-    int chars_consumed = substructure_spec::SmartsFetchNumeric(input, value, ltgt);
+    int chars_consumed = substructure_spec::SmartsFetchNumeric(input, max_chars, value, ltgt);
     if (ltgt < 0) {
       result.set_max(value - 1);
     } else if (ltgt > 0) {
@@ -2507,8 +2511,8 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     int next_char_is_relational = 0;
     int next_char_is_charge = 0;
 
-    // cerr << "characters_processed " << characters_processed << " characters_to_process " << characters_to_process << " char " << s << '\n';
-    if (characters_processed < characters_to_process)
+    cerr << "characters_processed " << characters_processed << " characters_to_process " << characters_to_process << " char " << s << '\n';
+    if (characters_processed + 1 < characters_to_process)
     {
       char cnext = smarts[1];
 
@@ -2521,7 +2525,8 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       else if ('+' == cnext || '-' == cnext)
         next_char_is_charge = 1;
     }
-//  cerr << "next_char_is_relational " << next_char_is_relational << " next_char_is_digit " << next_char_is_digit << '\n';
+    cerr << "Char is " << s << '\n';
+    cerr << "next_char_is_relational " << next_char_is_relational << " next_char_is_digit " << next_char_is_digit << '\n';
 
 //  Oct 97. Change parsing rules for better consistency with Daylight.
 //  Try to consume leading characters as an element specifier

@@ -4433,7 +4433,7 @@ Substructure_Environment::construct_from_msi_object (const msi_object & msi,
     if (x.length() && (isdigit(s[0]) || '>' == s[0] || '<' == s[0]))
     {
       int value, qualifier;
-      int chars_consumed = substructure_spec::SmartsFetchNumeric(s, value, qualifier);
+      int chars_consumed = substructure_spec::SmartsFetchNumeric(s, x.length(), value, qualifier);
       if (0 == chars_consumed)
       {
         cerr << "Substructure_Environment::construct_from_msi_object:invalid numeric qualifier '" << x << "'\n";
