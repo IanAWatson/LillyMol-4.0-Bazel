@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package Dicer;
+
+message DicerFragment {
+  optional string smi = 1;
+
+  optional string id = 2;
+
+  optional uint32 n = 3;
+}
+

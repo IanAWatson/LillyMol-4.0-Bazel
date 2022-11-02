@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package RplRing;
+
+message ReplacementRing {
+  string smi = 1;
+
+  string smt = 2;
+
+  string id = 3;
+
+  string label = 4;
+
+  uint32 n = 5;
+}
