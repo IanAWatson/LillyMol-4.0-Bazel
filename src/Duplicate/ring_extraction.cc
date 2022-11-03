@@ -38,6 +38,7 @@ Usage(int rc) {
   cerr << "Extracts rings and creates ReplacementRing protos\n";
   cerr << " -S <stem>         create files with <stem>\n";
   cerr << " -R <rsize>        max ring size to process (def 7)\n";
+  cerr << " -k                also generate smarts with connectivity not specified\n";
   cerr << " -x                transform within ring aliphatic double bonds to type any\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
@@ -74,12 +75,15 @@ class ExtractRings {
     int _substructure_search_starting_molecule;
     int _substructure_search_failures;
 
+    int _generate_substitution_not_specified;
+
     FileType _input_type;
 
     Chemical_Standardisation _chemical_standardisation;
 
   // Private functions.
-    int GenerateRing(Molecule& parent, Molecule& m, const IWString& label, const int* include_atom);
+    int GenerateRing(Molecule& parent, Molecule& m, const IWString& label, const int* include_atom, int include_d);
+    int GenerateSmarts(Molecule& m, const int* include_atom, int include_d, IWString& result) const;
 
     int LabelAttachmentPoints(const Molecule& parent,
                                     Molecule& r,
@@ -128,6 +132,7 @@ ExtractRings::ExtractRings() {
   _transform_ring_double_bonds = 0;
   _substructure_search_starting_molecule = 0;
   _substructure_search_failures = 0;
+  _generate_substitution_not_specified = 0;
   _input_type = FILE_TYPE_INVALID;
 }
 
@@ -189,6 +194,13 @@ ExtractRings::Initialise(Command_Line& cl) {
     _substructure_search_starting_molecule = 1;
     if (_verbose) {
       cerr << "WIll perform a substructure search vs the starting molecule\n";
+    }
+  }
+
+  if (cl.option_present('k')) {
+    _generate_substitution_not_specified = 1;
+    if (_verbose) {
+      cerr << "Will also generate a smarts variant without connectivity\n";
     }
   }
 
@@ -346,7 +358,8 @@ ExtractRings::Process(Molecule& m) {
     }
     // cerr << "Label '" << label << "' " << r.unique_smiles() << '\n';
 
-    GenerateRing(m, r, *label, include_atom.get());
+    GenerateRing(m, r, *label, include_atom.get(), 1);
+    GenerateRing(m, r, *label, include_atom.get(), 0);
   }
 
   return 1;
@@ -545,10 +558,12 @@ ExtractRings::ChangeRingDoubleBonds(Molecule& m,
   smt = new_smt;
 }
 
-// Renerally exocyclic double bonds are not handled properly. Ignoring for now.
 int
-ExtractRings::GenerateRing(Molecule& parent,
-                           Molecule& m, const IWString& label, const int* include_atom) {
+ExtractRings::GenerateSmarts(Molecule& m,
+               const int * include_atom,
+               int include_d,
+               IWString& result) const {
+
   const int matoms = m.natoms();
 
   Smiles_Information smiles_information(matoms);
@@ -574,7 +589,8 @@ ExtractRings::GenerateRing(Molecule& parent,
       }
     }
 
-    if (_isotope == m.isotope(i)) {
+    if (! include_d) {
+    } else if (_isotope == m.isotope(i)) {
       smt << "D>" << m.ncon(i);
     } else if (m.ncon(i) > 1) {
       smt << "D" << m.ncon(i);
@@ -583,18 +599,28 @@ ExtractRings::GenerateRing(Molecule& parent,
     smiles_information.set_user_specified_atomic_smarts(i, smt);
   }
 
-  const IWString smi = m.smiles();
-
   set_write_smiles_aromatic_bonds_as_colons(1);
-  IWString smt = m.smiles(smiles_information, include_atom);
+  result = m.smiles(smiles_information, include_atom);
   set_write_smiles_aromatic_bonds_as_colons(0);
 
-  ChangeRingDoubleBonds(m, smt);
+  ChangeRingDoubleBonds(m, result);
+
+  return 1;
+}
+
+// Renerally exocyclic double bonds are not handled properly. Ignoring for now.
+int
+ExtractRings::GenerateRing(Molecule& parent,
+                           Molecule& m, const IWString& label, const int* include_atom,
+                           int include_d) {
+
+  const IWString smi = m.smiles();
+  const IWString& usmi = m.unique_smiles();
+
+  IWString smt;
+  GenerateSmarts(m, include_atom, 1, smt);
 
   MaybeCheckSubstructureMatch(parent, smt);
-
-  // Make sure the unique smiles is not called before ChangeRingDoubleBonds.
-  const IWString& usmi = m.unique_smiles();
 
   auto iter_label = _ring.find(label);
   if (iter_label == _ring.end()) {
@@ -606,15 +632,21 @@ ExtractRings::GenerateRing(Molecule& parent,
   auto iter_usmi = iter_label->second.find(usmi);
   if (iter_usmi == iter_label->second.end()) {
     RplRing::ReplacementRing r;
-    r.set_smi(smi.AsString());
-    r.set_smt(smt.AsString());
+    r.set_smi(smi.data(), smi.length());
+    r.set_smt(smt.data(), smt.length());
     r.set_id(m.name().AsString());
+    r.set_usmi(usmi.data(), usmi.length());
+    r.set_conn(include_d);
     r.set_n(1);
 
     iter_label->second.emplace(std::make_pair(usmi, std::move(r)));
   } else {
     const auto n = iter_usmi->second.n();
     iter_usmi->second.set_n(n + 1);
+  }
+  
+  if (! _generate_substitution_not_specified) {
+    return 1;
   }
 
   return 1;

@@ -12,4 +12,10 @@ message ReplacementRing {
   string label = 4;
 
   uint32 n = 5;
+
+  bool conn = 6;
+
+  // the unique smiles is not needed for processing, but needed for aggregating
+  // results across different collections.
+  string usmi = 7;
 }
