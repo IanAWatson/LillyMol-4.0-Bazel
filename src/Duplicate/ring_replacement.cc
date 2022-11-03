@@ -5,9 +5,12 @@
 #include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 #include "google/protobuf/text_format.h"
 
+#define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
+
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwstring/iw_stl_hash_set.h"
+#include "Foundational/iwqsort/iwqsort.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
@@ -35,6 +38,8 @@ Usage(int rc) {
   cerr << " -Y <query>    product molecules MUST     match a query in <query>\n";
   cerr << " -N <query>    product molecules must NOT match any queries in <query>\n";
   cerr << " -D <query>    discard any replacement ring that matches <query>\n";
+  cerr << " -I            remove isotopes from product molecules\n";
+  cerr << " -w            sort output by precedent count\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
   cerr << " -v                verbose output\n";
@@ -88,6 +93,7 @@ Replacement::BuildFromProto(const RplRing::ReplacementRing& proto) {
   }
 
   _id = proto.id();
+  _label = proto.label();
 
   _count = proto.n();
 
@@ -146,12 +152,18 @@ Replacement::MakeVariant(Molecule& parent, const Set_of_Atoms& embedding, std::u
       // cerr << "From atom " << a << " make bond " << (initial_natoms + i) << " to " << o << '\n';
       remove_bonds << b;
 
+      atom_number_t join_to = initial_natoms + i;
+      // This happens with double bonds being removed and related.
+      if (m->hcount(join_to) == 0) {
+        return 0;
+      }
+
       if (b->is_single_bond()) {
-        m->add_bond(initial_natoms + i, o, SINGLE_BOND);
+        m->add_bond(o, join_to, SINGLE_BOND);
       } else if (b->is_double_bond()) {
-        m->add_bond(initial_natoms + i, o, DOUBLE_BOND);
+        m->add_bond(o, join_to, DOUBLE_BOND);
       } else {
-        m->add_bond(initial_natoms + i, o, TRIPLE_BOND);
+        m->add_bond(o, join_to, TRIPLE_BOND);
       }
     }
   }
@@ -177,13 +189,18 @@ Replacement::MakeVariant(Molecule& parent, const Set_of_Atoms& embedding, std::u
 
   if (! m->valence_ok()) {
     cerr << "Invalid valence '" << m->smiles() << ' ' << parent.name() << ' ' << _id << '\n';
+    for (int i = 0; i < m->natoms(); ++i) {
+      if (! m->valence_ok(i)) {
+        cerr << " atom " << i << ' ' << m->smarts_equivalent_for_atom(i) << '\n';
+      }
+    }
     return 0;
   }
 
   IWString name;
   name << parent.name();
   name << " %% " << _id;
-  name << '.' << _label;
+  name << '.' << _label << ' ' << _count;
   m->set_name(name);
 
   result.reset(m.release());
@@ -228,6 +245,11 @@ class RingReplacement {
 
     extending_resizable_array<int> _number_variants;
 
+    // Remove isotopes from product molecules.
+    int _remove_isotopes;
+
+    int _sort_output_by_precedent = 0;
+
     FileType _input_type;
 
     Chemical_Standardisation _chemical_standardisation;
@@ -239,7 +261,7 @@ class RingReplacement {
     int OkSupport(const Replacement& r);
     int IsUnique(Molecule& m);
     int Process(resizable_array_p<Molecule>& mols, int ndx);
-    int Write(const resizable_array_p<Molecule>& mols, IWString_and_File_Descriptor& output);
+    int Write(resizable_array_p<Molecule>& mols, IWString_and_File_Descriptor& output);
 
   public:
     RingReplacement();
@@ -279,6 +301,10 @@ RingReplacement::RingReplacement() {
   _duplicates_suppressed = 0;
 
   _molecules_formed = 0;
+
+  _remove_isotopes = 0;
+
+  _sort_output_by_precedent = 0;
 
   _nreplacements = 0;
   _rings = nullptr;
@@ -378,6 +404,14 @@ RingReplacement::Initialise(Command_Line& cl) {
     }
   }
 
+  // Make sure this is set before reading the replacement rings.
+  if (cl.option_present('w')) {
+    _sort_output_by_precedent = 1;
+    if (_verbose) {
+      cerr << "Will write new molecules in order of precedent\n";
+    }
+  }
+
   if (! cl.option_present('P')) {
     cerr << "Must specify one of more sets of replacement rings via the -P option\n";
     return 0;
@@ -387,7 +421,6 @@ RingReplacement::Initialise(Command_Line& cl) {
 
   _rings = new resizable_array_p<Replacement>[_nreplacements];
 
-
   if (cl.option_present('P')) {
     IWString p;
     for (int i = 0; cl.value('P', p, i); ++i) {
@@ -395,6 +428,13 @@ RingReplacement::Initialise(Command_Line& cl) {
         cerr << "Cannot read replacement rings '" << p << "'\n";
         return 0;
       }
+    }
+  }
+
+  if (cl.option_present('I')) {
+    _remove_isotopes = 1;
+    if (_verbose) {
+      cerr << "Will remove isotopes from product molecules\n";
     }
   }
 
@@ -448,6 +488,18 @@ RingReplacement::ReadReplacementRings(iwstring_data_source& input, int ndx) {
   if (_rings[ndx].empty()) {
     cerr << "RingReplacement::ReadReplacementRings:no replacement rings\n";
     return 0;
+  }
+
+  if (_sort_output_by_precedent) {
+    _rings[ndx].iwqsort_lambda([](const Replacement* r1, const Replacement* r2) {
+      if (r1->count() < r2->count()) {
+        return 1;
+      } else if (r1->count() > r2->count()) {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
   }
 
   return 1;
@@ -542,6 +594,11 @@ RingReplacement::Process(resizable_array_p<Molecule>& mols,
         if (!IsUnique(*variant)) {
           continue;
         }
+        if (_remove_isotopes) {
+          variant->transform_to_non_isotopic_form();
+        }
+        variant->reduce_to_largest_fragment();
+
         generated_here << variant.release();
       }
     }
@@ -573,8 +630,9 @@ RingReplacement::IsUnique(Molecule& m) {
   return 1;
 }
 
+// `mols` is only non const because it may be sorted.
 int
-RingReplacement::Write(const resizable_array_p<Molecule>& mols,
+RingReplacement::Write(resizable_array_p<Molecule>& mols,
                        IWString_and_File_Descriptor& output) {
   for (Molecule* m : mols) {
     output << m->smiles() << ' ' << m->name() << '\n';
@@ -635,7 +693,7 @@ ReplaceCore(RingReplacement& ring_replacement,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcY:N:P:s:q:uapn:D:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcY:N:P:s:q:uapn:D:Iw");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

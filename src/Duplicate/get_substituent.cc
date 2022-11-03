@@ -32,8 +32,8 @@ Usage(int rc) {
   cerr << " -m <natoms>   minimum number of atoms in each substituent\n";
   cerr << " -M <natoms>   maximum number of atoms in each substituent\n";
   cerr << " -X <length>   maximum distance from the attachment point\n";
-  cerr << " -. <smarts>   queries that must     be present in the substituent\n";
-  cerr << " -. <smarts>   queries that must not be present in the substituent\n";
+  cerr << " -Y <smarts>   queries that must     be present in the substituent\n";
+  cerr << " -N <smarts>   queries that must not be present in the substituent\n";
   cerr << " -z i          ignore molecules not matching the query\n";
   cerr << " -I <iso>      isotopically label substituents\n";
   cerr << " -Y <smarts>   substituents must match\n";
@@ -140,7 +140,7 @@ GetSubstituent::Initialise(Command_Line& cl) {
   }
 
   if (cl.option_present('g')) {
-    if (! _chemical_standardisation.construct_from_command_line(cl, _verbose, 'g')) {
+    if (! _chemical_standardisation.construct_from_command_line(cl, _verbose > 1, 'g')) {
       cerr << "Cannot initialise chemical standardisation\n";
       return 0;
     }
@@ -289,6 +289,7 @@ GetSubstituent::Report(std::ostream& output) const {
     return 1;
   }
 
+  output << "Found " << _fragments.size() << " fragments\n";
   output << _molecules_not_matching_query << " molecules did not match the query\n";
 
   for (int i = 0; i < _fragment_size.number_elements(); ++i) {

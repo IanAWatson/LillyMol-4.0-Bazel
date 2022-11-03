@@ -359,7 +359,10 @@ ExtractRings::Process(Molecule& m) {
     // cerr << "Label '" << label << "' " << r.unique_smiles() << '\n';
 
     GenerateRing(m, r, *label, include_atom.get(), 1);
-    GenerateRing(m, r, *label, include_atom.get(), 0);
+    if (_generate_substitution_not_specified) {
+      r.transform_to_non_isotopic_form();
+      GenerateRing(m, r, *label, include_atom.get(), 0);
+    }
   }
 
   return 1;
@@ -618,7 +621,7 @@ ExtractRings::GenerateRing(Molecule& parent,
   const IWString& usmi = m.unique_smiles();
 
   IWString smt;
-  GenerateSmarts(m, include_atom, 1, smt);
+  GenerateSmarts(m, include_atom, include_d, smt);
 
   MaybeCheckSubstructureMatch(parent, smt);
 
@@ -645,10 +648,6 @@ ExtractRings::GenerateRing(Molecule& parent,
     iter_usmi->second.set_n(n + 1);
   }
   
-  if (! _generate_substitution_not_specified) {
-    return 1;
-  }
-
   return 1;
 }
 
