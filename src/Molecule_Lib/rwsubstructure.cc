@@ -2688,6 +2688,11 @@ Substructure_Atom::create_from_molecule (Molecule & m,
       return 0;
     }
   }
+  else if (mqs.convert_all_aromatic_atoms_to_generic_aromatic() && m.is_aromatic(my_atom_number)) {
+    Substructure_Atom_Specifier* a = new Substructure_Atom_Specifier;
+    a->set_aromaticity(AROMATIC);
+    _components.add(a);
+  }
   else if (e->is_in_periodic_table())
   {
     if (1 == e->atomic_number() && (mqs.convert_explicit_hydrogens_to_match_any_atom() || mqs.convert_explicit_hydrogens_to_match_any_atom_including_hydrogen()))
@@ -3622,7 +3627,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
   {
     for (int i = 0; i < nf; i++)
     {
-      Substructure_Atom * r = new Substructure_Atom;
+      std::unique_ptr<Substructure_Atom> r = std::make_unique<Substructure_Atom>();
 
       atom_number_t astart = m.first_atom_in_fragment(i);
       
@@ -3632,7 +3637,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
         return 0;
       }
     
-      _root_atoms.add(r);
+      _root_atoms.add(r.release());
     }
   }
 
