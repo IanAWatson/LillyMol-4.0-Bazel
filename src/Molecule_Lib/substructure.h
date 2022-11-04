@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 
 #ifdef IW_USE_TBB_SCALABLE_ALLOCATOR
 #include "tbb/scalable_allocator.h"
