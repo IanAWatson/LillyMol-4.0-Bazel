@@ -77,7 +77,7 @@ CoreReplacement::Initialise(Command_Line& cl) {
   }
 
   if (cl.option_present('g')) {
-    if (! _chemical_standardisation.construct_from_command_line(cl, _verbose, 'g')) {
+    if (! _chemical_standardisation.construct_from_command_line(cl, _verbose > 1, 'g')) {
       cerr << "Cannot initialise chemical standardisation\n";
       return 0;
     }
@@ -125,7 +125,7 @@ CoreReplacement::Preprocess(Molecule& m) {
 
 int
 CoreReplacement::Report(std::ostream& output) const {
-  cerr << "CoreReplacement:read " << _molecules_read << " molecules\n";
+  output << "CoreReplacement:read " << _molecules_read << " molecules\n";
   if (_molecules_read == 0) {
     return 1;
   }

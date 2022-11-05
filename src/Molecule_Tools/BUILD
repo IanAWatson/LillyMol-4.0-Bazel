@@ -172,6 +172,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "crispr",
+    srcs = [
+        "crispr.cc",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+    ],
+)
+
+cc_binary(
     name = "dbf",
     srcs = [
         "dbf.cc",

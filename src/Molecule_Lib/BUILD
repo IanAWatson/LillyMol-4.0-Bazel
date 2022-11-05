@@ -24,6 +24,24 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "molecule_to_query_proto",
+    srcs = [
+        "molecule_to_query.proto",
+    ],
+    deps = [
+        ":substructure_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "molecule_to_query_cc_proto",
+    deps = [
+        ":molecule_to_query_proto",
+    ],
+)
+
+
+proto_library(
     name = "geometric_constraints_proto",
     srcs = [
         "geometric_constraints.proto",
@@ -268,6 +286,7 @@ cc_library(
     ],
     deps = [
         ":mol2graph_cc_proto",
+        ":molecule_to_query_cc_proto",
         ":space_vector",
         ":substructure_cc_proto",
         ":toggle_kekule_form_cc_proto",
@@ -277,6 +296,7 @@ cc_library(
         "//Foundational/iwmisc:iwconfig",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:iwre2",
+        "//Foundational/iwmisc:proto_support",
         "//Foundational/iwbits:iwbits",
         "//Foundational/iwqsort:iwqsort",
         "//Foundational/iwstring:iwstring",

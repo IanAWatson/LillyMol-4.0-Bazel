@@ -2693,15 +2693,18 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     a->set_aromaticity(AROMATIC);
     _components.add(a);
   }
+  else if (mqs.ignore_atom_type()) {
+    // Do not set any attributes.
+  }
+  else if (mqs.isotope_means_match_any_atom() &&
+           a->isotope() == mqs.isotope_means_match_any_atom()) {
+  }
   else if (e->is_in_periodic_table())
   {
     if (1 == e->atomic_number() && (mqs.convert_explicit_hydrogens_to_match_any_atom() || mqs.convert_explicit_hydrogens_to_match_any_atom_including_hydrogen()))
       ;
     else
       set_element(e);
-  }
-  else if (mqs.isotope_means_match_any_atom() &&
-           a->isotope() == mqs.isotope_means_match_any_atom()) {
   }
   else if ("A" == initial_atomic_symbol)    // match any atom
     ;
@@ -2848,7 +2851,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     set_formal_charge(a->formal_charge());
 
   if (smarts_specified.length()) {  // Ignore isotopic labels
-  } else if (only_include_isotopically_labeled_atoms()) {  // ignore isotopic labels
+  } else if (mqs.only_include_isotopically_labeled_atoms()) {  // ignore isotopic labels
   } else if (mqs.substituents_only_at_isotopic_atoms()) {   // ignore isotopes
   } else if (0 != mqs.isotopic_label_means()) {
   } else if (a->isotope() == 0) {
@@ -3048,7 +3051,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     if (nullptr == completed[j])     // not yet done, further down the tree
       continue;
 
-    if (only_include_isotopically_labeled_atoms() && 0 == m.isotope(j))
+    if (mqs.only_include_isotopically_labeled_atoms() && 0 == m.isotope(j))
       continue;
 
 #ifdef DEBUG_CREATE_FROM_MOLECULE
@@ -3095,7 +3098,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     if (completed[j])    // must be a cyclic structure
       continue;
 
-    if (only_include_isotopically_labeled_atoms() && 0 == m.isotope(j))
+    if (mqs.only_include_isotopically_labeled_atoms() && 0 == m.isotope(j))
       continue;
 
     Substructure_Atom * child = new Substructure_Atom;
@@ -3405,7 +3408,7 @@ Single_Substructure_Query::_build_element_hits_needed (const MDL_Molecule & m,
     if (nullptr != include_these_atoms && 0 == include_these_atoms[i])
       continue;
 
-    if (only_include_isotopically_labeled_atoms() && 0 == m.isotope(i))
+    if (mqs.only_include_isotopically_labeled_atoms() && 0 == m.isotope(i))
       continue;
 
     const Element * e = m.elementi(i);
@@ -3535,11 +3538,11 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
 
   if (mqs.built_from_isis_reaction_file())
     ;
-  else if (substituents_only_at_isotopic_atoms())
+  else if (mqs.substituents_only_at_isotopic_atoms())
     m.only_allow_substitutions_at_isotopic_atoms(mqs);
   else if (mqs.substitutions_only_at().active())
     m.determine_attachment_points_by_query(mqs);
-  else if (substitutions_only_at_non_isotopic_atoms())
+  else if (mqs.substituents_only_at_non_isotopic_atoms())
     m.only_allow_substitutions_at_non_isotopic_atoms();
 
 #ifdef DEBUG_INITIALISE_SUB_ARRAY_STUFF
@@ -3576,7 +3579,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
 
   int nf = m.number_fragments();
 
-  if (only_include_isotopically_labeled_atoms())
+  if (mqs.only_include_isotopically_labeled_atoms())
   {
     for (int i = 0; i < nf; i++)
     {
@@ -3651,7 +3654,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
 
   int nr = m.number_sssr_rings();
 
-  if (only_include_isotopically_labeled_atoms())
+  if (mqs.only_include_isotopically_labeled_atoms())
   {
     // some time put in a computation of the number of rings with isotopes - is complicated by fused rings...
   }

@@ -9,6 +9,8 @@
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/stubs/stringpiece.h"
+#include "google/protobuf/util/json_util.h"
 
 #include "Foundational/iwstring/iwstring.h"
 
@@ -33,6 +35,8 @@ class AFile {
     int fd() const {
       return _fd;
     }
+
+    size_t ReadAll(IWString& buffer);
 };
 
 // Write a proto to `fname` using Text_Format.
@@ -120,9 +124,25 @@ ReadTextProto(IWString& fname) {
   std::unique_ptr<FileInputStream> zero_copy_input(new FileInputStream(input.fd()));
 
   Proto result;
-  if (! google::protobuf::TextFormat::Parse(zero_copy_input.get(), &result)) {
-    cerr << "ReadTextProto:cannot read '" << fname << "'\n";
-    return std::nullopt;
+
+  if (fname.ends_with(".json")) {
+    IWString data;
+    if (!input.ReadAll(data)) {
+      cerr << "ReadTextProto:cannot read\n";
+      return std::nullopt;
+    }
+    google::protobuf::stringpiece_internal::StringPiece string_piece(data.data(), data.size());
+    google::protobuf::util::JsonParseOptions options;
+    auto status = google::protobuf::util::JsonStringToMessage(string_piece, &result, options);
+    if (! status.ok()) {
+      cerr << "ReadTextProto:cannot read json '" << fname << " " << status << '\n';
+      return std::nullopt;
+    }
+  } else {
+    if (! google::protobuf::TextFormat::Parse(zero_copy_input.get(), &result)) {
+      cerr << "ReadTextProto:cannot read '" << fname << "'\n";
+      return std::nullopt;
+    }
   }
 
   return result;

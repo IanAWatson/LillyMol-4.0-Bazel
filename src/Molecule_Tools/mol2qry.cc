@@ -16,17 +16,16 @@
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/ematch.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/mdl_molecule.h"
 #include "Molecule_Lib/molecule_to_query.h"
 #include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
 
 namespace mol2qry {
 
 using std::cerr;
-using std::endl;
 
 int queries_written = 0;
 int verbose = 0;
@@ -104,7 +103,7 @@ int append_smiles_to_query_name = 0;
 void
 usage(int rc = 1)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Converts a molecule to a query file\n";
   cerr << "  -m             all ncon and nbonds values are written as minima\n";
   cerr << "  -r             all ring bonds become type ANY\n";
@@ -285,7 +284,7 @@ expand_isotopes(MDL_Molecule & m,
 
   int acon = a->ncon();
 
-//cerr << "Expanding isotopes from " << zatom << endl;
+//cerr << "Expanding isotopes from " << zatom << '\n';
 
   for (int i = 0; i < acon; i++)
   {
@@ -352,7 +351,7 @@ mol2qry(MDL_Molecule & m,
   if (radius_from_coordination_point <= 0)
     ;
   else if (identify_coordination_point_and_adjacent_atoms(m))
-    set_only_include_isotopically_labeled_atoms(1);
+    mqs.set_only_include_isotopically_labeled_atoms(1);
   else
   {
     cerr << "Cannot identify coordination points in '" << m.name() << "'\n";
@@ -456,7 +455,7 @@ mol2qry(MDL_Molecule & m,
   }
 
   if (stream_for_names_of_query_files.rdbuf()->is_open())
-    stream_for_names_of_query_files << output_fname << endl;
+    stream_for_names_of_query_files << output_fname << '\n';
 
   return mol2qry(m, mqs, output);
 }
@@ -823,23 +822,23 @@ mol2qry(int  argc, char ** argv) {
 //  mqs.substitutions_only_at().create_from_smarts("[!0*]");
     isotopically_labelled_from_slicer = 1;
 
-    set_substituents_only_at_isotopic_atoms(1);
+    mqs.set_substituents_only_at_isotopic_atoms(1);
 
     if (cl.option_present('t'))
     {
-      set_must_have_substituent_at_every_isotopic_atom(0);
+      mqs.set_must_have_substituent_at_every_isotopic_atom(0);
       if (verbose)
         cerr << "Not all isotopically labelled atoms need substituents\n";
     }
 
     if (cl.option_present('c')) {
-      set_isotope_count_means_extra_connections(1);
+      mqs.set_isotope_count_means_extra_connections(1);
       if (verbose)
         cerr << "Isotopic number indicates number of extra connections\n";
     }
   }
   else if (cl.option_present('w')) {
-    set_substitutions_only_at_non_isotopic_atoms(1);
+    mqs.set_substituents_only_at_non_isotopic_atoms(1);
   }
   else if (cl.option_present('u')) {
     const_IWSubstring smarts;
@@ -943,11 +942,11 @@ mol2qry(int  argc, char ** argv) {
     if (verbose)
       cerr << "Coordination points defined by matches to '" << l << "'\n";
 
-    set_only_include_isotopically_labeled_atoms(1);
+    mqs.set_only_include_isotopically_labeled_atoms(1);
   }
 
   if (cl.option_present('I')) {
-    set_only_include_isotopically_labeled_atoms(1);
+    mqs.set_only_include_isotopically_labeled_atoms(1);
 
     if (verbose)
       cerr << "Will only include isotopically labelled atoms in the query\n";
@@ -1087,7 +1086,7 @@ mol2qry(int  argc, char ** argv) {
 
         mqs.set_min_fraction_atoms_matched(f);
         if (verbose)
-          cerr <<  "Matches will require a min fraction atom matched of " << f << endl;
+          cerr <<  "Matches will require a min fraction atom matched of " << f << '\n';
       }
       else if (y.starts_with("maxfm="))
       {
@@ -1101,7 +1100,7 @@ mol2qry(int  argc, char ** argv) {
 
         mqs.set_max_fraction_atoms_matched(f);
         if (verbose)
-          cerr <<  "Matches will require a max fraction atom matched of " << f << endl;
+          cerr <<  "Matches will require a max fraction atom matched of " << f << '\n';
       }
       else if (y.starts_with("A2A="))
       {
@@ -1115,7 +1114,7 @@ mol2qry(int  argc, char ** argv) {
 
         mqs.set_convert_all_aromatic_atoms_to_generic_aromatic(a);
         if (verbose)
-          cerr << "Convert aromatic atoms to generic aromatic directive " << a << endl;
+          cerr << "Convert aromatic atoms to generic aromatic directive " << a << '\n';
       }
       else if ("rmiso" == y)
       {

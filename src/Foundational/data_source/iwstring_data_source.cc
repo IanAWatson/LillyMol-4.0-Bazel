@@ -1838,3 +1838,22 @@ iwstring_data_source::is_pipe() const
 
   return S_ISFIFO(s.st_mode);
 }
+
+size_t
+iwstring_data_source::ReadAll(IWString& result) {
+  const_IWSubstring buffer;
+  size_t rc = 0;
+  int first_record = true;
+
+  while (next_record(buffer)) {
+    if (first_record) {
+      first_record = false;
+    } else {
+      result << '\n';
+    }
+    result << buffer;
+    rc += buffer.length();
+  }
+
+  return rc;
+}

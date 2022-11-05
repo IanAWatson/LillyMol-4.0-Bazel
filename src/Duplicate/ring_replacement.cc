@@ -261,7 +261,7 @@ class RingReplacement {
     int OkSupport(const Replacement& r);
     int IsUnique(Molecule& m);
     int Process(resizable_array_p<Molecule>& mols, int ndx);
-    int Write(resizable_array_p<Molecule>& mols, IWString_and_File_Descriptor& output);
+    int Write(const resizable_array_p<Molecule>& mols, IWString_and_File_Descriptor& output);
 
   public:
     RingReplacement();
@@ -630,9 +630,8 @@ RingReplacement::IsUnique(Molecule& m) {
   return 1;
 }
 
-// `mols` is only non const because it may be sorted.
 int
-RingReplacement::Write(resizable_array_p<Molecule>& mols,
+RingReplacement::Write(const resizable_array_p<Molecule>& mols,
                        IWString_and_File_Descriptor& output) {
   for (Molecule* m : mols) {
     output << m->smiles() << ' ' << m->name() << '\n';

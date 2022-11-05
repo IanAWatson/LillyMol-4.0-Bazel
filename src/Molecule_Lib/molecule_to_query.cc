@@ -6,6 +6,8 @@
 
 #include "molecule_to_query.h"
 
+#ifdef OLD_STATIC_VARIABLES
+
 static int File_Scope_substituents_only_at_isotopic_atoms = 0;
 
 void
@@ -107,6 +109,7 @@ set_only_aromatic_atoms_match_aromatic_atoms(int s)
 {
   File_Scope_only_aromatic_atoms_match_aromatic_atoms = s;
 }
+#endif
 
 
 Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
@@ -114,11 +117,11 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
   _make_embedding = 1;
   _built_from_isis_reaction_file = 0;
   _all_ring_bonds_become_undefined = 0;
-  _non_ring_atoms_become_nrings_0 = respect_ring_membership;
+  _non_ring_atoms_become_nrings_0 = 0;
   _atoms_conserve_ring_membership = 0;
   _ring_atoms_conserve_ring_membership = 0;
   _copy_bond_attributes = 0;
-  _only_aromatic_atoms_match_aromatic_atoms = File_Scope_only_aromatic_atoms_match_aromatic_atoms;
+  _only_aromatic_atoms_match_aromatic_atoms = 0;
 
   _atoms_in_molecule = 0;
 
@@ -126,7 +129,7 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
   _min_ncon = -1;
   _max_ncon = -1;
 
-  _condense_explicit_hydrogens_to_anchor_atoms = molecule_to_query_always_condense_explicit_hydrogens_to_anchor_atoms;
+  _condense_explicit_hydrogens_to_anchor_atoms = 0;
 
   _just_atomic_number_and_connectivity = 0;
 
@@ -158,6 +161,8 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
 
   _substituents_only_at_isotopic_atoms = 0;
 
+  _substituents_only_at_non_isotopic_atoms = 0;
+
   _isotopic_label_means = 0;
 
   _set_element_hits_needed_during_molecule_to_query = 1;
@@ -171,6 +176,8 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
   _all_bonds_become_type_any = 0;
     
   _isotope_means_match_any_atom = -1;
+
+  _ignore_atom_type = 0;
 
   return;
 }
@@ -237,8 +244,6 @@ Molecule_to_Query_Specifications::_parse_directive(const_IWSubstring dir)    // 
   else if ("onlysubiso" == dir)
   {
     _substituents_only_at_isotopic_atoms = 1;
-
-//  File_Scope_substituents_only_at_isotopic_atoms = 1;   // need to get this into the object
 
     _substitutions_only_at.create_from_smarts("[!0*]");    // this may not be necessary now
   }
@@ -332,6 +337,82 @@ Molecule_to_Query_Specifications::set_smarts_for_atom(const const_IWSubstring & 
   }
 
   _element_to_smarts.add(e);
+
+  return 1;
+}
+
+int
+Molecule_to_Query_Specifications::Build(const molecule_to_query::MoleculeToQuery& proto) {
+  if (proto.make_embedding()) {
+    _make_embedding = 1;
+  }
+
+  if (proto.atoms_conserve_ring_membership()) {
+    _atoms_conserve_ring_membership = 1;
+  }
+
+  if (proto.convert_all_aromatic_atoms_to_generic_aromatic()) {
+    _convert_all_aromatic_atoms_to_generic_aromatic = 1;
+  }
+
+  if (! proto.set_element_hits_needed_during_molecule_to_query()) {
+    _set_element_hits_needed_during_molecule_to_query = 0;
+  }
+
+  if (proto.aromatic_only_matches_aromatic_aliphatic_only_matches_aliphatic()) {
+    _aromatic_only_matches_aromatic_aliphatic_only_matches_aliphatic = 1;
+  }
+
+  if (proto.all_bonds_become_type_any()) {
+    _all_bonds_become_type_any = 1;
+  }
+
+  if (proto.ring_atoms_conserve_ring_membership()) {
+    _ring_atoms_conserve_ring_membership = 1;
+  }
+
+  if (proto.non_ring_atoms_become_nrings_0()) {
+    _non_ring_atoms_become_nrings_0 = 1;
+  }
+
+  if (proto.all_ring_bonds_become_undefined()) {
+    _all_ring_bonds_become_undefined = 1;
+  }
+
+  if (proto.only_aromatic_atoms_match_aromatic_atoms()) {
+    _only_aromatic_atoms_match_aromatic_atoms = 1;
+  }
+
+  if (proto.just_atomic_number_and_connectivity()) {
+    _just_atomic_number_and_connectivity = 1;
+  }
+
+  if (proto.ignore_atom_type()) {
+    _ignore_atom_type = 1;
+  }
+
+  switch (proto.isotope_means()) {
+    case molecule_to_query::NOSPECIALMEANING:
+      break;
+    case molecule_to_query::SUBSTITUTION:
+      _substituents_only_at_isotopic_atoms = 1;
+      break;
+    case molecule_to_query::NCON:
+      _isotopic_label_means |= MQS_ISOTOPE_MEANS_NCON;
+      break;
+    case molecule_to_query::RING_BOND_COUNT:
+      _isotopic_label_means |= MQS_ISOTOPE_MEANS_RING_BOND_COUNT;
+      break;
+    case molecule_to_query::AROM:
+      _isotopic_label_means |= MQS_ISOTOPE_MEANS_AROMATIC;
+      break;
+    case molecule_to_query::MATCH_ANY_ATOM:
+      _isotope_means_match_any_atom = 1;
+      break;
+    default:
+      cerr << "Molecule_to_Query_Specifications::Build: unhandled isotope_means " << proto.isotope_means() << '\n';
+      return 0;
+  }
 
   return 1;
 }

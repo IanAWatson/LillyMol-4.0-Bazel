@@ -207,6 +207,9 @@ protected:
     int read_bytes (void *, size_t);
 
     size_t copy_raw_bytes (void *, const size_t);    // does a save and restore of the state, so it will not advance the file pointer - just got too complicated...
+
+    // Read the remaining records, newline separated.
+    size_t ReadAll(IWString& data);
 };
 
 #endif

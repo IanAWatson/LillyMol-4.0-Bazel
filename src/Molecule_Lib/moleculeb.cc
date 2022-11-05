@@ -583,15 +583,14 @@ Molecule::_check_chirality_after_loss_of_bond(const atom_number_t a1, const atom
 
     //  N1C(=S)N(C)C2=C(C1=O)C=CC=C2 PBCHM915229
 
-    if ((7 == z) && 2 == _things[ca]->ncon())
+    if ((z == 7 || z == 6) && 2 == _things[ca]->ncon())
     {
       _chiral_centres.remove_item(i);
       continue;
     }
 
-    if (1 == implicit_hydrogens(
-                 c->a()))    // after breaking the bond, centre now has an implicit hydrogen
-    {
+    // after breaking the bond, centre now has an implicit hydrogen
+    if (1 == implicit_hydrogens(c->a())) {
       if (ca == a1)
         c->atom_is_now_implicit_hydrogen(a2);
       else if (ca == a2)
