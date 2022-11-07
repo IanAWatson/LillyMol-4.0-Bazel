@@ -122,12 +122,16 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
   _ring_atoms_conserve_ring_membership = 0;
   _copy_bond_attributes = 0;
   _only_aromatic_atoms_match_aromatic_atoms = 0;
+  _only_include_isotopically_labeled_atoms = 0;
 
   _atoms_in_molecule = 0;
 
   _ncon = -1;
   _min_ncon = -1;
   _max_ncon = -1;
+
+   _must_have_substituent_at_every_isotopic_atom = 0;
+   _isotope_count_means_extra_connections = 0;
 
   _condense_explicit_hydrogens_to_anchor_atoms = 0;
 
