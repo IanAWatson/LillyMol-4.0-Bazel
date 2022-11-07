@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <tuple>
 
 #include "google/protobuf/text_format.h"
@@ -12,6 +13,7 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/tfdatarecord.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/proto_support.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/ematch.h"
@@ -25,15 +27,13 @@
 
 namespace mol2qry {
 
+const char * prog_name = nullptr;
+
 using std::cerr;
 
-int queries_written = 0;
 int verbose = 0;
-int write_ncon_as_min_ncon = 0;
-int write_nbonds_as_min_nbonds = 0;
-int all_ring_bonds_become_undefined = 0;
-int non_ring_atoms_become_nrings_0 = 0;
-int atoms_conserve_ring_membership = 0;
+
+int queries_written = 0;
 
 /*
   We may get molecules from slicer. These have isotopic labels that indicate
@@ -77,8 +77,6 @@ std::ofstream stream_for_all_queries;
 int remove_chiral_centres = 0;
 
 int add_explicit_hydrogens = 0;
-
-const char * prog_name = nullptr;
 
 Substructure_Query coordination_point;
 
@@ -129,6 +127,7 @@ usage(int rc = 1)
   cerr << "  -l <nbonds>    include all atoms within <nbonds> of the -L atom(s)\n";
   cerr << "  -I             only include isotopically labelled atoms in the query\n";
   cerr << "  -e             query file contains just element type and connectivity info\n";
+  cerr << "  -C <fname>     file containing MoleculeToQuery proto for building the query\n";
   cerr << "  -V <file>      file containing environment specification\n";
   cerr << "  -X <file>      file containing environment_no_match specification\n";
   cerr << "  -F <fname>     create a file containing the names of all the query files\n";
@@ -630,7 +629,7 @@ display_dash_y_options(std::ostream & os)
 
 int
 mol2qry(int  argc, char ** argv) {
-  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:x:p");
+  Command_Line cl(argc, argv, "aA:S:P:nrmvE:i:M:sV:X:F:f:R:btg:heu:ojK:Y:kl:L:IcdD:x:pC:");
 
   verbose = cl.option_count('v');
 
@@ -661,21 +660,6 @@ mol2qry(int  argc, char ** argv) {
     cerr << "Sorry, the -m and -R options are mutually incompatible, contact LillyMol on github (https://github.com/EliLillyCo/LillyMol)\n";
     return 3;
   }
-
-  if (cl.option_present('m'))
-  {
-    write_ncon_as_min_ncon = 1;
-    write_nbonds_as_min_nbonds = 1;
-  }
-
-  if (cl.option_present('r'))
-    all_ring_bonds_become_undefined = 1;
-
-  if (cl.option_present('j'))
-    atoms_conserve_ring_membership = 1;
-
-  if (cl.option_present('n'))
-    non_ring_atoms_become_nrings_0 = 1;
 
 // Historical quirk. When I wrote this, the -R option meant regular expression.
 // Then in May 2005, I needed to allow both regular expressions and element matches.
@@ -790,13 +774,36 @@ mol2qry(int  argc, char ** argv) {
 
   Molecule_to_Query_Specifications mqs;
 
-  mqs.set_make_embedding(write_ncon_as_min_ncon);
-  mqs.set_all_ring_bonds_become_undefined(all_ring_bonds_become_undefined);
-  mqs.set_non_ring_atoms_become_nrings_0(non_ring_atoms_become_nrings_0);
-  mqs.set_atoms_conserve_ring_membership(atoms_conserve_ring_membership);
+  if (cl.option_present('C')) {
+    IWString fname = cl.string_value('C');
+    std::optional<molecule_to_query::MoleculeToQuery> proto =
+                iwmisc::ReadTextProto<molecule_to_query::MoleculeToQuery>(fname);
+    if (! proto) {
+      cerr << "Cannot read proto '" << fname << "'\n";
+      return 1;
+    }
 
-  if (cl.option_present('h'))
-  {
+    if (! mqs.Build(*proto)) {
+      cerr << "Cannot initialise Molecule_to_Query_Specifications from " << proto->ShortDebugString() << '\n';
+    }
+  }
+
+  if (cl.option_present('m')) {
+    mqs.set_make_embedding(1);
+  }
+
+  if (cl.option_present('r')) {
+    mqs.set_all_ring_bonds_become_undefined(1);
+  }
+
+  if (cl.option_present('n')) {
+    mqs.set_non_ring_atoms_become_nrings_0(1);
+  }
+  if (cl.option_present('j')) {
+    mqs.set_atoms_conserve_ring_membership(1);
+  }
+
+  if (cl.option_present('h')) {
     mqs.set_condense_explicit_hydrogens_to_anchor_atoms(1);
 
     if (verbose)
