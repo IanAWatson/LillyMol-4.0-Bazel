@@ -2694,7 +2694,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
     _components.add(a);
   }
   else if (mqs.ignore_atom_type()) {
-    // Do not set any attributes.
+    // Do nothing
   }
   else if (mqs.isotope_means_match_any_atom() &&
            a->isotope() == mqs.isotope_means_match_any_atom()) {
@@ -3636,7 +3636,7 @@ Single_Substructure_Query::_create_from_molecule (MDL_Molecule & m,
       
       if (! r->create_from_molecule(m, m, astart, nullptr, mqs, tmp))
       {
-        cerr << "Single_Substructure_Query::_create_from_molecule:failure for fragment " << i << endl;
+        cerr << "Single_Substructure_Query::_create_from_molecule:failure for fragment " << i << '\n';
         return 0;
       }
     

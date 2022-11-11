@@ -716,7 +716,12 @@ NarrowTabular(const IWString& smiles,
   // There is a constant prefix on each line.
   IWString prefix;
   prefix << smiles << output_separator << id << output_separator;
-  output << prefix << neighbours.size() << output_separator << output_separator << output_separator;
+  if (from_gfp_leader) {
+    output << prefix;
+  } else {
+    output << prefix << neighbours.size();
+  }
+  output << output_separator << output_separator << output_separator;
   output << '\n';
   output.write_if_buffer_holds_more_than(8192);
 
@@ -1494,8 +1499,12 @@ process_molecule_gfp_leader(iwstring_data_source & input,
     id << output_separator << clusters_found << output_separator << 'P';
   else if (tabular_leader_output)
     id << output_separator << clusters_found << output_separator << 'P' << output_separator << '0';
+  else if (narrow_tabular) {
+    id << output_separator << (neighbours_initially_found + 1);
+  }
   else 
-    id << cluster << clusters_found << output_separator << "(" << (neighbours_initially_found + 1) << output_separator << "members)";
+    id << cluster << clusters_found << output_separator << "(" << (neighbours_initially_found + 1)
+         << output_separator << "members)";
 
   int n = neighbours.number_elements();
 
@@ -1504,10 +1513,15 @@ process_molecule_gfp_leader(iwstring_data_source & input,
     Smiles_ID_Dist_UID * ni = neighbours[i];
 
     IWString tmp(ni->id());
-    if (tabular_leader_output)
+    if (tabular_leader_output) {
       tmp << output_separator << clusters_found << output_separator << 'C';
-    else
+    }
+    else if (narrow_tabular) {
+    }
+    else {
       tmp << cluster << clusters_found << '.' << (i + 1);
+    }
+
     ni->set_id(tmp);
   }
 
@@ -2614,8 +2628,13 @@ plotnn (int argc, char ** argv)
     }
     output << '\n';
   } else if (narrow_tabular) {
+    if (from_gfp_leader) {
+    output << "Smiles" << output_separator << "Id" << output_separator << "csize"
+           << output_separator << "ndx" << output_separator << "smiles" << output_separator << "id" << output_separator << "dist" << '\n';
+    } else {
     output << "Smiles" << output_separator << "Id" << output_separator << "ndx"
            << output_separator << "smiles" << output_separator << "id" << output_separator << "dist" << '\n';
+    }
   }
 
   int rc = 0;
