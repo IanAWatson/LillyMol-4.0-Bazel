@@ -1,4 +1,4 @@
-//  Extracts subsets of the atoms in a molecule.
+// Extracts subsets of the atoms in a molecule.
 // The subset is specified by substructure query.
 
 #include <stdlib.h>
@@ -73,7 +73,7 @@ static int fill_in_partial_rings = 0;
 static void
 usage(int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Extracts a subset of atoms from a molecule based on a single substructure queries\n";
   cerr << "usage: " << prog_name << " -i <input type> -o <output type> file1 file2...\n";
   cerr << "  -q <query>     specify substructure query\n";
@@ -240,7 +240,7 @@ handle_no_queries_matching(Molecule& m, Molecule_Output_Object& output)
   }
 
   if (blank_line_to_cout_for_non_matches) {
-    std::cout << endl;
+    std::cout << '\n';
   }
 
   return output.good();
@@ -624,7 +624,7 @@ molecule_subset(Molecule& m, int* hits_in_fragment, Molecule_Output_Object& outp
     int nhits = queries[i]->substructure_search(target, sresults);
 
     if (verbose > 2) {
-      cerr << nhits << " matches to query " << i << endl;
+      cerr << nhits << " matches to query " << i << '\n';
     }
 
     if (0 == nhits) {
@@ -762,7 +762,7 @@ display_standard_dash_M_options(std::ostream& os)
 {
   os << "  -M aeuao       Atom Environments match Unmatched Atoms Only\n";
   os << "  -M imp2exp     make implicit Hydrogens explicit\n";
-  os << "  -M onlysubiso  isotopic atoms in query molecules indicate subsitution points\n";
+  // os << "  -M onlysubiso  isotopic atoms in query molecules indicate subsitution points\n";
   os << "  -M iso=nn      apply isotope <nn> to the points of breakage\n";
   os << "  -M ring        when a ring atom is matched, include the whole ring\n";
 
@@ -804,6 +804,7 @@ molecule_subset(int argc, char** argv)
       else if ("imp2exp" == m) {
         make_implicit_hydrogens_explicit = 1;
       }
+#ifdef NO_LONGER_WORKS_AS_GLOBAL
       else if ("onlysubiso" == m) {
         set_substituents_only_at_isotopic_atoms(1);
         if (verbose) {
@@ -811,6 +812,7 @@ molecule_subset(int argc, char** argv)
                   "points\n";
         }
       }
+#endif
       else if (m.starts_with("iso=")) {
         m.remove_leading_chars(4);
         if (!m.numeric_value(isotope_at_break_points) || isotope_at_break_points <= 0) {
@@ -819,7 +821,7 @@ molecule_subset(int argc, char** argv)
         }
 
         if (verbose) {
-          cerr << "Will label break points with isotope " << isotope_at_break_points << endl;
+          cerr << "Will label break points with isotope " << isotope_at_break_points << '\n';
         }
       }
       else if (m == "ring") {
@@ -982,7 +984,7 @@ molecule_subset(int argc, char** argv)
       }
 
       if (verbose) {
-        cerr << "Will process embedding " << embedding_to_process << endl;
+        cerr << "Will process embedding " << embedding_to_process << '\n';
       }
     }
     else if (!m.numeric_value(max_matches_to_process) || max_matches_to_process < 1) {
@@ -996,8 +998,8 @@ molecule_subset(int argc, char** argv)
   }
 
   if (max_matches_to_process > 0 && embedding_to_process >= max_matches_to_process) {
-    cerr << "Fatal error. max_matches_to_process = " << max_matches_to_process << endl;
-    cerr << "But you asked to process embedding number " << embedding_to_process << endl;
+    cerr << "Fatal error. max_matches_to_process = " << max_matches_to_process << '\n';
+    cerr << "But you asked to process embedding number " << embedding_to_process << '\n';
     cerr << "impossible\n";
     usage(37);
   }

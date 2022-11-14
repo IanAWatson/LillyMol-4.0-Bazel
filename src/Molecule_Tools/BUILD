@@ -1,20 +1,3 @@
-
-proto_library(
-    name = "bond_length_distribution_proto",
-    srcs = [
-        "bond_length_distribution.proto",
-    ],
-    deps = [
-    ],
-)
-
-cc_proto_library(
-    name = "bond_length_distribution_cc_proto",
-    deps = [
-        ":bond_length_distribution_proto",
-    ],
-)
-
 proto_library(
     name = "diced_molecule_proto",
     srcs = [
@@ -663,7 +646,6 @@ cc_binary(
         "molecule_subset.cc",
     ],
     deps = [
-        "//Molecule_Lib:iwmfingerprint",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:iwreaction",
@@ -671,8 +653,24 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
+)
+
+cc_binary(
+    name = "molecule_subset_fingerprint",
+    srcs = [
+        "molecule_subset_fingerprint.cc",
+    ],
+    deps = [
+        ":ec_fingerprint_lib",
+        "//Molecule_Lib:atom_pair_fingerprint",
+        "//Molecule_Lib:iwmfingerprint",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:linear_fingerprint",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:iwreaction",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iw_tdt:iw_tdt",
     ],
 )
 
@@ -1235,20 +1233,6 @@ cc_binary(
     linkopts = [
         "-lz",
     ],
-)
-
-cc_binary(
-    name = "topology_from_geometry",
-    srcs = [
-        "topology_from_geometry.cc",
-    ],
-    deps = [
-        ":bond_length_distribution_cc_proto",
-        "//Foundational/cmdline:iwcmdline",
-        "//Foundational/iwmisc:proto_support",
-        "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculeio",
-    ]
 )
 
 cc_binary(

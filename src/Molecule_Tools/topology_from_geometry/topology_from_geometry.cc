@@ -18,47 +18,11 @@
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/target.h"
 
-#include "Molecule_Tools/bond_length_distribution.pb.h"
+#include "Molecule_Tools/topology_from_geometry.h"
 
-namespace topology_from_geom {
+namespace topology_from_geometry {
 
 using std::cerr;
-
-void
-Usage(int rc) {
-  cerr << "Discerns plausible bond topologies from atomic positions\n";
-
-  cerr << " -v                verbose output\n";
-
-  ::exit(rc);
-}
-
-// Data about a particular bond length distribution. Instantiated from a
-// BondLengthDistribution.Distribution proto.
-class EmpiricalBondLengthDistribution {
-  private:
-    int _atomic_number1;
-    int _atomic_number2;
-    int _btype;
-    float _min_distance;
-    float _dx;
-    float _max_distance;
-    float* _distance;
-    uint32_t* _count;
-    float* _score;
-
-  public:
-    EmpiricalBondLengthDistribution();
-    ~EmpiricalBondLengthDistribution();
-
-    int Build(const BondLengthDistribution::Distribution& bld);
-
-    float Score(float distance) const;
-
-    float max_distance() const {
-      return _max_distance;
-    }
-};
 
 EmpiricalBondLengthDistribution::EmpiricalBondLengthDistribution() {
   _atomic_number1 = 0;
@@ -93,31 +57,6 @@ EmpiricalBondLengthDistribution::Score(float distance) const {
   const int bucket = static_cast<int>((distance - _min_distance) / _dx + 0.4999f);
   return _score[bucket];
 }
-
-// Contains multiple EmpiricalBondLengthDistribution. The important
-// function is to be able to return the pdf for two atomic numbers.
-// For each pair of atomic numbers, we store an EmpiricalBondLengthDistribution.
-class EmpiricalBondLengthDistributions {
-  private:
-    std::unordered_map<int, EmpiricalBondLengthDistribution> _dist;
-
-  // private functions
-    int Index(int at1, int at2, int btype) const;
-
-  public:
-    int Build(const BondLengthDistribution::Distributions& proto);
-
-    float LongestPlausibleBond() const;
-
-    // The number of different bond types we have.
-    uint32_t size() const {
-      return _dist.size();
-    }
-
-    // Given two atomic numbers and a bond type, what is the score
-    // associated with `distance`.
-    float Score(int at1, int at2, int btype, float distance) const;
-};
 
 int
 EmpiricalBondLengthDistributions::Index(int at1, int at2, int btype) const {
@@ -266,10 +205,38 @@ EmpiricalBondLengthDistribution::Build(const BondLengthDistribution::Distributio
     InterpolateZeros(_count, ndistances);
   }
 
-  _score = new float[ndistances];
-  // load _score with the normalised distribution.
+  // The normalized counts.
+  std::unique_ptr<double[]>values = std::make_unique<double[]>(ndistances);
   for (uint32_t i = 0; i < ndistances; ++i) {
-    _score[i] = static_cast<float>(_count[i]) / static_cast<float>(total_count);
+    values[i] = iwmisc::Fraction<double>(_count[i], total_count);
+  }
+
+  // Cumulative sum.
+  std::unique_ptr<uint32_t[]> csum = std::make_unique<uint32_t[]>(ndistances);
+  // We need to know where the median is found.
+  csum[0] = _count[0];
+  const uint32_t c50 = total_count / 2;
+  int ndx50 = -1;
+  for (uint32_t i = 1; i < ndistances; ++i) {
+    csum[i] = csum[i - 1] + _count[i];
+    if (ndx50 < 0 && csum[i] >= c50) {
+      ndx50 = i;
+    }
+  }
+
+  _score = new float[ndistances];
+  for (uint32_t i = 0; i <= c50; ++i) {
+    _score[i] = iwmisc::Fraction<float>(csum[i], c50);
+  }
+  for (uint32_t i = c50 + 1; i < ndistances; ++i) {
+    _score[i] = iwmisc::Fraction<float>(csum[i] - c50, c50);
+  }
+
+  // Normalize the scores.
+
+  float sum_scores = std::accumulate(_score, _score + ndistances, 0.0f);
+  for (int i = 0; i < ndistances; ++i) {
+    _score[i] /= sum_scores;
   }
 
   return 1;
@@ -293,45 +260,10 @@ struct Parameters {
   int Initialise(Command_Line& cl);
 };
 
-struct BtypeScore {
-  int btype;
-  float score;
-
-  BtypeScore(int bt, float s) {
-    btype = bt;
-    score = s;
-  }
-};
-
-// For each bond that can be varied, the two atoms, and the score
-// associated with the plausible bonds.
-struct ChangeableBond {
-  int a1;
-  int a2;
-  std::vector<BtypeScore> score;
-
-  public:
-    ChangeableBond();
-};
-
 ChangeableBond::ChangeableBond() {
   a1 = -1;
   a2 = -1;
 }
-
-// Each atom will have a vector of AtomAndScores, describing
-// the atoms to which it might be bonded, and the scores associated
-// with each possible bond type.
-struct AtomAndScores {
-  int atom;
-  std::vector<BtypeScore> score;
-}
-
-// A structure used for sorting neighbours.
-struct IDDist{
-  int id;
-  float dist;
-};
 
 // There are many working arrays associated with the current molecule.
 class CurrentMoleculeData {
@@ -372,62 +304,6 @@ CurrentMoleculeData::Initialise() {
   }
 }
 #endif
-
-class TopologyFromGeometry {
-  private:
-    int _verbose;
-
-    int _molecules_processed;
-
-    int _reduce_to_largest_fragment;
-
-    float _longest_plausible_bond;
-
-    float _sp2_tolerance;
-
-    EmpiricalBondLengthDistributions _bld;
-
-    FileType _input_type;
-
-  // private functions.
-
-    int UnivalentToNearest(Molecule& m, const float* distance_matrix);
-    std::unique_ptr<Set_of_Atoms[]> GatherPlausibleNeighbours(Molecule& m,
-                const float* distance_matrix);
-    int GatherPlausibleNeighbours(Molecule& m,
-                atom_number_t zatom,
-                const float* distance_matrix,
-                IDDist* id_dist,
-                Set_of_Atoms& result);
-    std::unique_ptr<int[]> DiscernSp2(Molecule& m,
-                                const Set_of_Atoms* nbrs) const;
-    int CountSp2(const Molecule& m, atom_number_t zatom, const Set_of_Atoms& nbrs) const;
-    std::unique_ptr<int[]> DetermineBondsNeeded(Molecule& m) const;
-    std::vector<float[4]> GatherPlausibleBondTypes(Molecule& m,
-                        const Set_of_Atoms* nbrs,
-                        const int * bond,
-                        const float* distance_matrix) const;
-    std::vector<ChangeableBond> GatherChangeableBonds(Molecule& m,
-                        const Set_of_Atoms* nbrs,
-                        const int * bond,
-                        const float* distance_matrix) const;
-
-  public:
-    TopologyFromGeometry();
-
-    int Initialise(Command_Line& cl);
-
-    int Preprocess(Molecule& m);
-
-    int Process(Molecule& m);
-
-    int Report(std::ostream& output) const;
-
-    FileType input_type() const {
-      return _input_type;
-    }
-};
-
 TopologyFromGeometry::TopologyFromGeometry() {
   _verbose = 0;
   _molecules_processed = 0;
@@ -507,6 +383,8 @@ TopologyFromGeometry::GatherPlausibleNeighbours(Molecule& m,
                 Set_of_Atoms& destination) {
   const int matoms = m.natoms();
 
+  const atomic_number_t z1 = m.atomic_number(zatom);
+
   int nbrs = 0;
   for (int i = 0; i < matoms; ++i) {
     if (i == zatom) {
@@ -523,6 +401,11 @@ TopologyFromGeometry::GatherPlausibleNeighbours(Molecule& m,
     if (d > _longest_plausible_bond) {
       continue;
     }
+
+    if (d > _bld.LongestPlausibleBond(z1, m.atomic_number(i)) {
+      continue;
+    }
+
     id_dist[nbrs].id = i;
     id_dist[nbrs].dist = d;
     ++nbrs;
@@ -606,7 +489,7 @@ TopologyFromGeometry::DiscernSp2(Molecule& m,
   for (int i = 0; i < matoms; ++i) {
     result[i] = 0;
     uint32_t maybe_bonded = nbrs[i].size();
-    if (maybe_bonded < 3) {
+    if (maybe_bonded < 2) {
       continue;
     }
     // the number of bond angles that seem to be sp2.
@@ -649,6 +532,19 @@ TopologyFromGeometry::DetermineBondsNeeded(Molecule& m) const {
       case 9:
         result[i] = 1;
         break;
+      // Sulphur is hard.
+      case 16:
+        result[i] = 1;
+        break;
+      case 17:
+        result[i] = 1;
+        break;
+      case 35:
+        result[i] = 1;
+        break;
+      case 53:
+        result[i] = 1;
+        break;
       default:
         cerr << "Unhandled atom type " << m.smarts_equivalent_for_atom(i) << '\n';
     }
@@ -684,12 +580,16 @@ TopologyFromGeometry::Process(Molecule& m) {
   ++_molecules_processed;
 
   const int matoms = m.natoms();
+  // Cases where there can be no bonds.
+  if (matoms =< 2) {
+    return 1;
+  }
 
   std::unique_ptr<float[]> distance_matrix = MakeDistanceMatrix(m);
 
-  UnivalentToNearest(m, distance_matrix.get());
-
   std::unique_ptr<Set_of_Atoms[]> nbrs = GatherPlausibleNeighbours(m, distance_matrix.get());
+
+  UnivalentToNearest(m, distance_matrix.get());
 
   std::unique_ptr<int[]> is_sp2 = DiscernSp2(m, nbrs.get());
 
@@ -717,15 +617,15 @@ TopologyFromGeometry::Process(Molecule& m) {
   combinations::Combinations<int> combo(state);
   std::fill(state.begin(), state.end(), 0);
   int combinations_tried = 0;
-  while (combo.Next(state)) {
+  for (; combo.Next(state); ++combinations_tried) {
     for (int s : state) {
       cerr << ' ' << s;
     }
     cerr << '\n';
     //std::copy_n(initial_bonded.get(), current_bonded.get(), npb);
     //if (! PlaceBonds(
-    ++combinations_tried;
   }
+
   if (_verbose) {
     cerr << m.name() << " tried " << combinations_tried << " combinations\n";
   }
@@ -737,13 +637,14 @@ TopologyFromGeometry::Process(Molecule& m) {
 // Return a matrix of whether or not pairs of atoms are bonded.
 int
 TopologyFromGeometry::UnivalentToNearest(Molecule& m,
-                        const float* distance_matrix) {
+                        const float* distance_matrix,
+                        int* btype) {
   const int matoms = m.natoms();
 
   int rc = 0;
   for (int i = 0; i < matoms; ++i) {
     const atomic_number_t z = m.atomic_number(i);
-    if (z == 1 || z == 9) {
+    if (z == 1 || z == 9 || z == 17 || z == 35 || z == 53) {
     } else {
       continue;
     }
@@ -754,31 +655,77 @@ TopologyFromGeometry::UnivalentToNearest(Molecule& m,
       if (j == i || m.are_bonded(i, j)) {
         continue;
       }
-      float d = distance_matrix[i * matoms + j];
+
+      const float d = distance_matrix[i * matoms + j];
+      if (d > _longest_plausible_bond) {
+        continue;
+      }
+
       if (d < shortest_distance) {
         shortest_distance = d;
         closest = j;
       }
     }
 
+    if (closest < 0) {
+      continue;
+    }
+
     if (m.hcount(closest) == 0) {
       continue;
     }
+
     m.add_bond(i, closest, SINGLE_BOND);
+    btype[i * matoms + closest] = kSingleBond;
+    btype[closest * matoms + i] = kSingleBond;
     ++rc;
   }
 
   return rc;
 }
 
+int
+TopologyFromGeometry::AttachToNearest(Molecule& m,
+                        const float* distance_matrix,
+                        int* btype) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    if (m.hcount(i) == 0) {
+      continue;
+    }
+    const atomic_number_t zi = m.atomic_number(i);
+
+    for (int j = i + 1; j < matoms; ++j) {
+      if (m.hcount[j] == 0) {
+        continue;
+      }
+      if (btype[i * matoms + j] > 0) {
+        continue;
+      }
+
+      if (distance_matrix[i * matoms + j] > _longest_plausible_bond) {
+        continue;
+      }
+
+      if (distance_matrix[i * matoms + j] > _bld.LongestPlausibleBond(zi, m.atomic_number(j))) {
+        continue;
+      }
+
+      btype[i * matoms + j] = btype[j * matoms + i] = _bld.Mask(zi, zj, d);
+    }
+  }
+
+  return 1;
+}
+
 // For each atom a list of possible bonds.
-std::vector<AtomAndScores>
+std::vector<ChangeableBond>
 TopologyFromGeometry::GatherChangeableBonds(Molecule& m,
                         const Set_of_Atoms* nbrs,
                         const int * bond,
                         const float* distance_matrix) const {
   const int matoms = m.natoms();
-  std::vector<AtomAndScores> result(matoms);
+  std::vector<ChangeableBond> result(matoms);
   for (int i = 0; i < matoms; ++i) {
     const atomic_number_t zi = m.atomic_number(i);
     for (int j : nbrs[i]) {
@@ -789,7 +736,7 @@ TopologyFromGeometry::GatherChangeableBonds(Molecule& m,
       for (int btype = 1; btype <= 3; ++btype) {
         float s = _bld.Score(zi, zj, btype, distance_matrix[i * matoms + j]);
         if (s > 0.0f) {
-          result[i].score.emplace_back(ChangeableBond(i, j, btype, s));
+          result[i].score.emplace_back(ChangeableBond(i, j, btype, {s}));
         }
       }
     }
@@ -801,6 +748,7 @@ TopologyFromGeometry::GatherChangeableBonds(Molecule& m,
       );
     }
   }
+
   return result;
 }
 
@@ -966,11 +914,11 @@ Main(int argc, char** argv) {
   return 0;
 }
 
-}  // namespace topology_from_geom
+}  // namespace topology_from_geometry
 
 int
 main(int argc, char** argv) {
-  int rc = topology_from_geom::Main(argc, argv);
+  int rc = topology_from_geometry::Main(argc, argv);
 
   return rc;
 }

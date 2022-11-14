@@ -167,7 +167,6 @@ class ProduceFingerprint : public ECFunction
     int DoAnyOutput(Molecule& m, JobParameters& job_parameters, 
                     IWString_and_File_Descriptor& output) override;
 
-    // Mostly for testing
     const Sparse_Fingerprint_Creator& sfc() const { return _sfc;}
 };
 
