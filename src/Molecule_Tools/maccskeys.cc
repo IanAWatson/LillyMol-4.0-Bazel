@@ -15,7 +15,7 @@
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/smiles.h"
 
-#include "maccskeys_fn5.h"
+#include "maccskeys.h"
 
 //#define USE_IWMALLOC
 #ifdef USE_IWMALLOC

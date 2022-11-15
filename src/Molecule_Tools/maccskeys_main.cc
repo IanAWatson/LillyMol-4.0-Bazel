@@ -17,7 +17,7 @@
 #include "Molecule_Lib/smiles.h"
 #include "Molecule_Lib/standardise.h"
 
-#include "maccskeys_fn5.h"
+#include "maccskeys.h"
 
 static int number_maccs_keys = 192;
 

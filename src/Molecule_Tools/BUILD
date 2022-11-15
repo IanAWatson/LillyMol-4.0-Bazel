@@ -495,12 +495,12 @@ cc_binary(
 )
 
 cc_binary(
-    name = "maccskeys_fn5",
+    name = "maccskeys",
     srcs = [
-        "maccskeys_fn5_main.cc",
+        "maccskeys_main.cc",
     ],
     deps = [
-        ":maccskeys_fn5_lib",
+        ":maccskeys_lib",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:iwreaction",
@@ -732,7 +732,7 @@ cc_binary(
     ],
     deps = [
         ":linear_path_fingerprint",
-        ":maccskeys_fn5_lib",
+        ":maccskeys_lib",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
@@ -1485,12 +1485,12 @@ cc_library(
 )
 
 cc_library(
-    name = "maccskeys_fn5_lib",
+    name = "maccskeys_lib",
     srcs = [
-        "maccskeys_fn5.cc",
+        "maccskeys.cc",
     ],
     hdrs = [
-        "maccskeys_fn5.h"
+        "maccskeys.h"
     ],
     deps = [
         "//Molecule_Lib:iwmolecule",
