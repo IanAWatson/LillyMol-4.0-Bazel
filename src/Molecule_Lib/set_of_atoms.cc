@@ -100,8 +100,9 @@ template int Set_of_Atoms::set_vector(float *, const float) const;
   first application in kekule determinations
 */
 
+template <typename T>
 int
-Set_of_Atoms::all_members_set_in_array(const int * v, int target) const
+Set_of_Atoms::all_members_set_in_array(const T * v, T target) const
 {
   for (int i = 0; i < _number_elements; i++)
   {
@@ -115,6 +116,9 @@ Set_of_Atoms::all_members_set_in_array(const int * v, int target) const
 
   return 1;
 }
+
+template int Set_of_Atoms::all_members_set_in_array(const int*, int) const;
+template int Set_of_Atoms::all_members_set_in_array(const uint32_t*, uint32_t) const;
 
 int
 Set_of_Atoms::all_members_non_zero_in_array(const int * v) const

@@ -32,7 +32,8 @@ class Set_of_Atoms : public resizable_array<atom_number_t>
     std::ostream & write_atom_numbers(std::ostream &, int = 0, int = 0) const;
 
     int adjust_for_loss_of_atom(atom_number_t, int = 0);
-    int all_members_set_in_array(const int * v, int target) const;
+    template <typename T>
+    int all_members_set_in_array(const T* v, T target) const;
 
     int all_members_non_zero_in_array(const int * v) const;
     int number_members_non_zero_in_array(const int * v) const;
