@@ -103,16 +103,31 @@ BondLengthDistribution::Hash(int atnum1, int btype, int atnum2) const {
     std::swap(atnum1, atnum2);
   }
 
-  return atnum1 * 100 + btype * 10 + atnum2;
+  if (atnum1 < 10 && atnum2 < 10) {
+    return atnum1 * 100 + btype * 10 + atnum2;
+  }
+
+  return 10000 * btype + 100 * atnum1 + atnum2;
 }
 
 std::tuple<int, int, int>
 HashToComponents(int h) {
-  int atnum1 = h / 100;
-  h %= 100;
-  int btype = h / 10;
-  h %= 10;
-  return std::tuple<int, int, int>(atnum1, btype, h);
+  int at1, btype, at2;
+  if (h < 400) {
+    btype = h / 100;
+    h %= 100;
+    at1 = h / 10;
+    h %= 10;
+    at2 = h;
+  } else {
+    btype = h / 10000;
+    h %= 10000;
+    at1 = h / 100;
+    h %= 100;
+    at2 = h;
+  }
+
+  return std::tuple<int, int, int>(at1, btype, at2);
 }
 
 int
