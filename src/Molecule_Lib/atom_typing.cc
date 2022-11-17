@@ -338,7 +338,7 @@ iwattype_convert_to_string_form(int atype,
     s = "nox";
   else
   {
-    cerr << "iwattpe_convert_to_string_form:unrecognised form " << atype << endl;
+    cerr << "iwattpe_convert_to_string_form:unrecognised form " << atype << '\n';
     return 0;
   }
 
@@ -752,7 +752,7 @@ assign_atom_types_tt (Molecule & m,
     if (pi > 4)
       pi = 4;
 
-//  cerr << "Atom " << i << " type " << m.atomic_number(i) << " invariant " << z2inv[ai->atomic_number()] << endl;
+//  cerr << "Atom " << i << " type " << m.atomic_number(i) << " invariant " << z2inv[ai->atomic_number()] << '\n';
 
     invariant[i] = 50 * (ai->ncon() - 1) + 10 * pi + z2inv[ai->atomic_number()];
   }
@@ -1406,7 +1406,7 @@ assign_atom_types_synthetic_feasibility_expt (Molecule & m,
     int fc = a->formal_charge() + 1;
 
     atype[i] = (10 * 5 * 4 * 3) * z2inv_sfx[z] + (5 * 4 * 3) * ring_status[i] + (4 * 3) * a->ncon() + (3) * m.hcount(i) + fc;
-//  cerr << "Atom " << i << " type " << m.smarts_equivalent_for_atom(i) << " type " << atype[i] << " z2inv " << z2inv_sfx[z] << endl;
+//  cerr << "Atom " << i << " type " << m.smarts_equivalent_for_atom(i) << " type " << atype[i] << " z2inv " << z2inv_sfx[z] << '\n';
   }
 
   return 1;
@@ -1551,12 +1551,12 @@ Atom_Typing_Specification::_assign_atom_types_pharmacaphore (Molecule & m,
 {
   const auto matoms = m.natoms();
 
-//cerr << "Atom_Typing_Specification::_assign_atom_types_pharmacaphore, ust " << _user_specified_type << endl;
+//cerr << "Atom_Typing_Specification::_assign_atom_types_pharmacaphore, ust " << _user_specified_type << '\n';
 
   if (0 != _user_specified_type)
     (void) _assign_user_specified_type(m, atype, nullptr);
 
-//cerr << "Assigned " << std::count_if(atype, atype + matoms, [] (int t) { return 0 != t;}) << endl;
+//cerr << "Assigned " << std::count_if(atype, atype + matoms, [] (int t) { return 0 != t;}) << '\n';
 
   (void) _charge_assigner.process(m);
 
@@ -1564,7 +1564,7 @@ Atom_Typing_Specification::_assign_atom_types_pharmacaphore (Molecule & m,
 
   (void) _donor_acceptor_assigner.process(m, da);
 
-//cerr << "After donor acceptor " << m.smiles() << endl;
+//cerr << "After donor acceptor " << m.smiles() << '\n';
 
   Molecule_to_Match target(&m);
 
@@ -1652,7 +1652,7 @@ _assign_atom_types (Molecule & m,
     typing_to_use ^= DIFFERENTIATE_RINGS;
   }
 
-//cerr << "Assigning, DIFFERENTIATE_RINGS " << differentiate_rings << " type " << typing_to_use << endl;
+//cerr << "Assigning, DIFFERENTIATE_RINGS " << differentiate_rings << " type " << typing_to_use << '\n';
 
   const int matoms = m.natoms();
 
@@ -1901,7 +1901,7 @@ Atom_Typing_Specification::build(const const_IWSubstring & s)
   {
     _perform_shell_iteration = mys.last_item() - '0';
     mys.chop();
-//  cerr << "Detected shell iteration " << _perform_shell_iteration << endl;
+//  cerr << "Detected shell iteration " << _perform_shell_iteration << '\n';
   }
 
   if (mys.starts_with("UST:") || mys.starts_with("ust:"))
@@ -1932,7 +1932,7 @@ Atom_Typing_Specification::build(const const_IWSubstring & s)
   if (IWATTYPE_PPHORE == _type)
     return _build_pharmacaphore_specification(mys);
 
-//cerr << "TYpe " << _type << endl;
+//cerr << "TYpe " << _type << '\n';
 
   return 1;
 }
@@ -2109,6 +2109,9 @@ Atom_Typing_Specification::_perform_shell_iteration_v2 (Molecule & m,
   return rc;
 }
 
+static constexpr int kCarbon = 6007;
+static constexpr int kOxygen = 9001;
+
 template <typename T>
 int
 Atom_Typing_Specification::_ust_assign_atom_types_z_prime_numbers(const Molecule & m,
@@ -2125,10 +2128,10 @@ Atom_Typing_Specification::_ust_assign_atom_types_z_prime_numbers(const Molecule
         atype[i] = 3001;
         break;
       case 7:
-        atype[i] = 6007;
+        atype[i] = kCarbon;
         break;
       case 8:
-        atype[i] = 9001;
+        atype[i] = kOxygen;
         break;
       case 9:
         atype[i] = 12007;
@@ -2408,12 +2411,61 @@ ust_assign_atom_types_t_ring (Molecule & m,
   return 1;
 }
 
+// Return true if `zatom` is the sulphur of a sulfonamide.
+static int
+IsSulfonamide(const Molecule& m,
+              atom_number_t zatom) {
+  const Atom& sulphur = m.atom(zatom);
+  if (sulphur.ncon() != 4) {
+    return 0;
+  }
+
+  int doubly_bonded_oxygen = 0;
+  atom_number_t nitrogen = INVALID_ATOM_NUMBER;
+  for (const Bond* b : sulphur) {
+    const atom_number_t nbr = b->other(zatom);
+
+    if (b->is_double_bond() && m.atomic_number(nbr) == 8) {
+      ++doubly_bonded_oxygen;
+    } else if (b->is_single_bond() && m.atomic_number(nbr) == 7) {
+      nitrogen = nbr;
+    }
+  }
+
+  if (doubly_bonded_oxygen < 2 ||
+      nitrogen == INVALID_ATOM_NUMBER) {
+    return 0;
+  }
+
+  return 1;
+}
+
+// Nove 2022. Modified to make low connected sulphur equivalent to oxygen.
+// Do the same for sulfonamides, but that is only slighly effective because
+// of the different connectivity of a sulfonamide (4) vs an amide (3).
 template <typename T>
 int
 Atom_Typing_Specification::_ust_assign_atom_types_t(Molecule & m,
                                                     T * atype) const
 {
   _ust_assign_atom_types_z_prime_numbers(m, atype, 1);    // last arg means compress halogens
+
+  // Make 1 and 2 connected Sulphur same as Oxygen, and
+  // Sulfonamides same as amides.
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    if (m.atomic_number(i) != 16) {
+      continue;
+    }
+    const Atom& s = m.atom(i);
+    if (s.ncon() <= 2) {
+      atype[i] = kOxygen;
+      continue;
+    }
+    if (IsSulfonamide(m, i)) {
+      atype[i] = kCarbon;
+    }
+  }
 
   const int nr = m.nrings();
 
@@ -2854,7 +2906,7 @@ Atom_Typing_Specification::_assign_user_specified_type(Molecule & m,
     {
       cerr << " " << m.smarts_equivalent_for_atom(i) << ' ' << atype[i];
     }
-    cerr << endl;
+    cerr << '\n';
 #endif
   }
 
@@ -3023,7 +3075,7 @@ string_interpolation(const const_IWSubstring & starting_string,
     return 0;
 
 #ifdef DEBUG_STRING_INTERPOLATION
-  cerr << "Dollar at " << dollar << " closing_brace " << closing_brace << endl;
+  cerr << "Dollar at " << dollar << " closing_brace " << closing_brace << '\n';
 #endif
   const_IWSubstring before_dollar, after_dollar;
 
@@ -3060,7 +3112,7 @@ string_interpolation(const const_IWSubstring & starting_string,
   {
     e = getenv(token.null_terminated_chars());
 #ifdef DEBUG_STRING_INTERPOLATION
-    cerr << "Checking shell variable '" << token << "' ? " << (nullptr != e) << endl;
+    cerr << "Checking shell variable '" << token << "' ? " << (nullptr != e) << '\n';
 #endif
     if (nullptr != e)
     {
