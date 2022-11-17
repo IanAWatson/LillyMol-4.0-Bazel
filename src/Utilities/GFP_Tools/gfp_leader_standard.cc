@@ -3,6 +3,8 @@
 */
 
 #include <stdlib.h>
+
+#include <ctime>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -16,6 +18,8 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/data_source/tfdatarecord.h"
+#include "Foundational/iwmisc/iwdigits.h"
+#include "Foundational/iwmisc/misc.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 #include "Foundational/iwmisc/report_progress.h"
 
@@ -27,7 +31,6 @@
 
 using std::cerr;
 using std::endl;
-using std::cout;
 
 using iw_tf_data_record::TFDataWriter;
 
@@ -76,7 +79,7 @@ static float * distances = nullptr;
 static void
 usage(int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Leader implementation requiring MPR IW MK MK2\n";
   cerr << " -t <dist>      distance threshold\n";
   cerr << " -n <number>    number of clusters to form\n";
@@ -97,7 +100,7 @@ choose_next_leader(const int * selected,
 {
   for (int i = 0; i < n; i++)
   {
-//      cerr << " CNL i = " << i << " sel " << selected[i] << endl;
+//      cerr << " CNL i = " << i << " sel " << selected[i] << '\n';
     if (! selected[i])
       return i;
   }
@@ -140,7 +143,7 @@ leader()
 #ifdef DEBUG_LEADER1
   for (int i = 0; i < pool_size; i++)
   {
-     cerr << " i = " << i << " selected " << selected[i] << endl;
+     cerr << " i = " << i << " selected " << selected[i] << '\n';
   }
 #endif
 
@@ -152,7 +155,7 @@ leader()
       cerr << "Formed " << cluster_id << " clusters, " << count_non_zero_occurrences_in_array(selected, pool_size) << " items in clusters\n";
 
 #ifdef DEBUG_LEADER1
-    cerr << "Selected " << icentre << " index " << (icentre+start) << endl;
+    cerr << "Selected " << icentre << " index " << (icentre+start) << '\n';
 #endif
 
     icentre += start;
@@ -164,7 +167,7 @@ leader()
 
 #pragma omp parallel for schedule(dynamic,256)
 #ifdef DEBUG_LEADER1
-    cerr << "leader was " << icentre << " scanning from " << start << " to " << pool_size << endl;
+    cerr << "leader was " << icentre << " scanning from " << start << " to " << pool_size << '\n';
 #endif
     for(int i= start;i<pool_size;++i)
     {
@@ -182,7 +185,7 @@ leader()
 #ifdef DEBUG_LEADER1
   for (int i = 0; i < pool_size; i++)
   {
-    cerr << " i = " << i << " selected " << selected[i] << endl;
+    cerr << " i = " << i << " selected " << selected[i] << '\n';
   }
 #endif
 
@@ -231,8 +234,8 @@ leader(int * leaders,
       const int c1id = cluster_id+2;
       cluster_id += 2;
       start = leaders[1] + 1;
-      //cout << "S"<<c0id << " " << pool.id(potl_centers[0]) << " " << 0.0f<<endl;
-      //cout << "S"<<c1id << " " << pool.id(potl_centers[1]) << " " << 0.0f<<endl;
+      //cout << "S"<<c0id << " " << pool.id(potl_centers[0]) << " " << 0.0f<<'\n';
+      //cout << "S"<<c1id << " " << pool.id(potl_centers[1]) << " " << 0.0f<<'\n';
       selected[leaders[0]] = c0id;
       selected[leaders[1]] = c1id;
       distances[leaders[0]] = 0.0f;
@@ -459,7 +462,7 @@ gfp_leader_standard(int argc, char ** argv)
     }
 
     if (verbose)
-      cerr << "Threshold set to " << threshold << endl;
+      cerr << "Threshold set to " << threshold << '\n';
   }
 
   if (cl.option_present('s'))
@@ -627,6 +630,19 @@ gfp_leader_standard(int argc, char ** argv)
 
   extending_resizable_array<int> cluster_sizes;
 
+  Fraction_as_String fas;
+  fas.set_leading_string(distance_tag);
+  fas.initialise(0.0, 1.0, 4);
+  fas.append_to_each_stored_string(">\n");
+
+  IWDigits csize;
+  csize.set_leading_string("CSIZE<");
+  csize.initialise(1000);
+  csize.append_to_each_stored_string(">\n");
+
+  IWString_and_File_Descriptor output(1);
+  const auto tzero = time(nullptr);
+
   int start = 0;
   for (int c = 1; c <= clusters_formed; c++) {
     int items_in_cluster = 0;
@@ -655,17 +671,18 @@ gfp_leader_standard(int argc, char ** argv)
       proto->set_smi(leader_item[start].smiles().AsString());
       proto->set_cnum(c - 1);
     } else {
-      cout << smiles_tag << leader_item[start].smiles() << ">\n";
-      cout << identifier_tag << leader_item[start].id() << ">\n";
-      cout << "CLUSTER<" << (c-1) << ">\n";
-      cout << "CSIZE<" << items_in_cluster << ">\n";
+      output << smiles_tag << leader_item[start].smiles() << ">\n";
+      output << identifier_tag << leader_item[start].id() << ">\n";
+      output << "CLUSTER<" << (c-1) << ">\n";
+      //output << "CSIZE<" << items_in_cluster << ">\n";
+      csize.append_number(output, items_in_cluster);
     }
 
     start++;
 
     if (start == pool_size) {
       if (! proto) {
-        cout << "|\n";
+        output << "|\n";
       }
       break;
     }
@@ -681,10 +698,12 @@ gfp_leader_standard(int argc, char ** argv)
         n->set_smi(leader_item[j].smiles().AsString());
         n->set_d(distances[j]);
       } else {
-        cout << smiles_tag << leader_item[j].smiles() << ">\n";
-        cout << identifier_tag << leader_item[j].id() << ">\n";
-        cout << distance_tag << distances[j] << ">\n";
+        output << smiles_tag << leader_item[j].smiles() << ">\n";
+        output << identifier_tag << leader_item[j].id() << ">\n";
+        //output << distance_tag << distances[j] << ">\n";
+        fas.append_number(output, distances[j]);
       }
+      output.write_if_buffer_holds_more_than(8192);
     }
 
     if (ascii_proto_output) {
@@ -692,9 +711,12 @@ gfp_leader_standard(int argc, char ** argv)
     } else if (binary_proto_output) {
         WriteBinaryProto(*proto, *binary_proto_output);
     } else {
-      cout << "|\n";
+      output << "|\n";
     }
   }
+
+  const auto tnow = time(nullptr);
+  cerr << "Writing took from " << tzero << " to " << tnow << " diff " << (tnow - tzero) << '\n';
 
   if (verbose) {
     for (uint32_t i = 0; i < cluster_sizes.size(); ++i) {
