@@ -177,7 +177,7 @@ FingerprintSubset::Initialise(Command_Line& cl)
   }
 
   if (cl.option_present('q')) {
-    if (!process_queries(cl, _queries, _verbose)) {
+    if (!process_queries(cl, _queries, _verbose, 'q')) {
       cerr << "Cannot read queries (-q)\n";
       return 0;
     }

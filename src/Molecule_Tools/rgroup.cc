@@ -19,6 +19,7 @@
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/qry_wstats.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/smiles.h"
 
 //#define USE_IWMALLOC

@@ -36,6 +36,7 @@ using std::endl;
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/rmele.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
 

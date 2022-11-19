@@ -22,6 +22,7 @@ using std::endl;
 #include "Molecule_Lib/output.h"
 #include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/rmele.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/smiles.h"
 #include "Molecule_Lib/target.h"
 

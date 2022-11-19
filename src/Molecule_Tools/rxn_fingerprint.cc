@@ -24,6 +24,7 @@
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule_to_query.h"
 #include "Molecule_Lib/rxn_file.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/target.h"
 
 #include "Molecule_Tools/extended_connectivity_fp.h"

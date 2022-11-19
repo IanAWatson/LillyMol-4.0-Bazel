@@ -21,6 +21,7 @@
 #include "Molecule_Lib/moleculeio.h"
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/rotbond_common.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"

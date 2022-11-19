@@ -8,8 +8,9 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
 
-#include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/istream_and_type.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/substructure.h"
 #include "Molecule_Lib/target.h"
 

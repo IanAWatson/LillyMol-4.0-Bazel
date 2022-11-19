@@ -7,14 +7,15 @@ using std::endl;
 #include "Foundational/iwmisc/misc.h"
 
 #include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/path.h"
 #include "Molecule_Lib/element.h"
-#include "Molecule_Lib/target.h"
-#include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/istream_and_type.h"
-#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/output.h"
+#include "Molecule_Lib/path.h"
+#include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/rotbond_common.h"
+#include "Molecule_Lib/rwsubstructure.h"
+#include "Molecule_Lib/standardise.h"
+#include "Molecule_Lib/target.h"
 
 static int verbose = 0;
 

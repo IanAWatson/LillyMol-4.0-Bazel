@@ -45,6 +45,20 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "molecule3d_proto",
+    srcs = [
+        "molecule3d.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "molecule3d_cc_proto",
+    deps = [
+        ":molecule3d_proto",
+    ],
+)
+
+proto_library(
     name = "substructure_results_proto",
     srcs = [
         "substructure_results.proto",
@@ -673,6 +687,22 @@ cc_binary(
         "//Foundational/iw_tdt:iw_tdt",
     ],
 )
+
+cc_binary(
+    name = "mol2proto",
+    srcs = [
+        "mol2proto.cc",
+    ],
+    deps = [
+        ":molecule3d_cc_proto",
+        "//Foundational/data_source:iwtfdata_record",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/cmdline:iwcmdline",
+        "@snappy//:snappy",
+    ],
+)
+
 
 cc_binary(
     name = "msort",
