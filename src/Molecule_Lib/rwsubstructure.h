@@ -153,7 +153,8 @@ template <typename T>
 int
 build_query_from_smiles(const const_IWSubstring & smiles,
                         resizable_array_p<T> & queries,
-                        int verbose)
+                        int verbose,
+                        Molecule_to_Query_Specifications* mqs = nullptr)
 {
   Molecule m;
 
@@ -165,19 +166,26 @@ build_query_from_smiles(const const_IWSubstring & smiles,
     return 0;
   }
 
-  Molecule_to_Query_Specifications mqs;
-  mqs.set_make_embedding(1);
+  std::unique_ptr<Molecule_to_Query_Specifications> tmp;
 
-  T * q = new T;
+  Molecule_to_Query_Specifications* my_mqs;
+  if (mqs == nullptr) {
+    my_mqs = mqs;
+  } else {
+    tmp = std::make_unique<Molecule_to_Query_Specifications>();
+    tmp->set_make_embedding(1);
+    my_mqs = tmp.get();
+  }
 
-  if (! q->create_from_molecule(m, mqs))
+  std::unique_ptr<T>q = std::make_unique<T>();
+
+  if (! q->create_from_molecule(m, *my_mqs))
   {
     std::cerr << "build_query_from_smiles:invalid molecule?? '" << smiles << "'\n";
-    delete q;
     return 0;
   }
 
-  queries.add(q);
+  queries.add(q.release());
 
   return 1;
 }
@@ -567,20 +575,19 @@ file_record_is_smarts(resizable_array_p<T> & queries,
                        IWString & buffer,
                        int verbose)
 {
-  T * tmp = new T;
   buffer.remove_leading_chars(7);
 
-  if (! tmp->create_from_smarts(buffer))
-  {
+  std::unique_ptr<T> tmp = std::make_unique<T>();
+
+  if (! tmp->create_from_smarts(buffer)) {
     std::cerr << "Invalid smarts 'SMARTS:" << buffer << "'\n";
-    delete tmp;
     return 0;
   }
 
   if (verbose)
     std::cerr << "Created query '" << tmp->comment() << "' from SMARTS:" << buffer << '\n';
 
-  queries.add(tmp);
+  queries.add(tmp.release());
 
   return 1;
 }
@@ -599,7 +606,6 @@ read_one_or_more_queries_from_file(resizable_array_p<T> & queries,
 
   input.set_ignore_pattern("^#");
   input.set_skip_blank_lines(1);
-
 
   while (msi.read(input))
   {
@@ -836,7 +842,7 @@ queries_from_file (const IWString & fname, resizable_array_p<T> & queries,
 
 template <typename T>
 int
-process_files_of_queries (Command_Line & cl, resizable_array_p<T> & queries,
+process_files_of_queries(Command_Line & cl, resizable_array_p<T> & queries,
                  int inherit_directory_path,
                  int verbose, char option)
 {
@@ -871,7 +877,8 @@ int
 process_cmdline_token(char option,
                       const const_IWSubstring & token,
                       resizable_array_p<T> & queries,
-                      int verbose)
+                      int verbose,
+                      Molecule_to_Query_Specifications* mqs = nullptr)
 {
   const_IWSubstring mytoken(token);
 
@@ -934,7 +941,7 @@ process_cmdline_token(char option,
       return 0;
     }
 
-    if (! build_query_from_smiles(mytoken, queries, verbose))
+    if (! build_query_from_smiles(mytoken, queries, verbose, mqs))
     {
       std::cerr << "process_queries:cannot build query from 'smiles:" << mytoken << "'\n";
       return 0;
@@ -1047,7 +1054,8 @@ process_cmdline_token(char option,
 template <typename T>
 int
 process_queries (Command_Line & cl, resizable_array_p<T> & queries,
-                 int verbose, const char option)
+                 int verbose, const char option,
+                 Molecule_to_Query_Specifications* mqs = nullptr)
 {
   int nqueries = cl.option_count(option);
 
@@ -1058,7 +1066,7 @@ process_queries (Command_Line & cl, resizable_array_p<T> & queries,
   const_IWSubstring c;
   while (cl.value(option, c, i++))
   {
-    if (! process_cmdline_token(option, c, queries, verbose))
+    if (! process_cmdline_token(option, c, queries, verbose, mqs))
     {
       std::cerr << "Cannot process -" << option << " option '" << c << "'\n";
       return 0;

@@ -445,13 +445,6 @@ Space_Vector<T>::angle_between_unit_vectors(const Space_Vector<T> & v1) const
                static_cast<double>(_y) * static_cast<double>(v1._y) +
                static_cast<double>(_z) * static_cast<double>(v1._z);    // the dot product
 
-  if (tmp == 0.0) {
-  } else if (tmp < 0.0) {
-    std::cerr << "diff from -1 " << (-1.0 - tmp) << '\n';
-  } else {
-    std::cerr << "diff from +1 " << (1.0 - tmp) << '\n';
-  }
-
   if (tmp >= -1.0 && tmp <= 1.0) {
     // Good.
   } else if (tmp > 1.0 && tmp < 1.00001) {

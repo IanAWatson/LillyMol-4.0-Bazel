@@ -3119,6 +3119,7 @@ extern void set_query_environment_must_match_unmatched_atoms(const int s);
 extern int remove_atoms_with_same_or(Query_Atoms_Matched & matched_atoms,
                            int istart, int orid);
 
+#ifdef THESE_ARE_IN_RWSUBSTRUCTURE_H
 template <typename T>
 int
 process_queries(Command_Line & cl, resizable_array_p<T> & queries,
@@ -3159,7 +3160,9 @@ queries_from_file_of_molecules(const const_IWSubstring & fname,
 template <typename T>
 int
 process_cmdline_token(const char, const const_IWSubstring & token,
-                       resizable_array_p<T> & queries, int verbose);
+                       resizable_array_p<T> & queries, int verbose,
+                       Molecule_to_Query_Specifications* mqs = nullptr);
+#endif
 /*
   When parsing the form '-q M:fname' we can add directives in the form
   '-q M:fname%onlysub=smarts' 

@@ -23,6 +23,7 @@
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/qry_wstats.h"
 #include "Molecule_Lib/rmele.h"
+#include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/smiles.h"
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/target.h"
@@ -84,6 +85,9 @@ static int perform_search_even_if_names_the_same = 1;
   Dec 2019. Proto output.
 */
 static int write_results_as_proto = 0;
+
+// Nov 2022. Pass our own Molecule_to_Query to substructur reading.
+static Molecule_to_Query_Specifications mqs;
 
 static void
 usage(int rc) {
@@ -1869,7 +1873,7 @@ tsubstructure(int argc, char** argv) {
         if (verbose)
           cerr << "Matches must not include implicit rings\n";
       } else if ("nrnr" == m) {
-        set_respect_ring_membership(1);
+        mqs.set_bonds_preserve_ring_membership(1);
         if (verbose)
           cerr << "Non ring atoms in molecule queries will not match ring atoms\n";
       } else if ("env" == m) {
@@ -2026,7 +2030,7 @@ tsubstructure(int argc, char** argv) {
         if (verbose)
           cerr << "Will only make matches in the largest fragment of a molecule\n";
       } else if ("onlysubiso" == m) {
-        set_substituents_only_at_isotopic_atoms(1);
+        mqs.set_substituents_only_at_isotopic_atoms(1);
         if (verbose)
           cerr << "When building queries from molecules, isotopic atoms indicate substitution "
                   "points\n";
@@ -2075,7 +2079,7 @@ tsubstructure(int argc, char** argv) {
         if (verbose)
           cerr << "Directcolorfile colour set to '" << m << "'\n";
       } else if ("CEH" == m) {
-        set_molecule_to_query_always_condense_explicit_hydrogens_to_anchor_atoms(1);
+        mqs.set_condense_explicit_hydrogens_to_anchor_atoms(1);
         if (verbose)
           cerr << "Queries from molecules always condense explicit Hydrogens\n";
       } else if (m.starts_with("maxat=")) {
@@ -2103,7 +2107,7 @@ tsubstructure(int argc, char** argv) {
         if (verbose)
           cerr << "Will relax strict adherence to initial atom numbering\n";
       } else if ("ama" == m) {
-        set_only_aromatic_atoms_match_aromatic_atoms(1);
+        mqs.set_only_aromatic_atoms_match_aromatic_atoms(1);
         if (verbose)
           cerr << "Molecule to query transformations such that only aromatic atoms match aromatic "
                   "atoms\n";
@@ -2311,13 +2315,13 @@ tsubstructure(int argc, char** argv) {
 
   queries.resize(256);  // hopefully large enough to avoid extra mallocs
 
-  if (cl.option_present('q') && !process_queries(cl, queries, verbose)) {
+  if (cl.option_present('q') && !process_queries(cl, queries, verbose, 'q', &mqs)) {
     cerr << prog_name << ": cannot process queries from -q option(s)\n";
     return 6;
   }
 
   if (cl.option_present('Q')) {
-    if (!process_files_of_queries(cl, queries, cl.option_present('h'), verbose)) {
+    if (!process_files_of_queries(cl, queries, cl.option_present('h'), verbose, 'O')) {
       cerr << prog_name << ": cannot process files of queries, -Q option\n";
       usage(7);
     }

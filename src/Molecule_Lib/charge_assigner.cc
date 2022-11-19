@@ -4,9 +4,10 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
 
+#include "charge_assigner.h"
 #include "molecule.h"
 #include "qry_wstats.h"
-#include "charge_assigner.h"
+#include "rwsubstructure.h"
 #include "target.h"
 
 /*

@@ -342,7 +342,7 @@ TEST_F(TestReaction, TestMakeSingleBond)
 
   ASSERT_TRUE(_MoleculeFromSmiles("CCCC"));
 
-  EXPECT_EQ(_rxn.in_place_transformations(_m), 2);
+  EXPECT_EQ(_rxn.in_place_transformations(_m), 1);
 
   EXPECT_EQ(_m.unique_smiles(), "C1CCC1");
 }
@@ -367,7 +367,7 @@ TEST_F(TestReaction, TestMakedoubleBond)
 
   ASSERT_TRUE(_MoleculeFromSmiles("CCCC"));
 
-  EXPECT_EQ(_rxn.in_place_transformations(_m), 2);
+  EXPECT_EQ(_rxn.in_place_transformations(_m), 1);
 
   EXPECT_EQ(_m.unique_smiles(), "C1CC=C1");
 }
@@ -441,7 +441,8 @@ TEST_F(TestReaction, TestBondAngle)
 
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &_proto));
 
-  const float angle = 109.0 / M_PI/ 180.0;
+  //const float angle = 109.0 / M_PI/ 180.0;
+  const float angle = _proto.scaffold().bond_angle(0).angle();
 
   _proto.mutable_scaffold()->mutable_bond_angle(0)->set_angle(angle);
 
@@ -453,7 +454,7 @@ TEST_F(TestReaction, TestBondAngle)
 
   EXPECT_EQ(_m.unique_smiles(), "FCN");
 
-  EXPECT_NEAR(_m.bond_angle(0, 1, 2), angle, 1.0e-06);
+  EXPECT_NEAR(_m.bond_angle(0, 1, 2) * RAD2DEG, angle, 5.0e-06);
 }
 
 TEST_F(TestReaction, TestDihedralAngle)
@@ -467,14 +468,14 @@ TEST_F(TestReaction, TestDihedralAngle)
         a2: 1
         a3: 2
         a4: 3
-        angle: 0.5
+        angle: 90.0
       }
     }
   )";
 
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &_proto));
 
-  const float angle = 0.5;
+  const float angle = _proto.scaffold().dihedral_angle(0).angle();
 
   _proto.mutable_scaffold()->mutable_dihedral_angle(0)->set_angle(angle);
 
@@ -486,7 +487,7 @@ TEST_F(TestReaction, TestDihedralAngle)
 
   EXPECT_EQ(_m.unique_smiles(), "NCCC");
 
-  EXPECT_NEAR(fabs(_m.dihedral_angle(0, 1, 2, 3)), angle, 1.0e-06);
+  EXPECT_NEAR(fabs(_m.dihedral_angle(0, 1, 2, 3) * RAD2DEG), angle, 5.0e-06);
 }
 
 // Use of an Substructure_Query is complex. It is

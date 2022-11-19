@@ -4967,7 +4967,7 @@ Molecule::_kekule_cannot_be_aromatic(int * process_these_atoms, int & aromatic_a
       else if (warn_aromatic_chain_atoms)    // not exactly, but OK
       {
         cerr << "Molecule::_kekule_cannot_be_aromatic: atom " << i << " has " << icon
-             << " connections\n";
+             << " connections, atomic number " << atomic_number(i) << '\n';
         return 1;
       }
     }

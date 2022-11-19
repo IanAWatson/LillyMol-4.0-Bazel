@@ -1435,9 +1435,6 @@ Single_Substructure_Query::_find_next_root_atom_embedding (Query_Atoms_Matched &
 
     rc += tmp;
 
-    if (_find_one_embedding_per_start_atom)
-      break;
-
     if (_max_matches_to_find > 0 && rc >= _max_matches_to_find)
       break;
   }

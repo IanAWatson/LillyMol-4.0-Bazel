@@ -372,7 +372,7 @@ Reaction_Bond_Angle::ConstructFromProto(const ReactionProto::BondAngle& proto,
       return WriteError("Reaction_Dihedral_Angle::ConstructFromProto:invalid c3", proto);
   }
 
-  _desired_angle = proto.angle();
+  _desired_angle = proto.angle() * DEG2RAD;
 
   return 1;
 }
@@ -424,7 +424,7 @@ Reaction_Dihedral_Angle::ConstructFromProto(const ReactionProto::DihedralAngle& 
       return WriteError("Reaction_Dihedral_Angle::ConstructFromProto:invalid c4", proto);
   }
 
-  _desired_angle = proto.angle();
+  _desired_angle = proto.angle() * DEG2RAD;
 
   return 1;
 }
@@ -804,12 +804,12 @@ Sidechain_Reaction_Site::ConstructFromProto(const ReactionProto::SidechainReacti
   if (proto.has_make_implicit_hydrogens_explicit())
     _make_implicit_hydrogens_explicit = proto.make_implicit_hydrogens_explicit();
 
+  _copy_match_conditions_to_query();
+
   // Do this last after all query modifiers have been applied.
   if (proto.reagent_size() > 0)
   {
     Substructure_Query::set_do_not_perceive_symmetry_equivalent_matches(1);   // let's just make this the default
-
-    _copy_match_conditions_to_query();
 
     for (const auto& reagent : proto.reagent()) {
       if (! _add_reagent(reagent))
@@ -872,6 +872,14 @@ IWReaction::ConstructFromProto(const ReactionProto::Reaction& proto)
   if (proto.has_scaffold_match_conditions() &&
       ! _match_conditions.ConstructFromProto(proto.scaffold_match_conditions()))
     return WriteError("IWReaction::ConstructFromProto:invalid scaffold match conditions", proto);
+
+  // Copy match conditions to query.
+  if (_match_conditions.find_unique_embeddings_only()) {
+    set_find_unique_embeddings_only(1);
+  }
+  if (_match_conditions.one_embedding_per_start_atom()) {
+    set_one_embedding_per_start_atom(1);
+  }
 
   for (const auto& sidechain : proto.sidechain()) {
     std::unique_ptr<Sidechain_Reaction_Site> sc(new Sidechain_Reaction_Site);

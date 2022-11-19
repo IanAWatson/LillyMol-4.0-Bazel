@@ -477,9 +477,11 @@ angle_between_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Ato
   v21.normalise();
   v32.normalise();
   v43.normalise();
+#ifdef DEBUG_ATOM_BETWEEN_ATOMS
   cerr << "v21 " << v21 << '\n';
   cerr << "v32 " << v32 << '\n';
   cerr << "v43 " << v43 << '\n';
+#endif
 
   v21.cross_product(v32);
   v43.cross_product(v32);

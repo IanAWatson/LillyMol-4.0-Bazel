@@ -9,8 +9,8 @@
 #include "substructure.h"
 #include "rwsubstructure.h"
 
-template int process_queries(Command_Line &, resizable_array_p<Substructure_Query> &, int, char);
-template int process_cmdline_token(const char, const const_IWSubstring &, resizable_array_p<Substructure_Query> &, int);
+template int process_queries(Command_Line &, resizable_array_p<Substructure_Query> &, int, char, Molecule_to_Query_Specifications*);
+template int process_cmdline_token(const char, const const_IWSubstring &, resizable_array_p<Substructure_Query> &, int, Molecule_to_Query_Specifications*);
 
 template int queries_from_file(iwstring_data_source &, resizable_array_p<Substructure_Query> &, const IWString &, int);
 template int queries_from_file(const_IWSubstring const &, resizable_array_p<Substructure_Query> &, int, int);
@@ -39,4 +39,4 @@ template int queries_from_ISIS_query_file<Substructure_Query>(const_IWSubstring 
 template int queries_from_ISIS_query_file<Substructure_Query>(data_source_and_type<MDL_Molecule>&, Molecule_to_Query_Specifications&, resizable_array_p<Substructure_Query>&, int);
 template int queries_from_ISIS_query_file<Substructure_Query>(const_IWSubstring const&, resizable_array_p<Substructure_Query>&, int);
 template int query_from_ISIS_query_file<Substructure_Query>(MDL_Molecule&, Molecule_to_Query_Specifications&, resizable_array_p<Substructure_Query>&, int);
-template int build_query_from_smiles<Substructure_Query>(const const_IWSubstring & smiles, resizable_array_p<Substructure_Query> & queries, int verbose);
+template int build_query_from_smiles<Substructure_Query>(const const_IWSubstring & smiles, resizable_array_p<Substructure_Query> & queries, int verbose, Molecule_to_Query_Specifications*);

@@ -18,6 +18,7 @@ using std::endl;
 #include "molecule_to_query.h"
 #include "output.h"
 #include "path.h"
+#include "rwsubstructure.h"
 #include "target.h"
 
 template class data_source_and_type<Molecule_and_Embedding>;

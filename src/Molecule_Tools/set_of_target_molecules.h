@@ -8,7 +8,7 @@
 #include "Molecule_Lib/istream_and_type.h"
 
 #include "Molecule_Tools/linear_path_fingerprint.h"
-#include "Molecule_Tools/maccskeys_fn5.h"
+#include "Molecule_Tools/maccskeys.h"
 
 /*
   The various random molecule creation tools might be trying to get as
