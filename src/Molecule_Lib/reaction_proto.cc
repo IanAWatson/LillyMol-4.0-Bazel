@@ -434,7 +434,7 @@ Reaction_3D_Replace::ConstructFromProto(const ReactionProto::ThreeDReplace& prot
 {
   if (proto.a1().empty())
     return WriteError("Reaction_3D_Replace::ConstructFromProto:no a1", proto);
-  if (! proto.a2().empty())
+  if (proto.a2().empty())
     return WriteError("Reaction_3D_Replace::ConstructFromProto:no a2", proto);
 
   if (proto.a1_size() != proto.a2_size())
