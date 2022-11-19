@@ -104,7 +104,7 @@ BondLengthDistribution::Hash(int atnum1, int btype, int atnum2) const {
   }
 
   if (atnum1 < 10 && atnum2 < 10) {
-    return atnum1 * 100 + btype * 10 + atnum2;
+    return btype * 100 + atnum1 * 10 + atnum2;
   }
 
   return 10000 * btype + 100 * atnum1 + atnum2;
