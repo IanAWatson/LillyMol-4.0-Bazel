@@ -2,7 +2,6 @@
 #include <memory>
 
 using std::cerr;
-using std::endl;
 
 #include "Foundational/iwmisc/misc.h"
 
@@ -43,7 +42,7 @@ Reaction_Dihedral_Angle::construct_from_msi_attribute(const msi_attribute * att)
   if (5 != m.nwords())
   {
     cerr << "Reaction_Dihedral_Angle::construct_from_msi_attribute: attribute must have 5 tokens\n";
-    cerr << m << endl;
+    cerr << m << '\n';
     return 0;
   }
 
@@ -55,7 +54,7 @@ Reaction_Dihedral_Angle::construct_from_msi_attribute(const msi_attribute * att)
     if (! _atom[i].construct(token))
     {
       cerr << "Reaction_Dihedral_Angle::construct_from_msi_attribute: cannot parse attribute " << i << " '" << token << "'\n";
-      cerr << m << endl;
+      cerr << m << '\n';
       return 0;
     }
   }
@@ -107,7 +106,7 @@ Reaction_Dihedral_Angle::adjust_matched_atoms_in_component(const extending_resiz
   return 1;
 }
 
-//#define DEBUG_PROCESS_DIHEDRAL_ANGLE
+#define DEBUG_PROCESS_DIHEDRAL_ANGLE
 
 int
 Reaction_Dihedral_Angle::process(Molecule & m, 
@@ -115,9 +114,9 @@ Reaction_Dihedral_Angle::process(Molecule & m,
                                  const Enumeration_Temporaries & etmp) const
 {
 #ifdef DEBUG_PROCESS_DIHEDRAL_ANGLE
-  cerr << "Processing dihedral angle " << _desired_angle << endl;
-  if (nullptr != scaffold_embedding)
-    cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
+  cerr << "Processing dihedral angle " << _desired_angle << '\n';
+  write_isotopically_labelled_smiles(m, false, cerr);
+  cerr << " scaffold embedding " << (*scaffold_embedding) << '\n';
 #endif
 
   atom_number_t a[4];
@@ -125,7 +124,7 @@ Reaction_Dihedral_Angle::process(Molecule & m,
   for (int i = 0; i < 4; i++)
   {
 #ifdef DEBUG_PROCESS_DIHEDRAL_ANGLE
-    cerr << _atom[i] << endl;
+    cerr << _atom[i] << '\n';
 #endif
 
     if (! determine_atom_number(*scaffold_embedding, _atom[i], etmp, "Reaction_Dihedral_Angle:process:", a[i]))
@@ -136,9 +135,9 @@ Reaction_Dihedral_Angle::process(Molecule & m,
   {
     cerr << "Reaction_Dihedral_Angle::process: atom do not form a valid dihedral set in product\n";
     if (nullptr != scaffold_embedding)
-      cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
+      cerr << "Scaffold embedding " << (*scaffold_embedding) << '\n';
 
-    cerr << "Atoms " << a[0] << ' ' << a[1] << ' ' << a[2] << ' ' << a[3] << endl;
+    cerr << "Atoms " << a[0] << ' ' << a[1] << ' ' << a[2] << ' ' << a[3] << '\n';
     if (! m.are_bonded(a[0], a[1]))
       cerr << "Atoms " << a[0] << " and " << a[1] << " not bonded\n";
     if (! m.are_bonded(a[1], a[2]))
@@ -151,17 +150,22 @@ Reaction_Dihedral_Angle::process(Molecule & m,
 
   if (! m.set_dihedral(a[0], a[1], a[2], a[3], _desired_angle))
   {
-    cerr << "Reaction_Dihedral_Angle::process:cannot set angle, atoms " << a[0] << ',' << a[1] << ',' << a[2] << ',' << a[3] << endl;
+    cerr << "Reaction_Dihedral_Angle::process:cannot set angle, atoms " << a[0] << ',' << a[1] << ',' << a[2] << ',' << a[3] << '\n';
     write_isotopically_labelled_smiles(m, cerr);
     return 0;
   }
+
+#ifdef DEBUG_PROCESS_DIHEDRAL_ANGLE
+  const auto final_angle = m.dihedral_angle(a[0], a[1], a[2], a[3]);
+  cerr << "final_angle " << final_angle << " rad " << (final_angle * RAD2DEG) << " deg\n";
+#endif
 
   if (bump_tolerance > static_cast<distance_t>(0.0))
   {
     if (! m.bump_check(a[0], a[1], a[2], a[3], bump_tolerance))
     {
-      cerr << "Reaction_Dihedral_Angle::process: bump check failed tolerance " << bump_tolerance << endl;
-      cerr << "Twist " << a[0] << ',' << a[1] << ',' << a[2] << ',' << a[3] << endl;
+      cerr << "Reaction_Dihedral_Angle::process: bump check failed tolerance " << bump_tolerance << '\n';
+      cerr << "Twist " << a[0] << ',' << a[1] << ',' << a[2] << ',' << a[3] << '\n';
       return 0;
     }
   }

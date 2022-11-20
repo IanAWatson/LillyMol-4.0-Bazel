@@ -239,7 +239,8 @@ class Atom : public resizable_array <Bond *>, public Coordinates
 extern void reset_atom_file_scope_variables();
 
 // Returns the dihedral angle implied by a1-a2-a3-a4
-extern angle_t angle_between_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Atom & a4);
+extern double angle_between_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Atom & a4);
+extern double signed_dihedral_angle_atoms(const Atom & a1, const Atom & a2, const Atom & a3, const Atom & a4);
 
 #define OK_ATOM(a) (NULL != (a) && (a)->ok () )
 

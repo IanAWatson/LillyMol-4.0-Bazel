@@ -1137,6 +1137,7 @@ class Molecule : private resizable_array_p<Atom>
     distance_t    bond_length(atom_number_t, atom_number_t, int = 0) const;
     angle_t       bond_angle(atom_number_t, atom_number_t, atom_number_t, int = 0) const;
     angle_t       dihedral_angle(atom_number_t, atom_number_t, atom_number_t, atom_number_t, int = 0) const;
+    angle_t       signed_dihedral_angle(atom_number_t, atom_number_t, atom_number_t, atom_number_t, int = 0) const;
 
 //  After changing a dihedral, we may want to do a bump check
 

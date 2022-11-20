@@ -34,6 +34,34 @@ Molecule::dihedral_angle(atom_number_t a1, atom_number_t a2, atom_number_t a3, a
   return angle_between_atoms(*aa1, *aa2, *aa3, *aa4);
 }
 
+angle_t
+Molecule::signed_dihedral_angle(atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4,
+                         int not_bonded_ok) const
+{
+  assert(ok_4_atoms(a1, a2, a3, a4));
+
+  if (! not_bonded_ok)
+  {
+    assert (are_bonded(a1, a2));
+    assert (are_bonded(a2, a3));
+    assert (are_bonded(a3, a4));
+  }
+
+  const Atom * aa1 = _things[a1];
+  const Atom * aa2 = _things[a2];
+  const Atom * aa3 = _things[a3];
+  const Atom * aa4 = _things[a4];
+
+  return signed_dihedral_angle_atoms(*aa1, *aa2, *aa3, *aa4);
+}
+
+
+#define DEBUG_SET_DIHEDRAL
+//  Set dihedral from
+//   a1          a4
+//     \        /
+///     a2 -- a3
+
 int
 Molecule::set_dihedral(atom_number_t a1, 
                        atom_number_t a2,
@@ -46,10 +74,12 @@ Molecule::set_dihedral(atom_number_t a1,
 
   assert(ok_4_atoms(a1, a2, a3, a4));
 
-  angle_t current_angle = dihedral_angle(a1, a2, a3, a4, 1);
+  const double current_angle = signed_dihedral_angle(a1, a2, a3, a4, 1);
 
-  if (current_angle == theta)     // nothing to do
+  // If likely close enough already, do nothing.
+  if (abs(current_angle - theta) < 1.0e-05) {
     return 1;
+  }
 
 #ifdef DEBUG_SET_DIHEDRAL
   cerr << "Molecule::set_dihedral:atoms " << a1 << ',' << a2 << ',' << a3 << ',' << a4 << " angle " << theta << " (" << (theta * RAD2DEG) << " deg)\n";
@@ -74,7 +104,7 @@ Molecule::set_dihedral(atom_number_t a1,
     const atom_number_t j = aa3->other(a3, i);
 
 #ifdef DEBUG_SET_DIHEDRAL
-    cerr << " bonded to " << j << ' ' << smarts_equivalent_for_atom(j) << endl;
+    cerr << " bonded to " << j << ' ' << smarts_equivalent_for_atom(j) << '\n';
 #endif
 
     if (j == a2)
@@ -82,14 +112,15 @@ Molecule::set_dihedral(atom_number_t a1,
 
     if (0 == _determine_moving_atoms(j, atoms_to_move))
     {
-      cerr << "Molecule::set_dihedral:possible ring structure, a1 " << a2 << " a2 " << a2 << " a3 " << a3 << " a4 " << a4 << endl;
+      cerr << "Molecule::set_dihedral:possible ring structure, a1 " << a2 << " a2 " << a2 << " a3 " << a3 << " a4 " << a4 << '\n';
       return 0;
     }
   }
 
+  atoms_to_move[a2] = 0;
   atoms_to_move[a3] = 0;
 
-  double rot = current_angle - theta;
+  const double rot = current_angle - theta;
 
 #ifdef DEBUG_SET_DIHEDRAL
   cerr << "Rotating " << rot << " (" << (rot * RAD2DEG) << " deg)\n";
@@ -99,7 +130,7 @@ Molecule::set_dihedral(atom_number_t a1,
   if (0.0 == r)
   {
 #ifdef DEBUG_SET_DIHEDRAL
-    cerr << "Molecule::set_dihedral:zero distance between atoms " << a2 << " and " << a3 << endl;
+    cerr << "Molecule::set_dihedral:zero distance between atoms " << a2 << " and " << a3 << '\n';
     _things[a2]->debug_print(cerr);
     _things[a3]->debug_print(cerr);
     write_molecule_mdl(cerr, "");
@@ -133,7 +164,7 @@ Molecule::set_dihedral(atom_number_t a1,
       continue;
 
 #ifdef DEBUG_SET_DIHEDRAL
-    cerr << "Molecule::set_dihedral::moving atom " << i << endl;
+    cerr << "Molecule::set_dihedral::moving atom " << i << '\n';
 #endif
 
     Atom *a = _things[i];
@@ -151,7 +182,7 @@ Molecule::set_dihedral(atom_number_t a1,
   }
 
 #ifdef DEBUG_SET_DIHEDRAL
-  angle_t tmp = dihedral_angle(a1, a2, a3, a4);
+  double tmp = signed_dihedral_angle(a1, a2, a3, a4);
   cerr << "Molecule::set_dihedral:after moving " << tmp << " (" << (tmp * RAD2DEG) << " deg)\n";
 #endif
   
@@ -199,7 +230,7 @@ Molecule::_bump_check (atom_number_t a1,
 
       if (dij <= too_close)
       {
-        cerr << "Molecule::_bump_check: atoms " << i << " and " << j << " too close " << dij << " min is " << too_close << endl;
+        cerr << "Molecule::_bump_check: atoms " << i << " and " << j << " too close " << dij << " min is " << too_close << '\n';
         return 0;
       }
     }
@@ -214,7 +245,7 @@ Molecule::_determine_either_side_of_bond (atom_number_t a1,
                                           int * either_side) const
 {
 #ifdef DEBUG_DETERMINE_EITHER_SIDE_OF_BOND
-  cerr << "_determine_either_side_of_bond with atoms " << a1 << " and " << a2 << endl;
+  cerr << "_determine_either_side_of_bond with atoms " << a1 << " and " << a2 << '\n';
 #endif
 
   set_vector(either_side, _number_elements, -9);
@@ -222,7 +253,7 @@ Molecule::_determine_either_side_of_bond (atom_number_t a1,
   identify_side_of_bond(either_side, a1, -1, a2);
 
 #ifdef DEBUG_DETERMINE_EITHER_SIDE_OF_BOND
-  cerr << "Ring? " << (-1 == either_side[a2]) << endl;
+  cerr << "Ring? " << (-1 == either_side[a2]) << '\n';
 #endif
 
   if (-1 == either_side[a2])      // bond must be in a ring
@@ -265,7 +296,7 @@ Molecule::identify_side_of_bond (int * either_side,
       continue;
 
 #ifdef DEBUG_IDENTIFY_SIDE_OF_BOND
-    cerr << "Top level, astart " << astart << " to " << j << " must avoid " << avoid << ", flag " << flag << endl;
+    cerr << "Top level, astart " << astart << " to " << j << " must avoid " << avoid << ", flag " << flag << '\n';
 #endif
 
     int tmp = __identify_side_of_bond(either_side, j, flag, avoid);
@@ -276,7 +307,7 @@ Molecule::identify_side_of_bond (int * either_side,
   }
 
 #ifdef DEBUG_IDENTIFY_SIDE_OF_BOND
-  cerr << "From atom " << astart << " returning " << rc << endl;
+  cerr << "From atom " << astart << " returning " << rc << '\n';
 #endif
 
   return rc;
@@ -302,7 +333,7 @@ Molecule::__identify_side_of_bond (int * either_side,
   {
     atom_number_t j = a->other(astart, i);
 
-//  cerr << "Molecule::__identify_side_of_bond:how about atom " << j << endl;
+//  cerr << "Molecule::__identify_side_of_bond:how about atom " << j << '\n';
 
     if (flag == either_side[j])    // already done this atom - a ring somewhere
       continue;
@@ -388,7 +419,7 @@ Molecule::_determine_moving_atoms(atom_number_t zatom,
     atom_number_t j = a->other(zatom, i);
 
 //  if (2 == moving_atom[j])    // gack, came back to the non-moving atom, a1
-//    cerr << "Gack, from " << zatom << " got to " << j << endl;
+//    cerr << "Gack, from " << zatom << " got to " << j << '\n';
     if (2 == moving_atom[j])    // gack, came back to the non-moving atom, a1
       return 0;
 
@@ -426,13 +457,13 @@ Molecule::set_bond_angle (atom_number_t a1,
 
   if (! aa1->is_bonded_to(a2))
   {
-    cerr << "Molecule::set_bond_angle:atom " << a1 << " not bonded to " << a2 << endl;
+    cerr << "Molecule::set_bond_angle:atom " << a1 << " not bonded to " << a2 << '\n';
     return 0;
   }
 
   if (! aa2->is_bonded_to(a3))
   {
-    cerr << "Molecule::set_bond_angle:atom " << a2 << " not bonded to " << a3 << endl;
+    cerr << "Molecule::set_bond_angle:atom " << a2 << " not bonded to " << a3 << '\n';
     return 0;
   }
 
@@ -446,7 +477,7 @@ Molecule::set_bond_angle (atom_number_t a1,
 
   if (_sssr_rings.number_elements() && in_same_ring(a1, a3))
   {
-    cerr << "Molecule::set_bond_angle:cannot change ring bond, atoms " << a2 << " and " << a3 << endl;
+    cerr << "Molecule::set_bond_angle:cannot change ring bond, atoms " << a2 << " and " << a3 << '\n';
     return 0;
   }
 
@@ -478,7 +509,7 @@ Molecule::set_bond_angle (atom_number_t a1,
   for (int i = 0; i < _number_elements; i++)
   {
     if (moving_atoms[i])
-      cerr << "Atom " << i << " moving_atoms " << moving_atoms[i] << ' ' << smarts_equivalent_for_atom(i) << endl;
+      cerr << "Atom " << i << " moving_atoms " << moving_atoms[i] << ' ' << smarts_equivalent_for_atom(i) << '\n';
   }
 #endif
 
@@ -522,7 +553,7 @@ Molecule::set_bond_angle (atom_number_t a1,
   double rot = current_angle - theta;
 
 #ifdef DEBUG_SET_BOND_ANGLE
-  cerr << "Rotating " << rot << " (" << (rot * RAD2DEG) << " degrees) around " << v32 << endl;
+  cerr << "Rotating " << rot << " (" << (rot * RAD2DEG) << " degrees) around " << v32 << '\n';
 #endif
 
   Set_of_Atoms atoms_to_move;
@@ -541,8 +572,8 @@ Molecule::set_bond_angle (atom_number_t a1,
   }
 
 #ifdef DEBUG_SET_BOND_ANGLE
-  cerr << "Moving " << atoms_to_move.size() << " atoms around " << v32 << endl;
-  cerr << atoms_to_move << endl;
+  cerr << "Moving " << atoms_to_move.size() << " atoms around " << v32 << '\n';
+  cerr << atoms_to_move << '\n';
 #endif
 
 // Need to shift so that atom A2 is the origin
