@@ -3688,6 +3688,29 @@ Molecule::translate_atoms(const Coordinates & whereto,
   return;
 }
 
+void
+Molecule::translate_atoms(coord_t xdelta, coord_t ydelta, coord_t zdelta,
+                          const int* to_move, int flag) {
+  for (int i = 0; i < _number_elements; ++i) {
+    if (to_move[i] == flag) {
+      _things[i]->translate(xdelta, ydelta, zdelta);
+    }
+  }
+}
+
+template <typename T>
+void
+Molecule::translate_atoms(const Space_Vector<T>& delta,
+                          const int* to_move, int flag) {
+  for (int i = 0; i < _number_elements; ++i) {
+    if (to_move[i] == flag) {
+      _things[i]->translate(delta.x(), delta.y(), delta.z());
+    }
+  }
+}
+
+template void Molecule::translate_atoms(const Space_Vector<double>&, const int*, int);
+
 // Multiply all atomic coordinates in `m` by `multiply`.
 int
 Molecule::ScaleCoordinates(float multiply) {
@@ -3763,7 +3786,7 @@ Molecule::rotate_atoms(const Space_Vector<T> & axis, T theta,
   if (static_cast<T>(0.0) == theta)
     return 1;
 
-  int moving_atoms = atoms_to_move.number_elements();
+  const int moving_atoms = atoms_to_move.number_elements();
   if (0 == moving_atoms)
     return 0;
 
@@ -3943,6 +3966,35 @@ Molecule::get_coords(Coordinates * c) const
   }
 
   return _number_elements;
+}
+
+std::unique_ptr<float[]>
+Molecule::GetCoords() const {
+  std::unique_ptr<float[]> result = std::make_unique<float[]>(3 * _number_elements);
+  int ndx = 0;
+  for (int i = 0; i < _number_elements; ++i) {
+    result[ndx] = _things[i]->x();
+    ++ndx;
+    result[ndx] = _things[i]->y();
+    ++ndx;
+    result[ndx] = _things[i]->z();
+    ++ndx;
+  }
+
+  return result;
+}
+
+void
+Molecule::SetXyz(const float* coords) {
+  int ndx = 0;
+  for (int i = 0; i < _number_elements; ++i) {
+    _things[i]->set_x(coords[ndx]);
+    ++ndx;
+    _things[i]->set_y(coords[ndx]);
+    ++ndx;
+    _things[i]->set_z(coords[ndx]);
+    ++ndx;
+  }
 }
 
 coord_t

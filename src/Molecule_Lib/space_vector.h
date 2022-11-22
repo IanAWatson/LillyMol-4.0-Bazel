@@ -33,6 +33,16 @@ class Space_Vector
     T & y() { return _y; }
     T & z() { return _z; }
 
+    void set_x(T v) {
+      _x = v;
+    }
+    void set_y(T v) {
+      _y = v;
+    }
+    void set_z(T v) {
+      _z = v;
+    }
+
     void setxyz(T, T, T);
     void setxyz(const Space_Vector<T> &);
     // From any iterable containing at least 3 items.
@@ -51,8 +61,8 @@ class Space_Vector
 
     void add(T, T, T);
     void translate(T tx, T ty, T tz) { Space_Vector<T>::add(tx, ty, tz);}
-    void translate(const Space_Vector<T> &);
-    void  normalise();
+    void translate(const Space_Vector<T> & delta);
+    void normalise();
     T norm() const;
     T length() const { return norm();}
     T normsquared() const { return _x * _x + _y * _y + _z * _z;}
@@ -316,11 +326,11 @@ Space_Vector<T>::add(T xx, T yy, T zz)
 
 template <typename T>
 void
-Space_Vector<T>::translate(const Space_Vector<T> & whereto)
+Space_Vector<T>::translate(const Space_Vector<T> & delta)
 {
-  _x += whereto._x;
-  _y += whereto._y;
-  _z += whereto._z;
+  _x += delta._x;
+  _y += delta._y;
+  _z += delta._z;
 
   return;
 }

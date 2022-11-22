@@ -106,7 +106,7 @@ Reaction_Dihedral_Angle::adjust_matched_atoms_in_component(const extending_resiz
   return 1;
 }
 
-#define DEBUG_PROCESS_DIHEDRAL_ANGLE
+//#define DEBUG_PROCESS_DIHEDRAL_ANGLE
 
 int
 Reaction_Dihedral_Angle::process(Molecule & m, 

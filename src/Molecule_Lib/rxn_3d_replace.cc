@@ -328,3 +328,148 @@ Reaction_3D_Replace::process(Molecule & m,
 
   return 1;
 }
+
+Place3D::Place3D() {
+  _n1 = 0;
+  _a1 = nullptr;
+  _n2 = 0;
+  _a2 = nullptr;
+
+  _bond_length = 1.45f;
+  // _angle = 0;
+  _btype = SINGLE_BOND;
+}
+
+Place3D::~Place3D() {
+  if (_a1 != nullptr) {
+    delete [] _a1;
+  }
+  if (_a2 != nullptr) {
+    delete [] _a2;
+  }
+}
+
+#define DEBUG_PLACE3D_PROCESS
+
+int
+Place3D::Process(Molecule& m, 
+                 const Set_of_Atoms * scaffold_embedding,
+                 const Enumeration_Temporaries & etmp) const {
+  atom_number_t scaffold;
+  if (! determine_atom_number(*scaffold_embedding, _a1[0], etmp, "Place3D:process:", scaffold)) {
+    return 0;
+  }
+
+  atom_number_t sidechain;
+  if (! determine_atom_number(*scaffold_embedding, _a2[0], etmp, "Place3D:process:", sidechain)) {
+    return 0;
+  }
+
+#ifdef DEBUG_PLACE3D_PROCESS
+  cerr << "Place3D::Process ";
+  write_isotopically_labelled_smiles(m, false, cerr);
+  cerr << " atoms " << scaffold << " and " << sidechain << '\n';
+#endif
+
+  // If placing a double bond, should be more careful...
+  if (m.hcount(scaffold) == 0 || m.hcount(sidechain) == 0) {
+    return 0;
+  }
+
+  if (! m.are_bonded(scaffold, sidechain)) {
+    m.add_bond(scaffold, sidechain, _btype);
+  }
+
+  cerr << "COntinue processing\n";
+
+  int sidechain_ncon = m.ncon(sidechain);
+  if (sidechain_ncon == 1) {
+    return Process1(m, scaffold, sidechain);
+  } else if (sidechain_ncon == 2) {
+    return Process1(m, scaffold, sidechain);
+  } else if (sidechain_ncon == 3) {
+    return Process1(m, scaffold, sidechain);
+  } else {
+    cerr << "Place3D::Process:cannot process " << sidechain_ncon << " connected atom\n";
+    return 0;
+  }
+}
+
+// Return a unit vector that is the sum of all atoms connected to 
+// `scaffold`, except for `sidechain`.
+Space_Vector<double>
+ConnectedAtoms(const Molecule& m,
+               atom_number_t scaffold,
+               atom_number_t sidechain) {
+  Space_Vector<double> result;
+
+  Space_Vector<double> scaf(m.x(scaffold), m.y(scaffold), m.z(scaffold));
+
+  const Atom& a = m.atom(scaffold);
+  for (const Bond* b : a) {
+    atom_number_t j = b->other(scaffold);
+    if (j == sidechain) {
+      continue;
+    }
+
+    Space_Vector<double> jv(m.x(j) - scaf.x(), m.y(j) - scaf.y(), m.z(j) - scaf.z());
+    result += jv;
+  }
+
+  result.normalise();
+
+  return -result;
+}
+
+// within `m` the fragment defined by `sidechain` is moved so it forms a
+// bond to `scaffold`.
+int
+Place3D::Process1(Molecule& m,
+                  int scaffold,
+                  int sidechain) const {
+  const int matoms = m.natoms();
+
+  std::unique_ptr<int[]> moving(new_int(matoms));
+  int nmoving = m.identify_side_of_bond(moving.get(), sidechain, 1, scaffold);
+
+  write_isotopically_labelled_smiles(m, false, cerr);
+  cerr << '\n';
+
+  Space_Vector<double> s1(m.x(scaffold), m.y(scaffold), m.z(scaffold));
+  Space_Vector<double> s2(m.x(sidechain), m.y(sidechain), m.z(sidechain));
+
+  // Vectors from their bonded atoms towards the two participating atoms.
+  // These are unit vectors.
+
+  Space_Vector<double> scaf = ConnectedAtoms(m, scaffold, sidechain);
+  const Space_Vector<double> frag = ConnectedAtoms(m, sidechain, scaffold);
+
+  // Move `sidechain` to somewhere along `scaf`.
+  const Space_Vector<double> delta = s1 + scaf * _bond_length - s2;
+  m.translate_atoms(delta, moving.get(), 1);
+
+  const double angle = scaf.angle_between_unit_vectors(frag);
+
+  scaf.cross_product(frag);
+  scaf.normalise();
+
+  Set_of_Atoms moving_atoms;
+  moving_atoms.reserve(nmoving);
+  for (int i = 0; i < matoms; ++i) {
+    if (moving[i]) {
+      cerr << " atom " << i << " is moving\n";
+      moving_atoms << i;
+    }
+  }
+
+  // sidechain has moves, so reset s2.
+  s2.setxyz(m.x(sidechain), m.y(sidechain), m.z(sidechain));
+
+  m.translate_atoms(-s2, moving.get(), 1);
+
+  m.rotate_atoms(scaf, M_PI-angle, moving_atoms);
+
+  m.translate_atoms(s2, moving.get(), 1);
+
+  return 1;
+}

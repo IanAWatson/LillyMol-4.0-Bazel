@@ -1,6 +1,7 @@
 #ifndef IWREACTION_H
 #define IWREACTION_H
 
+#include <ostream>
 #include <random>
 
 #include "Foundational/cmdline/cmdline.h"
@@ -720,6 +721,40 @@ class Reaction_3D_Replace
                  const Enumeration_Temporaries & etmp) const;
 };
 
+// For doing reactions in 3D where there are no existing atoms for alignment.
+// We need at least one atom in the scaffold, and an atom in the sidechain.
+// By looking at the connectivity of the sidechain atom, we can position
+// it in a likely bonded orientation.
+// Currently only one Matched_Atom_in_Component in both places is supported.
+class Place3D {
+  private:
+    int _n1;
+    Matched_Atom_in_Component* _a1;
+
+    int _n2;
+    Matched_Atom_in_Component* _a2;
+
+    // The length of the bond to be created;
+    float _bond_length;
+
+    // The kind of bond to be placed.
+    int _btype;
+
+  // private functions.
+
+    int Process1(Molecule& m, atom_number_t scaffold, atom_number_t sidechain) const;
+    int Process2(Molecule& m, atom_number_t scaffold, atom_number_t sidechain) const;
+    int Process3(Molecule& m, atom_number_t scaffold, atom_number_t sidechain) const;
+  public:
+    Place3D();
+    ~Place3D();
+
+    int ConstructFromProto(const ReactionProto::Place3D& proto);
+
+    int Process(Molecule& m, const Set_of_Atoms* scaffold_embedding,
+                const Enumeration_Temporaries& etmp) const;
+};
+
 
 /*
   Jul 99. Finally need to do something about "libraries" which consist
@@ -773,6 +808,7 @@ class Reaction_Site : public Substructure_Query
     resizable_array_p<Reaction_Bond_Angle> _reaction_bond_angle;
 //  resizable_array_p<Reaction_Rotate_Fragment> _reaction_rotate_fragment;
     resizable_array_p<Reaction_3D_Replace> _reaction_3d_replace;
+    resizable_array_p<Place3D> _place_3d;
 
 //  Do we need to worry about coordinates when doing stereo preserving substitutions
 
@@ -966,6 +1002,10 @@ class Reaction_Site : public Substructure_Query
     const Replace_Atom * replace_atom (int i) const { return _replace_atom[i];}
 
     int add_toggle_kekule_form (int, int, bond_type_t);
+
+    const resizable_array_p<Place3D>& place_3d() const {
+      return _place_3d;
+    }
 
     int DoReplacements(Molecule& result,
                              const Set_of_Atoms * scaffold_embedding,
@@ -1324,6 +1364,14 @@ class IWReaction : public Scaffold_Reaction_Site
                               const Enumeration_Temporaries & etmp,
                               const Reaction_Site & r) const;
     int _do_3d_replacements (Molecule & result,
+                              const Set_of_Atoms * scaffold_embedding,
+                              const Enumeration_Temporaries & etmp) const;
+
+    int _place_reagents_3d (Molecule & result,
+                              const Set_of_Atoms * scaffold_embedding,
+                              const Enumeration_Temporaries & etmp,
+                              const Reaction_Site& r) const;
+    int _place_reagents_3d (Molecule & result,
                               const Set_of_Atoms * scaffold_embedding,
                               const Enumeration_Temporaries & etmp) const;
 

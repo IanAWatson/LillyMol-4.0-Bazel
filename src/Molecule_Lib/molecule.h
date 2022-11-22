@@ -19,12 +19,18 @@ struct XMLNode;
 
 #include "Foundational/iwstring/iwstring.h"
 #include "iwmtypes.h"
-class iwstring_data_source;
 
+#include "atom.h"
+#include "bond_list.h"
+#include "collection_template.h"
+#include "coordinates.h"
+#include "iwrcb.h"
 #include "mol2graph.h"
+#include "set_of_atoms.h"
 
 // forward declaration
 
+class iwstring_data_source;
 class Molecule;
 class Ring;
 class Beep;
@@ -54,10 +60,6 @@ class MDL_File_Artifacts_Last_Molecule_Read;
 */
 
 #define EMPTY_MOLECULE_SMILES "."
-
-#include "atom.h"
-
-#include "collection_template.h"
 
 class Set_of_Charges : public Collection_Template <charge_t>
 {
@@ -108,8 +110,6 @@ class PDB_Stored_Atom_Information
 };
 
 
-#include "bond_list.h"
-
 /*
   The charge array is initialised to NULL. As a molecule
   is built, if we encounter a non-zero charge, we allocate
@@ -122,8 +122,6 @@ class PDB_Stored_Atom_Information
   a partially built molecule. Typically, this means that bonds have been
   added for which the atoms may not yet be in the molecule.
 */
-
-#include "coordinates.h"
 
 #define MOLECULE_MAGIC_NUMBER -7215237
 
@@ -213,8 +211,6 @@ class Fragment_Information
 
     int all_atoms_in_one_fragment(int natoms, int nbonds);   // initialise the structure
 };
-
-#include "iwrcb.h"
 
 /*
   Once fragments, rings and aromaticity are known, we can generate a smiles ordering
@@ -368,8 +364,6 @@ class Tnode;
 class Ring_Number_Manager;
 
 class Chiral_Centre;
-
-#include "set_of_atoms.h"
 
 /*
   We want various degrees of control over how implicit Hydrogens are added
@@ -1261,6 +1255,10 @@ class Molecule : private resizable_array_p<Atom>
     int get_coords(atom_number_t, Coordinates &) const;
     int get_coords(Coordinates *) const;
     int vector_between_atoms(atom_number_t, atom_number_t, Coordinates &) const;
+    // Return a vector of floats, xyz triples for each atom.
+    std::unique_ptr<float[]> GetCoords() const;
+    // `coords` is a vector or floats, xyz triples for each atom.
+    void SetXyz(const float* coords);
 
     void setx(atom_number_t, coord_t);
     void sety(atom_number_t, coord_t);
@@ -1294,8 +1292,11 @@ class Molecule : private resizable_array_p<Atom>
     void translate_atoms(coord_t, coord_t, coord_t);
     void translate_atoms(const Coordinates &);
     void translate_atoms(coord_t, coord_t, coord_t, const Set_of_Atoms &);
+    void translate_atoms(coord_t, coord_t, coord_t, const int* to_move, int flag);
     void translate_atoms(const Coordinates &, const Set_of_Atoms &);
     void translate_atoms(const Coordinates & whereto, const int * to_move, int flag);
+    template <typename T>
+    void translate_atoms(const Space_Vector<T> & whereto, const int * to_move, int flag);
 
     int rotate_atoms(const Coordinates &, angle_t);
 

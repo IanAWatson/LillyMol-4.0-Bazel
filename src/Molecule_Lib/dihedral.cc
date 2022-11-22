@@ -56,7 +56,7 @@ Molecule::signed_dihedral_angle(atom_number_t a1, atom_number_t a2, atom_number_
 }
 
 
-#define DEBUG_SET_DIHEDRAL
+//#define DEBUG_SET_DIHEDRAL
 //  Set dihedral from
 //   a1          a4
 //     \        /
@@ -120,6 +120,7 @@ Molecule::set_dihedral(atom_number_t a1,
   atoms_to_move[a2] = 0;
   atoms_to_move[a3] = 0;
 
+  // This should be the other sign, but a lot of inter-dependencies here.
   const double rot = current_angle - theta;
 
 #ifdef DEBUG_SET_DIHEDRAL

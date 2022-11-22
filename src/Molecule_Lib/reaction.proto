@@ -188,9 +188,27 @@ message RotateFragment {
   optional float angle = 3;
 }
 
+// The case where new atoms are placed as a best fit to some existing atoms.
 message ThreeDReplace {
   repeated MatchedAtomInComponent a1 = 1;
   repeated MatchedAtomInComponent a2 = 2;
+}
+
+// When performing a 3D reaction, the sidechain must be aligned relative to
+// the scaffold reaction site. Note that we place a bond, and so a join
+// directive should not be used.
+message Place3D {
+  // The reactive site in the scaffold.
+  repeated MatchedAtomInComponent a1 = 1;
+
+  // The reactive site in the sidechain.
+  repeated MatchedAtomInComponent a2 = 2;
+
+  // The length of the bond formed.
+  optional float bond_length = 3;
+
+  // The type of bond to be made - defaults to single.
+  optional SubstructureSearch.BondType btype = 4;
 }
 
 message NoReaction {
@@ -389,6 +407,8 @@ message SidechainReactionSite {
   repeated NoReaction no_reaction = 42;
   optional bool make_implicit_hydrogens_explicit = 43;
   optional SidechainMatchConditions match_conditions = 44;
+
+  repeated Place3D place_3d = 45;
 }
 
 message Reaction {

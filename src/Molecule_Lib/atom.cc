@@ -528,9 +528,9 @@ signed_dihedral_angle_atoms(const Atom& a1, const Atom& a2, const Atom& a3, cons
     return result;
   }
   if (zvalue < 0.0f) {
-    return result;
-  } else {
     return -result;
+  } else {
+    return result;
   }
 }
 

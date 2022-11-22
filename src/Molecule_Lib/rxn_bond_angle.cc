@@ -1,6 +1,8 @@
-#include <stdlib.h>
+#include <iostream>
 
 #include "iwreaction.h"
+
+using std::cerr;
 
 Reaction_Bond_Angle::Reaction_Bond_Angle()
 {
@@ -29,7 +31,7 @@ Reaction_Bond_Angle::construct_from_msi_attribute(const msi_attribute * att)
   if (4 != m.nwords())
   {
     cerr << "Reaction_Bond_Angle::construct_from_msi_attribute: attribute must have 4 tokens\n";
-    cerr << m << endl;
+    cerr << m << '\n';
     return 0;
   }
 
@@ -43,7 +45,7 @@ Reaction_Bond_Angle::construct_from_msi_attribute(const msi_attribute * att)
     if (! _atom[j].construct(token))
     {
       cerr << "Reaction_Bond_Angle::construct_from_msi_attribute: cannot parse attribute " << j << " '" << token << "'\n";
-      cerr << m << endl;
+      cerr << m << '\n';
       return 0;
     }
   }
@@ -95,7 +97,7 @@ Reaction_Bond_Angle::adjust_matched_atoms_in_component(const extending_resizable
   return 1;
 }
 
-//#define DEBUG_PROCESS_BOND_ANGLE
+#define DEBUG_PROCESS_BOND_ANGLE
 
 int
 Reaction_Bond_Angle::process(Molecule & m,
@@ -103,10 +105,10 @@ Reaction_Bond_Angle::process(Molecule & m,
                              const Enumeration_Temporaries & etmp) const
 {
 #ifdef DEBUG_PROCESS_BOND_ANGLE
-  cerr << "Processing bond angle " << _desired_angle << endl;
+  cerr << "Processing bond angle " << _desired_angle << '\n';
   if (nullptr != scaffold_embedding)
-    cerr << "Scaffold embedding " << (*scaffold_embedding) << endl;
-  cerr << m.smiles() << endl;
+    cerr << "Scaffold embedding " << (*scaffold_embedding) << '\n';
+  cerr << m.smiles() << '\n';
 #endif
 
   atom_number_t a[3];
@@ -117,7 +119,7 @@ Reaction_Bond_Angle::process(Molecule & m,
       return 0;
 
 #ifdef DEBUG_PROCESS_BOND_ANGLE
-    cerr << _atom[i] << " is atom " << a[i] << endl;
+    cerr << _atom[i] << " is atom " << a[i] << '\n';
 #endif
   }
 
@@ -142,13 +144,13 @@ Reaction_Bond_Angle::process(Molecule & m,
   if (m.set_bond_angle(a[0], a[1], a[2], _desired_angle))
   {
 #ifdef DEBUG_PROCESS_BOND_ANGLE
-    cerr << "After setting, angle is " << RAD2DEG * m.bond_angle(a[0], a[1], a[2]) << endl;
+    cerr << "After setting, angle is " << RAD2DEG * m.bond_angle(a[0], a[1], a[2]) << '\n';
 #endif
     return 1;
   }
 
   cerr << "Reaction_Bond_Angle::process:set_bond_angle failed '" << m.name() << "'\n";
-  cerr << "Atoms " << a[0] << ' ' << a[1] << ' ' << a[2] << endl;
+  cerr << "Atoms " << a[0] << ' ' << a[1] << ' ' << a[2] << '\n';
   write_isotopically_labelled_smiles(m, cerr);
 
   return 0;

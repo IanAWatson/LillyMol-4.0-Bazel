@@ -3764,6 +3764,10 @@ IWReaction::_perform_scaffold_transformations(Molecule & result,
   if (! _do_3d_replacements(result, scaffold_embedding, etmp))
     return 0;
 
+  if (! _place_reagents_3d(result, scaffold_embedding, etmp)) {
+    return 0;
+  }
+
   if (! _set_bond_lengths(result, scaffold_embedding, etmp))
     return 0;
 
@@ -4957,8 +4961,39 @@ IWReaction::_set_bond_angles(Molecule & result,
   {
     const Reaction_Bond_Angle * b = r.bond_angle_specification(j);
 
-    if (! b->process(result, scaffold_embedding, etmp))
+    if (! b->process(result, scaffold_embedding, etmp)) {
       return 0;
+    }
+  }
+
+  return 1;
+}
+
+int
+IWReaction::_place_reagents_3d(Molecule& result,
+                             const Set_of_Atoms * scaffold_embedding,
+                             const Enumeration_Temporaries & etmp) const {
+  const int ns = _sidechains.number_elements();
+
+  for (int i = 0; i < ns; ++i) {
+    const Sidechain_Reaction_Site* s = _sidechains[i];
+    if (! _place_reagents_3d(result, scaffold_embedding, etmp, *s)) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int
+IWReaction::_place_reagents_3d(Molecule& result,
+                             const Set_of_Atoms * scaffold_embedding,
+                             const Enumeration_Temporaries & etmp,
+                             const Reaction_Site & r) const {
+  for (const Place3D* place_3d : r.place_3d()) {
+    if (! place_3d->Process(result, scaffold_embedding, etmp)) {
+      return 0;
+    }
   }
 
   return 1;

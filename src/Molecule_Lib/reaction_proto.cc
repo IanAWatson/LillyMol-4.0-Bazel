@@ -667,8 +667,9 @@ Reaction_Site::ConstructFromProto(const P& proto)
 
   for (const auto& bond_angle : proto.bond_angle()) {
     std::unique_ptr<Reaction_Bond_Angle> rba(new Reaction_Bond_Angle);
-    if (! rba->ConstructFromProto(bond_angle, _unique_id))
+    if (! rba->ConstructFromProto(bond_angle, _unique_id)) {
        return WriteError("Reaction_Site::ConstructFromProto:invalid bond angle", proto);
+    }
     _reaction_bond_angle.add(rba.release());
   }
 
@@ -801,6 +802,14 @@ Sidechain_Reaction_Site::ConstructFromProto(const ReactionProto::SidechainReacti
     _no_reaction.add(nrxn.release());
   }
 
+  for (const auto& place_3d : proto.place_3d()) {
+    std::unique_ptr<Place3D> p3d = std::make_unique<Place3D>();
+    if (! p3d->ConstructFromProto(place_3d)) {
+      return WriteError("Reaction_Site::ConstructFromProto:invalid place3D ", place_3d);
+    }
+    _place_3d << p3d.release();
+  }
+
   if (proto.has_make_implicit_hydrogens_explicit())
     _make_implicit_hydrogens_explicit = proto.make_implicit_hydrogens_explicit();
 
@@ -919,6 +928,53 @@ IWReaction::ConstructFromProto(const ReactionProto::Reaction& proto)
   if (proto.has_noop_reaction()) {
     _noop_reaction = proto.noop_reaction();
   }
+
+  return 1;
+}
+
+int
+Place3D::ConstructFromProto(const ReactionProto::Place3D& proto) {
+  if (proto.a1().empty()) {
+    return WriteError("Reaction_3D_Replace::ConstructFromProto:no a1", proto);
+  }
+  if (proto.a2().empty()) {
+    return WriteError("Reaction_3D_Replace::ConstructFromProto:no a2", proto);
+  }
+
+  if (! proto.has_btype()) {
+    _btype = SINGLE_BOND;
+  } else if (proto.btype() == SubstructureSearch::SS_SINGLE_BOND) {
+    _btype = SINGLE_BOND;
+  } else if (proto.btype() == SubstructureSearch::SS_DOUBLE_BOND) {
+    _btype = DOUBLE_BOND;
+  } else if (proto.btype() == SubstructureSearch::SS_TRIPLE_BOND) {
+    _btype = TRIPLE_BOND;
+  } else {
+    cerr << "Place3D::ConstructFromProto:unrecognised bond " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  if (proto.has_bond_length()) {
+    _bond_length = proto.bond_length();
+  }
+
+  _n1 = proto.a1_size();
+  _n2 = proto.a2_size();
+  _a1 = new Matched_Atom_in_Component[_n1];
+  _a2 = new Matched_Atom_in_Component[_n2];
+
+  for (int i = 0; i < _n1; ++i) {
+    if (! _a1[i].ConstructFromProto(proto.a1(i))) {
+      return WriteError("Place3D::ConstructFromProto:invalid a1", proto);
+    }
+  }
+
+  for (int i = 0; i < _n2; ++i) {
+    if (! _a2[i].ConstructFromProto(proto.a2(i))) {
+      return WriteError("Place3D::ConstructFromProto:invalid a2", proto);
+    }
+  }
+
 
   return 1;
 }
