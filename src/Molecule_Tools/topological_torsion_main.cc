@@ -9,6 +9,8 @@
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/standardise.h"
 
+#include "Molecule_Tools/fingerprint_writer.h"
+
 #include "topological_torsion.h"
 
 namespace topological_torsion {
@@ -29,6 +31,8 @@ struct JobOptions {
 
   int reduce_to_largest_fragment = 0;
 
+  fingerprint_writer::FingerprintWriter _fp_writer;
+
   IWString tag;
 
   int fixed_width = 0;
@@ -42,6 +46,13 @@ using std::cerr;
 
 void
 Usage(int rc) {
+  cerr << "Generates topological torsion fingerprints\n";
+  cerr << " -J ...          fingerprint specification\n";
+  cerr << " -f              function as TDT filter\n";
+  cerr << " -P <atype>      atom typing specifications\n";
+  cerr << " -g ...          chemical standardisation\n";
+  cerr << " -l              reduce to largest fragment\n";
+  cerr << " -v              verbose output\n";
   exit(rc);
 }
 
@@ -114,14 +125,7 @@ TopologicalTorsion(Molecule& m,
     output << identifier_tag << m.name() << ">\n";
   }
 
-  output << job_options.tag;
-  if (job_options.fixed_width) {
-    output << sfc.FixedWidthFingerprint(job_options.fixed_width) << ">\n";
-  } else {
-    IWString ascii;
-    sfc.daylight_ascii_form_with_counts_encoded(ascii);
-    output << ascii << ">\n";
-  }
+  job_options._fp_writer.WriteFingerprint(m.name(), sfc, output);
 
   if (! job_options.work_as_filter) {
     output << "|\n";
@@ -257,6 +261,15 @@ TopologicalTorsion(int argc, char ** argv) {
     job_options.tag = "FPTT<";
   } else {
     job_options.tag = "NCTT<";
+  }
+
+  if (cl.option_present('J')) {
+    if (! job_options._fp_writer.Initialise(cl, 'J', job_options.verbose)) {
+      cerr << "Cannot initialise fingerprint writer (-J)\n";
+      return 1;
+    }
+  } else {
+    job_options._fp_writer.SetSparseOutput("NCTT<");
   }
 
   if (cl.option_present('y')) {

@@ -24,7 +24,8 @@ class AP
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    path_length, atype = FpCommon.parse_fp_token(fp.gsub(/^M*AP/, ''))
+    path_length, atype, fixed = FpCommon.parse_fp_token(fp.gsub(/^M*AP/, ''))
+    $stderr << "path_length #{path_length} atype #{atype} fixed #{fixed}\n"
 
     if fp.match(/:fixed/)
       cmd << ' -J fixed -J FPAP'

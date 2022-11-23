@@ -24,8 +24,9 @@ class IW
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    path_length, atype = FpCommon.parse_fp_token(fp[2..])
+    path_length, atype, fixed = FpCommon.parse_fp_token(fp[2..])
 
+    # fixed is the default, and non colliding does not work with iwfp.
     cmd << ' -J FPIW'
     cmd << "#{path_length} -R #{path_length}" if path_length
     cmd << " -P #{atype}" if atype

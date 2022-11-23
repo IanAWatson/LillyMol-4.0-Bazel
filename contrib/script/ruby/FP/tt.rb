@@ -24,9 +24,13 @@ class TT
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    path_length, atype = FpCommon.parse_fp_token(fp[2..])
+    path_length, atype, fixed = FpCommon.parse_fp_token(fp[2..])
 
-    cmd << ' -J FPTT -w 1024'
+    if fixed
+      cmd << ' -J fixed -J FPTT -J nbits=1024'
+    else
+      cmd << ' -J NCTT'
+    end
     cmd << " -P #{atype}" if atype
     cmd
   end

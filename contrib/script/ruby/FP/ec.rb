@@ -24,13 +24,20 @@ class EC
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    radius, atype = FpCommon.parse_fp_token(fp[2..])
+    radius, atype, fixed = FpCommon.parse_fp_token(fp[2..])
     # $stderr << "Radius #{radius} predefined '#{predefined}' ust_atype #{ust_atype}\n"
 
     radius ||= '3'
 
-    cmd << " -J NCEC#{radius}" unless /-J /.match(extra_qualifiers)
     cmd << " -R #{radius}" unless /-R \d/.match(extra_qualifiers)
+
+    if /-J /.match(extra_qualifiers)
+      pass
+    elsif fixed
+      cmd << " -J FPEC#{radius} -J fixed"
+    else
+      cmd << " -J NCEC#{radius}"
+    end
 
     atype ||= 'UST:Y'
     cmd << " -P #{atype}"

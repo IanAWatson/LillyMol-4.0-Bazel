@@ -25,9 +25,13 @@ class LINEAR
 
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                                      extra_qualifiers: extra_qualifiers)
-    path_length, atype = FpCommon.parse_fp_token(fp[6..])
+    path_length, atype, fixed = FpCommon.parse_fp_token(fp[6..])
 
-    cmd << ' -J NCLN'
+    if fixed
+      cmd << ' -J fixed -J FPLN'
+    else
+      cmd << ' -J NCLN'
+    end
     cmd << "#{path_length} -R #{path_length}" if path_length
     cmd << " -P #{atype}" if atype
     cmd

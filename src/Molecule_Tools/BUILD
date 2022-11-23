@@ -1265,6 +1265,7 @@ cc_binary(
         "topological_torsion_main.cc",
     ],
     deps = [
+        ":fingerprint_writer",
         ":topological_torsion_lib",
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",

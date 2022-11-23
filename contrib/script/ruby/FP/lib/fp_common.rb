@@ -45,8 +45,9 @@ end
 #    a. the 3 (the radius)
 #    b. the atom type. If derived from xxx, then UST:xxx
 #  Raise an exception if both atom type forms are specified.
-def parse_fp_token(fp)
+def parse_fp_token_inner(fp)
   return nil, nil if fp.empty?
+  $stderr << "parse_fp_token_inner processing #{fp}\n"
   f = fp.split(':')
   ust_atype = if f.length == 1
                nil
@@ -73,6 +74,21 @@ def parse_fp_token(fp)
   return radius, predefined if predefined
   return radius, "UST:#{ust_atype}" if ust_atype
   return radius, nil
+end
+
+# Detect whether `fp` contains the token ':fixed'. If so, remove it and pass what remains
+# to parse_fp_token_inner.
+# Returns whatever parse_fp_token_inner returns, together with a boolean for presence of :fixed
+
+def parse_fp_token(fp)
+  return nil, nil, false if fp.empty?
+
+  if fp.match(/:fixed/)
+    fp.slice!(':fixed')
+    return *parse_fp_token_inner(fp), true
+  else
+    return *parse_fp_token_inner(fp), false
+  end
 end
 
 end
