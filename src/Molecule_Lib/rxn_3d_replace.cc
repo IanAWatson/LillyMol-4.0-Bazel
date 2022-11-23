@@ -349,7 +349,7 @@ Place3D::~Place3D() {
   }
 }
 
-#define DEBUG_PLACE3D_PROCESS
+//#define DEBUG_PLACE3D_PROCESS
 
 int
 Place3D::Process(Molecule& m, 
@@ -379,8 +379,6 @@ Place3D::Process(Molecule& m,
   if (! m.are_bonded(scaffold, sidechain)) {
     m.add_bond(scaffold, sidechain, _btype);
   }
-
-  cerr << "COntinue processing\n";
 
   int sidechain_ncon = m.ncon(sidechain);
   if (sidechain_ncon == 1) {
@@ -432,9 +430,6 @@ Place3D::Process1(Molecule& m,
   std::unique_ptr<int[]> moving(new_int(matoms));
   int nmoving = m.identify_side_of_bond(moving.get(), sidechain, 1, scaffold);
 
-  write_isotopically_labelled_smiles(m, false, cerr);
-  cerr << '\n';
-
   Space_Vector<double> s1(m.x(scaffold), m.y(scaffold), m.z(scaffold));
   Space_Vector<double> s2(m.x(sidechain), m.y(sidechain), m.z(sidechain));
 
@@ -457,7 +452,6 @@ Place3D::Process1(Molecule& m,
   moving_atoms.reserve(nmoving);
   for (int i = 0; i < matoms; ++i) {
     if (moving[i]) {
-      cerr << " atom " << i << " is moving\n";
       moving_atoms << i;
     }
   }
