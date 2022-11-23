@@ -1883,6 +1883,9 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
       ;
     else if (c.starts_with("nonorganic"))
       ;
+    else if (c.starts_with("")) {
+      ;
+    }
     else if (c.starts_with("Nv"))
     {
       c.remove_leading_chars(2);

@@ -835,6 +835,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "ring_fingerprint",
+    srcs = [
+        "ring_fingerprint.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "//Foundational/iw_tdt:iw_tdt",
+    ],
+)
+
+cc_binary(
     name = "rgroup",
     srcs = [
         "rgroup.cc",

@@ -268,12 +268,17 @@ Molecular_Abstraction_Base_Class::_parse_fp_directive(const const_IWSubstring & 
     return 1;
   }
 
+  // Most likely this is of the form 'FP=FPFOO'.
   if (token.starts_with("FP=") && token.length() > 3)
   {
     const_IWSubstring tmp(token);
     tmp.remove_leading_chars(3);
 
     _smiles_tag << tmp;
+    // Otherwise _smiles_tag and _fingerprint_tag end up the same
+    if (_smiles_tag.starts_with("FP")) {
+      _smiles_tag.remove_leading_chars(2);
+    }
     if (! _smiles_tag.ends_with('<'))
       _smiles_tag << '<';
 
@@ -285,6 +290,7 @@ Molecular_Abstraction_Base_Class::_parse_fp_directive(const const_IWSubstring & 
     if (! _fingerprint_tag.ends_with('<'))
       _fingerprint_tag << '<';
 
+    cerr << "Returning with _smiles_tag " << _smiles_tag << " and _fingerprint_tag " << _fingerprint_tag << '\n';
     return 1;
   }
 

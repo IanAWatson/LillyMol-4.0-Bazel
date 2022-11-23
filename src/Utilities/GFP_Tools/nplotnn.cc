@@ -195,7 +195,7 @@ display_dash_x_options(std::ostream & os)
   os << " -X table           produce tabular output of near neighbour distances\n";
   os << " -X table1          produce tabular output of nearest neighbour distances\n";
   os << " -X tsmiles         produce tabular output including smiles\n";
-  os << " -x narrow_tabular  tabular form with each molecule on a separate line (Excel, Spotfire..)\n";
+  os << " -X narrow_tabular  tabular form with each molecule on a separate line (Excel, Spotfire..)\n";
   os << " -X osep=<char>     tabular data output separator\n";
   os << " -X normh           normalise the -H file to largest count\n";
   os << " -X allh            include all distances in the -H file (not just nearest)\n";
@@ -2422,7 +2422,7 @@ plotnn (int argc, char ** argv)
           cerr << "Tabular output with smiles\n";
         }
       }
-      else if (x == "narrow_table") {
+      else if (x == "narrow_table" || x == "narrow_tabular") {
         narrow_tabular = 1;
         if (verbose) {
           cerr << "Narrow tabular output (DataWarrior, Excel...)\n";

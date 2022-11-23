@@ -12,17 +12,17 @@ using std::endl;
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwmisc/sparse_fp_creator.h"
 
+#include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/path.h"
-#include "Molecule_Lib/aromatic.h"
-#include "Molecule_Lib/iwstandard.h"
 #include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/standardise.h"
 
 static const char * prog_name = nullptr;
 
-static IWString smiles_tag("Molecule_Lib/$SMI<");
-static IWString identifier_tag("Molecule_Lib/PCN<");
+static IWString smiles_tag("$SMI<");
+static IWString identifier_tag("PCN<");
 
 class Ring_Fingerprint
 {
@@ -122,6 +122,7 @@ Ring_Fingerprint::_usage (int rc)
   cerr << " -d            form inter-ring distance bits\n";
   cerr << " -e            echo the bits in each fingerprint (debugging only)\n";
   cerr << " -J <tag>      fingerprint tag\n";
+  cerr << " -f            work as a TDT filter\n";
   cerr << " -l            reduce to largest fragment\n";
   cerr << " -i <type>     input specification\n";
   cerr << " -g ...        chemical standardisation options\n";
@@ -172,7 +173,7 @@ write_fingerprint_differences (const Sparse_Fingerprint_Creator & sfc1,
   {
     const auto ib1 = b1.find(f->first);
 
-    if (f != b1.cend())
+    if (ib1 != b1.cend())
       continue;
 
     cerr << "bit " << f->first << " count " << f->second << " only found in second fp\n";
@@ -181,7 +182,6 @@ write_fingerprint_differences (const Sparse_Fingerprint_Creator & sfc1,
 
   return failures;
 }
-
 
 int
 Ring_Fingerprint::_perform_tests (Molecule & m)
@@ -230,7 +230,7 @@ Ring_Fingerprint::_perform_tests (Molecule & m)
 }
 
 void
-Ring_Fingerprint::_discern_exocyclic_bond_aliph (Molecule & m,
+Ring_Fingerprint::_discern_exocyclic_bond_aliph(Molecule & m,
                                 const atom_number_t zatom,
                                 int & exocyclic_double_bond,
                                 int & substituents,
@@ -270,7 +270,7 @@ Ring_Fingerprint::_discern_exocyclic_bond_aliph (Molecule & m,
 }
 
 void
-Ring_Fingerprint::_discern_exocyclic_bond (Molecule & m,
+Ring_Fingerprint::_discern_exocyclic_bond(Molecule & m,
                                            const int * arom,
                                            const atom_number_t zatom,
                                            int & exocyclic_double_bond,
@@ -436,6 +436,8 @@ Ring_Fingerprint::_fingerprint_aromatic_ring (Molecule & m,
   int biphenyl = 0;
   int to_aliphatic_ring = 0;
 
+  for (auto j : r) {
+  }
   for (unsigned int i = 0; i < rsize; ++i)
   {
     const auto j = r[i];
@@ -821,7 +823,7 @@ Ring_Fingerprint::_form_fingerprint (Molecule & m,
   extending_resizable_array<int> aromatic_ring_count, aliphatic_ring_count;
 
   int number_aromatic_rings = 0;
-  int largest_ring_size = 0;
+  uint32_t largest_ring_size = 0;
 
   for (auto i = 0; i < nr; ++i)
   {
@@ -1184,6 +1186,10 @@ Ring_Fingerprint::operator() (int argc, char ** argv)
     if (! _tag.ends_with('<'))
       _tag << '<';
 
+    if (! _tag.starts_with("NC")) {
+      cerr << "This generates a non colliding sparse fingerprint, invalid tag '" << _tag << "'\n";
+      return 0;
+    }
     if (_verbose)
       cerr << "Fingerprint written with tag '" << _tag << "'\n";
   }
@@ -1255,8 +1261,7 @@ Ring_Fingerprint::operator() (int argc, char ** argv)
       cerr << "Will produce bits based on aliphatic rings\n";
   }
 
-  if (0 == cl.number_elements())
-  {
+  if (cl.empty()) {
     cerr << "Insufficient arguments\n";
     _usage(2);
   }
@@ -1271,11 +1276,10 @@ Ring_Fingerprint::operator() (int argc, char ** argv)
   }
   else
   {
-    for (int i = 0; i < cl.number_elements(); i++)
-    {
-      if (! _process(cl[i], input_type, output))
-      {
-        rc = i + 1;
+    for (const char* fname: cl) {
+      if (! _process(fname, input_type, output)) {
+        cerr << "Fatal error processing '" << fname << "'\n";
+        rc = 1;
         break;
       }
     }

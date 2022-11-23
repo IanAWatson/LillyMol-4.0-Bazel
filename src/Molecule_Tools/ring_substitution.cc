@@ -96,6 +96,7 @@ usage(int rc)
   cerr << "  -P <bonds>    maximum path length around edge of ring system\n";
 //cerr << "  -b            break after finding adjacent match\n";
   cerr << "  -M ...        options for specifying just what kind of information to generate\n";
+  cerr << "  -f            work as a TDT filter\n";
   cerr << "  -l            reduce to largest fragment\n";
   cerr << "  -g ...        chemical standardisation options\n";
   cerr << "  -i <type>     input specification\n";

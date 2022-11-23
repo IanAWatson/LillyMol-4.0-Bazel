@@ -73,6 +73,8 @@ static int keep_going_after_fatal_error = 0;
 
 static int fatal_errors_encountered = 0;
 
+static int transfer_integer_molecular_properties_to_float = 0;
+
 class Needle : public Neighbour_List<similarity_type_t, Smiles_ID_Dist, GFP_Standard>
 {
   private:
@@ -240,7 +242,10 @@ build_fingerprint(IW_TDT & tdt,
     first_call = false;
   }
 
-  fp.build_molecular_properties(gfp.molecular_properties_integer());
+  if (transfer_integer_molecular_properties_to_float) {
+  } else {
+    fp.build_molecular_properties(gfp.molecular_properties_integer());
+  }
   fp.build_mk(gfp[stdfp_index[StdFpIndex::kMK]]);
   fp.build_mk2(gfp[stdfp_index[StdFpIndex::kMK2]]);
   fp.build_iw(gfp[stdfp_index[StdFpIndex::kIWfp]]);
@@ -435,6 +440,28 @@ nearneighbours_list_of_files (iwstring_data_source & input,
 }
 
 static int
+Benchmark(GFP_Standard* pool, int pool_size) {
+  constexpr int kNiter = 500;
+  float maxval = 0.0f;
+  for (int i = 0; i < kNiter; ++i) {
+    for (int j = 0; j < pool_size; ++j) {
+      for (int k = 0; k < pool_size; ++k) {
+        const float d = pool[j].tanimoto(pool[k]);
+        if (d > maxval) {
+          maxval = d;
+        }
+      }
+    }
+  }
+  if (maxval == 0.1f) {
+    return 12;
+  }
+  cerr << "maxval " << maxval << '\n';
+
+  return 1;
+}
+
+static int
 nearneighbours (const const_IWSubstring & fname,
                 IWString_and_File_Descriptor & output)
 {
@@ -477,6 +504,7 @@ usage (int rc)
   cerr << " -j <nthreads>    number of omp threads to use\n";
 //cerr << " -B <qualifier>   various other options, enter '-B help' for details\n";
 //cerr << " -V ...           Tversky specification, enter '-V help' for details\n";
+  cerr << " -x               enable AVX treatment of molecular properties\n";
   cerr << " -v               verbose output\n";
 
   exit(rc);
@@ -485,7 +513,7 @@ usage (int rc)
 static int
 nearneighbours (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "vn:p:t:T:r:V:hB:N:m:zj:");
+  Command_Line cl(argc, argv, "vn:p:t:T:r:V:hB:N:m:zj:x");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -620,6 +648,13 @@ nearneighbours (int argc, char ** argv)
     }
   }
 
+  if (cl.option_present('x')) {
+    transfer_integer_molecular_properties_to_float = 1;
+    if (verbose) {
+      cerr << "Will use AVX instructions for molecular properties\n";
+    }
+  }
+
   if (! cl.option_present('p'))
   {
     cerr << "Must specify a file of \"needles\" via the -p option\n";
@@ -656,6 +691,12 @@ nearneighbours (int argc, char ** argv)
       return 9;
     }
   }
+
+#ifdef DO_BENCHMARK
+  Benchmark(pool, pool_size);
+  return 0;
+#endif
+
 
   if (cl.option_present('r'))
   {
