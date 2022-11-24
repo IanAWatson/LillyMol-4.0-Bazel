@@ -68,7 +68,13 @@ enum class Comparison {
   kSmallestRingSize,
   kSumAtomicNumber,
   kSP3,
-  kNbonds
+  kNbonds,
+  kXrange,
+  kYrange,
+  kZrange,
+  kXAve,
+  kYAve,
+  kZAve
 };
 
 
@@ -744,6 +750,61 @@ compute_aromatic_rings(Molecule & m)
   return rc;
 }
 
+// Pointer to member function for getting a coordinate 
+typedef coord_t (Atom::*Coordinate)() const;
+
+class AtomRange {
+  private:
+    float _min;
+    float _max;
+
+  public:
+    AtomRange();
+
+    void operator()(float value);
+
+    float range() const {
+      return _max - _min;
+    }
+};
+
+AtomRange::AtomRange() {
+  _min = std::numeric_limits<float>::max();
+  _max = -std::numeric_limits<float>::max();
+}
+
+void
+AtomRange::operator()(float value) {
+  if (value < _min) {
+    _min = value;
+  }
+  if (value > _max) {
+    _max = value;
+  }
+}
+
+static float
+Range(const Molecule& m,
+      Coordinate f) {
+  AtomRange range;
+  m.each_atom_lambda([&range, f](const Atom* a) {
+    std::invoke(f, *a);
+  });
+
+  return range.range();
+}
+
+static float
+Average(const Molecule& m,
+        Coordinate f) {
+  Accumulator<float> acc;
+  m.each_atom_lambda([&acc, f](const Atom* a) {
+    std::invoke(f, *a);
+  });
+
+  return acc.average();
+}
+
 static int
 perform_substructure_search(Molecule & m, int property_number)
 {
@@ -924,6 +985,24 @@ File_Record::Initialise(Molecule & m,
         break;
       case Comparison::kSmallestRingSize:
         _property[i] = smallest_ring_size(m);
+        break;
+      case Comparison::kXrange:
+        _property[i] = Range(m, &Atom::x);
+        break;
+      case Comparison::kYrange:
+        _property[i] = Range(m, &Atom::y);
+        break;
+      case Comparison::kZrange:
+        _property[i] = Range(m, &Atom::z);
+        break;
+      case Comparison::kXAve:
+        _property[i] = Average(m, &Atom::x);
+        break;
+      case Comparison::kYAve:
+        _property[i] = Average(m, &Atom::y);
+        break;
+      case Comparison::kZAve:
+        _property[i] = Average(m, &Atom::z);
         break;
       default:
       {
@@ -1556,6 +1635,24 @@ msort (int argc, char ** argv)
           comparison_criterion[nproperties] = Comparison::kSDFTag;
           comparison_tag[nproperties] << "<" << token << '>';
           moleculeio::set_read_extra_text_info(1);
+        }
+        else if (token == "xrange") {
+          comparison_criterion[nproperties] = Comparison::kXrange;
+        }
+        else if (token == "yrange") {
+          comparison_criterion[nproperties] = Comparison::kYrange;
+        }
+        else if (token == "zrange") {
+          comparison_criterion[nproperties] = Comparison::kZrange;
+        }
+        else if (token == "xave") {
+          comparison_criterion[nproperties] = Comparison::kXAve;
+        }
+        else if (token == "yave") {
+          comparison_criterion[nproperties] = Comparison::kYAve;
+        }
+        else if (token == "zave") {
+          comparison_criterion[nproperties] = Comparison::kZAve;
         }
 //      else if (token.starts_with("rx="))
 //      {
