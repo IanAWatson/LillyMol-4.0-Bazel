@@ -383,7 +383,7 @@ Molecular_Abstraction_Base_Class::_do_any_writing_needed (Molecule_With_Info_Abo
 
   if (_min_atom_ratio_needed_for_write > 0.0f || _max_atom_ratio_allowed_for_write > 0.0f)
   {
-    float r = static_cast<float>(matoms) / static_cast<float>(m.parent_natoms());
+    const float r = iwmisc::Fraction<float>(matoms, m.parent_natoms());
 
     if (r < _min_atom_ratio_needed_for_write)
       return 1;
