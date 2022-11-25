@@ -172,6 +172,12 @@ usage(int rc)
   cerr << "                     'qry=...' hits to substructure query\n";
   cerr << "                     'smt=...' hits to substructure query\n";
   cerr << "                     'sdf=...' values in SDF tag\n";
+  cerr << "                     'xrange' the extent of X coordinates (3D)\n";
+  cerr << "                     'yrange' the extent of Y coordinates (3D)\n";
+  cerr << "                     'zrange' the extent of Z coordinates (3D)\n";
+  cerr << "                     'xave' the average X coordinates (3D)\n";
+  cerr << "                     'yave' the average Y coordinates (3D)\n";
+  cerr << "                     'zave' the average Z coordinates (3D)\n";
   cerr << "  -d             descending order\n";
   cerr << "  -y             if multiple queries present, treat as a group\n";
   cerr << "  -D <stem>      write different groups to output files starting with <stem>\n";
@@ -753,6 +759,7 @@ compute_aromatic_rings(Molecule & m)
 // Pointer to member function for getting a coordinate 
 typedef coord_t (Atom::*Coordinate)() const;
 
+// Keep track of the extrema values.
 class AtomRange {
   private:
     float _min;
@@ -783,25 +790,29 @@ AtomRange::operator()(float value) {
   }
 }
 
+// Compute the range defined by member function `f`.
 static float
 Range(const Molecule& m,
       Coordinate f) {
   AtomRange range;
   m.each_atom_lambda([&range, f](const Atom* a) {
-    std::invoke(f, *a);
+    range(std::invoke(f, *a));
   });
 
+  // cerr << "Range is " << range.range() << '\n';
   return range.range();
 }
 
+// Compute the average coordinate defined by member function `f`.
 static float
 Average(const Molecule& m,
         Coordinate f) {
   Accumulator<float> acc;
   m.each_atom_lambda([&acc, f](const Atom* a) {
-    std::invoke(f, *a);
+    acc.extra(std::invoke(f, *a));
   });
 
+  // cerr << "Average is " << acc.average() << '\n';
   return acc.average();
 }
 
