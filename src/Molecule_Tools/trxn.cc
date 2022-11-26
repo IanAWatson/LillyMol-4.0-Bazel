@@ -154,6 +154,10 @@ static int all_scaffold_possibilities_enumeration = 0;
 // helpful messages about multiple or no hits.
 static int emit_scaffold_nhits_messages = 1;
 
+// We can suppress molecules that fail a bump check.
+static float bump_check = 0.0f;
+int molecules_discarded_for_bump_check = 0;
+
 static void
 usage (int rc)
 {
@@ -315,6 +319,45 @@ perform_secondary_reactions(Molecule * m, Molecule & result)
   return 1;
 }
 
+// Return true of `a1` and `a2` are both bonded to some atom.
+int
+JoinedToSameAtom(const Molecule& m,
+                 atom_number_t a1,
+                 atom_number_t a2) {
+  const Set_of_Atoms c1 = m.connections(a1);
+
+  for (const Bond* b : m.atom(a2)) {
+    atom_number_t j = b->other(a2);
+    if (c1.contains(j)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+// Return OK if all non bonded pairs of atoms in `m` are further apart than `dist`.
+int
+OkBumpCheck(const Molecule& m,
+            float dist) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    for (int j = i + 1; j < matoms; ++j) {
+      if (m.are_bonded(i, j)) {
+        continue;
+      }
+      if (JoinedToSameAtom(m, i, j)) {
+        continue;
+      }
+      float d = m.distance_between_atoms(i, j);
+      if (d < dist) {
+        return 0;
+      }
+    }
+  }
+
+  return 1;
+}
+
 static void
 do_append_text (Molecule & m,
                 const IWString & to_append)
@@ -375,6 +418,13 @@ do_write (Molecule_and_Embedding * sidechain,
   {
     product.reset_all_atom_map_numbers(); 
 //  product.unset_unnecessary_implicit_hydrogens_known_values();    not sure if this is needed or not
+  }
+
+  if (bump_check > 0.0f && ! OkBumpCheck(product, bump_check)) {
+    ++molecules_discarded_for_bump_check;
+    //set_append_coordinates_after_each_atom(1);
+    //cerr << product.smiles() << ' ' << product.name() << '\n';
+    return 1;
   }
 
   if (chemical_standardisation.active())
@@ -1268,6 +1318,7 @@ display_dash_j_qualifiers (std::ostream & os)
   os << "  -J marvin      the input reaction file (-D) has come from Marvin\n";
   os << "  -J keepatmn    retain any atom map numbers in output molecules\n";
   os << "  -J larf        in smirks, if an atom is lost, remove the fragment\n";
+  os << "  -J bumpcheck=<dist> do not write molecules that have atoms closer than <dist>\n";
 
   return;
 }
@@ -1589,6 +1640,15 @@ trxn (int argc, char ** argv)
         emit_scaffold_nhits_messages = 0;
         if (verbose)
           cerr << "Will suppress messages about no/multiple scaffold embeddings\n";
+      }
+      else if (j.starts_with("bumpcheck=")) {
+        j.remove_leading_chars(10);
+        if (! j.numeric_value(bump_check) || bump_check < 0.0f) {
+          cerr << "Invalud bump check '" << j << "'\n";
+        }
+        if (verbose) {
+          cerr << "Will not write molecules failing a " << bump_check << " bump check\n";
+        }
       }
       else 
       {
@@ -2150,6 +2210,10 @@ trxn (int argc, char ** argv)
 
     if (suppress_duplicate_molecules)
       cerr << duplicate_molecules_suppressed << " duplicate products suppressed\n";
+
+    if (bump_check > 0.0f) {
+      cerr << molecules_discarded_for_bump_check << " molecules discarded for " << bump_check << " bump check\n";
+    }
   }
 
   if (nullptr != secondary_reactions)
