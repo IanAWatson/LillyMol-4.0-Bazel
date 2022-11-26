@@ -1137,12 +1137,11 @@ class Molecule : private resizable_array_p<Atom>
 
     int bump_check(atom_number_t, atom_number_t, atom_number_t, atom_number_t, distance_t) const;
 
-//  if different parts of the molecule have been shifted, we can do a bump check between all
-//  the '0' atoms and all the '1' atoms
+    // Compare all pairs for which `classification[i]` != `classification[j]` and
+    // return the number of pairs that are closer than `threshold`.
+    int bump_check(const int* classification, distance_t threshold) const;
 
-    int bump_check(const int *, distance_t) const;
-
-    int    set_dihedral(atom_number_t, atom_number_t, atom_number_t, atom_number_t, angle_t);
+    int set_dihedral(atom_number_t, atom_number_t, atom_number_t, atom_number_t, angle_t);
 
 //  A1 and A2 stay fixed. A3 is moved
 

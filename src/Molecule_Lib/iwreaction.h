@@ -755,7 +755,6 @@ class Place3D {
                 const Enumeration_Temporaries& etmp) const;
 };
 
-
 /*
   Jul 99. Finally need to do something about "libraries" which consist
   of different types of reactions.
@@ -1374,7 +1373,6 @@ class IWReaction : public Scaffold_Reaction_Site
     int _place_reagents_3d (Molecule & result,
                               const Set_of_Atoms * scaffold_embedding,
                               const Enumeration_Temporaries & etmp) const;
-
     int _do_find_kekule_forms_for_bad_valence (Molecule & result) const;
 
     int _break_bonds_to_atoms_and_fragments_to_be_removed (Molecule & result, const Enumeration_Temporaries & etmp) const;

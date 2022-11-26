@@ -381,20 +381,21 @@ Molecule::conf_search_possible (const Dihedral_Atoms & dihedral) const
 }*/
 
 int
-Molecule::bump_check(const int * tmp,
-                     distance_t tolerance) const
+Molecule::bump_check(const int * classification,
+                     distance_t threshold) const
 {
-  int rc = 1;
+  int rc = 0;
 
   for (int i = 0; i < _number_elements; i++)
   {
     for (int j = i + i; j < _number_elements; j++)
     {
-      if (tmp[i] == tmp[j])    // same grouping, don't compare them
+      if (classification[i] == classification[j])    // same grouping, don't compare them
         continue;
 
-      if (_things[i]->distance(*(_things[j])) < tolerance)
-        rc = 0;
+      // cerr << " btw " << i << " and " << j << " dist " <<_things[i]->distance(*(_things[j])) << " cmp " << threshold << '\n';
+      if (_things[i]->distance(*(_things[j])) < threshold)
+        ++rc;
     }
   }
 

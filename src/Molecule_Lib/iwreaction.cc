@@ -3946,20 +3946,6 @@ IWReaction::_perform_reaction(Molecule & result,
   cerr << "After performing scaffold transformations " << result.smiles() << endl;
 #endif
 
-#ifdef THESE_ARE_DONE_IN_PERFORM_SCAFFOLD_TRANSFORMATIONS
-  if (! _set_bond_lengths(result, scaffold_embedding, etmp))
-    return 0;
-
-  if (! _set_dihedral_angles(result, scaffold_embedding, etmp))
-    return 0;
-
-  if (! _set_bond_angles(result, scaffold_embedding, etmp))
-    return 0;
-
-  if (_make_implicit_hydrogens_explicit)
-    result.remove_all_atoms_with_isotope(_make_implicit_hydrogens_explicit);
-#endif
-
   if (_find_kekule_forms_for_bad_valence && ! result.valence_ok())
     _do_find_kekule_forms_for_bad_valence(result);
 

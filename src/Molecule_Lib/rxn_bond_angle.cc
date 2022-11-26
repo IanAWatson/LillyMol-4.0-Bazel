@@ -97,7 +97,7 @@ Reaction_Bond_Angle::adjust_matched_atoms_in_component(const extending_resizable
   return 1;
 }
 
-#define DEBUG_PROCESS_BOND_ANGLE
+//#define DEBUG_PROCESS_BOND_ANGLE
 
 int
 Reaction_Bond_Angle::process(Molecule & m,

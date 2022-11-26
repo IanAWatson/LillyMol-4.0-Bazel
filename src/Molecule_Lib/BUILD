@@ -693,9 +693,20 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ]
+)
+
+cc_test(
+    name = "rxn_3d_replace_test",
+    srcs = [
+        "rxn_3d_replace_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":iwreaction",
+        ":moleculeio",
+        "@googletest//:gtest_main",
+    ],
 )
 
 cc_test(
