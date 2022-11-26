@@ -35,6 +35,7 @@ cc_library(
         "new_int.cc",
         "new_unsigned_int.cc",
         "report_progress.cc",
+        "restore_state.cc",
         "write_space_suppressed_string.cc",
         "_numeric_data_from_file_int.cc",
         "_numeric_data_from_file_float.cc",

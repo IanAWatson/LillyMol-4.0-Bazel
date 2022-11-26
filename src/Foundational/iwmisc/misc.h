@@ -365,6 +365,27 @@ Fraction(A numerator, A denominator) {
   return static_cast<T>(numerator) / static_cast<T>(denominator);
 }
 
+// Class to temporarily set a state that can be defined by a 
+// getter and setter function.
+class RestoreState {
+  typedef int(*getter)();
+  typedef void(*setter)(int);
+
+  private:
+    // Set during the constructor and restored in the destructor.
+    int _initial_state;
+
+    setter _setter;
+
+  public:
+    // The initial state is captured in the constructor, and
+    // the setter(state) is invoked.
+    RestoreState(getter g, setter s, int state);
+
+    // during destruction, setter(_initial_state) is invoked.
+    ~RestoreState();
+};
+
 }  // namespace iwmisc
 
 
