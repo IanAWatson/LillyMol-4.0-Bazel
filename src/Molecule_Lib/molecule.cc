@@ -3741,20 +3741,29 @@ Molecule::rotate_atoms(const Coordinates & axis, angle_t theta)
   const double dc1 = axis.x();
   const double dc2 = axis.y();
   const double dc3 = axis.z();
+
+  const double dtheta = static_cast<double>(theta);
 //cerr << "Dc's are " << dc1 << "," << dc2 << "," << dc3 << " sum = " <<
 //     dc1 * dc1 + dc2 * dc2 + dc3 * dc3 << ", angle " << theta << endl;
   
 // Rather than deal properly with a matrix, just use individual variables
 
-  double rotmat11 = static_cast<coord_t>(cos(theta) + dc1 * dc1 * (1.0 - cos(theta)) );
-  double rotmat12 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(theta)) - dc3 * sin(theta) );
-  double rotmat13 = static_cast<coord_t>(dc1 * dc3 * (1.0 - cos(theta)) + dc2 * sin(theta) );
-  double rotmat21 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(theta)) + dc3 * sin(theta) );
-  double rotmat22 = static_cast<coord_t>(cos(theta) + dc2 * dc2 * (1.0 - cos(theta)) );
-  double rotmat23 = static_cast<coord_t>(dc2 * dc3 * (1.0 - cos(theta)) - dc1 * sin(theta) );
-  double rotmat31 = static_cast<coord_t>(dc3 * dc1 * (1.0 - cos(theta)) - dc2 * sin(theta) );
-  double rotmat32 = static_cast<coord_t>(dc3 * dc2 * (1.0 - cos(theta)) + dc1 * sin(theta) );
-  double rotmat33 = static_cast<coord_t>(cos(theta) + dc3 * dc3 * (1.0 - cos(theta)) );
+  double rotmat11 = static_cast<coord_t>(cos(dtheta) + dc1 * dc1 * (1.0 - cos(dtheta)) );
+  double rotmat12 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(dtheta)) - dc3 * sin(dtheta) );
+  double rotmat13 = static_cast<coord_t>(dc1 * dc3 * (1.0 - cos(dtheta)) + dc2 * sin(dtheta) );
+  double rotmat21 = static_cast<coord_t>(dc1 * dc2 * (1.0 - cos(dtheta)) + dc3 * sin(dtheta) );
+  double rotmat22 = static_cast<coord_t>(cos(dtheta) + dc2 * dc2 * (1.0 - cos(dtheta)) );
+  double rotmat23 = static_cast<coord_t>(dc2 * dc3 * (1.0 - cos(dtheta)) - dc1 * sin(dtheta) );
+  double rotmat31 = static_cast<coord_t>(dc3 * dc1 * (1.0 - cos(dtheta)) - dc2 * sin(dtheta) );
+  double rotmat32 = static_cast<coord_t>(dc3 * dc2 * (1.0 - cos(dtheta)) + dc1 * sin(dtheta) );
+  double rotmat33 = static_cast<coord_t>(cos(dtheta) + dc3 * dc3 * (1.0 - cos(dtheta)) );
+
+#ifdef DEBUG_ROTATE_ATOMS
+  cerr << "dc " << dc1 << ' ' << dc2 << ' ' << dc3 << " angle " << theta << '\n';
+  cerr << rotmat11 << '\t' << rotmat12 << '\t' << rotmat13 << '\n';
+  cerr << rotmat21 << '\t' << rotmat22 << '\t' << rotmat23 << '\n';
+  cerr << rotmat31 << '\t' << rotmat32 << '\t' << rotmat33 << '\n';
+#endif
 
   for (int i = 0; i < _number_elements; i++)
   {

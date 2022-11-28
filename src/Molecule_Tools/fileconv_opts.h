@@ -387,6 +387,11 @@ struct FileconvConfig {
   // in the input.
   int _threshold_for_small_fragment_report = 1;
 
+  int _report_shortest_non_bonded_distance = 0;
+  float _report_distances_shorter_than = 0.0f;
+  Accumulator<double> _acc_shortest_distance;
+  int _fail_shortest_non_bonded_distance = 0;
+
   // Private functions.
   private:
   void DefaultValues();
@@ -417,6 +422,9 @@ struct FileconvConfig {
   int IdentifyMatchedAtomsWithChiralCentres(const Molecule& m,
                                             const Set_of_Atoms& e,
                                             Set_of_Atoms& atoms_with_chiral_centres_to_be_removed);
+
+  int ReportShortestNonBondedDistance(const Molecule& m, std::ostream& output);
+  int OkShortestNonBondedDistance(const Molecule& m);
 
   int RemoveChiralCentresOnMatchedAtoms(
       Molecule& m, const resizable_array_p<Substructure_Query>& remove_chiral_centres_on);

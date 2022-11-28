@@ -5,8 +5,11 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwstring/iwstring.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
@@ -30,6 +33,7 @@ Usage(int rc) {
   cerr << " -O <atoms>        the matched atom(s) that define the origin\n";
   cerr << " -X <atoms>        the matched atom(s) that define the X axis\n";
   cerr << " -Y <atoms>        the matched atom(s) that define the Y axis\n";
+  cerr << " -C <angle>        rather than rotate an atom to the Y axis, rotate the closest atom to <angle> degrees from Y\n";
   cerr << " -z i              ignore molecules not matching the query\n";
   cerr << " -z w              write molecules not matching the query\n";
   cerr << " -T <x,y,z>        apply a final translation to molecules just before writing\n";
@@ -64,6 +68,10 @@ class AlignByMatchedAtoms {
     resizable_array<int> _xaxis;
     resizable_array<int> _yaxis;
 
+    // Rather than a matched atom aligned to the Y axis, place the atom with the highest X coordinate
+    // at an angle relative to Y
+    std::optional<float> _yangle;
+
     // After alignment has been done, we can apply a translation before writing.
     Space_Vector<float> _final_translation;
     // To enable a quick check on whether or not _final_translation is set.
@@ -78,6 +86,8 @@ class AlignByMatchedAtoms {
     int RunQueries(Molecule& m, Substructure_Results& sresults);
     int Process(Molecule& m, const Substructure_Results& sresults, Molecule_Output_Object& output);
     int HandleMoleculesNotMatchingQueries(Molecule& m, Molecule_Output_Object& output);
+    int RotateClosestToYaxis(Molecule& m, const Set_of_Atoms& embedding,
+                        Molecule_Output_Object& output);
     int Write(Molecule& m, Molecule_Output_Object& output);
 
   public:
@@ -222,6 +232,19 @@ AlignByMatchedAtoms::Initialise(Command_Line& cl) {
     _final_translation_active = 1;
   }
 
+  if (cl.option_present('C')) {
+    float angle;
+    if (! cl.value('C', angle)) {
+      cerr << "Invalid closest atom Y axis angle (-C)\n";
+      return 0;
+    }
+
+    if (_verbose) {
+      cerr << "Will place the highest X atom at " << angle << " degrees from the Y axis\n";
+    }
+    _yangle = angle * DEG2RAD;
+  }
+
   if (1 == cl.number_elements() && 0 == strcmp("-", cl[0])) { // reading a pipe, assume sdf
     _input_type = FILE_TYPE_SDF;
   } else if (!all_files_recognised_by_suffix(cl)) {
@@ -311,8 +334,12 @@ AlignByMatchedAtoms::Process(Molecule& m,
   m.rotate_atoms(xatoms, theta);
   m.translate_atoms(xatoms);
 
-  if (_yaxis.empty()) {
+  if (_yaxis.empty() && ! _yangle) {
     return Write(m, output);
+  }
+
+  if (_yangle) {
+    return RotateClosestToYaxis(m, *sresults.embedding(0), output);
   }
 
   Space_Vector<float> yatoms = Center(m, *sresults.embedding(0), _yaxis);
@@ -330,9 +357,6 @@ AlignByMatchedAtoms::Process(Molecule& m,
     return Write(m, output);
   }
 
-  // Move atoms to the positive Y direction.
-  //theta = M_PI + theta;
-
   if (yatoms.z() < 0.0f) {
     m.rotate_atoms(xaxis, theta);
   } else {
@@ -346,6 +370,103 @@ AlignByMatchedAtoms::Process(Molecule& m,
   }
 
   cerr << "Rotation to Y seems to have failed " << after_rotation << ' ' << m.name() << '\n';
+
+  return Write(m, output);
+}
+
+void
+Scatter(const resizable_array<int>& from,
+        const Set_of_Atoms& embedding,
+        int* to,
+        int value) {
+  for (int x : from) {
+    to[embedding[x]] = value;
+  }
+}
+
+//#define DEBUG_ROTATE_CLOSEST_TO_Y_AXIS
+// by definition, the highest X value must come from one of the atoms that did NOT
+// define the origin or the X axis.
+// Note that Hydrogen atoms are not considered.
+int
+AlignByMatchedAtoms::RotateClosestToYaxis(Molecule& m, const Set_of_Atoms& embedding,
+                        Molecule_Output_Object& output) {
+
+  const int matoms = m.natoms();
+  // Keep track of which atoms are to be considered. Note that in the common case
+  // of both origin and x axis each being defined by a single matched atom, this
+  // is quite inefficient.
+  std::unique_ptr<int[]> include_atom(new_int(matoms, 1));
+  Scatter(_origin, embedding, include_atom.get(), 0);
+  Scatter(_xaxis, embedding, include_atom.get(), 0);
+
+  float highest_x_coord = -std::numeric_limits<int>::max();
+  atom_number_t highest_x_atom = INVALID_ATOM_NUMBER;
+  for (int i = 0; i < matoms; ++i) {
+    if (! include_atom[i]) {
+      continue;
+    }
+    if (m.atomic_number(i) == 1) {
+      continue;
+    }
+    const float x = m.x(i);
+    if (x < highest_x_coord) {
+      continue;
+    }
+    highest_x_coord = x;
+    highest_x_atom = i;
+  }
+
+#ifdef DEBUG_ROTATE_CLOSEST_TO_Y_AXIS
+  cerr << "Highest X coord atom " << highest_x_atom << " " << m.smarts_equivalent_for_atom(highest_x_atom) << " at " << highest_x_coord << " " << m.name() << '\n';
+#endif
+
+  // The case where all atoms were involved with defining the origin and x axis.
+  if (highest_x_atom == INVALID_ATOM_NUMBER) {
+    return output.write(m);
+  }
+
+  static const Space_Vector<float> xaxis(1.0f, 0.0f, 0.0f);
+  static const Space_Vector<float> yaxis(0.0f, 1.0f, 0.0f);
+
+  static const Space_Vector<float> target(0.0f, cos(*_yangle), sin(*_yangle));
+
+  Space_Vector<float> closest(m.x(highest_x_atom), m.y(highest_x_atom), m.z(highest_x_atom));
+
+  Space_Vector<float>tmp(closest);
+  tmp.set_x(0.0f);
+  tmp.normalise();
+  float current_angle = target.angle_between_unit_vectors(tmp);
+  float delta = current_angle - *_yangle;
+  tmp.cross_product(target);
+
+  if (tmp.x() < 0.0f) {
+    m.rotate_atoms(xaxis, -delta);
+  } else {
+    m.rotate_atoms(xaxis, delta);
+  }
+
+  Space_Vector<float> after_rotation(m.x(highest_x_atom), m.y(highest_x_atom), m.z(highest_x_atom));
+  after_rotation.set_x(0.0f);
+  after_rotation.normalise();
+  const float new_angle = after_rotation.angle_between_unit_vectors(target);
+#ifdef DEBUG_ROTATE_CLOSEST_TO_Y_AXIS
+  cerr << "require " << *_yangle << " currently " << current_angle << '\n';
+#endif
+  if (abs(new_angle - *_yangle) < 0.0001) {
+#ifdef DEBUG_ROTATE_CLOSEST_TO_Y_AXIS
+    static int ngood = 0;
+    ++ngood;
+    cerr << "good " << ngood << '\n';
+#endif
+    return Write(m, output);
+  }
+
+  static int nbad = 0;
+  ++nbad;
+  cerr << "RotateClosestToYaxis:rotation did not work, expected " << *_yangle << " got " << new_angle << " tmp.x " << tmp.x() << '\n';
+  cerr << "Initial angle " << current_angle << " delta " << delta << " bad " << nbad << '\n';
+  cerr << "Final coords " << m.get_coords(highest_x_atom) << '\n';
 
   return Write(m, output);
 }
@@ -381,7 +502,11 @@ AlignByMatchedAtoms::Report(std::ostream& output) const {
   if (_molecules_read == 0) {
     return 1;
   }
-  output << _molecules_not_matching_queries << " molecules matched no queries\n";
+  if (_molecules_not_matching_queries == 0) {
+    cerr << "All molecules matched a query\n";
+  } else {
+    output << _molecules_not_matching_queries << " molecules matched no queries\n";
+  }
 
   return 1;
 }
@@ -449,7 +574,7 @@ AlignMolecules(AlignByMatchedAtoms& core_replacement,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcq:s:O:X:Y:o:S:z:T:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcq:s:O:X:Y:o:S:z:T:C:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

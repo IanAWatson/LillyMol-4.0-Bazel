@@ -291,6 +291,10 @@ FileconvConfig::DefaultValues() {
   _accumulate_small_fragments = 0;
   _threshold_for_small_fragment_report = 1;
 
+  _report_shortest_non_bonded_distance = 0;
+  _report_distances_shorter_than = 0.0f;
+  _fail_shortest_non_bonded_distance = 0;
+
   return;
 }
 
@@ -455,6 +459,9 @@ DisplayDashYOptions(std::ostream& os, char flag, int rc) {
   os << dash_flag << "amap2iso      convert atom map numbers to isotopes\n";
   os << dash_flag << "num2amap      the atom map number will be the atom number\n";
   os << dash_flag << "ecount        accumulate the number of molecules containing each kind of atom\n";
+  os << dash_flag << "bumpcheck     print and accumulate shortest non bonded distances\n";
+  os << dash_flag << "bumpcheck=dist     print and accumulate shortest non bonded distances shorter than <dist>\n";
+  os << dash_flag << "failbump      reject the molecule if it fails the bump check\n";
   os << dash_flag << "help          this message\n";
 
   exit(rc);
@@ -2882,6 +2889,80 @@ FileconvConfig::SubstituteForWhitespaceInName(Molecule& m) {
   return;
 }
 
+// Return true of `a1` and `a2` are both bonded to some atom.
+int
+JoinedToSameAtom(const Molecule& m,
+                 atom_number_t a1,
+                 atom_number_t a2) {
+  const Set_of_Atoms c1 = m.connections(a1);
+
+  for (const Bond* b : m.atom(a2)) {
+    atom_number_t j = b->other(a2);
+    if (c1.contains(j)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int
+FileconvConfig::ReportShortestNonBondedDistance(const Molecule& m, std::ostream& output) {
+  const int matoms = m.natoms();
+  float shortest_distance = std::numeric_limits<float>::max();
+  atom_number_t ishort = INVALID_ATOM_NUMBER;
+  atom_number_t jshort = INVALID_ATOM_NUMBER;
+  for (int i = 0; i < matoms; ++i) {
+    for (int j = i + 1; j < matoms; ++j) {
+      if (m.are_bonded(i, j)) {
+        continue;
+      }
+
+      const float d = m.distance_between_atoms(i, j);
+      if (JoinedToSameAtom(m, i, j)) {
+        continue;
+      }
+      if (d >= shortest_distance) {
+        continue;
+      }
+      shortest_distance = d;
+      ishort = i;
+      jshort = j;
+    }
+  }
+
+  _acc_shortest_distance.extra(shortest_distance);
+
+  if (shortest_distance < _report_distances_shorter_than) {
+    output << m.name() << " dist " << shortest_distance << ' ' << m.smarts_equivalent_for_atom(ishort) <<
+              m.smarts_equivalent_for_atom(jshort) << '\n';
+  }
+
+  return 1;
+}
+
+int
+FileconvConfig::OkShortestNonBondedDistance(const Molecule& m) {
+  const int matoms = m.natoms();
+
+  for (int i = 0; i < matoms; ++i) {
+    for (int j = i + 1; j < matoms; ++j) {
+      if (m.are_bonded(i, j)) {
+        continue;
+      }
+      if (JoinedToSameAtom(m, i, j)) {
+        continue;
+      }
+
+      const float d = m.distance_between_atoms(i, j);
+      if (d < _report_distances_shorter_than) {
+        return 0;
+      }
+    }
+  }
+
+  return 1;
+}
+
 int
 do_remove_unnecessary_square_brackets(Molecule& m) {
   return m.unset_unnecessary_implicit_hydrogens_known_values();
@@ -2948,6 +3029,17 @@ FileconvConfig::Process(Molecule& m) {
 
   if (print_max_atom_separation)
     (void)PrintMaxAtomSeparation(m, std::cout);
+
+  if (_report_shortest_non_bonded_distance) {
+    ReportShortestNonBondedDistance(m, std::cout);
+  }
+  if (_fail_shortest_non_bonded_distance) {
+    if (!OkShortestNonBondedDistance(m)) {
+      result.rejected = 1;
+      result.rejection_reason = "bump_check";
+      return result;
+    }
+  }
 
   if (verbose) {
     int matoms = m.natoms();
@@ -3649,11 +3741,29 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       if (verbose) {
         cerr << "Will report element counts\n";
       }
+    } else if (y == "bumpcheck") {
+      _report_shortest_non_bonded_distance = 1;
+      if (verbose) {
+        cerr << "Will report the shortest non bonded distances\n";
+      }
+    } else if (y.starts_with("bumpcheck")) {
+      y.remove_leading_chars(10);
+      if (! y.numeric_value(_report_distances_shorter_than) || _report_distances_shorter_than < 0.0f) {
+        cerr << "Invalid bumpcheck reporting threshold '" << y << "'\n";
+        return 0;
+      }
+      if (verbose) {
+        cerr << "Will report inter-atomic distances shorter than " << _report_distances_shorter_than << '\n';
+      }
+      _report_shortest_non_bonded_distance = 1;
+    } else if (y == "failbump") {
+      _fail_shortest_non_bonded_distance = 1;
+      _report_shortest_non_bonded_distance = 1;
     } else if ("help" == y) {
       DisplayDashYOptions(cerr, 'Y', 2);
     } else {
       cerr << "Unrecognised -Y qualifier '" << y << "'\n";
-      return 6;
+      return 0;
     }
   }
 
@@ -4232,6 +4342,7 @@ FileconvConfig::GatherAppendSpecifications(Command_Line& cl, char flag) {
     } else {
       cerr << "Unrecognised -p qualifier '" << p << "'\n";
       DisplayPDirectives(1);
+      return 0;
     }
   }
 
@@ -4516,6 +4627,11 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
         cerr << usmi << " count " << count << '\n';
       }
     }
+  }
+
+  if (_acc_shortest_distance.n() > 0) {
+    cerr << "Shortest non bonded distances btw " << _acc_shortest_distance.minval() << " and "
+         << _acc_shortest_distance.maxval() << " ave " << _acc_shortest_distance.average() << '\n';
   }
 
   if (audit_input) {
@@ -4844,7 +4960,7 @@ FileconvConfig::Build(Command_Line& cl) {
   }
 
   if (!ParseMiscOptions(cl, 'Y')) {
-    return 1;
+    return 0;
   }
 
   if (!GatherAppendSpecifications(cl, 'p')) {
