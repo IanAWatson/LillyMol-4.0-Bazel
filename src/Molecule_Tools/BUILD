@@ -142,9 +142,22 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
+)
+
+cc_binary(
+    name = "conformational_scan",
+    srcs = [
+        "conformational_scan.cc",
     ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+    ]
 )
 
 cc_binary(

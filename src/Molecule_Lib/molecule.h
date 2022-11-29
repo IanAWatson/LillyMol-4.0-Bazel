@@ -718,6 +718,8 @@ class Molecule : private resizable_array_p<Atom>
     int   add_bond(atom_number_t, atom_number_t, bond_type_t, int = 0);
     int   are_bonded(atom_number_t, atom_number_t) const;
     int   are_bonded(atom_number_t, atom_number_t, bond_type_t &) const;
+    // Return true if `a1` and `a2` share a common neighbour.
+    int   are_adjacent(atom_number_t a1, atom_number_t a2) const;
     int   finished_bond_addition();    // call after add_bond with partial mol
     int   assign_bond_numbers_to_bonds();
     int   assign_bond_numbers_to_bonds_if_needed();
@@ -1139,7 +1141,12 @@ class Molecule : private resizable_array_p<Atom>
 
     // Compare all pairs for which `classification[i]` != `classification[j]` and
     // return the number of pairs that are closer than `threshold`.
-    int bump_check(const int* classification, distance_t threshold) const;
+    // Note that non bonded pairs are skipped - even though the atoms are different in
+    // `classification`.
+    int count_bump_check(const int* classification, distance_t threshold) const;
+    // Return true if any non-bonded pairs with classification[i] != classification[j]
+    // are closer than `threshold`.
+    int any_bump_check(const int* classification, distance_t threshold) const;
 
     int set_dihedral(atom_number_t, atom_number_t, atom_number_t, atom_number_t, angle_t);
 
@@ -1306,6 +1313,8 @@ class Molecule : private resizable_array_p<Atom>
 
     template <typename T>
     int rotate_atoms(const Space_Vector<T> &, T, const Set_of_Atoms &);
+    template <typename T>
+    int rotate_atoms(const Space_Vector<T>& axis, const T angle, const int* to_move);
 
     int number_fragments();
     // Each fragment is assigned an arbitrary number - that starts at 0. Usually

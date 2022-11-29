@@ -387,10 +387,18 @@ struct FileconvConfig {
   // in the input.
   int _threshold_for_small_fragment_report = 1;
 
+  // Various things controlling bump checks.
   int _report_shortest_non_bonded_distance = 0;
   float _report_distances_shorter_than = 0.0f;
   Accumulator<double> _acc_shortest_distance;
+  // If set, a molecule is considered failed if there are pairs of atoms closer than
+  // _report_distances_shorter_than.
   int _fail_shortest_non_bonded_distance = 0;
+  // The first two matched atoms from a query can define portions of
+  // a molecule, and we can bump check either side of those.
+  resizable_array_p<Substructure_Query> _bump_check_query;
+
+  int _molecules_failing_bump_check = 0;
 
   // Private functions.
   private:
@@ -423,8 +431,8 @@ struct FileconvConfig {
                                             const Set_of_Atoms& e,
                                             Set_of_Atoms& atoms_with_chiral_centres_to_be_removed);
 
-  int ReportShortestNonBondedDistance(const Molecule& m, std::ostream& output);
-  int OkShortestNonBondedDistance(const Molecule& m);
+  int ReportShortestNonBondedDistance(Molecule& m, std::ostream& output);
+  int OkShortestNonBondedDistance(Molecule& m);
 
   int RemoveChiralCentresOnMatchedAtoms(
       Molecule& m, const resizable_array_p<Substructure_Query>& remove_chiral_centres_on);
@@ -493,6 +501,12 @@ struct FileconvConfig {
   int AccumulateElementCounts(const Molecule& m);
 
   int AccumulateSmallFragments(Molecule& m);
+
+  int GetBumpCheckMatchedAtoms(Molecule& m,
+                                atom_number_t& a1,
+                                atom_number_t& a2);
+  int OkShortestNonBondedDistanceQuery(Molecule& m);
+  int AddBumpCheckQuery(const const_IWSubstring& s);
 
  public:
   // By default, nothing will be set. Useless in default state.

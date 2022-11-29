@@ -196,6 +196,8 @@ AlignByMatchedAtoms::Initialise(Command_Line& cl) {
       } else if (z == 'w') {
         _write_molecules_not_matching_queries = 1;
       } else {
+        cerr << "Unrecognised -z qualifier '" << z << "'\n";
+        return 0;
       }
     }
   }

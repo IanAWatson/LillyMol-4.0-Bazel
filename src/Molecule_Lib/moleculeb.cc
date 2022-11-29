@@ -260,6 +260,11 @@ Molecule::are_bonded(atom_number_t a1, atom_number_t a2, bond_type_t & bt) const
   return _things[a1]->is_bonded_to(a2, bt);
 }
 
+int
+Molecule::are_adjacent(atom_number_t a1, atom_number_t a2) const {
+  return _things[a1]->connections(a1).contains(a2);
+}
+
 /*
   Return the bond number of the bond between atoms A1 and A2
 */

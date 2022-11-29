@@ -381,7 +381,7 @@ Molecule::conf_search_possible (const Dihedral_Atoms & dihedral) const
 }*/
 
 int
-Molecule::bump_check(const int * classification,
+Molecule::count_bump_check(const int * classification,
                      distance_t threshold) const
 {
   int rc = 0;
@@ -393,6 +393,10 @@ Molecule::bump_check(const int * classification,
       if (classification[i] == classification[j])    // same grouping, don't compare them
         continue;
 
+      if (_things[i]->is_bonded_to(j)) {
+        continue;
+      }
+
       // cerr << " btw " << i << " and " << j << " dist " <<_things[i]->distance(*(_things[j])) << " cmp " << threshold << '\n';
       if (_things[i]->distance(*(_things[j])) < threshold)
         ++rc;
@@ -400,6 +404,34 @@ Molecule::bump_check(const int * classification,
   }
 
   return rc;
+}
+
+int
+Molecule::any_bump_check(const int * classification,
+                     distance_t threshold) const
+{
+  for (int i = 0; i < _number_elements; i++)
+  {
+    for (int j = i + i; j < _number_elements; j++)
+    {
+      if (classification[i] == classification[j])    // same grouping, don't compare them
+        continue;
+
+      // We ignore bonded pairs.
+      if (_things[i]->is_bonded_to(j)) {
+        continue;
+      }
+
+      // cerr << " btw " << i << " and " << j << " dist " <<_things[i]->distance(*(_things[j])) << " cmp " << threshold << '\n';
+      if (_things[i]->distance(*(_things[j])) >= threshold) {
+        continue;
+      }
+
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 //#define DEBUG_SET_BOND_ANGLE

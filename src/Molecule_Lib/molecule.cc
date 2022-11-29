@@ -3856,6 +3856,67 @@ Molecule::rotate_atoms(const Space_Vector<T> & axis, T theta,
 template int Molecule::rotate_atoms(const Space_Vector<double> &, double, const Set_of_Atoms &);
 template int Molecule::rotate_atoms(const Space_Vector<coord_t> &, angle_t, const Set_of_Atoms &);
 
+template <typename T>
+int
+Molecule::rotate_atoms(const Space_Vector<T>& axis, const T angle, const int* to_move) {
+  if (angle == static_cast<T>(0)) {
+    return 1;
+  }
+ 
+  const double dc1 = axis.x();
+  const double dc2 = axis.y();
+  const double dc3 = axis.z();
+  const double dtheta = static_cast<double>(angle);
+  
+#ifdef DEBUG_ROTATE_ATOMS
+  cerr << "Dc's are " << dc1 << "," << dc2 << "," << dc3 << " sum = " <<
+       dc1 * dc1 + dc2 * dc2 + dc3 * dc3 << "\n";
+#endif
+
+// Rather than deal properly with a matrix, just use individual variables
+
+  double rotmat11 = static_cast<double>(cos(dtheta) + dc1 * dc1 * (1.0 - cos(dtheta)) );
+  double rotmat12 = static_cast<double>(dc1 * dc2 * (1.0 - cos(dtheta)) - dc3 * sin(dtheta) );
+  double rotmat13 = static_cast<double>(dc1 * dc3 * (1.0 - cos(dtheta)) + dc2 * sin(dtheta) );
+  double rotmat21 = static_cast<double>(dc1 * dc2 * (1.0 - cos(dtheta)) + dc3 * sin(dtheta) );
+  double rotmat22 = static_cast<double>(cos(dtheta) + dc2 * dc2 * (1.0 - cos(dtheta)) );
+  double rotmat23 = static_cast<double>(dc2 * dc3 * (1.0 - cos(dtheta)) - dc1 * sin(dtheta) );
+  double rotmat31 = static_cast<double>(dc3 * dc1 * (1.0 - cos(dtheta)) - dc2 * sin(dtheta) );
+  double rotmat32 = static_cast<double>(dc3 * dc2 * (1.0 - cos(dtheta)) + dc1 * sin(dtheta) );
+  double rotmat33 = static_cast<double>(cos(dtheta) + dc3 * dc3 * (1.0 - cos(dtheta)) );
+
+#ifdef DEBUG_ROTATE_ATOMS
+  cerr << "Rotation matrix is\n" << rotmat11 << " " << rotmat12 << " " << rotmat13 << "\n";
+  cerr << rotmat21 << " " << rotmat22 << " " << rotmat23 << "\n";
+  cerr << rotmat31 << " " << rotmat32 << " " << rotmat33 << "\n";
+#endif
+
+  for (int i = 0; i < _number_elements; i++)
+  {
+    if (to_move[i] == 0) {
+      continue;
+    }
+
+    Atom *a = _things[i];
+
+//  cerr << "Initial coordinates for atom " << j << " " << *a << endl;
+  
+    double x0 = a->x();
+    double y0 = a->y();
+    double z0 = a->z();
+
+    double xx = rotmat11 * x0 + rotmat12 * y0 + rotmat13 * z0;
+    double yy = rotmat21 * x0 + rotmat22 * y0 + rotmat23 * z0;
+    double zz = rotmat31 * x0 + rotmat32 * y0 + rotmat33 * z0;
+
+    a->setxyz(static_cast<coord_t>(xx), static_cast<coord_t>(yy), static_cast<coord_t>(zz) );
+  }
+
+  return 1;
+}
+
+template int Molecule::rotate_atoms(const Space_Vector<double>& axis, const double angle, const int* to_move);
+
 void
 Molecule::rotate_to_longest_distance_along_x(atom_number_t & left, atom_number_t & right)
 {
