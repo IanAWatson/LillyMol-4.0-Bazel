@@ -1,7 +1,11 @@
 // Read a query and write it.
 // Most useful for converting legacy query format to proto.
 
+#include <fstream>
+#include <iostream>
+
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/proto_support.h"
 
 #include "Molecule_Lib/rwsubstructure.h"
 #include "Molecule_Lib/substructure.h"
@@ -9,11 +13,28 @@
 
 namespace echoqry {
 
+using std::cerr;
+
 int verbose = 0;
+
+int write_binary_proto = 0;
 
 void
 Usage(int rc) {
   exit(rc);
+}
+
+int
+WriteBinaryProto(Substructure_Query& query,
+                 IWString& fname) {
+  SubstructureSearch::SubstructureQuery proto = query.BuildProto();
+  std::fstream output(fname.null_terminated_chars(), std::ios::out | std::ios::trunc | std::ios::binary);
+  if (! proto.SerializeToOstream(&output)) {
+    cerr << "WriteBinaryProto:writing to '" << fname << "' failed\n";
+    return 0;
+  }
+
+  return 1;
 }
 
 int
@@ -22,8 +43,13 @@ EchoQry(Substructure_Query& query,
         int inner_ndx,
         const IWString& output_stem) {
   IWString fname;
-  fname << output_stem << '.' << outer_ndx << '.' << inner_ndx << "_qry.txtproto";
-  return query.WriteProto(fname);
+  if (write_binary_proto) {
+    fname << output_stem << '.' << outer_ndx << '.' << inner_ndx << "_qry.dat";
+    return WriteBinaryProto(query, fname);
+  } else {
+    fname << output_stem << '.' << outer_ndx << '.' << inner_ndx << "_qry.txtproto";
+    return query.WriteProto(fname);
+  }
 }
 
 int
@@ -55,7 +81,7 @@ EchoQry(const char * token,
 
 int
 EchoQry(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:S:");
+  Command_Line cl(argc, argv, "vE:S:b");
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
     Usage(1);
@@ -63,7 +89,14 @@ EchoQry(int argc, char** argv) {
 
   verbose = cl.option_count('v');
 
-  if (cl.number_elements() == 0) {
+  if (cl.option_present('b')) {
+    write_binary_proto = 1;
+    if (verbose) {
+      cerr << "Will write binary proto files\n";
+    }
+  }
+
+  if (cl.empty()) {
     cerr << "Must specify name(s) of query file(s)\n";
     Usage(1);
   }

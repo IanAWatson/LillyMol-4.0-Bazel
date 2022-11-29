@@ -3119,50 +3119,6 @@ extern void set_query_environment_must_match_unmatched_atoms(const int s);
 extern int remove_atoms_with_same_or(Query_Atoms_Matched & matched_atoms,
                            int istart, int orid);
 
-#ifdef THESE_ARE_IN_RWSUBSTRUCTURE_H
-template <typename T>
-int
-process_queries(Command_Line & cl, resizable_array_p<T> & queries,
-                 int verbose = 0, char option = 'q');
-
-template <typename T>
-int
-process_files_of_queries(Command_Line & cl, resizable_array_p<T> & queries,
-                 int inherit_directory_path, int verbose = 0, char option = 'Q');
-
-template <typename T>
-int
-queries_from_file(const const_IWSubstring & fname, resizable_array_p<T> & queries,
-                   int inherit_directory_path, int verbose = 0);
-template <typename T>
-int
-queries_from_file(const IWString & fname, resizable_array_p<T> & queries,
-                   int inherit_directory_path, int verbose = 0);
-template <typename T>
-int
-queries_from_ISIS_query_file(const const_IWSubstring & fname,
-                              resizable_array_p<T> & queries,
-                              int verbose);
-template <typename T>
-int
-query_from_ISIS_query_file(MDL_Molecule & m,
-                            Molecule_to_Query_Specifications & mqs,
-                            resizable_array_p<T> & queries, int verbose);
-template <typename T>
-int
-queries_from_ISIS_query_file(const const_IWSubstring & fname,
-                              resizable_array_p<T> & queries, int verbose);
-template <typename T>
-int
-queries_from_file_of_molecules(const const_IWSubstring & fname,
-                                resizable_array_p<T> & queries,
-                                int verbose);
-template <typename T>
-int
-process_cmdline_token(const char, const const_IWSubstring & token,
-                       resizable_array_p<T> & queries, int verbose,
-                       Molecule_to_Query_Specifications* mqs = nullptr);
-#endif
 /*
   When parsing the form '-q M:fname' we can add directives in the form
   '-q M:fname%onlysub=smarts' 
