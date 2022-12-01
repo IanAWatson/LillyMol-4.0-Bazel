@@ -1881,9 +1881,7 @@ Substructure_Atom::construct_from_smarts_token(const const_IWSubstring & smarts)
       ;
     else if (c.starts_with("organic"))
       ;
-    else if (c.starts_with("nonorganic"))
-      ;
-    else if (c.starts_with("")) {
+    else if (c.starts_with("nonorganic")) {
       ;
     }
     else if (c.starts_with("Nv"))
@@ -2588,7 +2586,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       nchars--;
       _add_element(e);
       first_elemental_primitive_encountered = 1;
-      if (respect_aliphatic_smarts && e->organic())
+      if (respect_aliphatic_smarts && e->organic() && e->can_be_aromatic())
         _aromaticity = NOT_AROMATIC;
       previous_token_was = SMARTS_PREVIOUS_TOKEN_ELEMENT;
     }
@@ -2602,7 +2600,7 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
       nchars--;    // remember, we are looking at the base character
       _add_element(e);
       first_elemental_primitive_encountered = 1;
-      if (respect_aliphatic_smarts && e->organic())
+      if (respect_aliphatic_smarts && e->organic() && e->can_be_aromatic())
         _aromaticity = NOT_AROMATIC;
       previous_token_was = SMARTS_PREVIOUS_TOKEN_ELEMENT;
     }
@@ -2620,7 +2618,9 @@ Substructure_Atom_Specifier::construct_from_smarts_token(const const_IWSubstring
     {
       _add_element(e);
       first_elemental_primitive_encountered = 1;
-      _aromaticity = NOT_AROMATIC;
+      if (e->can_be_aromatic()) {
+        _aromaticity = NOT_AROMATIC;
+      }
       previous_token_was = SMARTS_PREVIOUS_TOKEN_ELEMENT;
     }
     else if ('D' == s)       // degree specifier (note that Deuterium is not valid in a smarts)

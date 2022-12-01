@@ -131,7 +131,8 @@ Substructure_Ring_Specification::terse_details (std::ostream & os,
   return os.good();
 }
 
-static int
+namespace ss_ring {
+int
 compute_atoms_with_pi_electrons (const Ring * r, Molecule_to_Match & target)
 {
   int rc = 0;
@@ -163,7 +164,7 @@ compute_atoms_with_pi_electrons (const Ring * r, Molecule_to_Match & target)
   return rc;
 }
 
-static int
+int
 compute_within_ring_unsaturation (const Ring * r, Molecule_to_Match & target)
 {
   int rc = 0;
@@ -201,6 +202,34 @@ compute_within_ring_unsaturation (const Ring * r, Molecule_to_Match & target)
 //cerr << "compute_within_ring_unsaturation finds " << rc << " unsaturation\n";
   return rc;
 }
+
+int
+fused_aromatic_neighbours(const Ring& r) {
+  int result = 0;
+  for (int i = 0; i < r.fused_ring_neighbours(); i++) {
+    const Ring * rni = r.fused_neighbour(i);
+    if (rni->is_aromatic()) {
+      ++result;
+    }
+  }
+
+  return result;
+}
+
+int
+fused_non_aromatic_neighbours(const Ring& r) {
+  int result = 0;
+  for (int i = 0; i < r.fused_ring_neighbours(); i++) {
+    const Ring * rni = r.fused_neighbour(i);
+    if (! rni->is_aromatic()) {
+      ++result;
+    }
+  }
+
+  return result;
+}
+
+}  // namespace ss_ring
 
 //#define DEBUG_SS_RING_MATCHES
 
@@ -305,13 +334,7 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
 
     if (_fused_aromatic_neighbours.is_set())
     {
-      int arfsn = 0;
-      for (int j = 0; j < r->fused_ring_neighbours(); j++)
-      {
-        const Ring * rnj = r->fused_neighbour(j);
-        if (rnj->is_aromatic())
-          arfsn++;
-      }
+      const int arfsn = ss_ring::fused_aromatic_neighbours(*r);
 
       if (! _fused_aromatic_neighbours.matches(arfsn))
         continue;
@@ -319,27 +342,15 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
 
     if (_fused_non_aromatic_neighbours.is_set())
     {
-      int narfsn = 0;
-      for (int j = 0; j < r->fused_ring_neighbours(); j++)
-      {
-        const Ring * rnj = r->fused_neighbour(j);
-        if (rnj->is_non_aromatic())
-          narfsn++;
-      }
+      int narfsn = ss_ring::fused_non_aromatic_neighbours(*r);
 
       if (! _fused_non_aromatic_neighbours.matches(narfsn))
         continue;
     }
 
-    if (_all_hits_in_same_fragment)
-    {
-      atom_number_t a = r->item(0);
-      hits_in_fragment[m->fragment_membership(a)]++;
-    }
-
     if (_within_ring_unsaturation.is_set())
     {
-      int ring_unsaturation = compute_within_ring_unsaturation(r, target);
+      int ring_unsaturation = ss_ring::compute_within_ring_unsaturation(r, target);
 
       if (! _within_ring_unsaturation.matches(ring_unsaturation))
         continue;
@@ -347,7 +358,7 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
 
     if (_atoms_with_pi_electrons.is_set())
     {
-      int awpe = compute_atoms_with_pi_electrons(r, target);
+      int awpe = ss_ring::compute_atoms_with_pi_electrons(r, target);
       if (! _atoms_with_pi_electrons.matches(awpe))
         continue;
     }
@@ -358,6 +369,12 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
 #ifdef DEBUG_SS_RING_MATCHES
     cerr << "now have " << nhits << " environment hits\n";
 #endif
+
+    if (_all_hits_in_same_fragment)
+    {
+      atom_number_t a = r->item(0);
+      hits_in_fragment[m->fragment_membership(a)]++;
+    }
 
     nhits++;
     if (_set_global_id) {

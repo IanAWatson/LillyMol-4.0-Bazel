@@ -964,8 +964,7 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
       }
 
       std::unique_ptr<Substructure_Atom_Specifier> tmp = std::make_unique<Substructure_Atom_Specifier>();
-      if (!tmp->construct_from_proto(spec))
-      {
+      if (!tmp->construct_from_proto(spec)) {
         cerr << "Substructure_Atom::_construct_from_proto:cannot parse Substructure_Atom_Specifier\n";
         cerr << spec.ShortDebugString() << "\n";
         return 0;
@@ -1481,8 +1480,8 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
 
   if (_components.number_elements() > 1) {
     for (int i = 0; i < _components.number_elements(); ++i) {
-      SubstructureSearch::SubstructureAtomSpecifier* atom_prop = proto.add_atom_properties();
-      _components[i]->BuildProto(*atom_prop);
+      SubstructureSearch::SubstructureAtomSpecifier* atom_prop = proto.mutable_atom_properties(i);
+      //_components[i]->BuildProto(*atom_prop);
       if (i == 0) {
         continue;
       }
@@ -3260,8 +3259,10 @@ Substructure_Ring_Specification::BuildProto(SubstructureSearch::SubstructureRing
   ::Substructure_Ring_Base::BuildProto(*proto.mutable_base());
 
   SETPROTOVALUES(proto, ring_size, int);  // 2
-  if (_aromatic) {
+  if (_aromatic == AROMATIC) {
     proto.set_aromatic(true);   // 5
+  } else if (_aromatic == NOT_AROMATIC) {
+    proto.set_aromatic(false);  // 5
   }
   SETPROTOVALUES(proto, fused, int);   // 6
   SETPROTOVALUES(proto, fused_aromatic_neighbours, int);   // 9

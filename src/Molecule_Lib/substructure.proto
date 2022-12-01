@@ -894,6 +894,7 @@ message SingleSubstructureQuery {
   // The most common use case is looking for molecules that have
   // any net formal charge, so make that easy.
   // If set, will match if there is any formal charge.
+  // Currently not implemented. TODO, fix this
   optional bool any_net_formal_charge = 92;
 
   // Once the matches are made, only accept if, across all
