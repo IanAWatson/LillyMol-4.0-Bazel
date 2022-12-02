@@ -3197,5 +3197,12 @@ namespace iwsubstructure {
 // grouping found in `input`.
 std::optional<std::string> GetNextQueryTextProto(iwstring_data_source& input);
 }
+
+// Functions used inside ss_ring.cc, but which need to be exported for qry2cpp
+namespace ss_ring {
+  int fused_aromatic_neighbours(const Ring& r);
+  int fused_non_aromatic_neighbours(const Ring& r);
+}  // namespace ss_ring
+
 #endif
 
