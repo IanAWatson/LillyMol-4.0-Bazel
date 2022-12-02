@@ -1209,6 +1209,19 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "substructure_search",
+    srcs = [
+        "substructure_search.cc",
+        "qry2cpp.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/cmdline:iwcmdline",
+    ],
+)
+
 #cc_library(
 #    name = "surface_area_molvol",
 #    srcs = [
