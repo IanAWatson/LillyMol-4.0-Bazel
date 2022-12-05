@@ -272,7 +272,7 @@ IW_Logical_Expression::add_operator(int op)
       return 0;
     }
   }
-  else if (0 == _operator.number_elements())    // no need to check
+  else if (_operator.empty())    // no need to check
     ;
   else if (IW_LOGEXP_XOR == _operator[0])
   {
@@ -284,6 +284,8 @@ IW_Logical_Expression::add_operator(int op)
 
   resizable_array<int>::add(IW_LOGEXP_UNKNOWN_RESULT);
   _unary_operator.add(1);
+
+  _first_low_priority_and_grouping = nullptr;
 
   assert (ok());
 
@@ -1037,6 +1039,8 @@ IW_Logical_Expression::BuildFromString(const IWString& s) {
     debug_print(cerr);
     return 0;
   }
+
+  _first_low_priority_and_grouping = nullptr;
 
   return 1;
 }

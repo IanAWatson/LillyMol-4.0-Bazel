@@ -1768,8 +1768,10 @@ Substructure_Atom::assign_unique_id_from_atom_number_if_set (extending_resizable
 {
 //cerr << "Substructure_Atom::assign_unique_id_from_atom_number_if_set:_initial_atom_number " << _initial_atom_number << " _unique_id " << _unique_id << endl;
 
-  if (_initial_atom_number >= 0)     // use it
+  if (_initial_atom_number >= 0) {   // use it
     _unique_id = _initial_atom_number;
+    ++numbers_in_use[_unique_id];
+  }
   else     // find an unused number to assign
   {
     int next_to_assign = -1;
@@ -1789,6 +1791,12 @@ Substructure_Atom::assign_unique_id_from_atom_number_if_set (extending_resizable
 
     _unique_id = next_to_assign;
     numbers_in_use[next_to_assign]++;
+  }
+
+  // THe environment is separate from the main query.
+  for (Substructure_Atom* e : _environment) {
+    extending_resizable_array<int> for_env;
+    e->assign_unique_id_from_atom_number_if_set(for_env);
   }
 
   for (unsigned int i = 0; i < _children.size(); ++i)

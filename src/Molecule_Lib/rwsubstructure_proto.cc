@@ -1123,6 +1123,18 @@ Substructure_Atom::construct_from_proto(const SubstructureSearch::SubstructureAt
   if (!GETVALUES(proto, unmatched_atoms_attached, 0, no_limit))
     return 0;
 
+  for (const SubstructureSearch::SubstructureAtom& c : proto.children()) {
+    std::unique_ptr<Substructure_Atom> a = std::make_unique<Substructure_Atom>();
+
+    // Each env gets its own unique numbers and ids.
+    extending_resizable_array<Substructure_Atom *> completed;
+    if (! a->construct_from_proto(c, completed)) {
+      cerr << "Substructure_Atom::construct_from_proto:invalid env " << c.ShortDebugString() << '\n';
+      return 0;
+    }
+    _children << a.release();
+  }
+
   if (proto.has_atom_type_group())
     _atom_type_group = proto.atom_type_group();
 
@@ -1499,6 +1511,13 @@ Substructure_Atom::BuildProto(SubstructureSearch::SubstructureAtom& proto) const
         return 0;
       }
     }
+  }
+
+  _environment.BuildProto(proto);
+
+  for (const Substructure_Atom* c : _children) {
+    SubstructureSearch::SubstructureAtom* child = proto.add_children();
+    c->BuildProto(*child);
   }
 
   return 1;
@@ -3427,6 +3446,72 @@ MatchedAtomMatch::BuildProto(SubstructureSearch::MatchedAtomMatch& proto) const 
   }
 
   cerr << "MatchedAtomMatch::BuildProto:cannot emit queries\n";
+
+  return 1;
+}
+
+int
+Substructure_Atom_Environment::BuildProto(SubstructureSearch::SubstructureAtom& proto) const {
+  cerr << "SubstructureAtom::BuildProto:has " << _number_elements << " components\n";
+  if (_number_elements == 0) {
+    return 1;
+  }
+
+  SubstructureSearch::SubstructureAtomEnvironment* env = proto.add_environment();
+  for (Substructure_Atom* a : *this) {
+    SubstructureSearch::SubstructureAtom* in_proto = env->add_substructure_atom();
+    a->BuildProto(*in_proto);
+  }
+
+  // If just one component, no operator.
+  if (_number_elements == 1) {
+    return 1;
+  }
+
+  const std::string op = _operator.ToString().AsString();
+  cerr << "Encoding logexp as '" << op << "'\n";
+  env->set_op(op);
+
+  return 1;
+}
+
+int
+Substructure_Atom_Environment::BuildFromProto(const SubstructureSearch::SubstructureAtomEnvironment& proto) {
+  cerr << "SubstructureAtomEnvironment::BuildFromProto:implement this\n";
+  for (const SubstructureSearch::SubstructureAtom& atom_proto : proto.substructure_atom()) {
+    std::unique_ptr<Substructure_Atom> a = std::make_unique<Substructure_Atom>();
+    extending_resizable_array<Substructure_Atom *> completed;
+    if (! a->construct_from_proto(atom_proto, completed)) {
+      cerr << "Substructure_Atom::BuildFromProto:cannot parse atom " << atom_proto.ShortDebugString() << '\n';
+      return 0;
+    }
+    this->add(a.release());
+  }
+
+  // Cannot be empty.
+  if (_number_elements == 0) {
+    cerr << "Substructure_Atom_Environment::BuildFromProto:no components read " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  // If there is just one component, no operator needed.
+  if (! proto.has_op()) {
+    if (_number_elements == 1) {
+      return 1;
+    }
+    cerr << "Substructure_Atom_Environment::BuildFromProto:one component, but operator " << proto.op() << "'\n";
+    return 0;
+  }
+
+  if (! proto.has_op() || proto.op().empty()) {
+    cerr << "Substructure_Atom_Environment::BuildFromProto:got " << _number_elements << " components, but no op " << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  if (! _operator.BuildFromString(proto.op())) {
+    cerr << "Substructure_Atom_Environment::BuildFromProto:cannot parse operator '" << proto.op() << "'\n";
+    return 0;
+  }
 
   return 1;
 }

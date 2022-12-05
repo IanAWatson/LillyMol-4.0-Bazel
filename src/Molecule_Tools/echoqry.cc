@@ -57,6 +57,8 @@ EchoQry(const resizable_array_p<Substructure_Query>& queries,
         int ndx,
         const IWString& output_stem) {
   for (int i = 0; i < queries.number_elements(); ++i) {
+    extending_resizable_array<int> uid;
+    queries[i]->assign_unique_id_from_atom_number_if_set(uid);
     if (! EchoQry(*queries[i], ndx, i, output_stem)) {
       cerr << "Fatal error processing '" << queries[i]->comment() << "'\n";
       return 0;

@@ -173,4 +173,102 @@ TEST(TestLogicalExpression, TestBuildLPAnd) {
   EXPECT_EQ(e1, e2);
 }
 
+class TestFailParse : public testing::TestWithParam<IWString> {
+  protected:
+    IW_Logical_Expression _logexp;
+};
+
+TEST_P(TestFailParse, TestFailParse) {
+  const auto& params = GetParam();
+  EXPECT_FALSE(_logexp.BuildFromString(params));
+}
+INSTANTIATE_TEST_SUITE_P(TestFailParse, TestFailParse, testing::Values(
+  "&",
+  ".&",
+  "!.&",
+  "!",
+  "..",
+  ".!",
+  ".!."
+));
+
+// A string to construct an IW_Logical_Expression, a set of results
+// and an expected result.
+struct LogexpValuesResult {
+  IWString _as_string;
+  resizable_array<int> _values;
+  int _result;
+};
+
+class TestLogexpValues : public testing::TestWithParam<LogexpValuesResult> {
+  protected:
+    IW_Logical_Expression _logexp;
+};
+
+TEST_P(TestLogexpValues, TestLogexpValues) {
+  const auto& params = GetParam();
+  ASSERT_TRUE(_logexp.BuildFromString(params._as_string));
+  for (int i = 0; i < params._values.number_elements(); ++i) {
+    _logexp.set_result(i, params._values[i]);
+  }
+  int res;
+  EXPECT_TRUE(_logexp.evaluate(res));
+  EXPECT_EQ(res, params._result);
+}
+
+INSTANTIATE_TEST_SUITE_P(TestLogexpValues, TestLogexpValues, testing::Values(
+  LogexpValuesResult{ {".,."}, {1,1}, 1},
+  LogexpValuesResult{ {".,."}, {0,0}, 0},
+  LogexpValuesResult{ {".,."}, {1,0}, 1},
+  LogexpValuesResult{ {".,."}, {0,1}, 1},
+
+  LogexpValuesResult{ {".&."}, {0,1}, 0},
+  LogexpValuesResult{ {".&."}, {1,0}, 0},
+  LogexpValuesResult{ {".&."}, {0,0}, 0},
+  LogexpValuesResult{ {".&."}, {1,1}, 1},
+
+  LogexpValuesResult{ {".^."}, {0,1}, 1},
+  LogexpValuesResult{ {".^."}, {1,0}, 1},
+  LogexpValuesResult{ {".^."}, {0,0}, 0},
+  LogexpValuesResult{ {".^."}, {1,1}, 0},
+
+  LogexpValuesResult{ {".;."}, {0,1}, 0},
+  LogexpValuesResult{ {".;."}, {1,0}, 0},
+  LogexpValuesResult{ {".;."}, {0,0}, 0},
+  LogexpValuesResult{ {".;."}, {1,1}, 1},
+
+  LogexpValuesResult{ ".,.,.", {0, 0, 0}, 0},
+  LogexpValuesResult{ ".,.,.", {0, 0, 1}, 1},
+  LogexpValuesResult{ ".,.,.", {0, 1, 0}, 1},
+  LogexpValuesResult{ ".,.,.", {1, 0, 0}, 1},
+  LogexpValuesResult{ ".,.,.", {1, 0, 1}, 1},
+  LogexpValuesResult{ ".,.,.", {1, 1, 1}, 1},
+
+  LogexpValuesResult{ ".;.,.", {1, 1, 1}, 1},
+  LogexpValuesResult{ ".;.,.", {1, 0, 1}, 1},
+  LogexpValuesResult{ ".;.,.", {1, 1, 0}, 1},
+  LogexpValuesResult{ ".;.,.", {1, 0, 0}, 0},
+  LogexpValuesResult{ ".;.,.", {0, 1, 1}, 0},
+  LogexpValuesResult{ ".;.,.", {0, 0, 1}, 0},
+  LogexpValuesResult{ ".;.,.", {0, 1, 0}, 0},
+  LogexpValuesResult{ ".;.,.", {0, 0, 0}, 0},
+
+  LogexpValuesResult{ ".,.;.,.", {0, 0, 0, 0}, 0},
+  LogexpValuesResult{ ".,.;.,.", {0, 1, 0, 0}, 0},
+  LogexpValuesResult{ ".,.;.,.", {0, 1, 1, 0}, 1},
+
+  LogexpValuesResult{ ".&.;.,.", {0, 1, 1, 0}, 0},
+  LogexpValuesResult{ ".&.;.,.", {1, 1, 0, 0}, 0},
+  LogexpValuesResult{ ".&.;.,.", {1, 1, 1, 0}, 1},
+
+  LogexpValuesResult{ "!.,.", {1,0}, 0},
+  LogexpValuesResult{ "!.,.", {0,0}, 1},
+  LogexpValuesResult{ "!.;.", {0,1}, 1},
+
+  LogexpValuesResult{ ".;!.", {0,1}, 0},
+  LogexpValuesResult{ ".;!.", {0,0}, 0},
+  LogexpValuesResult{ ".;!.", {1,0}, 1},
+  LogexpValuesResult{ ".;!.", {1,1}, 0}
+));
+
 }  // namespace

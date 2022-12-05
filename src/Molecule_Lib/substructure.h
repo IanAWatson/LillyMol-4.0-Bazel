@@ -773,6 +773,9 @@ class Substructure_Atom_Environment : public resizable_array_p<Substructure_Atom
     int number_elements () const { return _number_elements;}
     int active () const { return _number_elements;}
 
+    int BuildProto(SubstructureSearch::SubstructureAtom& proto) const;
+    int BuildFromProto(const SubstructureSearch::SubstructureAtomEnvironment& proto);
+
     int create_from_smarts (const Atomic_Smarts_Component &);
     int create_from_msi_object (msi_object &);
 

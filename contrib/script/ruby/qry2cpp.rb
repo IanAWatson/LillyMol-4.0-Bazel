@@ -107,11 +107,8 @@ end
 
 def add_any_net_formal_charge(qry, ndx, src)
   return unless qry.net_formal_charge
-  # Note that this is not implemented.
   src << "int\nOkAnyNetFormalCharge#{ndx}(Molecule_to_Match& target) {"
-  src << "  // not implemented, todo"
-  src << "  return 1;"
-  src << "  // return target.net_formal_charge() != 0;"
+  src << "  return target.net_formal_charge() != 0;"
   src << "}"
   src
 
@@ -617,7 +614,7 @@ def add_specifier_matcher(qry, uid, src)
 
   src << "  if (atom.symmetry_degree() < #{qry.min_symmetry_degree}) return 0;" if qry.has_min_symmetry_degree? 
   src << "  if (atom.symmetry_degree() > #{qry.max_symmetry_degree}) return 0;" if qry.has_max_symmetry_degree?
-    add_check_values('symmetry_degree', 'atom.symmetry_degree()', qry.symmetry_degree, src)
+  add_check_values('symmetry_degree', 'atom.symmetry_degree()', qry.symmetry_degree, src)
 
   # symmetry group?
   # atom_type, user_atom_type????
@@ -699,9 +696,46 @@ def add_query_atom(qry, ndx1, ndx2, src)
    src << "}"
 end
 
+# qry is a SubstructureSearch::SubstructureAtom that may have an environment
+# We return a list of functions.
+def add_environment(qry, ndx, src)
+  result = []
+  return result if qry.environment.empty?
+
+  src << "IW_Logical_Expression"
+  src << ""
+  src << "  IW_Logical_Expression result;"
+  src << "  return result;"
+  src << "}"
+
+  qry.environment.each_with_index do |e, i|
+  end
+end
+
+# qry is a SubstructureAtom. If it has any environment attributes, create
+# functions for them.
+# Returns the names of the environment match functions generated.
+def add_atom_env(qry, ndx1, ndx2, src)
+  result = []  # Names of functions generated
+
+  return result if qry.environment.empty?
+
+  $stderr << 
+
+  qry.environment.each_with_index do |e, i|
+    fname = "MatchAtomEnvironment_{ndx1}_#{ndx2}_#{i}"
+    result << fname
+    src << "int"
+    src << "#{fname}(Molecule_to_Match& target, atom_number_t zatom, int* matched) {"
+    src << "  return 1;"
+    src << "}"
+  end
+end
+
 def add_query_atoms(qry, ndx, src)
   qry.query_atom.each_with_index do |q, i|
     add_query_atom(q, ndx, i, src)
+    add_atom_env(q, ndx, i, src)
   end
 end
 
@@ -728,6 +762,7 @@ def generate_code(qry, ndx)
   add_ring_specifiers(qry, ndx, result)
   add_ring_system_specifiers(qry, ndx, result)
   add_query_atoms(qry, ndx, result)
+  add_environment(qry, ndx, result)
 
   result
 end
