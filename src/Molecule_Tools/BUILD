@@ -145,6 +145,21 @@ cc_binary(
 )
 
 cc_binary(
+    name = "compare_3d",
+    srcs = [
+        "compare_3d.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:sparse_fp_creator",
+    ],
+)
+
+cc_binary(
     name = "conformational_scan",
     srcs = [
         "conformational_scan.cc",
