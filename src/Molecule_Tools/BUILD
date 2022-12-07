@@ -128,6 +128,18 @@ cc_binary(
 )
 
 cc_binary(
+    name = "bump_check",
+    srcs = [
+        "bump_check.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "common_names",
     srcs = [
         "common_names.cc",
