@@ -42,11 +42,7 @@ def support_vectors_and_weights(input)
     m = sv_rx.match(line.chomp)
     raise "Invalid SV record #{line}" unless m
 
-    if m[1].length > 20
-      weights[m[2]] = m[1][...-5]
-    else
-      weights[m[2]] = m[1]
-    end
+    weights[m[2]] = m[1]
   end
 
   $stderr << "threshold_b #{threshold_b} #{weights.size} sv->weight values\n"

@@ -4,14 +4,11 @@
 
 #include <algorithm>
 #include <cmath>
-#include <memory>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <random>
-using std::cerr;
-using std::endl;
 
-//#include "iwmalloc.h"
 #define RESIZABLE_ARRAY_IMPLEMENTATION
 #define RESIZABLE_ARRAY_IWQSORT_IMPLEMENTATION
 #include "Foundational/accumulator/accumulator.h"
@@ -26,7 +23,6 @@ using std::endl;
 #include "Metric.h"
 
 using std::cout;
-using std::endl;
 using std::cerr;
 
 static Enrichment enrichment;
@@ -113,7 +109,7 @@ static IWString_and_File_Descriptor stream_for_residuals;
 static void
 usage (int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Computes Bsquared and other statistics - allows missing values\n";
   cerr << " -e <col>       column for experimental (measured) values\n";
   cerr << " -E <file>      activities are in a different file <file>\n";
@@ -282,7 +278,7 @@ establish_column_titles (const const_IWSubstring & buffer,
     {
       marker_column = col;
       if (verbose)
-        cerr << "Found marker descriptor '" << marker_column_name << "' in column " << (col+1) << endl;
+        cerr << "Found marker descriptor '" << marker_column_name << "' in column " << (col+1) << '\n';
     }
 
     col++;
@@ -432,7 +428,7 @@ Predicted_Values::parse_buffer (const const_IWSubstring & buffer,
     if (missing_value.length() && missing_value == token)
     {
       if (report_missing_values)
-        cerr << "Ignoring missing value in column " << (col + 1) << endl;
+        cerr << "Ignoring missing value in column " << (col + 1) << '\n';
       missing_values_encountered++;
       col++;
       continue;
@@ -445,7 +441,7 @@ Predicted_Values::parse_buffer (const const_IWSubstring & buffer,
       if (col == experimental_column && id_activity_hash.size() > 0)
         cerr << "Error is in activity file\n";
       else
-        cerr << buffer << endl;
+        cerr << buffer << '\n';
 
       fatal = 1;
       return 0;
@@ -464,7 +460,7 @@ Predicted_Values::parse_buffer (const const_IWSubstring & buffer,
 
   if (col != columns_in_input)
   {
-    cerr << "Column count mismatch, found " << col << " columns, expected " << columns_in_input << endl;
+    cerr << "Column count mismatch, found " << col << " columns, expected " << columns_in_input << '\n';
     fatal = 1;
     return 0;
   }
@@ -617,7 +613,7 @@ determine_numbers_to_check (resizable_array<int> & numbers_to_check,
       int n = N_to_check[i];
       if (n < 2 || n > records_read)
       {
-        cerr << "Skipping invalid number of records to check " << n << endl;
+        cerr << "Skipping invalid number of records to check " << n << '\n';
         continue;
       }
 
@@ -651,7 +647,7 @@ Predicted_Value_Comparitor::operator() (const Predicted_Values * pv1,
   experimental_value_t p1 = pv1->pred(_predicted_column);
   experimental_value_t p2 = pv2->pred(_predicted_column);
 
-//cerr << "Comparing " << p1 << " with " << p2 << endl;
+//cerr << "Comparing " << p1 << " with " << p2 << '\n';
 
   if (p1 > p2)
     return -1;
@@ -770,7 +766,7 @@ compute_distribution_function (int number_records,
 {
   if (minval >= maxval)
   {
-    cerr << "compute_distribution_function:unsorted or no variability: minval " << minval << ", maxval " << maxval << endl;
+    cerr << "compute_distribution_function:unsorted or no variability: minval " << minval << ", maxval " << maxval << '\n';
     return 0;
   }
 
@@ -779,7 +775,7 @@ compute_distribution_function (int number_records,
   for (int i = 0; i < number_records; i++)
   {
     int j = static_cast<int>((v[i] - minval) / delta + 0.49999);
-//  cerr << "Bucket " << j << " max " << number_distribution_buckets << endl;
+//  cerr << "Bucket " << j << " max " << number_distribution_buckets << '\n';
     if (j >= number_distribution_buckets)
       j = number_distribution_buckets - 1;
     else if (j < 0)
@@ -862,10 +858,10 @@ do_compute_distribution_functions(int number_records,
     tmp2[i] = pred;
     tmp1[i] = obs;
 
-//  cerr << " i = " << i << " obs " << obs << " pred " << pred << endl;
+//  cerr << " i = " << i << " obs " << obs << " pred " << pred << '\n';
   }
 
-//cerr << "min obs " << min_expt << " max obs " << max_expt << " min pred " << min_pred << " max pred " << max_pred << endl;
+//cerr << "min obs " << min_expt << " max obs " << max_expt << " min pred " << min_pred << " max pred " << max_pred << '\n';
 
   int * d1 = new_int(number_distribution_buckets); std::unique_ptr<int> free_d1(d1);
   int * d2 = new_int(number_distribution_buckets); std::unique_ptr<int> free_d2(d2);
@@ -977,7 +973,7 @@ compute_b_squared (int number_records,
 #ifdef CHECK_BSQUARED_COMPUTATION
   double check;
   compute_b_squared(tmp1, tmp2, n, check);
-  cerr << "N = " << n << ", whole set Bsquared " << check << endl;
+  cerr << "N = " << n << ", whole set Bsquared " << check << '\n';
 #endif
 
 //cerr << "From " << number_records << " found " << n << " values for B2\n";
@@ -1047,7 +1043,7 @@ read_the_data (iwstring_data_source & input,
       delete p;
 
       if (fatal)
-        cerr << "Fatal error processing '" << buffer << "', line " << input.lines_read() << endl;
+        cerr << "Fatal error processing '" << buffer << "', line " << input.lines_read() << '\n';
 
       if (fatal)
         return 0;
@@ -1123,7 +1119,7 @@ do_sort_by_predicted_value(resizable_array_p<Predicted_Values> & zdata,
 
   if (verbose > 2)
   {
-    cerr << "After sorting on column " << predicted_column << endl;
+    cerr << "After sorting on column " << predicted_column << '\n';
     echo_the_data(zdata, cerr);
   }
 
@@ -1268,7 +1264,7 @@ write_cmsr (const CMSR_Parameters & cmsrp,
 
 //#define DEBUG_CMSR 20
 #ifdef DEBUG_CMSR
-  cerr << "Bias " << bias << " sd " << sd << ", k = " << k << endl;
+  cerr << "Bias " << bias << " sd " << sd << ", k = " << k << '\n';
 #endif
 
   float cmsr_sd = pow(10.0, bias + k * sd);
@@ -1276,14 +1272,14 @@ write_cmsr (const CMSR_Parameters & cmsrp,
   if (which_predicted_set >= 0 && predicted_column >= 0)
     write_something_identifying_the_column(predicted_column, output);
 
-  output << " cMSR" << cmsrp._pct << "_sd = " << cmsr_sd << endl;
+  output << " cMSR" << cmsrp._pct << "_sd = " << cmsr_sd << '\n';
 
   std::copy(tmp2, tmp2 + ndx, tmpr);
 
 #ifdef DEBUG_CMSR
   for (auto i = 0; i < DEBUG_CMSR; ++i)
   {
-    cerr << "tmpr after copy from tmp2 " << tmpr[i] << endl;
+    cerr << "tmpr after copy from tmp2 " << tmpr[i] << '\n';
   }
 #endif
 
@@ -1300,10 +1296,10 @@ write_cmsr (const CMSR_Parameters & cmsrp,
     median_difference = tmpr[ndx/2];
   }
 #ifdef DEBUG_CMSR
-  cerr << "Median diff " << median_difference << endl;
+  cerr << "Median diff " << median_difference << '\n';
   for (auto i = 0; i < DEBUG_CMSR; ++i)
   {
-    cerr << " partially sorted " << i << ' ' << tmpr[i] << endl;
+    cerr << " partially sorted " << i << ' ' << tmpr[i] << '\n';
   }
 #endif
 
@@ -1315,7 +1311,7 @@ write_cmsr (const CMSR_Parameters & cmsrp,
 #ifdef DEBUG_CMSR
   for (auto i = 0; i < DEBUG_CMSR; ++i)
   {
-    cerr << "abs diff from median " << tmpr[i] << endl;
+    cerr << "abs diff from median " << tmpr[i] << '\n';
   }
 #endif
 
@@ -1334,7 +1330,7 @@ write_cmsr (const CMSR_Parameters & cmsrp,
   mad = mad * 1.4826;
 
 #ifdef DEBUG_CMSR
-  cerr << "median diff " << tmpr[ndx/2] << " MAD " << mad << endl;
+  cerr << "median diff " << tmpr[ndx/2] << " MAD " << mad << '\n';
 #endif
 
   if (which_predicted_set >= 0 && predicted_column >= 0)
@@ -1346,13 +1342,13 @@ write_cmsr (const CMSR_Parameters & cmsrp,
   {
     float cmsd = bias + k * mad;
 
-    output << " cMSD" << cmsrp._pct << " = " << cmsd << endl;
+    output << " cMSD" << cmsrp._pct << " = " << cmsd << '\n';
   }
   else
   {
     float cmsr_mad = pow(10.0, bias + k * mad);
 
-    output << " cMSR" << cmsrp._pct << "_mad = " << cmsr_mad << endl;
+    output << " cMSR" << cmsrp._pct << "_mad = " << cmsr_mad << '\n';
   }
 
   return 1;
@@ -1456,12 +1452,12 @@ iwstats (unsigned int number_records,
     do_sort_by_predicted_value(zdata, which_predicted_set, predicted_column);
 
 #ifdef ECHO_THE_DATA
-  cerr << "Processing " << number_records << " of " << which_predicted_set << " in column " << predicted_column << endl;
+  cerr << "Processing " << number_records << " of " << which_predicted_set << " in column " << predicted_column << '\n';
 
-  cerr << "N = " << zdata.number_elements() << endl;
+  cerr << "N = " << zdata.number_elements() << '\n';
   for (auto i = 0; i < zdata.number_elements(); ++i)
   {
-    cerr << zdata[i]->obs() << ' ' << zdata[i]->pred(0) << endl;
+    cerr << zdata[i]->obs() << ' ' << zdata[i]->pred(0) << '\n';
   }
 #endif
 
@@ -1503,7 +1499,7 @@ iwstats (unsigned int number_records,
     experimental_value_t pred = pvi.pred(which_predicted_set);
 
     p.extra(pred);
-//  cerr << " i = " << i << " processing predicted value " << pred << endl;
+//  cerr << " i = " << i << " processing predicted value " << pred << '\n';
 
     if (truncate_predicted_values_to_experimental_range)
       do_any_truncations_needed(pred, lower_experimental_value, upper_experimental_value);
@@ -1580,6 +1576,8 @@ iwstats (unsigned int number_records,
       output << " ave " << o.average() << '\n';
   }
 
+  float bias = 0.0f;
+
   if (predicted_column >= 0)
   {
     output << "Predicted values in column " << (predicted_column + 1);
@@ -1607,27 +1605,27 @@ iwstats (unsigned int number_records,
 
     double nx1bx2b = static_cast<double>(o.n()) * obar * pbar;
 
-//  cerr << "r = " << r << " nx1bx2b = " << nx1bx2b << endl;
+//  cerr << "r = " << r << " nx1bx2b = " << nx1bx2b << '\n';
 
     double v1 = o.sum_of_squares() - o.n() * obar * obar;
     double v2 = p.sum_of_squares() - o.n() * pbar * pbar;
 
     if (0.0 == v1 || 0.0 == v2)
     {
-      cerr << "Yipes, zero qzyq term " << v1 << " and v2 = " << v2 << endl;
+      cerr << "Yipes, zero qzyq term " << v1 << " and v2 = " << v2 << '\n';
       return 0;
     }
 
-//  cerr << " v1 " << v1 << " v2 " << v2 << endl;
+//  cerr << " v1 " << v1 << " v2 " << v2 << '\n';
 
     double rho = (r - nx1bx2b) / sqrt(v1 * v2);
   
     if (values_lower_than_experimental_range || values_higher_than_experimental_range)
       output << values_lower_than_experimental_range << " values lower than expt.min, " << values_higher_than_experimental_range << " greater than max\n";
 
-    output << "Errors between " << e.minval() << " and " << e.maxval() << " ave " << e.average() << endl;
+    output << "Errors between " << e.minval() << " and " << e.maxval() << " ave " << e.average() << '\n';
     output << "Average absolute error " << ae.average() << '\n';
-    output << "RMS error " << sqrt(ae.sum_of_squares() / static_cast<double>(ae.n())) << endl;
+    output << "RMS error " << sqrt(ae.sum_of_squares() / static_cast<double>(ae.n())) << '\n';
 
     if (static_cast<float>(0.0) != relative_error_threshold)
         output << "Average Relative Error " << static_cast<float>(are.average()) << '\n';
@@ -1653,13 +1651,13 @@ iwstats (unsigned int number_records,
       if (n < 0.0)
         output << '-';
       double r2 = n * n / (dno * dnp);
-      output << static_cast<float>(r2) << endl;
+      output << static_cast<float>(r2) << '\n';
     }
     else
     {
       if (rho < 0.0)
         output << '-';
-      output << static_cast<float>(rho * rho) << endl;
+      output << static_cast<float>(rho * rho) << '\n';
     }
 
 //  Q squared
@@ -1693,10 +1691,11 @@ iwstats (unsigned int number_records,
       output << " trQ2 ";
     else
       output << " Q2 ";
-    output << static_cast<float>(q2) << endl;
+    output << static_cast<float>(q2) << '\n';
 
     write_something_identifying_the_column(predicted_column, output);
-    output << " Bias " << (o.average() - p.average()) << endl;
+    bias = o.average() - p.average();
+    output << " Bias " << bias << '\n';
 
     sum1 = 0.0;
     for (unsigned int i = 0; i < number_records; i++)
@@ -1713,7 +1712,7 @@ iwstats (unsigned int number_records,
     }
 
 //  write_something_identifying_the_column (predicted_column, output);
-//  output << " R2 " << (sum1 / (p.variance() * o.variance()) / static_cast<double> (number_records)) << endl;
+//  output << " R2 " << (sum1 / (p.variance() * o.variance()) / static_cast<double> (number_records)) << '\n';
   }
 
   if (fold_difference_additive.number_elements())
@@ -1731,9 +1730,9 @@ iwstats (unsigned int number_records,
   if (0 == verbose || predicted_column < 0)     // don't write anything
     ;
   else if (0 == duplicate_predicted_values_present)
-    cerr << "No duplicate predicted values in column " << (predicted_column + 1) << endl;
+    cerr << "No duplicate predicted values in column " << (predicted_column + 1) << '\n';
   else
-    cerr << "Duplicate prediced values present in column " << (predicted_column + 1) << endl;
+    cerr << "Duplicate prediced values present in column " << (predicted_column + 1) << '\n';
 
   if (nullptr != chunk_title)     // we are dealing with a subset
     output << " first " << *(chunk_title) << " (" << number_records << " records)\n";
@@ -1751,14 +1750,22 @@ iwstats (unsigned int number_records,
 
   write_something_identifying_the_column(predicted_column, output);
   output << " AE50 = " << tmp1[ndx/2] << "\n";
+  if (bias != 0.0f) {
+    write_something_identifying_the_column(predicted_column, output);
+    output << " RmBias.AE50 = " << (tmp1[ndx/2] - abs(bias)) << '\n';
+  }
 
   write_something_identifying_the_column(predicted_column, output);
-  output << " AE95 = " << tmp1[ndx * 95 / 100] << "\n";
+  output << " AE95 = " << tmp1[ndx * 95 / 100] << '\n';
+  if (bias != 0.0f) {
+    write_something_identifying_the_column(predicted_column, output);
+    output << " RmBias.AE95 = " << (tmp1[ndx * 95 / 100] - abs(bias)) << '\n';
+  }
 
 #ifdef DEBUG_CMSR
   for (auto i = 0; i < DEBUG_CMSR; ++i)
   {
-    cerr << "tmp2 " << tmp2[i] << endl;
+    cerr << "tmp2 " << tmp2[i] << '\n';
   }
 #endif
 
@@ -1800,7 +1807,7 @@ iwstats (unsigned int number_records,
   double Bsquared;
   compute_b_squared(number_records, experimental_column, zdata, tmp1, tmp2, Bsquared, which_predicted_set);
 
-  output << " Bsquared " << static_cast<float>(Bsquared) << endl;
+  output << " Bsquared " << static_cast<float>(Bsquared) << '\n';
   
   if(calculate_enrichment_metrics && initilize_enrichment(number_records,experimental_column,zdata,tmp1,which_predicted_set))
   {
@@ -1810,7 +1817,7 @@ iwstats (unsigned int number_records,
 
     calculateBEDROC bedroc( bedroc_alpha );
     double bedroc_value = bedroc( enrichment );
-    output << " BEDROC " << static_cast<float>(bedroc_value) << endl;
+    output << " BEDROC " << static_cast<float>(bedroc_value) << '\n';
 
     calculateROC roc;
 
@@ -1819,7 +1826,7 @@ iwstats (unsigned int number_records,
     if (which_predicted_set >= 0 && predicted_column >= 0)
       write_something_identifying_the_column(predicted_column, output);
 
-    output << " ROC " << static_cast<float>(roc_value) << endl;
+    output << " ROC " << static_cast<float>(roc_value) << '\n';
 
     calculateEF ef(enrichment_factor_fraction);
     double ef_value = ef(enrichment);
@@ -1827,7 +1834,7 @@ iwstats (unsigned int number_records,
     if (which_predicted_set >= 0 && predicted_column >= 0)
       write_something_identifying_the_column(predicted_column, output);
 
-    output << " EF " << static_cast<float>(ef_value) << endl;
+    output << " EF " << static_cast<float>(ef_value) << '\n';
   }
 
 // To avoid horrible problems with iwqsort, which really doesn't do well sorting
@@ -1846,7 +1853,7 @@ iwstats (unsigned int number_records,
     double best_bsquared;
     compute_b_squared(number_records, experimental_column, zdata, tmp1, tmp2, best_bsquared, which_predicted_set);
     write_something_identifying_the_column(predicted_column, output);
-    output << " Best Bsquared " << best_bsquared << endl;
+    output << " Best Bsquared " << best_bsquared << '\n';
 
     std::random_shuffle(zdata.begin(), zdata.end());    // randomise before sorting
 
@@ -1856,12 +1863,12 @@ iwstats (unsigned int number_records,
     double worst_bsquared;
     compute_b_squared(number_records, experimental_column, zdata, tmp1, tmp2, worst_bsquared, which_predicted_set);
     write_something_identifying_the_column(predicted_column, output);
-    output << " Worst Bsquared " << worst_bsquared << endl;
+    output << " Worst Bsquared " << worst_bsquared << '\n';
 
     float b2 = static_cast<float>((best_bsquared + worst_bsquared) * 0.5);    // cut precision to suppress significant figures
 
     write_something_identifying_the_column(predicted_column, output);
-    output << " Unbiased Bsquared " << b2 << endl;
+    output << " Unbiased Bsquared " << b2 << '\n';
   }
 
   if (number_distribution_buckets > 0)
@@ -1932,7 +1939,7 @@ iwstats (const resizable_array<int> & predicted_column,
 
     if (! iwstats(i, col, experimental_column, tmp1, tmp2, tmpr, numbers_to_check, zdata, output))
     {
-      cerr << "Fatal error processing column " << (col + 1) << endl;
+      cerr << "Fatal error processing column " << (col + 1) << '\n';
       return 0;
     }
   }
@@ -2109,7 +2116,7 @@ get_comma_separated_values (Command_Line & cl,
       v.add(x);
 
       if (verbose)
-        cerr << "Option " << flag << " got value " << x << endl;
+        cerr << "Option " << flag << " got value " << x << '\n';
     }
   }
 
@@ -2266,7 +2273,7 @@ iwstats (int argc, char ** argv)
     }
 
     if (verbose)
-      cerr << "Experimental/Measured values in column " << experimental_column << endl;
+      cerr << "Experimental/Measured values in column " << experimental_column << '\n';
 
     experimental_column--;
   }
@@ -2347,7 +2354,7 @@ iwstats (int argc, char ** argv)
   if (verbose)
   {
     if (experimental_column >= 0)
-      cerr << "Measured/Observed values in column " << (experimental_column + 1) << endl;
+      cerr << "Measured/Observed values in column " << (experimental_column + 1) << '\n';
 
     if (predicted_column.number_elements())
     {
@@ -2356,7 +2363,7 @@ iwstats (int argc, char ** argv)
       {
         cerr << ' ' << (predicted_column[i] + 1);
       }
-      cerr << endl;
+      cerr << '\n';
     }
   }
 
@@ -2401,7 +2408,7 @@ iwstats (int argc, char ** argv)
     }
 
     if (verbose)
-      cerr << "Relative error computation threshold " << relative_error_threshold << endl;
+      cerr << "Relative error computation threshold " << relative_error_threshold << '\n';
 
     range_normal_relative_error = 1;    // turn on by default
   }
@@ -2465,7 +2472,7 @@ iwstats (int argc, char ** argv)
   {
     cerr << "Hmmm, you have specified more than one of: a constant step (-t) percent sample (-P) or number (-n)\n";
     cerr << "options. Might be a little strange....\n";
-//  cerr << cl.option_present('n') << ' ' << cl.option_present('t') << ' ' << cl.option_present('P') << ' ' << n << endl;
+//  cerr << cl.option_present('n') << ' ' << cl.option_present('t') << ' ' << cl.option_present('P') << ' ' << n << '\n';
   }
 
   if (cl.option_present('n'))
@@ -2598,7 +2605,7 @@ iwstats (int argc, char ** argv)
       usage(2);
     }
     if (verbose)
-      cerr << "Will discard measured values below " << discard_measured_values_below << endl;
+      cerr << "Will discard measured values below " << discard_measured_values_below << '\n';
   }
 
 /*
@@ -2676,7 +2683,7 @@ iwstats (int argc, char ** argv)
       }
 
       if (verbose)
-        cerr << "Marker column set to " << marker_column << endl;
+        cerr << "Marker column set to " << marker_column << '\n';
 
       marker_column--;
     }
