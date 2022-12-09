@@ -92,3 +92,19 @@ cc_binary(
         "@com_google_protobuf//:protobuf",
     ],
 )
+
+
+cc_binary(
+    name = "stratified_sample",
+    srcs = [
+        "stratified_sample.cc",
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwqsort:iwqsort",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
