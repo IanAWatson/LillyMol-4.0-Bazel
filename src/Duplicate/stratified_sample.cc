@@ -32,10 +32,10 @@ Usage(int rc) {
   cerr << " -R <fname>        file name stem for training set files to create\n";
   cerr << " -E <fname>        file name stem for training set files to create\n";
   cerr << " -C                data is class data\n";
-  cerr << " -a                create split Activity files in addition to split smiles files\n";
   cerr << " -b <nbuckets>     number of buckets for stratification (def 10)\n";
   cerr << "                   smaller number might be needed for smaller datasets\n";
   cerr << "                   The risk is that a bucket with few items may always get everything selected\n";
+  cerr << " -a                create split Activity files in addition to split smiles files\n";
   cerr << " -v                verbose output\n";
 
   ::exit(rc);
@@ -113,6 +113,11 @@ class StratifiedSample {
 
     int _activity_column;
 
+    // There are two ways of assigning buckets. Based on the activity
+    // value relative to its position in the range of activities, or
+    // within a sorted list of activity values, its index;
+    int _bucketise_by_value;
+
     // When processing continuous data, bucketize the activity
     // data and sample from those buckets.
     int _nbuckets;
@@ -156,6 +161,11 @@ class StratifiedSample {
     int ProcessContinuous(const Accumulator<double>& acc_activity);
     int ProcessClassification(IdValue<int>* id_value);
     int ProcessContinuous(IdValue<double>* id_value);
+
+    int BucketiseByValue(const Accumulator<double>& acc_activity,
+                        IdValue<double>* id_value);
+    int BucketiseByPosition(IdValue<double>* id_value);
+
     template <typename T>
     int CreateSplit(IdValue<T>* id_value, int ndx);
 
@@ -217,6 +227,7 @@ StratifiedSample::StratifiedSample() {
   _nsplits = 10;
 
   _nbuckets = 10;
+  _bucketise_by_value = false;
 
   std::random_device rd;
   _rng.seed(rd());
@@ -258,6 +269,24 @@ StratifiedSample::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('b')) {
+    _bucketise_by_value = true;
+    if (_verbose) {
+      cerr << "Will bucketise by value\n";
+    }
+  }
+
+  if (cl.option_present('f')) {
+    if (! cl.value('f', _train_fraction) || _train_fraction <= 0.0f || _train_fraction >= 1.0f) {
+      cerr << "The training fraction (-f) must be a valid fraction\n";
+      return 0;
+    }
+
+    if (_verbose) {
+      cerr << "Training fraction " << _train_fraction << '\n';
+    }
+  }
+
   if (cl.option_present('n')) {
     if (! cl.value('n', _nsplits) || _nsplits < 1) {
       cerr << "The number of splits (-n) must be a whole +ve number\n";
@@ -283,6 +312,19 @@ StratifiedSample::Initialise(Command_Line& cl) {
   if (! ReadSmiles(fname)) {
     if (! ReadSmiles(fname)) {
       cerr << "Cannot read smiles from '" << fname << "'\n";
+      return 0;
+    }
+
+    // Make sure every smiles id has an associated activity.
+    int no_smiles = 0;
+    for (const auto& [id, _] : _id_to_activity) {
+      const auto iter = _id_to_smiles.find(id);
+      if (iter == _id_to_smiles.end()) {
+        cerr << "StratifiedSample::Initialise:no smiles for '" << id << "'\n";
+        ++no_smiles;
+      }
+    }
+    if (no_smiles) {
       return 0;
     }
   }
@@ -517,6 +559,10 @@ StratifiedSample::WriteSmiles(const IdValue<T>* id_value,
     return 0;
   }
 
+  if (_verbose > 1) {
+    cerr << "Writing smiles '" << fname << "'\n";
+  }
+
   return WriteSmiles(id_value, train, flag, output);
 }
 
@@ -529,7 +575,7 @@ StratifiedSample::WriteSmiles(const IdValue<T>* id_value,
                         const int* train,
                         int flag,
                         IWString_and_File_Descriptor& output) {
-  constexpr char kSep = ' ';
+  static constexpr char kSep = ' ';
 
   const uint32_t n = _id_to_activity.size();
   for (uint32_t i = 0; i < n; ++i) {
@@ -604,6 +650,10 @@ StratifiedSample::WriteValuesContinuous(const IdValue<T>* id_value,
     return 0;
   }
 
+  if (_verbose > 1) {
+    cerr << "StratifiedSample::WriteValuesClassification:writing '" << fname << "'\n";
+  }
+
   return WriteValuesContinuous(id_value, train, flag, output);
 }
 
@@ -619,66 +669,56 @@ StratifiedSample::WriteValuesClassification(const IdValue<T>* id_value,
     return 0;
   }
 
+  if (_verbose > 1) {
+    cerr << "StratifiedSample::WriteValuesClassification:writing '" << fname << "'\n";
+  }
+
   return WriteValuesClassification(id_value, train, flag, output);
+}
+
+// Return $(stem)$(ndx).$(suffix)
+IWString
+FileName(const IWString& stem,
+         int ndx,
+         const char* suffix) {
+  IWString result(stem);
+  result << ndx << '.' << suffix;
+  return result;
 }
 
 template <typename T>
 int
 StratifiedSample::WriteSplit(const IdValue<T>* id_value, int ndx,
                 const int* train) {
-  constexpr char kSep = '_';
+  static constexpr int kTrain = 1;
+  static constexpr int kTest = 0;
 
-  if (_verbose > 1) {
-    cerr << "WriteSplit have " << _id_to_smiles.size() << " smiles\n";
-  }
   if (! _id_to_smiles.empty()) {
-    IWString fname(_train_file_name_stem);
-    fname << kSep << ndx << ".smi";
-    IWString_and_File_Descriptor train_output;
-    if (! train_output.open(fname)) {
-      cerr << "StratifiedSample::WriteSplit:cannot open '" << fname << "'\n";
-      return 0;
-    }
-    if (_verbose > 1) {
-      cerr << "Writing smiles for split " << ndx << " to '" << fname << "'\n";
-    }
-
-    if (! WriteSmiles(id_value, train, 1, train_output)) {
+    IWString fname = FileName(_train_file_name_stem, ndx, "smi");
+    if (! WriteSmiles(id_value, train, kTrain, fname)) {
+      cerr << "StratifiedSample::WriteSplit:cannot write train split '" << fname << "'\n";
       return 0;
     }
 
-    fname = _test_file_name_stem;
-    fname << kSep << ".smi";
-    IWString_and_File_Descriptor test_output;
-    if (! test_output.open(fname)) {
-      cerr << "StratifiedSample::WriteSmiles:cannot open test " << fname << "'\n";
-      return 0;
-    }
-
-    if (_verbose > 1) {
-      cerr << "Writing smiles for split " << ndx << " to '" << fname << "'\n";
-    }
-    if (! WriteSmiles(id_value, train, 0, test_output)) {
+    fname = FileName(_test_file_name_stem, ndx, "smi");
+    if (! WriteSmiles(id_value, train, kTest, fname)) {
+      cerr << "Cannot write test split '" << fname << "'\n";
       return 0;
     }
   }
 
+  // Nothing more to do unless we are also writing activity files.
   if (! _write_split_activity_files) {
     return 1;
   }
 
-  IWString train_fname(_train_file_name_stem);
-  train_fname << kSep << ndx << ".activity";
-
-  if (_verbose > 1) {
-    cerr << "Writing train to " << train_fname << '\n';
-  }
+  IWString train_fname = FileName(_train_file_name_stem, ndx, "activity");
 
   int rc = 0;
   if (_is_classification) {
-    rc = WriteValuesClassification(id_value, train, 1, train_fname);
+    rc = WriteValuesClassification(id_value, train, kTrain, train_fname);
   } else {
-    rc = WriteValuesClassification(id_value, train, 1, train_fname);
+    rc = WriteValuesContinuous(id_value, train, kTrain, train_fname);
   }
 
   if (rc == 0) {
@@ -686,16 +726,14 @@ StratifiedSample::WriteSplit(const IdValue<T>* id_value, int ndx,
     return 0;
   }
 
-  IWString test_fname(_test_file_name_stem);
-  test_fname << kSep << ndx << ".activity";
-  if (_verbose > 1) {
-    cerr << "Writing test to " << train_fname << '\n';
-  }
+  IWString test_fname = FileName(_test_file_name_stem, ndx, "activity");
+
   if (_is_classification) {
-    rc = WriteValuesClassification(id_value, train, 0, train_fname);
+    rc = WriteValuesClassification(id_value, train, kTest, train_fname);
   } else {
-    rc = WriteValuesClassification(id_value, train, 0, train_fname);
+    rc = WriteValuesContinuous(id_value, train, kTest, train_fname);
   }
+
   if (rc == 0) {
     cerr << "StratifiedSample::WriteSplit:cannot write '" << test_fname << "'\n";
     return 0;
@@ -732,11 +770,43 @@ StratifiedSample::ProcessContinuous() {
 
 int
 StratifiedSample::ProcessContinuous(const Accumulator<double>& acc_activity) {
+  std::unique_ptr<IdValue<double>[]> id_value = std::make_unique<IdValue<double>[]>(_id_to_activity.size());
+
+  if (_bucketise_by_value) {
+    BucketiseByValue(acc_activity, id_value.get());
+  } else {
+    BucketiseByPosition(id_value.get());
+  }
+
+  // Report the number of items per bucket. Reported if verbose output
+  // or of there are empty buckets.
+  extending_resizable_array<int> items_in_bucket;
+  const int n = _id_to_activity.size();
+  for (int i = 0; i < n; ++i) {
+    ++items_in_bucket[id_value[i].bucket];
+  }
+
+  for (int i = 0; i < items_in_bucket; ++i) {
+    if (items_in_bucket[i]) {
+      if (items_in_bucket == 0 || _verbose) {
+        cerr << items_in_bucket[i] << " items in bucket " << i << '\n';
+      }
+    }
+  }
+
+  return ProcessContinuous(id_value.get());
+}
+
+// In this bucketisation scheme, the range is bucketised, and each bucket
+// value is assigned based on where in the range the activity falls.
+// Note that in the common case of a small number of active molecules
+// we will get buckets that have hardly any molecules in that bucket.
+int
+StratifiedSample::BucketiseByValue(const Accumulator<double>& acc_activity,
+                        IdValue<double>* id_value) {
   const double range = acc_activity.maxval() - acc_activity.minval();
   const double dx = range / static_cast<double>(_nbuckets);
   const double min_activity = acc_activity.minval();
-
-  std::unique_ptr<IdValue<double>[]> id_value = std::make_unique<IdValue<double>[]>(_id_to_activity.size());
 
   int ndx = 0;
   for (const auto& [id, a] : _id_to_activity) {
@@ -746,21 +816,40 @@ StratifiedSample::ProcessContinuous(const Accumulator<double>& acc_activity) {
     ++ndx;
   }
 
-  extending_resizable_array<int> items_in_bucket;
-  for (int i = 0; i < ndx; ++i) {
-    ++items_in_bucket[id_value[i].bucket];
-  }
+  ByValueSorter<double> sorter;
+  iwqsort(id_value, ndx, sorter);
 
-  for (int i = 0; i < items_in_bucket; ++i) {
-    if (items_in_bucket[i]) {
-      cerr << items_in_bucket[i] << " items in bucket " << i << '\n';
-    }
+  return 1;
+}
+
+// The `id_value` array is filled and then sorted by value.
+// Buckets are assigned based on array index, so there will
+// always be roughly the same number of items in each bucket.
+int
+StratifiedSample::BucketiseByPosition(IdValue<double>* id_value) {
+  int ndx = 0;
+  for (const auto& [id, a] : _id_to_activity) {
+    id_value[ndx].id = &id;
+    id_value[ndx].value = a;
+    ++ndx;
   }
 
   ByValueSorter<double> sorter;
-  iwqsort(id_value.get(), ndx, sorter);
+  iwqsort(id_value, ndx, sorter);
 
-  return ProcessContinuous(id_value.get());
+  int items_per_bucket = ndx / _nbuckets;
+  if (items_per_bucket == 0) {
+    items_per_bucket = 1;
+  }
+
+  for (int i = 0; i < ndx; ++i) {
+    id_value[i].bucket = i / items_per_bucket;
+    if (id_value[i].bucket == _nbuckets) {
+      id_value[i].bucket = _nbuckets - 1;
+    }
+  }
+
+  return 1;
 }
 
 int
@@ -915,7 +1004,7 @@ StratifiedSample::ReadSmilesRecord(const const_IWSubstring& line) {
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vc:n:f:A:R:E:Ca");
+  Command_Line cl(argc, argv, "vc:n:f:A:R:E:Cab");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -923,20 +1012,19 @@ Main(int argc, char** argv) {
 
   const int verbose = cl.option_count('v');
 
-
-  StratifiedSample core_replacement;
-  if (! core_replacement.Initialise(cl)) {
+  StratifiedSample sampler;
+  if (! sampler.Initialise(cl)) {
     cerr << "Cannot initialise options\n";
     Usage(1);
   }
 
-  if (! core_replacement.Process()) {
+  if (! sampler.Process()) {
     cerr << "Sampling failed\n";
     return 1;
   }
 
   if (verbose) {
-    core_replacement.Report(cerr);
+    sampler.Report(cerr);
   }
 
   return 0;
