@@ -17,3 +17,5 @@ _deps
 bin
 build
 external
+*_pb2.py
+*_pb.rb
