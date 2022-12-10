@@ -533,14 +533,14 @@ SvmModel::Score(IW_General_Fingerprint& gfp) {
   double result = - _threshold_b;
   for (int i = 0; i < _nfingerprints; ++i) {
     result += _support_vector[i].Tanimoto(gfp) ;
-    cerr << " i = " << i << " so far " << result << '\n';
   }
 
   // If needed, convert back to the original range of the model data.
+  //cerr << "Before rescaling " << result << '\n';
   if (_response_scaler.Active()) {
     result = _response_scaler.ScaleBackToOrignalRange(result);
   }
-  cerr << "After rescaling " << result << '\n';
+  //cerr << "After rescaling " << result << '\n';
 
   _acc_scores.extra(result);
 

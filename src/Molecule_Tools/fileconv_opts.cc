@@ -4509,10 +4509,41 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
   }
 
   if (verbose > 1) {
+    int max_count = 0;
+    int last_nonzero = -1;
     for (int i = 0; i < atom_count.number_elements(); i++) {
-      if (atom_count[i])
-        cerr << atom_count[i] << " molecules had " << i << " atoms\n";
+      if (atom_count[i] == 0) {
+        continue;
+      }
+
+      cerr << atom_count[i] << " molecules had " << i << " atoms\n";
+      if (atom_count[i] > max_count) {
+        max_count = atom_count[i];
+      }
+      last_nonzero = i;
     }
+
+    // Assume that they have 50 lines - could query $LINES...
+    for (int i = 0; i < 50; ++i) {
+      int threshold = static_cast<float>(50 - i) / 50.0 * max_count;
+      for (int j = 0; j <= last_nonzero; ++j) {
+        if (atom_count[j] >= threshold) {
+          cerr << '*';
+        } else {
+          cerr << ' ';
+        }
+      }
+      cerr << '\n';
+    }
+
+    for (int i = 0; i <= last_nonzero; ++i) {
+      if (i % 10 == 0) {
+        cerr << (i / 10);
+      } else {
+        cerr << '-';
+      }
+    }
+    cerr << '\n';
   }
 
   if (_ecount != nullptr) {

@@ -134,7 +134,6 @@ FeatureScaler<T>::ScaleTo01(T value) const {
 template <typename T>
 T
 FeatureScaler<T>::ScaleBackToOrignalRange(T value) const {
-  assert(value >= T() && value <= 1.0);
 
   if (value >= T() && value <= 1.0) {
     return _min + value * _range;
@@ -158,11 +157,7 @@ FeatureScaler<T>::ScaleBackToOrignalRange(T value) const {
   }
 
   // Write extrapolated value.
-  if (value < T()) {
-    return _min + value * _range;
-  } else {
-    return _max + (value - 1.0) * _range;
-  }
+  return _min + value * _range;
 }
 
 #endif   // FEATURE_SCALER_IMPLEMENTATION

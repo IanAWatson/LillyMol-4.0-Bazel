@@ -14,6 +14,7 @@
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/iwdigits.h"
 #include "Foundational/iwmisc/proto_support.h"
+#include "Foundational/iwstring/iw_stl_hash_set.h"
 
 #include "Utilities/General/feature_scaling.pb.h"
 #define FEATURE_SCALER_IMPLEMENTATION
@@ -35,7 +36,11 @@ char output_separator = ' ';
 
 bool truncate_out_of_range = true;
 
-enum Action {scale_to_range, scale_back_to_original };
+// We can either scale to the target range, or unscale scaled values.
+enum class Action {kScaleToRange, kScaleBackToOriginal };
+
+// If the -subset option is given.
+IW_STL_Hash_Set identifiers_to_process;
 
 Fraction_as_String fraction_as_string;
 
@@ -47,6 +52,9 @@ Usage(int rc) {
   cerr << " -U <fname>        use a previously generated scaling to scale or unscale data\n";
   cerr << " -action ...       either 'scale' or 'unscale' data using previously generated scaling data\n";
   cerr << " -c <col>          colum contining the data\n";
+  cerr << " -subset <fname>   only process the identifiers in <fname>\n";
+  cerr << " -scol <col>       the identifiers in the -subset file are in <col> (use 2 for a smiles file)\n";
+  cerr << " -v                verbose output\n";
   exit(rc);
 }
 
@@ -85,7 +93,7 @@ UseScalingLine(const const_IWSubstring& buffer,
     }
 
 
-    if (action == scale_to_range) {
+    if (action == Action::kScaleToRange) {
       value = scaling.ScaleTo01(value);
     } else {
       value = scaling.ScaleBackToOrignalRange(value);
@@ -180,9 +188,48 @@ UseScaling(const Command_Line_v2& cl,
   return UseScaling(cl, scaler, action, output);
 }
 
+// Return true if `buffer` should be processed for determining
+// the range.
+// If `identifiers_to_process` is empty, no subsetting is done
+// so return ok.
+// Otherwise return ok if the identifier in `buffer` is in
+// identifiers_to_process.
+int
+OkSubset(const const_IWSubstring& buffer,
+         const IW_STL_Hash_Set& identifiers_to_process) {
+
+  static constexpr int kIdentifierColumn = 0;
+  static constexpr char kSep = ' ';
+
+  // No subsetting, everything is OK.
+  if (identifiers_to_process.empty()) {
+    return 1;
+  }
+
+  const_IWSubstring token;
+  int i = 0;
+  for (int col = 0; buffer.nextword(token, i, kSep); ++col) {
+    if (col != kIdentifierColumn) {
+      continue;
+    }
+
+    IWString tmp(token);
+    return identifiers_to_process.contains(tmp);
+  }
+
+  // Kind of strange, did not find the identifier column, 
+  // silently OK????
+  return 1;
+}
+
 int
 GatherRangeLine(const const_IWSubstring& buffer,
                  FeatureScaling::FeatureScaling& scaling) {
+
+  if (! OkSubset(buffer, identifiers_to_process)) {
+    return 1;
+  }
+
   int i = 0;
   const_IWSubstring token;
   for (int col = 0; buffer.nextword(token, i, input_separator); ++col) {
@@ -243,6 +290,53 @@ GatherRange(const char * fname,
   return GatherRange(input, scaling);
 }
 
+int
+GetIdentiferSubsetLine(const_IWSubstring& line,
+                   const int scol,
+                   IW_STL_Hash_Set& identifiers_to_process) {
+  static constexpr char kSep = ' ';
+  IWString token;
+  int i = 0;
+  for (int col = 0; line.nextword(token, i, kSep); ++col) {
+    if (col != scol) {
+      continue;
+    }
+
+    identifiers_to_process.emplace(token);
+    return 1;
+  }
+
+  return 0;
+}
+
+int
+GetIdentiferSubset(iwstring_data_source& input,
+                   int scol,
+                   IW_STL_Hash_Set& identifiers_to_process) {
+  const_IWSubstring buffer;
+  while (input.next_record(buffer)) {
+    if (! GetIdentiferSubsetLine(buffer, scol, identifiers_to_process)) {
+      cerr << "GetIdentiferSubset:invalid data '" << buffer << "'\n";
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int
+GetIdentiferSubset(IWString& fname,
+                   int scol,
+                   IW_STL_Hash_Set& identifiers_to_process) {
+  iwstring_data_source input(fname);
+  if (! input.good()) {
+    cerr << "GetIdentiferSubset:cannot open '" << fname << "'\n";
+    return 0;
+  }
+
+  return GetIdentiferSubset(input, scol, identifiers_to_process);
+}
+
 std::optional<FeatureScaling::FeatureScaling>
 GatherRange(const Command_Line_v2& cl,
             IWString& output_fname) {
@@ -277,7 +371,7 @@ GatherRange(const Command_Line_v2& cl,
 
 int
 FeatureScaling(int argc, char** argv) {
-  Command_Line_v2 cl(argc, argv, "-v-C=s-U=s-c=ipos-action=s-hdr=ipos-prec=ipos-bin");
+  Command_Line_v2 cl(argc, argv, "-v-C=s-U=s-c=ipos-action=s-hdr=ipos-prec=ipos-bin-subset=sfile-scol=ipos");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
@@ -309,13 +403,13 @@ FeatureScaling(int argc, char** argv) {
     Usage(1);
   }
 
-  Action action = scale_to_range;
+  Action action = Action::kScaleToRange;
   if (cl.option_present("action")) {
     const IWString s = cl.string_value("action");
     if (s == "scale") {
-      action = scale_to_range;
+      action = Action::kScaleToRange;
     } else if (s == "unscale" ) {
-      action = scale_back_to_original;
+      action = Action::kScaleBackToOriginal;
     } else {
       cerr << "Unrecognised action '" << s << "'\n";
       Usage(1);
@@ -330,6 +424,29 @@ FeatureScaling(int argc, char** argv) {
     fraction_as_string.initialise(0.0, 1.0, precision);
   }
 
+  if (cl.option_present("subset")) {
+    IWString fname = cl.string_value("subset");
+    int scol = 0;
+    if (cl.option_present("scol")) {
+      cl.value("scol", scol);
+      if (scol < 1) {
+        cerr << "Invalid subset column specifier " << scol << "\n";
+        return 1;
+      }
+      if (verbose) {
+        cerr << "Subset identifiers in column " << scol << " in '" << fname << "'\n";
+      }
+      --scol;
+    }
+    if (! GetIdentiferSubset(fname, scol, identifiers_to_process)) {
+      cerr << "Cannot read identifier subset '" << fname << "'\n";
+      return 1;
+    }
+    if (verbose) {
+      cerr << "Read " << identifiers_to_process.size() << " identifiers to process from '" << fname << "'\n";
+    }
+  }
+
   IWString_and_File_Descriptor output(1);
   int rc = 0;
   if (cl.option_present('C')) {
@@ -341,7 +458,7 @@ FeatureScaling(int argc, char** argv) {
     }
     feature_scaler::FeatureScaler<float> scaler = feature_scaler::FeatureScaler<float>::Build(*scaling);
     scaler.set_truncate_out_of_range(truncate_out_of_range);
-    rc = UseScaling(cl, scaler, scale_to_range, output);
+    rc = UseScaling(cl, scaler, Action::kScaleToRange, output);
   } else if (cl.option_present('U')) {
     IWString ufile = cl.string_value('U');
     rc = UseScaling(cl, ufile, action, output);
