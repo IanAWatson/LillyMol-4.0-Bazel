@@ -28,7 +28,7 @@ Usage(int rc) {
   cerr << " -i <sep>          token separator in -A file (def space)\n";
   cerr << " -c <col>          activity data is in column <col> of the -A file (def 2)\n";
   cerr << " -n <nsplits>      the number of splits to create\n";
-  cerr << " -t <fraction>     fraction for the training set (or percent)\n";
+  cerr << " -f <fraction>     fraction for the training set (or percent)\n";
   cerr << " -R <fname>        file name stem for training set files to create\n";
   cerr << " -E <fname>        file name stem for training set files to create\n";
   cerr << " -C                data is class data\n";

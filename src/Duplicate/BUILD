@@ -43,6 +43,23 @@ cc_binary(
 )
 
 cc_binary(
+    name = "mispredicted",
+    srcs = [
+        "mispredicted.cc"
+    ],
+    deps = [
+        "//Foundational/accumulator:accumulator",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+        "//Molecule_Lib:substructure_cc_proto",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_binary(
     name = "ring_extraction",
     srcs = [
         "ring_extraction.cc"
