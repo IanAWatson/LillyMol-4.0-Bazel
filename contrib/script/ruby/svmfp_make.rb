@@ -62,8 +62,8 @@ def perform_class_label_translation_lightgbm(activity_file, mdir, train_activity
   execute_cmd(cmd, verbose, [train_activity, "#{mdir}/class_label_translation.dat"])
 end
 
-def perform_response_scaling(activity_file, mdir, train_activity, verbose)
-  cmd = "feature_scaling -bin -C #{mdir}/response_scaling #{activity_file} > #{train_activity}"
+def perform_response_scaling(activity_file, mdir, train_smi, train_activity, verbose)
+  cmd = "feature_scaling -bin -C #{mdir}/response_scaling -v -subset #{train_smi} -scol 2 #{activity_file} > #{train_activity}"
   execute_cmd(cmd, verbose, [train_activity])
 end
 
@@ -175,7 +175,7 @@ if cmdline.option_present('C')  # Classification.
     svm_learn_options = "#{svm_learn_options} -z c"
   end
 else  # Regression
-  perform_response_scaling(activity_file, mdir, train_activity, verbose)
+  perform_response_scaling(activity_file, mdir, train_smi, train_activity, verbose)
   svm_learn_options = "#{svm_learn_options} -z r"
   lightgbm = "lightgbm #{lightgbm} objective=regression" if lightgbm
   catboost = "#{catboost} --loss-function RMSE" if catboost
