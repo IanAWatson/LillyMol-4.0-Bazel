@@ -8349,8 +8349,10 @@ iwdescr(int argc, char ** argv)
           cerr << "Descriptors generated with prefix '" << descriptor_prefix << "'\n";
       }
       else if (b == "help") {
+        cerr << "Recognised -B qualifiers\n";
         cerr << " -B prefix=...   prefix for descriptor names\n";
         cerr << " -B sep=.        output token separator (def space)\n";
+        return 0;
       } else if (b.starts_with("sep=")) {
         b.remove_leading_chars(4);
         char_name_to_char(b);  // Should check this...
