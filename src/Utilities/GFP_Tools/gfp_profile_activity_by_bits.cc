@@ -42,6 +42,7 @@ static int skip_header_record_in_activity_file = 0;
 static int write_most_informative_bits = 0;
 
 static IWString_and_File_Descriptor stream_for_table_output;
+static IWString_and_File_Descriptor stream_for_csv;
 
 static int output_precision = 0;
 
@@ -102,6 +103,7 @@ usage (int rc)
   cerr << " -j             compute set and nset values for sparse fingerprints (slow)\n";
   cerr << " -p <num>       min number of times set or not-set in order to be output\n";
   cerr << " -T <fname>     file for statistical analysis\n";
+  cerr << " -V <fname>     file for csv output\n";
   cerr << " -o             offset bit numbers by one - helps with tsubstructure files\n";
   cerr << " -n <num>       only write the <num> most significant bits (classification)\n";
   cerr << " -S <fname>     smiles file for bits - probably from dicer\n";
@@ -316,10 +318,10 @@ Class_Membership::report(int n,
 }
 
 static int
-write_table_output (IWString_and_File_Descriptor & output,
-                    unsigned int b,
-                    int times_hit,
-                    float ave)
+write_table_output(IWString_and_File_Descriptor & output,
+                   unsigned int b,
+                   int times_hit,
+                   float ave)
 {
   output << bit_prefix << b << " hit " << times_hit << " ave " << ave << " diff " << (ave - average_activity_of_whole_collection) << '\n';
 
@@ -480,6 +482,70 @@ write_smiles_if_present_and_bit_number (unsigned int b,
     output << "bit " << bname;
 
   output.write_if_buffer_holds_more_than(32768);
+
+  return 1;
+}
+
+// Write data for all bits ti `output`.
+// The two Accumulator's are arrays of length `nbits`.
+// `acc_set` holds the activity of molecules where the bit
+// is present, and `acc_nset` is the activity of molecules
+// where the bit it not present.
+static int
+CsvOutput(int nbits, const Accumulator<activity_type_t>* acc_set,
+          const Accumulator<activity_type_t>* acc_nset,
+          IWString_and_File_Descriptor& output) {
+  static constexpr char kSep = ',';
+  static constexpr char kMissing = '.';
+
+  for (int i = 0; i < nbits; ++i) {
+
+    // See if we have a smiles for this bit.
+    IWString bname;
+    bname << i;
+
+    const auto iter = smiles.find(bname);
+
+    if (iter == smiles.end()) {
+      output << kMissing;
+    } else {
+      output << iter->second;
+    }
+
+    output << kSep << bname;
+    output << kSep << acc_set[i].n();
+    if (acc_set[i].empty()) {
+      output << kSep << kMissing;
+      output << kSep << kMissing;
+      output << kSep << kMissing;
+    } else {
+      output << kSep << acc_set[i].minval();
+      output << kSep << acc_set[i].maxval();
+      output << kSep << acc_set[i].average();
+    }
+    output << kSep << acc_nset[i].n();
+    if (acc_nset[i].empty()) {
+      output << kSep << kMissing;
+      output << kSep << kMissing;
+      output << kSep << kMissing;
+    } else {
+      output << kSep << acc_nset[i].minval();
+      output << kSep << acc_nset[i].maxval();
+      output << kSep << acc_nset[i].average();
+    }
+    if (acc_set[i].n() && acc_nset[i].n()) {
+      if (show_absolute_differences) {
+        output << kSep << abs(acc_set[i].average() - acc_nset[i].average());
+      } else {
+        output << kSep << (acc_set[i].average() - acc_nset[i].average());
+      }
+    } else {
+      output << kSep << kMissing;
+    }
+
+    output << '\n';
+    output.write_if_buffer_holds_more_than(32768);
+  }
 
   return 1;
 }
@@ -1847,43 +1913,46 @@ profile_sparse_fingerprint(int f,                   // which sparse fingerprint
 }
 
 static int
-profile_sparse_fingerprint (int f,                     // which sparse fingerprint
-                            const activity_type_t * activity,
-                            IWString_and_File_Descriptor & output)
+profile_sparse_fingerprint(int f,                     // which sparse fingerprint
+                           const activity_type_t * activity,
+                           IWString_and_File_Descriptor & output)
 {
   IW_Hash_Map<unsigned int, unsigned int> bit_to_sequence;
 
   resizable_array<unsigned int> bit_number;
 
-  if (min_support_level > 0)
-  {
+  if (min_support_level > 0) {
     if (! build_bit_cross_reference_meeting_support(f, bit_to_sequence, bit_number))
       return 0;
   }
-  else if (! build_bit_cross_reference(f, bit_to_sequence, bit_number))
+  else if (! build_bit_cross_reference(f, bit_to_sequence, bit_number)) {
     return 0;
+  }
 
   int nbits = bit_number.number_elements();
+  std::unique_ptr<Accumulator<activity_type_t>[]> acc_set = std::make_unique<Accumulator<activity_type_t>[]>(nbits);
+  std::unique_ptr<Accumulator<activity_type_t>[]> acc_nset = std::make_unique<Accumulator<activity_type_t>[]>(nbits);
 
-  Accumulator<activity_type_t> * acc_set  = new Accumulator<activity_type_t>[nbits];
-  Accumulator<activity_type_t> * acc_nset = new Accumulator<activity_type_t>[nbits];
-
-  int * set_this_molecule = new int[nbits]; std::unique_ptr<int[]> free_set_this_molecule(set_this_molecule);
-
-  if (nullptr == acc_set || nullptr == acc_nset || nullptr == set_this_molecule)
-  {
+  if (nullptr == acc_set || nullptr == acc_nset) {
     cerr << "Cannot allocate " << nbits << " accumulators\n";
     return 0;
   }
 
-  for (int i = 0; i < pool_size; i++)
-  {
+  // If we need to report information on the activity of molecules without the
+  // bit set, we need to keep track of which bits are set in each molecule.
+  std::unique_ptr<int[]> set_this_molecule;
+  if (show_set_and_nset_averages) {
+    set_this_molecule = std::make_unique<int[]>(nbits);
+  }
+
+  for (int i = 0; i < pool_size; i++) {
     const IW_General_Fingerprint & fpi = pool[i];
 
     const Sparse_Fingerprint & sfp = fpi.sparse_fingerprint(f);
 
-    if (show_set_and_nset_averages)
-      set_vector(set_this_molecule, nbits, 0);
+    if (show_set_and_nset_averages) {
+      set_vector(set_this_molecule.get(), nbits, 0);
+    }
 
     unsigned int b;
     int j = 0;
@@ -1903,14 +1972,17 @@ profile_sparse_fingerprint (int f,                     // which sparse fingerpri
       acc_set[ndx].extra(activity[i]);
     }
 
-    if (show_set_and_nset_averages)
-    {
-      for (int j = 0; j < nbits; j++)
-      {
-        if (! set_this_molecule[j])
+    if (show_set_and_nset_averages) {
+      for (int j = 0; j < nbits; j++) {
+        if (! set_this_molecule[j]) {
           acc_nset[j].extra(activity[i]);
+        }
       }
     }
+  }
+
+  if (stream_for_csv.is_open()) {
+    return CsvOutput(nbits, acc_set.get(), acc_nset.get(), stream_for_csv);
   }
 
   Accumulator<activity_type_t> ave_act_acc;
@@ -2558,7 +2630,7 @@ display_dash_m_options(std::ostream & os)
 static int
 gfp_profile_activity (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "vs:E:F:P:wgu:p:T:p:Corn:S:M:zjY:");
+  Command_Line cl(argc, argv, "vs:E:F:P:wgu:p:T:p:Corn:S:M:zjY:V:");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -2824,6 +2896,33 @@ gfp_profile_activity (int argc, char ** argv)
 
     if (verbose)
      cerr << "Tabular output written to '" << t << "'\n";
+  }
+
+  if (cl.option_present('V')) {
+    IWString fname = cl.string_value('V');
+    if (! stream_for_csv.open(fname)) {
+      cerr << "Cannot open CSV stream '" << fname << "'\n";
+      return 1;
+    }
+
+    if (verbose) {
+      cerr << "CSV output written to '" << fname << "'\n";
+    }
+    show_set_and_nset_averages = 1;
+
+    constexpr char kSep = ',';
+    stream_for_csv << "smiles";
+    stream_for_csv << kSep << "bit";
+    stream_for_csv << kSep << "set";
+    stream_for_csv << kSep << "set_minval";
+    stream_for_csv << kSep << "set_maxval";
+    stream_for_csv << kSep << "set_average";
+    stream_for_csv << kSep << "nset";
+    stream_for_csv << kSep << "nset_minval";
+    stream_for_csv << kSep << "nset_maxval";
+    stream_for_csv << kSep << "nset_average";
+    stream_for_csv << kSep << "diff";
+    stream_for_csv << '\n';
   }
 
   if (! build_pool(cl[0]))

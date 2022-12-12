@@ -4491,6 +4491,40 @@ FileconvConfig::ParseMkFragOptions(Command_Line& cl, char flag) {
   return 1;
 }
 
+// Write an ASCII histogram of atom counts.
+int
+FileconvConfig::WriteAsciiAtomCounts(const extending_resizable_array<int>& atom_count,
+                int last_nonzero,
+                std::ostream& output) {
+  // Assume that they have 50 lines - could query $LINES...
+  if (molecules_processed < 2) {
+    return 1;
+  }
+
+  for (int i = 0; i < 50; ++i) {
+    int threshold = static_cast<float>(50 - i) / 50.0 * max_count;
+    for (int j = 0; j <= last_nonzero; ++j) {
+      if (atom_count[j] >= threshold) {
+        output << '*';
+      } else {
+        output << ' ';
+      }
+    }
+    output << '\n';
+  }
+
+  for (int i = 0; i <= last_nonzero; ++i) {
+    if (i % 10 == 0) {
+      output << (i / 10);
+    } else {
+      output << '-';
+    }
+  }
+  output << '\n';
+
+  return 1;
+}
+
 int
 FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) const {
   if (cl.number_elements() > 1)
@@ -4523,7 +4557,10 @@ FileconvConfig::ReportResults(const Command_Line& cl, std::ostream& output) cons
       last_nonzero = i;
     }
 
+    WriteAsciiAtomCounts(atom_count, last_nonzero, cerr);
+
     // Assume that they have 50 lines - could query $LINES...
+    // Should only do this if we have a certain number of molecules...
     for (int i = 0; i < 50; ++i) {
       int threshold = static_cast<float>(50 - i) / 50.0 * max_count;
       for (int j = 0; j <= last_nonzero; ++j) {

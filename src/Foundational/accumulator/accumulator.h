@@ -47,6 +47,13 @@ class Accumulator_Base
     unsigned int extra (const Accumulator_Base<T, SUMMER> &);
 
     void operator () (T e) { (void) extra(e);}
+    void operator<<(T e) {
+      (void) extra(e);
+    }
+
+    int empty() const {
+      return n() == 0;
+    }
 
     int subtract_data (const Accumulator_Base<T, SUMMER> &, Accumulator_Base<T, SUMMER> &) const;
 
