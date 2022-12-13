@@ -619,6 +619,7 @@ Chemical_Standardisation::Activate(const IWString& directive,
   else if (CS_REVERSE_NV5 == tmp)
   {
     _transform_nv5_to_charge_separated.activate();
+    cerr << "Activated _transform_nv5_to_charge_separated\n";
   }
   else if (CS_KETO_ENOL == tmp)
   {
@@ -3035,7 +3036,7 @@ Chemical_Standardisation::_process(Molecule & m,
 {
   int rc = 0;
 
-//cerr << m.smiles() << ' ' << __LINE__ << " rc " << rc << endl;
+  // cerr << m.smiles() << ' ' << __LINE__ << " rc " << rc << endl;
   int * atom_already_changed = new_int(m.natoms()); std::unique_ptr<int[]> free_atom_already_changed(atom_already_changed);
 
   if (_transform_nitro_reverse.active())
@@ -3208,7 +3209,7 @@ Chemical_Standardisation::_process(Molecule & m,
 int
 Chemical_Standardisation::process(Molecule & m) 
 {
-//cerr << "Chemical_Standardisation::process:active " << _active << endl;
+  //cerr << "Chemical_Standardisation::process:active " << _active << endl;
 
   if (0 == _active)
     return 0;
@@ -3273,8 +3274,10 @@ Chemical_Standardisation::_process(Molecule & m)
     return 0;
   }
 
-  if (! _processing_needed(current_molecule_data))
+  if (! _processing_needed(current_molecule_data)) {
+    cerr << "No processing needed\n";
     return rc;
+  }
 
   rc += _process(m, current_molecule_data);
 
@@ -3814,6 +3817,19 @@ Chemical_Standardisation::_do_transform_reverse_nitro (Molecule & m,
 }
 
 int
+HasTripleBond(const Molecule& m,
+              atom_number_t n) {
+  const Atom& a = m.atom(n);
+  for (const Bond* b : a) {
+    if (b->is_triple_bond()) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int
 Chemical_Standardisation::_do_nv5_to_charge_separated(Molecule & m,
                                                 IWStandard_Current_Molecule & current_molecule_data)
 {
@@ -3835,14 +3851,18 @@ Chemical_Standardisation::_do_nv5_to_charge_separated(Molecule & m,
 
     const Atom * a = atoms[i];
 
-    if (5 != a->nbonds())
+    if (a->nbonds() == 5) {
+    } else if (a->nbonds() == 4 && a->ncon() == 2 && HasTripleBond(m, i)) {
+    } else {
       continue;
+    }
 
     if (0 != a->formal_charge())
       continue;
 
     atom_number_t doubly_bonded_singly_connected = INVALID_ATOM_NUMBER;
     atom_number_t triply_connected_n = INVALID_ATOM_NUMBER;
+    atom_number_t triply_connected_c = INVALID_ATOM_NUMBER;
     bond_type_t bond_to_be_placed = SINGLE_BOND;
     atom_number_t double_bonded_2_connected_n = INVALID_ATOM_NUMBER;
 
@@ -3862,18 +3882,25 @@ Chemical_Standardisation::_do_nv5_to_charge_separated(Molecule & m,
         triply_connected_n = k;
         bond_to_be_placed = DOUBLE_BOND;
       }
+      else if (b->is_triple_bond() && z[k] == 6) {
+        triply_connected_c = k;
+        bond_to_be_placed = TRIPLE_BOND;
+      }
       else if (2 == ncon[k] && 7 == z[k] && b->is_double_bond())
         double_bonded_2_connected_n = k;
     }
 
-    if (INVALID_ATOM_NUMBER != doubly_bonded_singly_connected)
-      ;
-    else if (INVALID_ATOM_NUMBER != triply_connected_n)
+    if (INVALID_ATOM_NUMBER != triply_connected_c) {
+      // this is not strictly correct, but it works because we have set bond_to_be_placed.
+      doubly_bonded_singly_connected = triply_connected_c;
+    } else if (INVALID_ATOM_NUMBER != doubly_bonded_singly_connected) {
+    } else if (INVALID_ATOM_NUMBER != triply_connected_n) {
       doubly_bonded_singly_connected = triply_connected_n;
-    else if (INVALID_ATOM_NUMBER != double_bonded_2_connected_n)
+    } else if (INVALID_ATOM_NUMBER != double_bonded_2_connected_n) {
       doubly_bonded_singly_connected = double_bonded_2_connected_n;
-    else
+    } else {
       continue;
+    }
 
     m.set_formal_charge(i, 1);
     m.set_formal_charge(doubly_bonded_singly_connected, -1);
@@ -8144,7 +8171,9 @@ Chemical_Standardisation::_processing_needed (const IWStandard_Current_Molecule 
       current_molecule_data.possible_valence_errors() ||
       (current_molecule_data.nitrogens() && current_molecule_data.oxygens() && _transform_isoxazole.active()) ||
       (current_molecule_data.sulphur() && (_transform_amino_thiazole.active() || _transform_misdrawn_sulfonamide.active())) ||
-      (current_molecule_data.oxygens() && _transform_enol_to_keto.active()))
+      (current_molecule_data.oxygens() && _transform_enol_to_keto.active()) ||
+      (_transform_nv5_to_charge_separated.active() && current_molecule_data.nitrogens() > 0)
+      )
     return 1;
 
   return 0;
