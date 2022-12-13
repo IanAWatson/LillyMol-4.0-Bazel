@@ -489,6 +489,11 @@ struct FileconvConfig {
 
   int AccumulateSmallFragments(Molecule& m);
 
+  int WriteAsciiAtomCounts(const extending_resizable_array<int>& atom_count,
+                int max_count,
+                int last_nonzero,
+                std::ostream& output) const;
+
  public:
   // By default, nothing will be set. Useless in default state.
   FileconvConfig();
