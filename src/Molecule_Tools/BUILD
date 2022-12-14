@@ -761,6 +761,19 @@ cc_binary(
 )
 
 cc_binary(
+    name = "multiple_reactions",
+    srcs = [
+        "multiple_reactions.cc",
+    ],
+    deps = [
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:iwreaction",
+        "//Molecule_Lib:moleculeio",
+    ]
+)
+
+cc_binary(
     name = "pharmacaphore_2d",
     srcs = [
         "pharmacaphore_2d.cc",

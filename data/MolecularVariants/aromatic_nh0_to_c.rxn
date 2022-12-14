@@ -1,0 +1,9 @@
+name: "aromatic_nH0_to_c"
+scaffold {
+  id: 0
+  smarts: "[$([nD2H0]);!$([nD2H0]:c=[O,S])]"
+  change_element {
+    atom: 0
+    element: "C"
+  }
+}

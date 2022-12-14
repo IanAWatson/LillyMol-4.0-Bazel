@@ -1,0 +1,15 @@
+name: "aromatic_nh_to_methyl"
+scaffold {
+  id: 0
+  smarts: "[$([nH]);!$([nH]:c=[O,S])]"
+}
+sidechain {
+  id: 1
+  reagent: "C"
+  smarts: "C"
+  join {
+    a1: 0
+    a2: 0
+    btype: SS_SINGLE_BOND
+  }
+}

@@ -1,6 +1,4 @@
-/*
-  Do a series of transformations on molecules
-*/
+// Perform a series of reactions on molecules.
 
 #include <stdlib.h>
 #include <memory>

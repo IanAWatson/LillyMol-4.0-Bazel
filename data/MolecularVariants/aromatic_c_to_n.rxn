@@ -1,0 +1,5 @@
+name: "aromatic_c_to_n"
+scaffold {
+  id: 0
+  smarts: "[CD2T0]"
+}
