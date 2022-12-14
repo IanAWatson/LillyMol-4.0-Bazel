@@ -486,7 +486,7 @@ write_smiles_if_present_and_bit_number (unsigned int b,
   return 1;
 }
 
-// Write data for all bits ti `output`.
+// Write data for all bits to `output`.
 // The two Accumulator's are arrays of length `nbits`.
 // `acc_set` holds the activity of molecules where the bit
 // is present, and `acc_nset` is the activity of molecules
@@ -521,7 +521,7 @@ CsvOutput(int nbits, const Accumulator<activity_type_t>* acc_set,
     } else {
       output << kSep << acc_set[i].minval();
       output << kSep << acc_set[i].maxval();
-      output << kSep << acc_set[i].average();
+      output << kSep << static_cast<float>(acc_set[i].average());
     }
     output << kSep << acc_nset[i].n();
     if (acc_nset[i].empty()) {
@@ -531,13 +531,13 @@ CsvOutput(int nbits, const Accumulator<activity_type_t>* acc_set,
     } else {
       output << kSep << acc_nset[i].minval();
       output << kSep << acc_nset[i].maxval();
-      output << kSep << acc_nset[i].average();
+      output << kSep << static_cast<float>(acc_nset[i].average());
     }
     if (acc_set[i].n() && acc_nset[i].n()) {
       if (show_absolute_differences) {
-        output << kSep << abs(acc_set[i].average() - acc_nset[i].average());
+        output << kSep << static_cast<float>(abs(acc_set[i].average() - acc_nset[i].average()));
       } else {
-        output << kSep << (acc_set[i].average() - acc_nset[i].average());
+        output << kSep << static_cast<float>(acc_set[i].average() - acc_nset[i].average());
       }
     } else {
       output << kSep << kMissing;
@@ -1727,10 +1727,10 @@ do_write_most_informative_bits (const Classification_Data & classification_data,
 }*/
 
 static int
-do_write_data_for_gfp_adjust (const Classification_Data & classification_data,
-                              const Class_Membership * cm,
-                              const resizable_array<unsigned int> & bit_number,
-                              IWString_and_File_Descriptor & output)
+do_write_data_for_gfp_adjust(const Classification_Data & classification_data,
+                             const Class_Membership * cm,
+                             const resizable_array<unsigned int> & bit_number,
+                             IWString_and_File_Descriptor & output)
 {
   int nbits = bit_number.number_elements();
 
@@ -2113,19 +2113,22 @@ profile_fingerprint (int f,
     }
   }
 
+  if (stream_for_csv.active()) {
+    return CsvOutput(nbits, acc_set, acc_nset, stream_for_csv);
+  }
+
   for (int i = 0; i < nbits; i++)
   {
     Accumulator<activity_type_t> & s = acc_set[i];
 
     int constant_bit;
-    if (0 == s.n() || static_cast<unsigned int>(pool_size) == s.n())
-    {
+    if (0 == s.n() || static_cast<unsigned int>(pool_size) == s.n()) {
       constant_bit = 1;
       if (! show_constant_bits)
         continue;
-    }
-    else
+    } else {
       constant_bit = 0;
+    }
 
     Accumulator<activity_type_t> & ns = acc_nset[i];
 
