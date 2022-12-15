@@ -8,7 +8,6 @@
 namespace atom_pair_fingerprint {
 
 using std::cerr;
-using std::endl;
 
 using std::tie;
 
@@ -294,10 +293,10 @@ AtomPairFingerprint::_DoCheckForCollisions(const APairOfAtoms& a_pair) {
 
 //#define ECHO_BIT_COLLISIONS
 #ifdef ECHO_BIT_COLLISIONS
-  cerr << "Collision on bit " << bitnum << endl;
-  cerr << std::get<0>(tmp) << ' ' << std::get<0>(f->second) << endl;
-  cerr << std::get<1>(tmp) << ' ' << std::get<1>(f->second) << endl;
-  cerr << std::get<2>(tmp) << ' ' << std::get<2>(f->second) << endl;
+  cerr << "Collision on bit " << bitnum << '\n';
+  cerr << std::get<0>(tmp) << ' ' << std::get<0>(f->second) << '\n';
+  cerr << std::get<1>(tmp) << ' ' << std::get<1>(f->second) << '\n';
+  cerr << std::get<2>(tmp) << ' ' << std::get<2>(f->second) << '\n';
 #endif
 
   _collisions_found++;
