@@ -526,6 +526,7 @@ GfpBitsRetained::BitsToFeatures(const Sparse_Fingerprint& fp, int fpnum,
   uint32_t bit = 0;
   int count = 0;
   while (fp.next_bit_set(i, bit, count)) {
+    cerr << " bit " << bit << " count " << count << '\n';
     const auto iter = _sparse_count[fpnum].find(bit);
     if (iter == _sparse_count[fpnum].cend()) {
       continue;

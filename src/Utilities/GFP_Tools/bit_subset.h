@@ -24,7 +24,7 @@ using gfp_bit_type = uint32_t;
 // is not necessarily known when this is constructed.
 class BitSubset {
   private:
-    // Makking from tag to subset of bits.
+    // Making from tag to subset of bits.
     using Subset = std::unordered_set<uint32_t>;
     IW_STL_Hash_Map<IWString, Subset> _tag_to_bit_subset;
 
