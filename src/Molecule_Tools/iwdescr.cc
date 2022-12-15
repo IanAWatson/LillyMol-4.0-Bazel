@@ -576,8 +576,10 @@ Descriptor::produce_fingerprint (int bitnum, Sparse_Fingerprint_Creator & sfc) c
 
   float v;
 
-  if (! Set_or_Unset<float>::value(v))
+  if (! Set_or_Unset<float>::value(v)) {
+    //cerr << _name << " value not set\n";
     return;
+  }
 
   int c;
 
@@ -593,7 +595,7 @@ Descriptor::produce_fingerprint (int bitnum, Sparse_Fingerprint_Creator & sfc) c
     c++;   // ensure non zero
   }
   
-//cerr << "Descriptor::produce_fingerprint: descriptor " << _name << " value " << v << " bit " << bitnum << " value " << c << " rep " << _fingerprint_replicates << endl;
+  //cerr << "Descriptor::produce_fingerprint: descriptor " << _name << " value " << v << " bit " << bitnum << " value " << c << " rep " << _fingerprint_replicates << endl;
 
   if (1 == _fingerprint_replicates)    // presumably a common case
   {
@@ -1571,8 +1573,7 @@ write_fingerprint (Molecule & m,
 
   int bstart = 0;
 
-  for (int i = 0; i < n; i++)
-  {
+  for (int i = 0; i < n; i++) {
     if (! descriptor[i].produce_fingerprint())
       continue;
 
@@ -1581,6 +1582,7 @@ write_fingerprint (Molecule & m,
     bstart += descriptor[i].bit_replicates();
   }
 
+  // cerr << "sfc contains " << sfc.nbits() << " bits \n";
   IWString tmp;
   sfc.daylight_ascii_form_with_counts_encoded(tag, tmp);
   output << tmp << '\n';
@@ -8238,6 +8240,16 @@ parse_replicates_specification(const_IWSubstring & dname,
   return 1;
 }
 
+void
+DisplayFingerprintOptions(std::ostream& output) {
+  output << " -G FILTER          work as a TDT filter\n";
+  output << " -G R=<resolution>  the resolution applied to each feature (def 10)\n";
+  output << " -G <replicates>    number of replicates for each bit\n";
+  output << " -G ALL             generate fingerprints for all features\n";
+  output << " -G BEST            those features found to work well\n";
+  output << " -G <f>:<n>         <n> replicates of feature <f>\n";
+}
+
 int
 iwdescr(int argc, char ** argv)
 {
@@ -8569,10 +8581,14 @@ iwdescr(int argc, char ** argv)
     int replicates = 1;
     int resolution = 10;
 
-    int i = 0;
     const_IWSubstring s;
 
     for (int i = 0; cl.value('G', s, i); ++i) {
+      if (s == "help") {
+        DisplayFingerprintOptions(cerr);
+        return 1;
+      }
+
       if ("FILTER" == s) {
         work_as_tdt_filter = 1;
         continue;
@@ -8646,8 +8662,7 @@ iwdescr(int argc, char ** argv)
     fill_descriptor_extremeties(descriptor, resolution);
   }
 
-  if (cl.option_present('s'))
-  {
+  if (cl.option_present('s')) {
     include_smiles_as_descriptor = 1;
 
     if (verbose)

@@ -17,11 +17,6 @@
 
 #include "maccskeys.h"
 
-//#define USE_IWMALLOC
-#ifdef USE_IWMALLOC
-#include "iwmalloc.h"
-#endif
-
 void
 MACCSKeys::_default_values ()
 {
