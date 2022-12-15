@@ -8565,27 +8565,22 @@ iwdescr(int argc, char ** argv)
       cerr << "Will time out molecules that take more than " << alarm_time << " seconds\n";
   }
 
-  if (cl.option_present('G'))
-  {
+  if (cl.option_present('G')) {
     int replicates = 1;
     int resolution = 10;
 
     int i = 0;
     const_IWSubstring s;
 
-    while (cl.value('G', s, i++))
-    {
-      if ("FILTER" == s)
-      {
+    for (int i = 0; cl.value('G', s, i); ++i) {
+      if ("FILTER" == s) {
         work_as_tdt_filter = 1;
         continue;
       }
 
-      if (s.starts_with("R="))
-      {
+      if (s.starts_with("R=")) {
         s.remove_leading_chars(2);
-        if (! s.numeric_value(resolution) || resolution < 2)
-        {
+        if (! s.numeric_value(resolution) || resolution < 2) {
           cerr << "The resolution on fingerprints (R=) must be a whole +ve number\n";
           return 1;
         }
@@ -8593,23 +8588,19 @@ iwdescr(int argc, char ** argv)
       }
 
       int tmp;
-      if (s.numeric_value(tmp) && tmp > 0)
-      {
+      if (s.numeric_value(tmp) && tmp > 0) {
         replicates = tmp;
         continue;
       }
 
-      if (s.starts_with("ALL"))
-      {
+      if (s.starts_with("ALL")) {
         int tmpr = replicates;
-        if (! parse_replicates_specification(s, tmpr))
-        {
+        if (! parse_replicates_specification(s, tmpr)) {
           cerr << "Invalid ALL,replicates specification '" << s << "'\n";
           return 2;
         }
 
-        for (int i = 0; i < NUMBER_DESCRIPTORS; ++i)
-        {
+        for (int i = 0; i < NUMBER_DESCRIPTORS; ++i) {
           descriptor[i].set_produce_fingerprint(tmpr);
         }
         continue;
@@ -8618,14 +8609,12 @@ iwdescr(int argc, char ** argv)
       if (s.starts_with("BEST"))     // leave open possibility of adding a number later
       {
         int tmpr = replicates;
-        if (! parse_replicates_specification(s, tmpr))
-        {
+        if (! parse_replicates_specification(s, tmpr)) {
           cerr << "Invalid BEST,replicates specification '" << s << "'\n";
           return 2;
         }
 
-        for (int i = 0; i < NUMBER_DESCRIPTORS; ++i)
-        {
+        for (int i = 0; i < NUMBER_DESCRIPTORS; ++i) {
           if (descriptor[i].best_fingerprint())
             descriptor[i].set_produce_fingerprint(tmpr);
         }
@@ -8633,19 +8622,16 @@ iwdescr(int argc, char ** argv)
       }
 
       const_IWSubstring dname;
-      for (int j = 0; s.nextword(dname, j, ',');)
-      {
+      for (int j = 0; s.nextword(dname, j, ',');) {
         int tmpr = replicates;
-        if (! parse_replicates_specification(dname, tmpr))
-        {
+        if (! parse_replicates_specification(dname, tmpr)) {
           cerr << "Invalid descriptor:replicate specification '" << dname << "'\n";
           return 3;
         }
 
         int k = descriptor_name_2_index(descriptor, NUMBER_DESCRIPTORS, dname);
 
-        if (k < 0)
-        {
+        if (k < 0) {
           cerr << "Unrecognised descriptor name '" << dname << "' for fingerprint\n";
           return 3;
         }
