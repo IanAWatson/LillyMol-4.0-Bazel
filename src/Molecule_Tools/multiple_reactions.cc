@@ -31,6 +31,8 @@ Usage(int rc)
   cerr << " -z i              ignore molecules not matching any queries\n";
   cerr << " -z w              write molecules not reaction to the output\n";
   cerr << " -S <fname>        file name stem for output\n";
+  cerr << " -V <fname>        write products with bad valence to <fname>\n";
+  cerr << " -V drop           discard products with bad valence - no writing\n";
   cerr << " -o <type>         specify output type(s)\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
@@ -65,9 +67,12 @@ class MultipleReactions {
 
   int _append_reaction_name_to_product;
 
-  FileType _input_type;
-
   Chemical_Standardisation _chemical_standardisation;
+
+  // We can optionally discard molecules with bad valences.
+  int _discard_bad_valence;
+  IWString_and_File_Descriptor _stream_for_bad_valence;
+  int _bad_valence_detected;
 
   //  private functions.
 
@@ -95,8 +100,6 @@ class MultipleReactions {
   int Process(Molecule& m, resizable_array_p<Molecule>& result);
 
   int Report(std::ostream& output) const;
-
-  FileType input_type() const { return _input_type; }
 };
 
 MultipleReactions::MultipleReactions()
@@ -106,8 +109,9 @@ MultipleReactions::MultipleReactions()
   _reduce_to_largest_fragment = 0;
   _remove_chirality = 0;
   _duplicates_discarded = 0;
-  _input_type = FILE_TYPE_INVALID;
   _append_reaction_name_to_product = 0;
+  _discard_bad_valence = 0;
+  _bad_valence_detected = 0;
 }
 
 int
@@ -169,15 +173,22 @@ MultipleReactions::Initialise(Command_Line& cl)
     }
   }
 
-  if (1 == cl.number_elements() && 0 == strcmp("-", cl[0])) {  //  reading a pipe, assume smiles
-    _input_type = FILE_TYPE_SMI;
-  }
-  else if (!all_files_recognised_by_suffix(cl)) {
-    cerr << "Cannot discern all file types, use the -i option\n";
-    return 0;
-  }
-  else if (!process_input_type(cl, _input_type)) {
-    return 0;
+  if (cl.option_present('V')) {
+    _discard_bad_valence = 1;
+    IWString fname = cl.string_value('V');
+    if (fname == "drop") {
+    } else {
+      if (! fname.ends_with(".smi")) {
+        fname << ".smi";
+      }
+      if (! _stream_for_bad_valence.open(fname)) {
+        cerr << "Cannot open stream for bad valence '" << fname << "'\n";
+        return 0;
+      }
+      if (_verbose) {
+        cerr << "Will write bad valence molecules to '" << fname << "'\n";
+      }
+    }
   }
 
   return 1;
@@ -339,6 +350,18 @@ MultipleReactions::Process(Molecule& m, const Set_of_Atoms& embedding, IWReactio
 
   MaybeAppendRxnName(rxn.name(), *prod.get());
 
+  if (! _discard_bad_valence) {
+  } else if (prod->valence_ok()) {
+  } else if (_stream_for_bad_valence.active()) {
+    _stream_for_bad_valence << prod->smiles() << ' ' << prod->name() << '\n';
+    _stream_for_bad_valence.write_if_buffer_holds_more_than(32768);
+    ++_bad_valence_detected;
+    return 1;
+  } else {
+    ++_bad_valence_detected;
+    return 1;
+  }
+
   result << prod.release();
   return 1;
 }
@@ -379,6 +402,7 @@ MultipleReactions::Report(std::ostream& output) const
     return 1;
   }
   output << "Discarded " << _duplicates_discarded << " duplicates\n";
+  output << "Discarded " << _bad_valence_detected << " products with bad valence\n";
 
   for (int i = 0; i < _reactions_matching.number_elements(); ++i) {
     if (_reactions_matching[i]) {
@@ -413,6 +437,8 @@ struct Options {
 
   extending_resizable_array<int> products_generated;
 
+  FileType _input_type;
+
  public:
 
   Options();
@@ -420,6 +446,10 @@ struct Options {
   int Initialise(Command_Line& cl);
 
   int Report(std::ostream& output) const;
+
+  FileType input_type() const {
+    return _input_type;
+  }
 };
 
 Options::Options()
@@ -433,6 +463,8 @@ Options::Options()
 
   molecules_read = 0;
   molecules_not_reacting = 0;
+
+  _input_type = FILE_TYPE_INVALID;
 }
 
 int
@@ -471,6 +503,17 @@ Options::Initialise(Command_Line& cl)
     if (verbose) {
       cerr << "Will recurse " << recursion_depth << " times\n";
     }
+  }
+
+  if (1 == cl.number_elements() && 0 == strcmp("-", cl[0])) {  //  reading a pipe, assume smiles
+    _input_type = FILE_TYPE_SMI;
+  }
+  else if (!all_files_recognised_by_suffix(cl)) {
+    cerr << "Cannot discern all file types, use the -i option\n";
+    return 0;
+  }
+  else if (!process_input_type(cl, _input_type)) {
+    return 0;
   }
 
   return 1;
@@ -573,7 +616,7 @@ int
 ApplyMultipleReactions(MultipleReactions& many_reactions, Options& options, const char* fname,
                        Molecule_Output_Object& output)
 {
-  FileType input_type = many_reactions.input_type();
+  FileType input_type = options.input_type();
   if (input_type == FILE_TYPE_INVALID) {
     input_type = discern_file_type_from_name(fname);
   }
@@ -590,7 +633,7 @@ ApplyMultipleReactions(MultipleReactions& many_reactions, Options& options, cons
 int
 Main(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcR:S:az:pr:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcR:S:az:pr:V:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
