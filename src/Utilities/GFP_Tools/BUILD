@@ -1,3 +1,5 @@
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+
 proto_library(
     name = "gfp_proto",
     srcs = [
@@ -9,6 +11,13 @@ cc_proto_library(
     name = "gfp_cc_proto",
     deps = [
         ":gfp_proto",
+    ],
+)
+
+py_proto_library(
+    name = "gfp_py_proto",
+    srcs = [
+        "gfp_proto.proto",
     ],
 )
 
@@ -26,6 +35,13 @@ cc_proto_library(
     ],
 )
 
+py_proto_library(
+    name = "gfp_model_py_proto",
+    srcs = [
+        "gfp_model.proto",
+    ],
+)
+
 proto_library(
     name = "gfp_to_svm_lite_proto",
     srcs = [
@@ -37,6 +53,13 @@ cc_proto_library(
     name = "gfp_to_svm_lite_cc_proto",
     deps = [
         ":gfp_to_svm_lite_proto",
+    ],
+)
+
+py_proto_library(
+    name = "gfp_to_svm_lite_py_proto",
+    srcs = [
+        "gfp_to_svm_lite.proto",
     ],
 )
 
@@ -54,6 +77,13 @@ cc_proto_library(
     ],
 )
 
+py_proto_library(
+    name = "iwstats_py_proto",
+    srcs = [
+        "iwstats.proto",
+    ],
+)
+
 proto_library(
     name = "nearneighbors",
     srcs = [
@@ -65,6 +95,13 @@ cc_proto_library(
     name = "nearneighbors_cc_proto",
     deps = [
         "nearneighbors",
+    ],
+)
+
+py_proto_library(
+    name = "nearneighbors_py_proto",
+    srcs = [
+        "nearneighbors.proto",
     ],
 )
 
