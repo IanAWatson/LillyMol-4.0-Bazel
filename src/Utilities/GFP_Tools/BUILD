@@ -41,6 +41,20 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "iwstats_proto",
+    srcs = [
+        "iwstats.proto",
+    ],
+)
+
+cc_proto_library( 
+    name = "iwstats_cc_proto",
+    deps = [
+        "iwstats_proto",
+    ],
+)
+
+proto_library(
     name = "nearneighbors",
     srcs = [
       "nearneighbors.proto",
@@ -438,10 +452,12 @@ cc_binary(
     deps = [
         ":bsquared",
         ":metric",
+        ":iwstats_cc_proto",
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:proto_support",
         "//Foundational/iwqsort:iwqsort",
     ],
     linkopts = [

@@ -86,6 +86,8 @@ def parse_fp_token(fp)
   if fp.match(/:fixed/)
     fp.slice!(':fixed')
     return *parse_fp_token_inner(fp), true
+  elsif fp.match(/:sparse/)
+    return *parse_fp_token_inner(fp), false
   else
     return *parse_fp_token_inner(fp), false
   end

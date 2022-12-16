@@ -25,7 +25,11 @@ class MK
     $stderr << "IN MK\n"
     cmd = FpCommon.initial_command_stem(@executable, first_in_pipeline: first_in_pipeline,
                                         extra_qualifiers: extra_qualifiers)
-    cmd << " -J FPMK"
+    if fp.match(/:sparse/) 
+      cmd << " -J NC=NCMK"
+    else
+      cmd << " -J FPMK"
+    end
     cmd
   end
 end

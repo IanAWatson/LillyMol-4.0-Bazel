@@ -11,7 +11,7 @@ class LINEAR
 
   def initialize
     @rx = Regexp.new('^LINEAR')
-    @description = 'Linear fingerprint'
+    @description = 'Linear fingerprint (faster than IW)'
     @executable = 'linear_fingerprint'
   end
 

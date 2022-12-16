@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package IWStats;
+
+// iwstats can generate protos which makes summarising them easy
+
+message stats {
+  // THe name of the response
+  string response = 1;
+  // The name of the predicted response
+  string pred = 2;
+
+  // The number of points in the data.
+  uint32 nvalues = 3;
+
+  float min_response = 4;
+  float max_response = 5;
+  float ave_response = 6;
+  float min_predicted = 7;
+  float max_predicted = 8;
+  float ave_predicted = 9;
+
+  // Various performance measures.
+  float min_error = 10;
+  float max_error = 11;
+  float ave_error = 12;
+
+  float ave_abs_error = 13;
+  float rms_error = 14;
+  float rsquared = 15;
+  float qsquared = 16;
+  float ae50 = 17;
+  float ae95 = 18;
+  float bsquared = 19;
+}

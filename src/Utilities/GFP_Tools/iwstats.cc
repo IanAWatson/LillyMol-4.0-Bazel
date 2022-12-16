@@ -15,8 +15,11 @@
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/data_source/iwstring_data_source.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/proto_support.h"
 #include "Foundational/iwqsort/iwqsort.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
+
+#include "Utilities/GFP_Tools/iwstats.pb.h"
 
 #include "bsquared.h"
 
@@ -105,6 +108,9 @@ static resizable_array<float> fold_difference_multiplicative;
 */
 
 static IWString_and_File_Descriptor stream_for_residuals;
+
+// If we are creating proto files, this will be the file name stem.
+static IWString stem_for_proto_files;
 
 static void
 usage (int rc)
@@ -1489,6 +1495,10 @@ iwstats (unsigned int number_records,
 
   std::unique_ptr<int[]> free_n_fold_difference_multiplicative(n_fold_difference_multiplicative);
 
+  // Form the proto regardless of whether it is being written or not. Just
+  // keeps the code cleaner.
+  IWStats::stats proto;
+
   for (unsigned int i = 0; i < number_records; i++)
   {
     const Predicted_Values & pvi = *(zdata[i]);
@@ -1567,13 +1577,20 @@ iwstats (unsigned int number_records,
   if (experimental_column >= 0)
   {
     output << "Experimental/Measured values in column " << (experimental_column + 1);
-    if (activity_name.length() > 0)
+    if (! activity_name.empty()) {
       output << ' ' << activity_name;
+      proto.set_response(activity_name.AsString());
+    }
+    proto.set_min_response(o.minval());
+    proto.set_max_response(o.maxval());
+
     output << ". Range " << o.minval() << " and " << o.maxval();
     if (o.n() < 2)
       output << " hmmm, only " << o.n() << " values available\n";
-    else
+    else {
       output << " ave " << o.average() << '\n';
+      proto.set_ave_response(o.average());
+    }
   }
 
   float bias = 0.0f;
@@ -1583,6 +1600,10 @@ iwstats (unsigned int number_records,
     output << "Predicted values in column " << (predicted_column + 1);
     write_something_identifying_the_column (predicted_column, output);
     output << ". Range " << p.minval() << " and " << p.maxval() << " ave " << p.average() << " N = " << p.n() << '\n';
+    proto.set_min_predicted(p.minval());
+    proto.set_max_predicted(p.maxval());
+    proto.set_ave_predicted(p.average());
+    // Need to call proto.set_pred()
 
     double obar = o.average();
     double pbar = p.average();
@@ -1627,6 +1648,12 @@ iwstats (unsigned int number_records,
     output << "Average absolute error " << ae.average() << '\n';
     output << "RMS error " << sqrt(ae.sum_of_squares() / static_cast<double>(ae.n())) << '\n';
 
+    proto.set_min_error(e.minval());
+    proto.set_max_error(e.maxval());
+    proto.set_ave_error(e.average());
+    proto.set_ave_abs_error(ae.average());
+    proto.set_rms_error(sqrt(ae.sum_of_squares() / static_cast<double>(ae.n())));
+
     if (static_cast<float>(0.0) != relative_error_threshold)
         output << "Average Relative Error " << static_cast<float>(are.average()) << '\n';
 
@@ -1652,12 +1679,15 @@ iwstats (unsigned int number_records,
         output << '-';
       double r2 = n * n / (dno * dnp);
       output << static_cast<float>(r2) << '\n';
+      proto.set_rsquared(r2);
     }
     else
     {
       if (rho < 0.0)
         output << '-';
-      output << static_cast<float>(rho * rho) << '\n';
+      const float r2 = rho * rho;
+      output << static_cast<float>(r2) << '\n';
+      proto.set_rsquared(r2);
     }
 
 //  Q squared
@@ -1692,6 +1722,7 @@ iwstats (unsigned int number_records,
     else
       output << " Q2 ";
     output << static_cast<float>(q2) << '\n';
+    proto.set_qsquared(q2);
 
     write_something_identifying_the_column(predicted_column, output);
     bias = o.average() - p.average();
@@ -1752,14 +1783,18 @@ iwstats (unsigned int number_records,
   output << " AE50 = " << tmp1[ndx/2] << "\n";
   if (bias != 0.0f) {
     write_something_identifying_the_column(predicted_column, output);
-    output << " RmBias.AE50 = " << (tmp1[ndx/2] - abs(bias)) << '\n';
+    const float ae50 = (tmp1[ndx/2] - abs(bias));
+    output << " RmBias.AE50 = " << ae50 << '\n';
+    proto.set_ae50(ae50);
   }
 
   write_something_identifying_the_column(predicted_column, output);
   output << " AE95 = " << tmp1[ndx * 95 / 100] << '\n';
   if (bias != 0.0f) {
     write_something_identifying_the_column(predicted_column, output);
-    output << " RmBias.AE95 = " << (tmp1[ndx * 95 / 100] - abs(bias)) << '\n';
+    const float ae95 = (tmp1[ndx * 95 / 100] - abs(bias));
+    output << " RmBias.AE95 = " << ae95 << '\n';
+    proto.set_ae95(ae95);
   }
 
 #ifdef DEBUG_CMSR
@@ -1808,6 +1843,7 @@ iwstats (unsigned int number_records,
   compute_b_squared(number_records, experimental_column, zdata, tmp1, tmp2, Bsquared, which_predicted_set);
 
   output << " Bsquared " << static_cast<float>(Bsquared) << '\n';
+  proto.set_bsquared(Bsquared);
   
   if(calculate_enrichment_metrics && initilize_enrichment(number_records,experimental_column,zdata,tmp1,which_predicted_set))
   {
@@ -1873,6 +1909,19 @@ iwstats (unsigned int number_records,
 
   if (number_distribution_buckets > 0)
     do_compute_distribution_functions(number_records, which_predicted_set, predicted_column, experimental_column, tmp1, tmp2, zdata, output);
+
+  static int proto_counter = 0;
+  if (stem_for_proto_files.empty()) {
+    return 1;
+  }
+
+  IWString fname(stem_for_proto_files);
+  stem_for_proto_files << proto_counter << ".dat";
+  ++proto_counter;
+  if (! iwmisc::WriteBinaryProto<IWStats::stats>(proto, fname)) {
+    cerr << "Cannot write IWStats::stats proto to '" << fname << "'\n";
+    return 0;
+  }
 
   return output.good();
 }
@@ -2232,7 +2281,7 @@ parse_dash_p (const const_IWSubstring & p,
 static int
 iwstats (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "ve:E:p:s:jwn:t:P:M:qR:zc:TA:b:hr:ko:a:f:u:U:i:Km:dF:D:L:");
+  Command_Line cl(argc, argv, "ve:E:p:s:jwn:t:P:M:qR:zc:TA:b:hr:ko:a:f:u:U:i:Km:dF:D:L:I:");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -2711,6 +2760,13 @@ iwstats (int argc, char ** argv)
   {
     cerr << "INsufficient arguments\n";
     usage(1);
+  }
+
+  if (cl.option_present('I')) {
+    cl.value('I', stem_for_proto_files);
+    if (verbose) {
+      cerr << "Will write IWStats::stats protos to '" << stem_for_proto_files << "'\n";
+    }
   }
 
   if (cl.option_present('L'))

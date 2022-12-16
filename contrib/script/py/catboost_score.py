@@ -20,7 +20,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("mdir", None, "Model directory")
 flags.DEFINE_string("svml", None, "Name of libsvm input file to be scored")
-flags.DEFINE_string("ids", None, "File containing the identifiers - samw row order")
+flags.DEFINE_string("ids", None, "File containing the identifiers - same row order")
 
 def write_classification_result(ids: List[str],
                                 response: str,

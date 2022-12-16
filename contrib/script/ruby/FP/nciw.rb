@@ -10,7 +10,7 @@ class NCIW
 
   def initialize
     @rx = Regexp.new('^NCIW')
-    @description = 'sparse non colliding Linear path fingerprint'
+    @description = 'Sparse non colliding Linear path fingerprint'
     @executable = 'linear_fingerprint'
   end
 
