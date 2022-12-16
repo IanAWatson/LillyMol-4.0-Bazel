@@ -1,3 +1,4 @@
 import_version.rb
 *.md.bak
 __pycache__
+*__pycache__*
