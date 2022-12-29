@@ -1,4 +1,5 @@
 load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@rules_proto_grpc//ruby:defs.bzl", "ruby_proto_compile", "ruby_proto_library")
 
 proto_library(
     name = "gfp_proto",
@@ -17,7 +18,7 @@ cc_proto_library(
 py_proto_library(
     name = "gfp_py_proto",
     srcs = [
-        "gfp_proto.proto",
+        "gfp.proto",
     ],
 )
 
@@ -102,6 +103,13 @@ py_proto_library(
     name = "nearneighbors_py_proto",
     srcs = [
         "nearneighbors.proto",
+    ],
+)
+
+ruby_proto_compile(
+    name = "iwstats_rb_proto",
+    protos = [
+        "iwstats_proto",
     ],
 )
 

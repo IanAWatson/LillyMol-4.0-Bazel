@@ -281,12 +281,12 @@ cc_library(
 
 new_local_repository(
     name = "snappy",
-    path = "/home/ian/third_party",
+    path = "/home/ian/third_party/snappy",
     build_file_content = """
 cc_library(
     name = "snappy",
     srcs = [
-       "lib/libsnappy.a",
+       "build/libsnappy.a",
     ],
     hdrs = glob(["include/snappy*.h"]),
     strip_include_prefix = "include",
@@ -294,22 +294,6 @@ cc_library(
 )
 """,
 )
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-
-# Hedron's Compile Commands Extractor for Bazel
-# https://github.com/hedronvision/bazel-compile-commands-extractor
-http_archive(
-    name = "hedron_compile_commands",
-
-    # Replace the commit hash in both places (below) with the latest. 
-    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" below).
-    url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/084957eaa1bf6e2bd031f50b1f5d04c89273103a.tar.gz",
-    strip_prefix = "bazel-compile-commands-extractor-084957eaa1bf6e2bd031f50b1f5d04c89273103a",
-)
-load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_setup")
-hedron_compile_commands_setup()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -333,4 +317,29 @@ llvm_toolchain(
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
 
 llvm_register_toolchains()
+
+# taken from https://rules-proto-grpc.com/en/latest/lang/ruby.html
+http_archive(
+    name = "rules_proto_grpc",
+    url = "https://github.com/rules-proto-grpc/rules_proto_grpc/archive/refs/tags/4.3.0.tar.gz",
+    strip_prefix = "rules_proto_grpc-4.3.0",
+)
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+rules_proto_grpc_repos()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+rules_proto_toolchains()
+
+load("@rules_proto_grpc//ruby:repositories.bzl", rules_proto_grpc_ruby_repos = "ruby_repos")
+
+rules_proto_grpc_ruby_repos()
+
+load("@bazelruby_rules_ruby//ruby:deps.bzl", "rules_ruby_dependencies", "rules_ruby_select_sdk")
+
+rules_ruby_dependencies()
 
