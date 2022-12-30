@@ -101,7 +101,7 @@ class Ring : public Set_of_Atoms
     int  spiro_fused (const int * ring_membership) const;
     int  fused_ring_check_for_spiro_fusion (const int *) const;
 
-    int  end () const { return _number_elements;}    // used by the iterator
+    //int  end () const { return _number_elements;}    // used by the iterator
 
 // In aromatic.cc I need a means of computing whether an SSSR ring is
 // fused to a non-sssr ring.  The non-sssr ring will not be in the

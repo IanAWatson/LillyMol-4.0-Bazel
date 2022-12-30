@@ -1012,7 +1012,7 @@ RXN_File::_identify_atoms_with_different_bonding(const ISIS_RXN_FILE_Molecule & 
 
   const int * amap = m.atom_map();
 
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     const atom_number_t ra1 = i.a1();
     const atom_number_t ra2 = i.a2();
@@ -1182,7 +1182,7 @@ alternating_single_and_double_bonds(Molecule & m, const Ring & r)
 {
   bond_type_t previous_bond = INVALID_BOND_TYPE;
 
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     const atom_number_t ra1 = i.a1();
     const atom_number_t ra2 = i.a2();

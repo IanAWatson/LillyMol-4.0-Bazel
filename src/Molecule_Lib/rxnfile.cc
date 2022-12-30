@@ -1086,7 +1086,7 @@ ISIS_RXN_FILE_Molecule::_change_explicit_kekule_forms_to_aromatic()
 int
 ISIS_RXN_FILE_Molecule::_change_explicit_kekule_forms_to_aromatic(const Ring & r)
 {
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     atom_number_t a1 = i.a1();
     atom_number_t a2 = i.a2();
@@ -6385,7 +6385,7 @@ RXN_File::_reagent_ring_contains_adjacent_mapped_atoms(const ISIS_RXN_FILE_Molec
                                 atom_number_t & a2,
                                 const int * include_these_atom_map_numbers) const
 {
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     const atom_number_t ra1 = i.a1();
     const atom_number_t ra2 = i.a2();
@@ -7861,7 +7861,7 @@ RXN_File::_all_bonds_unchanged(const ISIS_RXN_FILE_Molecule & m,
 {
   const int * amap = m.atom_map();
 
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     const atom_number_t ra1 = i.a1();
     const atom_number_t ra2 = i.a2();

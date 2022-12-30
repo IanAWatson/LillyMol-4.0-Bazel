@@ -610,6 +610,8 @@ class FragToMap {
     template <typename P> int Recurse(Molecule& m,
                    MolData& mol_data, int nprev, P& proc);
 
+    int BreakBonds(Molecule& m, int depth);
+
   public:
     FragToMap();
 

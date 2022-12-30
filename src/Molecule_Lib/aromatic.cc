@@ -5012,7 +5012,7 @@ Molecule::_kekule_cannot_be_aromatic(int * process_these_atoms, int & aromatic_a
 int
 Molecule::_make_all_unshared_bonds_non_aromatic(const Ring & r)
 {
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     atom_number_t a1 = i.a1();
     atom_number_t a2 = i.a2();
@@ -5064,7 +5064,7 @@ Molecule::_make_bonds_aromatic(const Ring * zring)
 int
 Molecule::_make_all_bonds_aromatic(const Ring & r)
 {
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     atom_number_t a1 = i.a1();
     atom_number_t a2 = i.a2();
@@ -5090,7 +5090,7 @@ int
 Molecule::_count_aromatic_bonds_in_just_one_ring(const Ring & r)
 {
   int rc = 0;
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     atom_number_t a1 = i.a1();
     atom_number_t a2 = i.a2();
@@ -5110,7 +5110,7 @@ Molecule::_count_aromatic_bonds_in_just_one_ring(const Ring & r)
 int
 Molecule::_all_bonds_aromatic(const Ring & r) const
 {
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     atom_number_t a1 = i.a1();
     atom_number_t a2 = i.a2();
@@ -6825,7 +6825,7 @@ Molecule::set_bond_types_for_isis_aromaticity_matching()
       continue;
     }
 
-    for (Ring_Bond_Iterator j(*ri); j != ri->end(); j++)
+    for (Ring_Bond_Iterator j(*ri); j != ri->back(); j++)
     {
       atom_number_t a1 = j.a1();
       atom_number_t a2 = j.a2();
@@ -6854,7 +6854,7 @@ Molecule::set_bond_types_for_isis_aromaticity_matching()
     cerr << "Ring " << (*ri) << " is alternating aromatic\n";
 #endif
 
-    for (Ring_Bond_Iterator j(*ri); j != ri->end(); j++)
+    for (Ring_Bond_Iterator j(*ri); j != ri->back(); j++)
     {
       atom_number_t a1 = j.a1();
       atom_number_t a2 = j.a2();
@@ -7086,7 +7086,7 @@ is_fixed_kekule_form(const Molecule & m,
   bond_type_t first_bond_encountered = 0;
 
 //cerr << "Checking ring " << r << endl;
-  for (Ring_Bond_Iterator j (r); j != r.end(); j++)
+  for (Ring_Bond_Iterator j (r); j != r.back(); j++)
   {
     atom_number_t a1 = j.a1();
     atom_number_t a2 = j.a2();

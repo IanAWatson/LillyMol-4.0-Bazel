@@ -5606,7 +5606,7 @@ could_extend_aromatic_system (Molecule & m,
 {
   int new_double_bonds = 0;    // to possibly be aromatic, must have at least 1 double bond not already fully counted
 
-  for (Ring_Bond_Iterator i(r); i != r.end(); i++)
+  for (Ring_Bond_Iterator i(r); i != r.back(); i++)
   {
     atom_number_t a1 = i.a1();
     atom_number_t a2 = i.a2();

@@ -182,7 +182,7 @@ compute_max_nrings(Molecule & m,
 {
   int rc = 0;
 
-  for (Ring_Bond_Iterator i(r); i != r.end(); ++i)
+  for (Ring_Bond_Iterator i(r); i != r.back(); ++i)
   {
     const Bond * b = m.bond_between_atoms(i.a1(), i.a2());
 
@@ -455,7 +455,7 @@ is_rejectable_large_ring(Molecule & m,
   int fused_ring_atoms_encountered = 0;
   int heteroatom_outside_ring = 0;
 
-  for (Ring_Atom_Iterator i(ri); i != ri.end(); i++)
+  for (Ring_Atom_Iterator i(ri); i != ri.back(); i++)
   {
     atom_number_t j = i.current();
 

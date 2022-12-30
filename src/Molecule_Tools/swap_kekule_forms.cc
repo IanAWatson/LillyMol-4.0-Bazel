@@ -17,7 +17,7 @@ find_adjacent_atoms_in_common_between_two_rings (const Ring & ri,
   a1 = INVALID_ATOM_NUMBER;
   a2 = INVALID_ATOM_NUMBER;
 
-  for (Ring_Bond_Iterator i(ri); i != ri.end(); ++i)
+  for (Ring_Bond_Iterator i(ri); i != ri.back(); ++i)
   {
     if (! rj.contains_bond(i.a1(), i.a2()))
       continue;

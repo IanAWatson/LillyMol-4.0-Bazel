@@ -42,7 +42,6 @@ Usage(int rc)
   cerr << " -f <n>         numeric demerit value for rejections (default 100)\n";
   cerr << " -k             only process the survivors file (do not process bad0, bad1...)\n";
   cerr << " -v             verbose output\n";
-  output << "-T dprefix=<s> prepend `s` to each demerit name\n";
 
   exit(rc);
 }
@@ -652,18 +651,76 @@ Parameters::ProcessFromIwdemerit(const const_IWSubstring& buffer, int must_have_
     iwdemerit_rx = std::make_unique<RE2>("^(\\S+) (..+) : D\\(([0-9]+)\\) (\\S+)$");
   }
 
-#ifdef USE_RE2
-  std::string s, x, r;
-  int d;
+  std::string smiles, id, reasons;
+  int demerit;
   re2::StringPiece b(buffer.data(), buffer.length());
-  if (!RE2::FullMatch(b, *iwdemerit_rx, &s, &x, &d, &r)) {
+  if (!RE2::FullMatch(b, *iwdemerit_rx, &smiles, &id, &demerit, &reasons)) {
     cerr << "Parameters::ProcessFromIwdemerit:does not match " << iwdemerit_rx->pattern() << '\n';
     cerr << buffer << '\n';
     return 0;
   }
-#endif
 
-  //  cerr << "ProcessFromIwdemerit:Examining '" << buffer << "'\n";
+  if (demerit >= 0) {  //  Got a valid value, good.
+  } else if (must_have_demerit) {
+    cerr << "NO demerit value found for '" << id << "'\n";
+    return 0;
+  }
+
+  if (demerit > kRejected) {
+    demerit = kRejected;
+  }
+
+  WriteDemeritValue(id, demerit, output);
+
+  if (include_reason) {
+    const_IWSubstring s_reasons(reasons);
+    int demerit_reasons_this_molecule = 0;
+    int i = 0;
+    IWString myreason;
+    while (s_reasons.nextword(myreason, i, ':')) {
+      myreason.strip_leading_blanks();
+
+      if (!suppress_normal_output) {
+        output << output_separator << myreason;
+      }
+
+      if (!accumulate_reasons) {
+        continue;
+      }
+
+      MaybeAddPrefix(myreason);
+
+      if (demerit >= kRejected) {
+        reason_bad[myreason]++;
+      }
+      else {
+        reason_survivor[myreason]++;
+      }
+
+      demerit_reasons_this_molecule++;
+    }
+
+    demerits_per_molecule[demerit_reasons_this_molecule]++;
+  }
+
+  if (!suppress_normal_output) {
+    output << '\n';
+  }
+
+  output.write_if_buffer_holds_more_than(8192);
+
+  return output.good();
+}
+
+#ifdef OLD_VERSION
+int
+Parameters::ProcessFromIwdemerit(const const_IWSubstring& buffer, int must_have_demerit,
+                                 IWString_and_File_Descriptor& output)
+{
+  if (!d_parentheses) {
+    d_parentheses = std::make_unique<RE2>("^D\\(([0-9]+)\\)$");
+    iwdemerit_rx = std::make_unique<RE2>("^(\\S+) (..+) : D\\(([0-9]+)\\) (\\S+)$");
+  }
 
   int i = 0;
   const_IWSubstring smiles;
@@ -761,6 +818,7 @@ Parameters::ProcessFromIwdemerit(const const_IWSubstring& buffer, int must_have_
 
   return output.good();
 }
+#endif
 
 int
 Parameters::ProcessFromIwdemerit(iwstring_data_source& input, int must_have_demerit,

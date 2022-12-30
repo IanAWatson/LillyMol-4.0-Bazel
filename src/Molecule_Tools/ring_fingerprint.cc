@@ -436,12 +436,7 @@ Ring_Fingerprint::_fingerprint_aromatic_ring (Molecule & m,
   int biphenyl = 0;
   int to_aliphatic_ring = 0;
 
-  for (auto j : r) {
-  }
-  for (unsigned int i = 0; i < rsize; ++i)
-  {
-    const auto j = r[i];
-
+  for (const auto j : r) {
     const auto z = m.atomic_number(j);
 
     if (6 == z)

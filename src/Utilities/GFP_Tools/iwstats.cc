@@ -492,9 +492,8 @@ Predicted_Values::debug_print (std::ostream & os) const
 template class resizable_array_p<Predicted_Values>;
 template class resizable_array_base<Predicted_Values *>;
 
-/*
-  Are there any duplicate predicted values?
-*/
+// Return true if there are any duplicate values in the `predicted_column`
+// of `zdata`. Assume `zdata` is sorted.
 
 static int 
 duplicate_predicted_values (const resizable_array_p<Predicted_Values> & zdata,

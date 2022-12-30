@@ -596,7 +596,7 @@ remove_ring(Molecule & m,
 
   int atoms_removed = 0;
 
-  for (Ring_Atom_Iterator i(ring_being_removed); i != ring_being_removed.end(); i++)
+  for (Ring_Atom_Iterator i(ring_being_removed); i != ring_being_removed.back(); i++)
   {
     atom_number_t j = i.current();
 
@@ -634,7 +634,7 @@ remove_ring(Molecule & m,
   {
     Set_of_Atoms db1, db2;
 
-    for (Ring_Bond_Iterator i(ring_being_removed); i != ring_being_removed.end(); i++)
+    for (Ring_Bond_Iterator i(ring_being_removed); i != ring_being_removed.back(); i++)
     {
       const auto a1 = i.a1();
 
@@ -670,7 +670,7 @@ remove_ring(Molecule & m,
 
   if (isotope_for_ring_fusion)
   {
-    for (Ring_Atom_Iterator i(ring_being_removed); i != ring_being_removed.end(); i++)
+    for (Ring_Atom_Iterator i(ring_being_removed); i != ring_being_removed.back(); i++)
     {
       const auto j = i.current();
 

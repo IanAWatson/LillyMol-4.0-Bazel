@@ -31,15 +31,15 @@ http_archive(
 )
 
 # The next were all copied from Riegeli's WORKSPACE to enable riegeli
-http_archive(
-    name = "com_google_absl",
-    sha256 = "6a6eee57ce3375e26d49c542d191ceb90822984d5b587f0ea8e0d0c77016b02b",
-    strip_prefix = "abseil-cpp-20200225.3",
-    urls = [
-        "https://mirror.bazel.build/github.com/abseil/abseil-cpp/archive/20200225.3.zip",
-        "https://github.com/abseil/abseil-cpp/archive/20200225.3.zip",  # 2020-10-09
-    ],
-)
+#http_archive(
+#    name = "com_google_absl",
+#    sha256 = "6a6eee57ce3375e26d49c542d191ceb90822984d5b587f0ea8e0d0c77016b02b",
+#    strip_prefix = "abseil-cpp-20200225.3",
+#    urls = [
+#        "https://mirror.bazel.build/github.com/abseil/abseil-cpp/archive/20200225.3.zip",
+#        "https://github.com/abseil/abseil-cpp/archive/20200225.3.zip",  # 2020-10-09
+#    ],
+#)
 http_archive(
     name = "highwayhash",
     build_file = "//third_party:highwayhash.BUILD",
@@ -299,8 +299,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
   name = "com_google_absl",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/98eb410c93ad059f9bba1bf43f5bb916fc92a5ea.zip"],
-  strip_prefix = "abseil-cpp-98eb410c93ad059f9bba1bf43f5bb916fc92a5ea",
+  # urls = ["https://github.com/abseil/abseil-cpp/archive/98eb410c93ad059f9bba1bf43f5bb916fc92a5ea.zip"],
+  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/heads/master.zip"],
+  # strip_prefix = "abseil-cpp-98eb410c93ad059f9bba1bf43f5bb916fc92a5ea",
+  strip_prefix = "abseil-cpp-master",
 )
 
 load("@com_grail_bazel_toolchain//toolchain:deps.bzl", "bazel_toolchain_dependencies")
@@ -311,7 +313,7 @@ load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
 
 llvm_toolchain(
     name = "llvm_toolchain",
-    llvm_version = "9.0.0",
+    llvm_version = "14.0.0",
 )
 
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
@@ -329,11 +331,6 @@ load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_pr
 
 rules_proto_grpc_toolchains()
 rules_proto_grpc_repos()
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-
-rules_proto_dependencies()
-rules_proto_toolchains()
 
 load("@rules_proto_grpc//ruby:repositories.bzl", rules_proto_grpc_ruby_repos = "ruby_repos")
 
