@@ -5,31 +5,33 @@ package IWStats;
 // iwstats can generate protos which makes summarising them easy
 
 message stats {
+  // The file that generated the data.
+  string fname = 1;
   // THe name of the response
-  string response = 1;
+  string response = 2;
   // The name of the predicted response
-  string pred = 2;
+  string pred = 3;
 
   // The number of points in the data.
-  uint32 nvalues = 3;
+  uint32 nvalues = 4;
 
-  float min_response = 4;
-  float max_response = 5;
-  float ave_response = 6;
-  float min_predicted = 7;
-  float max_predicted = 8;
-  float ave_predicted = 9;
+  float min_response = 5;
+  float max_response = 6;
+  float ave_response = 7;
+  float min_predicted = 8;
+  float max_predicted = 9;
+  float ave_predicted = 10;
 
   // Various performance measures.
-  float min_error = 10;
-  float max_error = 11;
-  float ave_error = 12;
+  float min_error = 11;
+  float max_error = 12;
+  float ave_error = 13;
 
-  float ave_abs_error = 13;
-  float rms_error = 14;
-  float rsquared = 15;
-  float qsquared = 16;
-  float ae50 = 17;
-  float ae95 = 18;
-  float bsquared = 19;
+  float ave_abs_error = 14;
+  float rms_error = 15;
+  float rsquared = 16;
+  float qsquared = 17;
+  float ae50 = 18;
+  float ae95 = 19;
+  float bsquared = 20;
 }

@@ -1,5 +1,5 @@
 /*
-  Tester for Bsquared
+  Write summary statistics for model predictions.
 */
 
 #include <algorithm>
@@ -22,10 +22,8 @@
 #include "Utilities/GFP_Tools/iwstats.pb.h"
 
 #include "bsquared.h"
-
 #include "Metric.h"
 
-using std::cout;
 using std::cerr;
 
 static Enrichment enrichment;
@@ -38,9 +36,7 @@ static int missing_values_encountered = 0;
 
 static int randomise_ties = 0;
 
-/*
-  Nov 2002. Why not allow experimental values to come from another file
-*/
+// Experimental values may come from another file, via the -E option.
 
 static IW_STL_Hash_Map<IWString, IWString> id_activity_hash;
 
@@ -149,6 +145,7 @@ usage (int rc)
   cerr << " -U <fraction>  keep only the <fraction> most active experimental values\n";
   cerr << " -m <col/name>  do analysis by data in column <col> or descriptor name <name>\n";
   cerr << " -L <fname>     write residuals to <fname>\n";
+  cerr << " -I <stem>      write binary protos to file with stem <stem>\n";
   cerr << " -v             verbose output\n";
 
   exit (rc);
@@ -190,6 +187,7 @@ static int compute_range_of_bsquared_values_when_duplicates_present = 1;
 
 static int number_distribution_buckets = 0;
 
+// The median of a sorted array.
 template <typename T>
 T
 median (const T * v,
@@ -270,11 +268,9 @@ establish_column_titles (const const_IWSubstring & buffer,
 
   column_titles = new IWString[columns_in_input];
 
-  int col = 0;
   int i = 0;
   const_IWSubstring token;
-  while (buffer.nextword(token, i, input_separator))
-  {
+  for (int col = 0; buffer.nextword(token, i, input_separator); ++col) {
     column_titles[col] = token;
 
     if (col == experimental_column && 0 == id_activity_hash.size())    // expt column doesn't really mean the same thing when just a name cross reference
@@ -286,8 +282,6 @@ establish_column_titles (const const_IWSubstring & buffer,
       if (verbose)
         cerr << "Found marker descriptor '" << marker_column_name << "' in column " << (col+1) << '\n';
     }
-
-    col++;
   }
 
   if (experimental_column >= 0 && 0 == activity_name.length())
@@ -368,17 +362,17 @@ Predicted_Values::~Predicted_Values()
 
 static int
 fetch_activity (const IW_STL_Hash_Map<IWString, IWString> & id_activity_hash,
-                IWString & s)
+                IWString & id)
 {
   if (strip_leading_zeros_from_identifiers)
-    s.remove_leading_chars('0');
+    id.remove_leading_chars('0');
 
-  IW_STL_Hash_Map<IWString, IWString>::const_iterator f = id_activity_hash.find(s);
+  IW_STL_Hash_Map<IWString, IWString>::const_iterator f = id_activity_hash.find(id);
 
   if (f == id_activity_hash.end())
     return 0;
 
-  s = (*f).second;
+  id = (*f).second;
 
   return 1;
 }
@@ -1226,6 +1220,30 @@ compute_range_normal_relative_error (experimental_value_t obs,
   return fabs(obs - pred) / obs_range;
 }
 
+struct ThreeTempArrays {
+  public:
+    unsigned int number_records;
+    float* tmp1;
+    float* tmp2;
+    float* tmp3;
+  public:
+    ThreeTempArrays(unsigned int n);
+    ~ThreeTempArrays();
+};
+
+ThreeTempArrays::ThreeTempArrays(unsigned int n) {
+  number_records = n;
+  tmp1 = new float[n];
+  tmp2 = new float[n];
+  tmp3 = new float[n];
+}
+
+ThreeTempArrays::~ThreeTempArrays() {
+  delete [] tmp1;
+  delete [] tmp2;
+  delete [] tmp3;
+}
+
 class CMSR_Parameters
 {
   public:
@@ -1240,12 +1258,12 @@ write_cmsr (const CMSR_Parameters & cmsrp,
             const int which_predicted_set,
             const int predicted_column,
             const Accumulator<double> & e,
-            const float * tmp1,
-            const float * tmp2,
-            float * tmpr,
+            ThreeTempArrays& tmp,
             const int ndx,
             std::ostream & output)
 {
+  const float * tmp2 = tmp.tmp2;
+  float * tmpr = tmp.tmp3;
 
 // Note that we are using the tmp2 array, so we need to do this computation
 // before we call compute_b_squared which zorches that array. 
@@ -1425,24 +1443,24 @@ compute_fold_difference_values_multiplicative (const float obs,
 
   return;
 }
-
 /*
   which_predicted_set is an index into the _predicted array for each prediction type
   predicted_column is the column number in the original file
 */
 
 static int
-iwstats (unsigned int number_records,
+iwstats(unsigned int number_records,
          const IWString * chunk_title,
          int which_predicted_set,
          int predicted_column,
          int experimental_column,
-         float * tmp1,
-         float * tmp2,
-         float * tmpr,
+         ThreeTempArrays& tmp,
          resizable_array_p<Predicted_Values> & zdata,
          std::ostream & output)
 {
+  float * tmp1 = tmp.tmp1;
+  float * tmp2 = tmp.tmp2;
+
   experimental_value_t lower_experimental_value = static_cast<experimental_value_t>(0.0);
   experimental_value_t upper_experimental_value = static_cast<experimental_value_t>(0.0);
 
@@ -1822,14 +1840,14 @@ iwstats (unsigned int number_records,
   cmsrp._v3 = 4.134;
   cmsrp._pct = 95;
 
-  write_cmsr(cmsrp, which_predicted_set, predicted_column, e, tmp1, tmp2, tmpr, ndx, output);
+  write_cmsr(cmsrp, which_predicted_set, predicted_column, e, tmp, ndx, output);
 
   cmsrp._v1 = 1.274;
   cmsrp._v2 = 0.382;
   cmsrp._v3 = 3.448;
   cmsrp._pct = 90;
 
-  write_cmsr(cmsrp, which_predicted_set, predicted_column, e, tmp1, tmp2, tmpr, ndx, output);
+  write_cmsr(cmsrp, which_predicted_set, predicted_column, e, tmp, ndx, output);
 
   if (which_predicted_set >= 0 && predicted_column >= 0)
     write_something_identifying_the_column(predicted_column, output);
@@ -1876,8 +1894,8 @@ iwstats (unsigned int number_records,
 // To avoid horrible problems with iwqsort, which really doesn't do well sorting
 // a nearly sorted list, we sort by a random value before each sort!
 
-  if (which_predicted_set >= 0 && duplicate_predicted_values_present && compute_range_of_bsquared_values_when_duplicates_present)
-  {
+  if (which_predicted_set >= 0 && duplicate_predicted_values_present &&
+      compute_range_of_bsquared_values_when_duplicates_present) {
     output << "Contains duplicate predicted values in column " << (predicted_column + 1) << ", computing best and worst Bsquared\n";
 
     std::random_shuffle(zdata.begin(), zdata.end());    // randomise before sorting
@@ -1910,14 +1928,18 @@ iwstats (unsigned int number_records,
   if (number_distribution_buckets > 0)
     do_compute_distribution_functions(number_records, which_predicted_set, predicted_column, experimental_column, tmp1, tmp2, zdata, output);
 
-  static int proto_counter = 0;
   if (stem_for_proto_files.empty()) {
     return 1;
   }
 
+  static int proto_counter = 0;
+
   IWString fname(stem_for_proto_files);
-  stem_for_proto_files << proto_counter << ".dat";
+  fname << proto_counter << ".dat";
   ++proto_counter;
+  if (verbose) {
+    cerr << "Writing '" << fname << "'\n";
+  }
   if (! iwmisc::WriteBinaryProto<IWStats::stats>(proto, fname)) {
     cerr << "Cannot write IWStats::stats proto to '" << fname << "'\n";
     return 0;
@@ -1930,21 +1952,19 @@ static int
 iwstats (int which_predicted_set,
          int predicted_column,
          int experimental_column,
-         float * tmp1,
-         float * tmp2,
-         float * tmpr,
+         ThreeTempArrays& tmp,
          const resizable_array<int> & numbers_to_check,
          resizable_array_p<Predicted_Values> & zdata,
          std::ostream & output)
 {
   if (numbers_to_check.empty())   // no subsetting, doing the whole file at once
-    return iwstats(zdata.number_elements(), nullptr, which_predicted_set, predicted_column, experimental_column, tmp1, tmp2, tmpr, zdata, output);
+    return iwstats(zdata.number_elements(), nullptr, which_predicted_set, predicted_column, experimental_column, tmp, zdata, output);
 
   for (int i = 0; i < numbers_to_check.number_elements(); i++)
   {
     int n = numbers_to_check[i];
 
-    if (! iwstats(n, chunk_titles[i], which_predicted_set, predicted_column, experimental_column, tmp1, tmp2, tmpr, zdata, output))
+    if (! iwstats(n, chunk_titles[i], which_predicted_set, predicted_column, experimental_column, tmp, zdata, output))
       return 0;
   }
 
@@ -1957,7 +1977,7 @@ iwstats (const resizable_array<int> & predicted_column,
          resizable_array_p<Predicted_Values> & zdata,
          std::ostream & output)
 {
-  int records_in_file = zdata.number_elements();
+  const int records_in_file = zdata.number_elements();
 
   assert (records_in_file > 1);
 
@@ -1972,21 +1992,13 @@ iwstats (const resizable_array<int> & predicted_column,
 
 //cerr << "Will check " << numbers_to_check.number_elements() << " items\n";
 
-  float * tmp1 = new float[records_in_file]; std::unique_ptr<float[]> free_tmp1(tmp1);
-  float * tmp2 = new float[records_in_file]; std::unique_ptr<float[]> free_tmp2(tmp2);
-  float * tmpr = new float[records_in_file]; std::unique_ptr<float[]> free_tmpr(tmpr);
-
-  if (nullptr == tmp1 || nullptr == tmp2 || nullptr == tmpr)
-  {
-    cerr << "Memory failure, cannot allocate data for " << records_in_file << " records\n";
-    return 9;
-  }
+  ThreeTempArrays tmp(records_in_file);
 
   for (int i = 0; i < predicted_column.number_elements(); i++)
   {
     int col = predicted_column[i];
 
-    if (! iwstats(i, col, experimental_column, tmp1, tmp2, tmpr, numbers_to_check, zdata, output))
+    if (! iwstats(i, col, experimental_column, tmp, numbers_to_check, zdata, output))
     {
       cerr << "Fatal error processing column " << (col + 1) << '\n';
       return 0;
@@ -2291,11 +2303,9 @@ iwstats (int argc, char ** argv)
 
   verbose = cl.option_count('v');
 
-  if (cl.option_present('i'))
-  {
+  if (cl.option_present('i')) {
     IWString i = cl.string_value('i');
-    if (! char_name_to_char(i))
-    {
+    if (! char_name_to_char(i)) {
       cerr << "Unrecognised input separator specification '" << i << "'\n";
       return 2;
     }
@@ -2303,26 +2313,25 @@ iwstats (int argc, char ** argv)
     input_separator = i[0];
   }
 
-  if (cl.option_present('j'))
-  {
+  if (cl.option_present('j')) {
     is_descriptor_file = 1;
 
-    if (verbose)
+    if (verbose) {
       cerr << "Will process as a descriptor file\n";
+    }
   }
 
   int experimental_column = -1;
 
-  if (cl.option_present('e'))
-  {
-    if (! cl.value('e', experimental_column) || experimental_column < 1)
-    {
+  if (cl.option_present('e')) {
+    if (! cl.value('e', experimental_column) || experimental_column < 1) {
       cerr << "The experimental/measured value column (-e) must be a whole positive number\n";
       usage(4);
     }
 
-    if (verbose)
+    if (verbose) {
       cerr << "Experimental/Measured values in column " << experimental_column << '\n';
+    }
 
     experimental_column--;
   }
@@ -2807,7 +2816,7 @@ iwstats (int argc, char ** argv)
       continue;
     }
 
-    if (! iwstats(predicted_column, experimental_column, zdata, cout))
+    if (! iwstats(predicted_column, experimental_column, zdata, std::cout))
     {
       cerr << "Fatal error processing '" << cl[i] << "'\n";
       rc = i + 1;
@@ -2827,9 +2836,9 @@ iwstats (int argc, char ** argv)
         if ((*j).second < 3)
           continue;
 
-        cout << "By " << (*j).first << "\n";
+        std::cout << "By " << (*j).first << "\n";
 
-        if (! iwstats(j, predicted_column, experimental_column, zdata, cout))
+        if (! iwstats(j, predicted_column, experimental_column, zdata, std::cout))
         {
           cerr << "Fatal error processing marker '" << (*j).first << " in '" << cl[i] << "'\n";
           rc = i + 1;
