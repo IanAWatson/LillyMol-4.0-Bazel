@@ -21,3 +21,5 @@ external
 *_pb.py
 *_pb.rb
 *__pycache__*
+__init__.py
+*.ipynb
