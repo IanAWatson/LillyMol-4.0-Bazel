@@ -33,6 +33,8 @@ Usage(int rc)
   cerr << " -S <fname>        file name stem for output\n";
   cerr << " -V <fname>        write products with bad valence to <fname>\n";
   cerr << " -V drop           discard products with bad valence - no writing\n";
+  cerr << " -p                write starting molecule in addition to products\n";
+  cerr << " -b                perform the substructure search whilever there are matches\n";
   cerr << " -o <type>         specify output type(s)\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
@@ -59,6 +61,10 @@ class MultipleReactions {
   //  We keep track of how many of the reactions match each molecule.
   extending_resizable_array<int> _reactions_matching;
 
+  // A molecule may generate products if none of the reactions match,
+  // or it it only produces duplicate products.
+  int _molecules_not_generating_products;
+
   //  Used to keep identify duplicates.
   IW_STL_Hash_Set _seen;
 
@@ -66,6 +72,10 @@ class MultipleReactions {
   int _duplicates_discarded;
 
   int _append_reaction_name_to_product;
+
+  // The first match to a reaction might mess up the molecule to the point
+  // where matches found are no longer valid.
+  int _re_search_each_scaffold_hit;
 
   Chemical_Standardisation _chemical_standardisation;
 
@@ -85,6 +95,9 @@ class MultipleReactions {
 
   int Process(Molecule& m, const Set_of_Atoms& embedding, IWReaction& rxn,
               resizable_array_p<Molecule>& result);
+    int ProcessReSearch(Molecule& m,
+                                   IWReaction& rxn,
+                                   resizable_array_p<Molecule>& result);
 
   int IsDuplicate(Molecule& m);
   void MaybeAppendRxnName(const IWString& rxnname, Molecule& product);
@@ -109,9 +122,11 @@ MultipleReactions::MultipleReactions()
   _reduce_to_largest_fragment = 0;
   _remove_chirality = 0;
   _duplicates_discarded = 0;
+  _molecules_not_generating_products = 0;
   _append_reaction_name_to_product = 0;
   _discard_bad_valence = 0;
   _bad_valence_detected = 0;
+  _re_search_each_scaffold_hit = 0;
 }
 
 int
@@ -191,6 +206,13 @@ MultipleReactions::Initialise(Command_Line& cl)
     }
   }
 
+  if (cl.option_present('b')) {
+    _re_search_each_scaffold_hit = 1;
+    if (_verbose) {
+      cerr << "Will sequentially perform substructure searches\n";
+    }
+  }
+
   return 1;
 }
 
@@ -262,7 +284,7 @@ MultipleReactions::Preprocess(Molecule& m)
     m.remove_all_chiral_centres();
   }
 
-  if (m.natoms() == 0) {
+  if (m.empty()) {
     return 0;
   }
 
@@ -289,13 +311,18 @@ MultipleReactions::Process(Molecule& m, resizable_array_p<Molecule>& results)
 
   ++_reactions_matching[matches];
 
+  // Initially I had the check for zero matches being a failure, but something
+  // can fail if it only generates products that have already been seen.
+  // We could detect that, but too messy.
   if (matches == 0) {
     if (_verbose > 1) {
-      cerr << "MultipleReactions::Process:None of " << _rxn.size() << " reactions reacted with '"
-           << m.name() << "'\n";
+      cerr << "MultipleReactions::Process:Duplicates or none of " << _rxn.size() << " reactions reacted with '"
+           << m.smiles() << ' ' << m.name() << "'\n";
+      cerr << "Ignored\n";
+      ++_molecules_not_generating_products;
     }
 
-    return 0;
+    return 1;
   }
 
   return 1;
@@ -305,6 +332,10 @@ int
 MultipleReactions::Process(Molecule& m, Molecule_to_Match& target, IWReaction& rxn,
                            resizable_array_p<Molecule>& result)
 {
+  if (_re_search_each_scaffold_hit) {
+    return ProcessReSearch(m, rxn, result);
+  }
+
   Substructure_Results sresults;
   const int nhits = rxn.substructure_search(target, sresults);
   if (_verbose > 2) {
@@ -325,6 +356,30 @@ MultipleReactions::Process(Molecule& m, Molecule_to_Match& target, IWReaction& r
 #ifdef DEBUG_PROCESS
   cerr << "From " << nhits << " rc " << rc << '\n';
 #endif
+  return rc;
+}
+
+int
+MultipleReactions::ProcessReSearch(Molecule& m,
+                                   IWReaction& rxn,
+                                   resizable_array_p<Molecule>& result) {
+  // In order to avoid an infinite loop, only look this many times for a motif.
+  constexpr int kMaxTries = 100;
+
+  int rc = 0;
+
+  Substructure_Results sresults;
+  for (int i = 0; i < kMaxTries; ++i) {
+    const int nhits = rxn.substructure_search(&m, sresults);
+    if (nhits == 0) {
+      return 0;
+    }
+
+    if (Process(m, *sresults.embeddings().first(), rxn, result)) {
+      ++rc;
+    }
+  }
+
   return rc;
 }
 
@@ -403,6 +458,7 @@ MultipleReactions::Report(std::ostream& output) const
   }
   output << "Discarded " << _duplicates_discarded << " duplicates\n";
   output << "Discarded " << _bad_valence_detected << " products with bad valence\n";
+  output << _molecules_not_generating_products << " molecules did not generate any products\n";
 
   for (int i = 0; i < _reactions_matching.number_elements(); ++i) {
     if (_reactions_matching[i]) {
@@ -633,7 +689,7 @@ ApplyMultipleReactions(MultipleReactions& many_reactions, Options& options, cons
 int
 Main(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcR:S:az:pr:V:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcR:S:az:pr:V:b");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

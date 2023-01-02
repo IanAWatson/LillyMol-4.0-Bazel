@@ -116,7 +116,7 @@ CoreReplacement::Preprocess(Molecule& m) {
     m.remove_all_chiral_centres();
   }
 
-  if (m.natoms() == 0) {
+  if (m.empty()) {
     return 0;
   }
 

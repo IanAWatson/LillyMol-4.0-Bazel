@@ -1776,7 +1776,7 @@ tsubstructure(int argc, char** argv) {
   }
 
   if (cl.option_present('g')) {
-    if (!chemical_standardisation.construct_from_command_line(cl, verbose)) {
+    if (!chemical_standardisation.construct_from_command_line(cl, verbose > 1)) {
       cerr << "Cannot parse -g option\n";
       return 61;
     }
