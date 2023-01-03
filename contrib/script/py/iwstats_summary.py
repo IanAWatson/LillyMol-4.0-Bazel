@@ -3,6 +3,9 @@
 
 from dataclasses import dataclass
 from dataclasses import field, fields
+from itertools import count
+import math 
+from os.path import exists
 from typing import Dict, List, Set
 
 from scipy import stats
@@ -49,7 +52,7 @@ def get_responses(proto: iwstats_pb2.IWStats) -> Dict[str, Results]:
 def write_summary_header(options:Options) -> None:
   """Write a header for `write_summary`.
   """
-  s = ['pred', 'nobs', 'min', 'max', 'ave']
+  s = ['pred', 'measure', 'nobs', 'min', 'max', 'ave', 'stddev']
   print(options.osep.join(s))
   
 
@@ -65,7 +68,8 @@ def write_summary(response: str, results: Results,
   field_names = [field.name for field in fields(Results)]
   for field_name in field_names:
     s = stats.describe(getattr(results, field_name))
-    tokens = [response, str(s.nobs), f'{s.minmax[0]:.3f}', f'{s.minmax[1]:.3f}', f'{s.mean:.3f}']
+    tokens = [response, field_name, str(s.nobs), f'{s.minmax[0]:.3f}', f'{s.minmax[1]:.3f}',
+              f'{s.mean:.3f}', f'{math.sqrt(s.variance):.3f}']
     print(options.osep.join(tokens))
   
 
@@ -99,6 +103,15 @@ def process_all_files(proto: iwstats_pb2.IWStats, responses: Dict[str, Results],
   for k, v in responses.items():
     write_summary(k, v, options)
 
+def get_results(files:List[str]) -> None:
+  """
+  Args:
+    files:
+  Returns:
+  """
+  result: list[Results] = []
+
+
 def get_series(files:Set[str], options:Options) -> List[str]:
   """Discern series present in `files`.
   Args:
@@ -113,6 +126,32 @@ def get_series(files:Set[str], options:Options) -> List[str]:
     return get_series_all(files)
   return get_series_via_pattern(files, options.pattern)
 
+def get_patterns(patterns:List[str], files:Set[str]) -> List[List[str]]:
+  """Return the list of files implied by each pattern.
+
+  Args:
+    patterns: Format strings describing a series of files. Must contain %d
+    files: list of file names
+  Returns:
+    For each pattern, the list of files that match the enumerated pattern.
+  """
+  result: List[List[str]] = []
+  # For each pattern, determine how many files are present.
+  # Ignore 0 because maybe things start at 1 rather than zero.
+  for pattern in patterns:
+    files = []
+    for i in count(start=0, step=1):
+      fname = pattern%(i)
+      if exists(fname):
+        files.append(fname)
+        continue
+      if i == 0:
+        continue
+      result.append(files)
+      break
+
+  return result
+
 def summary(options: Options, proto: iwstats_pb2.IWStats):
   """proto is an IWStats::IWStats proto.
   Produce summary stats. If there are multiple types of predictions in
@@ -126,7 +165,19 @@ def summary(options: Options, proto: iwstats_pb2.IWStats):
 
   # Get the set of all file names in the proto
   files = [p.fname for p in proto.stats]
-  print(files)
+  # For each pattern work out how many files present.
+  pattern_files = get_patterns(options.pattern, files)
+
+  # Must be same number of values for each
+  s = set([len(p) for p in pattern_files])
+  if len(s) != 1:
+    logging.fatal('Disparate counts %v', pattern_files)
+
+  logging.info('Patterns contain %d files eacg', s.pop())
+
+  results = []
+  for files in pattern_files:
+    results.append(get_results(proto, files))
 
 def main(argv):
   """Examine an IWStats::IWStats proto and provide summary and comparison info
