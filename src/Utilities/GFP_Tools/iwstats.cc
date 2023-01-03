@@ -99,9 +99,7 @@ static int wikipedia_r2_definition = 1;
 static resizable_array<float> fold_difference_additive;
 static resizable_array<float> fold_difference_multiplicative;
 
-/*
-  Useful to be able to collect residuals
-*/
+// If residuals are collected.
 
 static IWString_and_File_Descriptor stream_for_residuals;
 
@@ -1071,14 +1069,13 @@ read_the_data (const char * fname,
 {
   iwstring_data_source input(fname);
 
-  if (! input.ok())
-  {
+  if (! input.ok()) {
     cerr << "Cannot open '" << fname << "'\n";
     return 0;
   }
 
   if (0 == zdata.elements_allocated())
-    zdata.resize(1000);      // just a guess
+    zdata.resize(2000);      // just a guess
   else
     zdata.resize_keep_storage(0);
 
@@ -1116,8 +1113,7 @@ do_sort_by_predicted_value(resizable_array_p<Predicted_Values> & zdata,
 
   zdata.iwqsort(pvc);
 
-  if (verbose > 2)
-  {
+  if (verbose > 2) {
     cerr << "After sorting on column " << predicted_column << '\n';
     echo_the_data(zdata, cerr);
   }
@@ -1455,6 +1451,7 @@ iwstats(unsigned int number_records,
          int experimental_column,
          ThreeTempArrays& tmp,
          resizable_array_p<Predicted_Values> & zdata,
+         IWStats::Stats& proto,
          std::ostream & output)
 {
   float * tmp1 = tmp.tmp1;
@@ -1512,12 +1509,7 @@ iwstats(unsigned int number_records,
 
   std::unique_ptr<int[]> free_n_fold_difference_multiplicative(n_fold_difference_multiplicative);
 
-  // Form the proto regardless of whether it is being written or not. Just
-  // keeps the code cleaner.
-  IWStats::stats proto;
-
-  for (unsigned int i = 0; i < number_records; i++)
-  {
+  for (unsigned int i = 0; i < number_records; i++) {
     const Predicted_Values & pvi = *(zdata[i]);
 
     if (! pvi.valid(which_predicted_set))
@@ -1616,6 +1608,9 @@ iwstats(unsigned int number_records,
   {
     output << "Predicted values in column " << (predicted_column + 1);
     write_something_identifying_the_column (predicted_column, output);
+    if (is_descriptor_file) {
+      proto.set_pred(column_titles[predicted_column]);
+    }
     output << ". Range " << p.minval() << " and " << p.maxval() << " ave " << p.average() << " N = " << p.n() << '\n';
     proto.set_min_predicted(p.minval());
     proto.set_max_predicted(p.maxval());
@@ -1927,6 +1922,7 @@ iwstats(unsigned int number_records,
   if (number_distribution_buckets > 0)
     do_compute_distribution_functions(number_records, which_predicted_set, predicted_column, experimental_column, tmp1, tmp2, zdata, output);
 
+#ifdef NOW_DONE_ELSEWHERE
   if (stem_for_proto_files.empty()) {
     return 1;
   }
@@ -1939,10 +1935,11 @@ iwstats(unsigned int number_records,
   if (verbose) {
     cerr << "Writing '" << fname << "'\n";
   }
-  if (! iwmisc::WriteBinaryProto<IWStats::stats>(proto, fname)) {
+  if (! iwmisc::WriteBinaryProto<IWStats::Stats>(proto, fname)) {
     cerr << "Cannot write IWStats::stats proto to '" << fname << "'\n";
     return 0;
   }
+#endif
 
   return output.good();
 }
@@ -1954,16 +1951,19 @@ iwstats (int which_predicted_set,
          ThreeTempArrays& tmp,
          const resizable_array<int> & numbers_to_check,
          resizable_array_p<Predicted_Values> & zdata,
+         IWStats::Stats& proto,
          std::ostream & output)
 {
-  if (numbers_to_check.empty())   // no subsetting, doing the whole file at once
-    return iwstats(zdata.number_elements(), nullptr, which_predicted_set, predicted_column, experimental_column, tmp, zdata, output);
+  // If there is no subsetting, do the whole file at once.
+  if (numbers_to_check.empty()) {
+    return iwstats(zdata.number_elements(), nullptr, which_predicted_set, predicted_column, experimental_column, tmp, zdata, proto, output);
+  }
 
   for (int i = 0; i < numbers_to_check.number_elements(); i++)
   {
     int n = numbers_to_check[i];
 
-    if (! iwstats(n, chunk_titles[i], which_predicted_set, predicted_column, experimental_column, tmp, zdata, output))
+    if (! iwstats(n, chunk_titles[i], which_predicted_set, predicted_column, experimental_column, tmp, zdata, proto, output))
       return 0;
   }
 
@@ -1974,6 +1974,7 @@ static int
 iwstats (const resizable_array<int> & predicted_column,
          int experimental_column,
          resizable_array_p<Predicted_Values> & zdata,
+         IWStats::Stats& proto,
          std::ostream & output)
 {
   const int records_in_file = zdata.number_elements();
@@ -1997,7 +1998,7 @@ iwstats (const resizable_array<int> & predicted_column,
   {
     int col = predicted_column[i];
 
-    if (! iwstats(i, col, experimental_column, tmp, numbers_to_check, zdata, output))
+    if (! iwstats(i, col, experimental_column, tmp, numbers_to_check, zdata, proto, output))
     {
       cerr << "Fatal error processing column " << (col + 1) << '\n';
       return 0;
@@ -2012,6 +2013,7 @@ iwstats (const IW_STL_Hash_Map_int::const_iterator & f,
          const resizable_array<int> & predicted_column,
          int experimental_column,
          resizable_array_p<Predicted_Values> & zdata,
+         IWStats::Stats& proto,
          std::ostream & output)
 {
   resizable_array_p<Predicted_Values> tmp;
@@ -2020,19 +2022,15 @@ iwstats (const IW_STL_Hash_Map_int::const_iterator & f,
 
   tmp.resize(n);
 
-  for (auto i = 0; i < n; ++i)
-  {
+  for (auto i = 0; i < n; ++i) {
     if ((*f).first == zdata[i]->marker())
       tmp.add(zdata[i]);
   }
 
-  if (tmp.empty())
-  {
+  if (tmp.empty()) {
     cerr << "Very strange, no records retrieved for marker '" << (*f).first << "'\n";
     return 0;
-  }
-  else if (tmp.number_elements() < 3)
-  {
+  } else if (tmp.number_elements() < 3) {
     tmp.resize_no_delete(0);
     cerr << "Only one instance of '" << (*f).first << "', ignored\n";
     return 1;
@@ -2042,7 +2040,7 @@ iwstats (const IW_STL_Hash_Map_int::const_iterator & f,
 
   global_prefix << ' ' << (*f).first;
 
-  auto rc = iwstats(predicted_column, experimental_column, tmp, output);
+  auto rc = iwstats(predicted_column, experimental_column, tmp, proto, output);
 
   global_prefix.resize_keep_storage(0);
 
@@ -2791,56 +2789,57 @@ iwstats (int argc, char ** argv)
       cerr << "Residuals written to '" << fname << "'\n";
   }
 
+  IWStats::IWStats proto;
+
   int rc = 0;
-  for (int i = 0; i < cl.number_elements(); i++)
-  {
+  for (const char* fname : cl) {
     resizable_array_p<Predicted_Values> zdata(2000);
 
-    if (! read_the_data(cl[i], experimental_column, predicted_column, marker_column, marker_column_name, zdata))
+    if (! read_the_data(fname, experimental_column, predicted_column, marker_column, marker_column_name, zdata))
     {
-      cerr << "Error reading data file '" << cl[i] << "'\n";
-      rc = i + 1;
+      cerr << "Error reading data file '" << fname << "'\n";
+      rc = 1;
       break;
     }
 
     if (verbose)
-      cerr << "Read " << zdata.number_elements() << " data items from '" << cl[i] << "'\n";
+      cerr << "Read " << zdata.number_elements() << " data items from '" << fname << "'\n";
 
     if (verbose > 2)
       echo_the_data(zdata, cerr);
 
     if (1 == zdata.number_elements())
     {
-      cerr << "Very strange, only one record in '" << cl[i] << "', ignored\n";
+      cerr << "Very strange, only one record in '" << fname << "', ignored\n";
       continue;
     }
 
-    if (! iwstats(predicted_column, experimental_column, zdata, std::cout))
-    {
-      cerr << "Fatal error processing '" << cl[i] << "'\n";
-      rc = i + 1;
+    IWStats::IWStatsFile *pfile = proto.add_stats();
+    pfile->set_fname(fname);
+
+    if (! iwstats(predicted_column, experimental_column, zdata, *pfile->add_stats(), std::cout)) {
+      cerr << "Fatal error processing '" << fname << "'\n";
+      rc = 1;
       break;
     }
 
-    if (marker_column >= 0)
-    {
+    if (marker_column >= 0) {
       IW_STL_Hash_Map_int markers_present;
       gather_markers(zdata, markers_present);
 
       if (verbose)
         cerr << "Found " << markers_present.size() << " different marker values\n";
 
-      for (auto j = markers_present.begin(); j != markers_present.end(); ++j)
-      {
-        if ((*j).second < 3)
+      for (auto j = markers_present.begin(); j != markers_present.end(); ++j) {
+        if ((*j).second < 3) {
           continue;
+        }
 
         std::cout << "By " << (*j).first << "\n";
 
-        if (! iwstats(j, predicted_column, experimental_column, zdata, std::cout))
-        {
-          cerr << "Fatal error processing marker '" << (*j).first << " in '" << cl[i] << "'\n";
-          rc = i + 1;
+        if (! iwstats(j, predicted_column, experimental_column, zdata, *pfile->add_stats(), std::cout)) {
+          cerr << "Fatal error processing marker '" << (*j).first << " in '" << fname << "'\n";
+          rc = 1;
           break;
         }
       }
@@ -2855,6 +2854,15 @@ iwstats (int argc, char ** argv)
 
   if (nullptr != column_titles)
     delete [] column_titles;
+
+  if (! stem_for_proto_files.empty()) {
+    IWString fname;
+    fname << stem_for_proto_files << ".dat";
+    if (! iwmisc::WriteBinaryProto<IWStats::IWStats>(proto, fname)) {
+      cerr << "Cannot write IWStats::stats proto to '" << fname << "'\n";
+      return 1;
+    }
+  }
 
   return rc;
 }

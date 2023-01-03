@@ -4,34 +4,48 @@ package IWStats;
 
 // iwstats can generate protos which makes summarising them easy
 
-message stats {
-  // The file that generated the data.
-  string fname = 1;
-  // THe name of the response
-  string response = 2;
-  // The name of the predicted response
-  string pred = 3;
+message Stats {
+  // The name of the response. Usually derived from the experimental data file.
+  string response = 1;
+
+  // The name of the predicted response. Might be the same as `response`.
+  string pred = 2;
 
   // The number of points in the data.
-  uint32 nvalues = 4;
+  uint32 nvalues = 3;
 
-  float min_response = 5;
-  float max_response = 6;
-  float ave_response = 7;
-  float min_predicted = 8;
-  float max_predicted = 9;
-  float ave_predicted = 10;
+  // The ranges and ave for the actual and the predicted values.
+  float min_response = 4;
+  float max_response = 5;
+  float ave_response = 6;
+
+  float min_predicted = 7;
+  float max_predicted = 8;
+  float ave_predicted = 9;
 
   // Various performance measures.
-  float min_error = 11;
-  float max_error = 12;
-  float ave_error = 13;
+  float min_error = 10;
+  float max_error = 11;
+  float ave_error = 12;
 
-  float ave_abs_error = 14;
-  float rms_error = 15;
-  float rsquared = 16;
-  float qsquared = 17;
-  float ae50 = 18;
-  float ae95 = 19;
-  float bsquared = 20;
+  float ave_abs_error = 13;
+  float rms_error = 14;
+  float rsquared = 15;
+  float qsquared = 16;
+  float ae50 = 17;
+  float ae95 = 18;
+  float bsquared = 19;
+}
+
+// Within a file, there can be multiple responses.
+message IWStatsFile {
+  // The file that generated the data.
+  string fname = 1;
+  // One or more columns in that file for which data has been generated.
+  repeated Stats stats = 2;
+}
+
+// When iwstats is run, it can process multiple files.
+message IWStats {
+  repeated IWStatsFile stats = 1;
 }
