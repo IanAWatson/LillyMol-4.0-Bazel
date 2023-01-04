@@ -12,7 +12,7 @@ require_relative 'lib/feature_scaling_pb'
 
 def usage(retcod)
   $stderr << "Evaluate a LightGBM model build with svmfp_make\n"
-  $stderr << " -m <dir>     model directory\n"
+  $stderr << " -mdir <dir>     model directory\n"
   $stderr << " -v           verbose output\n"
   exit(retcod)
 end
@@ -45,11 +45,11 @@ class Model
     raise "Missing #{@model_data_fname}" unless File.size?(@model_data_fname)
 
     @data = GfpModel::LightGbmModel.decode(File.read(@model_data_fname))
-    $stderr << @data
+    # $stderr << @data
   end
 
   def gfp
-    $stderr << "Fingerprints #{@data.metadata.fingerprints}\n"
+    # $stderr << "Fingerprints #{@data.metadata.fingerprints}\n"
     @data.metadata.fingerprints
   end
 
@@ -90,7 +90,7 @@ models = []
 model_dirs.each do |dir|
   models << Model.new(dir)
 end
-$stderr << models << "\n"
+# $stderr << models << "\n"
 
 if ARGV.empty?
   $stderr << "Insufficient arguments\n"
@@ -143,7 +143,7 @@ models.each do |model|
   mnames << '-M ' << model.model_data_fname
 end
 mnames = mnames.join(' ')
-$stderr << mnames << "\n"
+# $stderr << mnames << "\n"
 
 def paste_files(file1, file2, destination, verbose)
   cmd = "paste -d' ' #{file1} #{file2} > #{destination.path}"
@@ -172,7 +172,8 @@ def write_header(model, classification)
 
   sep = ' '
 
-  $stdout << "ID#{sep}pred_#{response}"
+  # $stdout << "ID#{sep}pred_#{response}"
+  $stdout << "ID#{sep}#{response}"
   $stdout << "#{sep}score" if classification
   $stdout << "\n"
 end
