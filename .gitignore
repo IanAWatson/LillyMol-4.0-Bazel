@@ -3,3 +3,5 @@ import_version.rb
 __pycache__
 *__pycache__*
 *_pb2.py
+*_pb.rb
+__init__.py
