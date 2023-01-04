@@ -1,4 +1,5 @@
 load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@rules_proto_grpc//ruby:defs.bzl", "ruby_proto_compile", "ruby_proto_library")
 
 proto_library(
     name = "class_label_translation_proto",
@@ -14,6 +15,20 @@ cc_proto_library(
     ],
     visibility = [
         "//visibility:public",
+    ],
+)
+
+py_proto_library(
+    name = "class_label_translation_py_proto",
+    srcs = [
+        "class_label_translation.proto",
+    ]
+)
+
+ruby_proto_compile(
+    name = "class_label_translation_rb_proto",
+    protos = [
+        "class_label_translation_proto",
     ],
 )
 

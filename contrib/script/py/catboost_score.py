@@ -35,7 +35,9 @@ def write_classification_result(ids: List[str],
   Returns:
   """
   sep = ' '
-  print(f"ID{sep}pred_{response}{sep}score")
+  # Might be a good idea to prefix the predicted value, but that can break other things.
+  # print(f"ID{sep}pred_{response}{sep}score")
+  print(f"ID{sep}{response}{sep}score")
   for i, id in enumerate(ids):
     score = pred[i][1].round(4)
     id = id.rstrip()
@@ -58,7 +60,8 @@ def write_regression_result(ids: List[str],
   sep = ' '
 # print(feature_scaling)
   pred = feature_scaling.min + pred * (feature_scaling.max - feature_scaling.min)
-  print(f"ID{sep}pred_{response}")
+  # print(f"ID{sep}pred_{response}")
+  print(f"ID{sep}{response}")
   for i, id in enumerate(ids):
     id = id.rstrip()
     print(f"{id}{sep}{pred[i]}")

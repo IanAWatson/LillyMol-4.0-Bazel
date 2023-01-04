@@ -1739,6 +1739,7 @@ iwstats(unsigned int number_records,
     write_something_identifying_the_column(predicted_column, output);
     bias = o.average() - p.average();
     output << " Bias " << bias << '\n';
+    proto.set_bias(bias);
 
     sum1 = 0.0;
     for (unsigned int i = 0; i < number_records; i++)

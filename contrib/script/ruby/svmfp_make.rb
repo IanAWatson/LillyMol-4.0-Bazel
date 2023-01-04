@@ -168,7 +168,7 @@ FileUtils.cp(smiles, train_smi)
 if cmdline.option_present('C')  # Classification.
   if lightgbm || catboost
     perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
-    lightgbm = "lightgbm #{lightgbm} objective=binary" if lightgbm
+    lightgbm = "#{lightgbm} objective=binary" if lightgbm
     catboost = "#{catboost} --loss-function Logloss --custom-metric=MCC --auto-class-weights Balanced" if catboost
   else
     perform_class_label_translation(activity_file, mdir, train_activity, verbose)
@@ -177,7 +177,7 @@ if cmdline.option_present('C')  # Classification.
 else  # Regression
   perform_response_scaling(activity_file, mdir, train_smi, train_activity, verbose)
   svm_learn_options = "#{svm_learn_options} -z r"
-  lightgbm = "lightgbm #{lightgbm} objective=regression" if lightgbm
+  lightgbm = "#{lightgbm} objective=regression" if lightgbm
   catboost = "#{catboost} --loss-function RMSE" if catboost
 end
 

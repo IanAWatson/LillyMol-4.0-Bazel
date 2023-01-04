@@ -172,7 +172,10 @@ def write_header(model, classification)
 
   sep = ' '
 
-  $stdout << "ID#{sep}pred_#{response}"
+  # Might be a good idea to insert a prefix, but that breaks
+  # iwstats_summary
+  # $stdout << "ID#{sep}pred_#{response}"
+  $stdout << "ID#{sep}#{response}"
   $stdout << "#{sep}score" if classification
   $stdout << "\n"
 end

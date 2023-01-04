@@ -69,6 +69,7 @@ DisplayCWriteOptions(std::ostream& output) {
 }
 
 // Read a binary encoded proto from `fname` into `proto`.
+// TODO:ianwatson transition to utilities in iwmisc
 template <typename Proto>
 int
 ReadBinaryProto(IWString& fname,

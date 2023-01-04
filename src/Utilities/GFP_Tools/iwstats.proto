@@ -28,13 +28,14 @@ message Stats {
   float max_error = 11;
   float ave_error = 12;
 
-  float ave_abs_error = 13;
-  float rms_error = 14;
-  float rsquared = 15;
-  float qsquared = 16;
-  float ae50 = 17;
-  float ae95 = 18;
-  float bsquared = 19;
+  float bias = 13;
+  float ave_abs_error = 14;
+  float rms_error = 15;
+  float rsquared = 16;
+  float qsquared = 17;
+  float ae50 = 18;
+  float ae95 = 19;
+  float bsquared = 20;
 }
 
 // Within a file, there can be multiple responses.
