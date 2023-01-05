@@ -60,3 +60,10 @@ message CatboostModel {
   // svm_lite feature numbers
   string bit_xref = 4;
 }
+
+message XGBoostModel {
+
+  // Proto file containing a mapping from gfp bits to
+  // svm_lite feature numbers
+  string bit_xref = 4;
+}

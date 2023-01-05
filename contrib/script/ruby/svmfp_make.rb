@@ -76,7 +76,7 @@ end
 
 cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' \
                         '-svm_learn=xfile-gfp_to_svm_lite=xfile-lightgbm=close-lightgbm_config=sfile' \
-                        '-catboost=close')
+                        '-catboost=close-xgboost=close')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
   usage(1)
@@ -127,20 +127,32 @@ svm_learn_options = if cmdline.option_present('svml')
                       '-t 4 -m 500'
                     end
 
-# nil if not specified.
+# the alternate model forms will be nil if not specified.
 lightgbm = cmdline.value('lightgbm')
 default_lightgbm_config = cmdline.value('lightgbm_config')
 catboost = cmdline.value('catboost')
+xgboost = cmdline.value('xgboost')
+xgboost_config = cmdline.value('xgboost_config')
 
-lightgbm = "lightgbm config=#{default_lightgbm_config} #{lightgbm} force_row_wise=true" if lightgbm
+if lightgbm
+  if ! default_lightgbm_config
+    $stderr << "When building a lightgbm model, must specify -lightgbm_config\n"
+    usage(1)
+  end
+  lightgbm = "lightgbm config=#{default_lightgbm_config} #{lightgbm} force_row_wise=true"
+end
+
+if xgboost
+  if ! xgboost_config
+    $stderr << "When building a xgboost model, must specify -xgboost_config\n"
+    usage(1)
+  end
+  xgboost = "xgboost #{xgboost_config} model_dir=#{mdir}"
+end
+
 catboost = "catboost fit #{catboost} --train-dir #{mdir} --fstr-file fstr.dat " \
            "--use-best-model --min-data-in-leaf=2 " \
            "--model-format CatboostBinary,CPP " if catboost
-
-if lightgbm && ! default_lightgbm_config
-  $stderr << "When building a lightgbm model, must specify -lightgbm_config\n"
-  usage(1)
-end
 
 if ARGV.empty?
   $stderr << "Insufficient arguments\n"
@@ -166,10 +178,11 @@ execute_cmd(cmd, verbose, [train_gfp])
 
 FileUtils.cp(smiles, train_smi)
 if cmdline.option_present('C')  # Classification.
-  if lightgbm || catboost
+  if lightgbm || catboost || xgboost
     perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
     lightgbm = "#{lightgbm} objective=binary" if lightgbm
     catboost = "#{catboost} --loss-function Logloss --custom-metric=MCC --auto-class-weights Balanced" if catboost
+    xgboost = "#{xgboost} objective=binary:logistic" if xgboost
   else
     perform_class_label_translation(activity_file, mdir, train_activity, verbose)
     svm_learn_options = "#{svm_learn_options} -z c"
@@ -179,6 +192,7 @@ else  # Regression
   svm_learn_options = "#{svm_learn_options} -z r"
   lightgbm = "#{lightgbm} objective=regression" if lightgbm
   catboost = "#{catboost} --loss-function RMSE" if catboost
+  xgboost = "#{xgboost} objective=reg:squarederror" if xgboost
 end
 
 bit_xref = "bit"
@@ -190,7 +204,7 @@ f = if flatten_sparse_fingerprints
       ''
     end
 
-l = if lightgbm || catboost
+l = if lightgbm || catboost || xgboost
       '-l'
     else
       ''
@@ -212,6 +226,10 @@ if lightgbm
 elsif catboost
   model_file = "#{mdir}/Catboost.model.bin"
   cmd = "#{catboost} --learn-set libsvm://#{mdir}/train.svml --model-file Catboost.model.bin"
+elsif xgboost
+  # need to interpolate the number of training rounds
+  model_file = "#{mdir}/qq.model"
+  cmd = "#{xgboost}"
 else
   model_file = "#{mdir}/train.model"
   cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
@@ -249,6 +267,8 @@ elsif catboost
   model.bit_xref = 'bit_xref.dat'
   File.write("#{mdir}/model.dat", GfpModel::CatboostModel.encode(model))
   File.write("#{mdir}/model.json", GfpModel::CatboostModel.encode_json(model))
+elsif xgboost
+  model = GfpModel::XGBoostModel.new
 else
   support_vectors = "#{mdir}/support_vectors.gfp"
   cmd = "svm_model_support_vectors.sh -o #{support_vectors} #{model_file} #{train_gfp}"

@@ -43,6 +43,13 @@ py_proto_library(
     ],
 )
 
+ruby_proto_compile(
+    name = "gfp_model_rb_proto",
+    protos = [
+        "gfp_model_proto",
+    ],
+)
+
 proto_library(
     name = "gfp_to_svm_lite_proto",
     srcs = [
