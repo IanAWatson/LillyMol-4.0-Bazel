@@ -31,6 +31,8 @@ def execute_cmd(cmd, verbose, files_needed = [])
   raise "Non zero rc #{rc} from #{cmd}" unless rc
 
   files_needed.each do |fname|
+    next if fname == nil
+
     next if File.size?(fname)
 
     raise "#{cmd} did not produce #{fname}"
@@ -45,6 +47,18 @@ def get_threshold_b(model_file)
     return m[1].to_f if m
   end
   raise "No threshold_b in #{model_file}"
+end
+
+# A model file has been created in `mdir`. return the name.
+def get_xgboost_file(mdir)
+  maybe = Dir.children(mdir).filter { |fname| /^\d+\.model$/.match(fname) }
+
+  if maybe.empty?
+    $stderr << "No model file in #{mdir}\n"
+    return nil
+  end
+
+  return maybe.first
 end
 
 # `activity_file` has been identified as containing classification data.
@@ -76,7 +90,8 @@ end
 
 cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' \
                         '-svm_learn=xfile-gfp_to_svm_lite=xfile-lightgbm=close-lightgbm_config=sfile' \
-                        '-catboost=close-xgboost=close')
+                        '-catboost=close-xgboost=close' \
+                        '-xgboost=close-xgboost_config=sfile')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
   usage(1)
@@ -140,6 +155,7 @@ if lightgbm
     usage(1)
   end
   lightgbm = "lightgbm config=#{default_lightgbm_config} #{lightgbm} force_row_wise=true"
+  FileUtils.cp(default_lightgbm_config, mdir)
 end
 
 if xgboost
@@ -148,6 +164,8 @@ if xgboost
     usage(1)
   end
   xgboost = "xgboost #{xgboost_config} model_dir=#{mdir}"
+  $stderr << "Copying #{xgboost_config} to #{mdir}\n"
+  FileUtils.cp(xgboost_config, mdir)
 end
 
 catboost = "catboost fit #{catboost} --train-dir #{mdir} --fstr-file fstr.dat " \
@@ -177,6 +195,7 @@ cmd = "#{gfp_make} #{fingerprints} #{smiles} > #{train_gfp}"
 execute_cmd(cmd, verbose, [train_gfp])
 
 FileUtils.cp(smiles, train_smi)
+
 if cmdline.option_present('C')  # Classification.
   if lightgbm || catboost || xgboost
     perform_class_label_translation_lightgbm(activity_file, mdir, train_activity, verbose)
@@ -228,13 +247,21 @@ elsif catboost
   cmd = "#{catboost} --learn-set libsvm://#{mdir}/train.svml --model-file Catboost.model.bin"
 elsif xgboost
   # need to interpolate the number of training rounds
-  model_file = "#{mdir}/qq.model"
-  cmd = "#{xgboost}"
+  uri = File.absolute_path(train_svml)
+  cmd = "#{xgboost} data=#{uri}?format=libsvm"
 else
   model_file = "#{mdir}/train.model"
   cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
 end
 execute_cmd(cmd, verbose, [model_file])
+
+# The name of the model file for xgboost is not known until after
+# the model is built. We could also try to discern the number of
+# boosting cycles.
+xgboost_model_file = nil
+if xgboost
+  xgboost_model_file = get_xgboost_file(mdir)
+end
 
 # The metadata attribute is common among all model types.
 def populate_metadata(model, fingerprints, response_name, classification, flatten_sparse_fingerprints)
@@ -259,16 +286,25 @@ if lightgbm
   model = GfpModel::LightGbmModel.new
   populate_metadata(model, fingerprints, response_name, cmdline.option_present('C'), flatten_sparse_fingerprints)
   model.bit_xref = 'bit_xref.dat'
+  model.training_cmdline = lightgbm
   File.write("#{mdir}/model.dat", GfpModel::LightGbmModel.encode(model))
   File.write("#{mdir}/model.json", GfpModel::LightGbmModel.encode_json(model))
 elsif catboost
   model = GfpModel::CatboostModel.new
   populate_metadata(model, fingerprints, response_name, cmdline.option_present('C'), flatten_sparse_fingerprints)
   model.bit_xref = 'bit_xref.dat'
+  model.training_cmdline = catboost
   File.write("#{mdir}/model.dat", GfpModel::CatboostModel.encode(model))
   File.write("#{mdir}/model.json", GfpModel::CatboostModel.encode_json(model))
 elsif xgboost
   model = GfpModel::XGBoostModel.new
+  populate_metadata(model, fingerprints, response_name, cmdline.option_present('C'), flatten_sparse_fingerprints)
+  model.bit_xref = 'bit_xref.dat'
+  model.config_file = xgboost_config
+  model.training_cmdline = xgboost
+  model.model_file = xgboost_model_file
+  File.write("#{mdir}/model.dat", GfpModel::XGBoostModel.encode(model))
+  File.write("#{mdir}/model.json", GfpModel::XGBoostModel.encode_json(model))
 else
   support_vectors = "#{mdir}/support_vectors.gfp"
   cmd = "svm_model_support_vectors.sh -o #{support_vectors} #{model_file} #{train_gfp}"

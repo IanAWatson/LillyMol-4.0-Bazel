@@ -51,6 +51,9 @@ message LightGbmModel {
   // Proto file containing a mapping from gfp bits to
   // svm_lite feature numbers
   string bit_xref = 4;
+
+  // The entire catboost command line used for training.
+  string training_cmdline = 6;
 }
 
 message CatboostModel {
@@ -59,11 +62,26 @@ message CatboostModel {
   // Proto file containing a mapping from gfp bits to
   // svm_lite feature numbers
   string bit_xref = 4;
+
+  // The config file used during model building
+  string config_file = 5;
+
+  // The entire catboost command line used for training.
+  string training_cmdline = 6;
 }
 
 message XGBoostModel {
+  ModelMetadata metadata = 1;
 
   // Proto file containing a mapping from gfp bits to
   // svm_lite feature numbers
   string bit_xref = 4;
+
+  string model_file = 5;
+
+  // The config file used during model building
+  string config_file = 6;
+
+  // The entire xgboost command line used for training.
+  string training_cmdline = 7;
 }
