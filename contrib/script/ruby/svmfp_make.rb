@@ -5,6 +5,7 @@
 
 require 'date'
 require 'fileutils'
+require 'tempfile'
 require 'google/protobuf'
 
 require_relative 'lib/iwcmdline'
@@ -90,8 +91,8 @@ end
 
 cmdline = IWCmdline.new('-v-mdir=s-A=sfile-C-gfp=close-svml=close-p=ipos-flatten-gfp_make=xfile' \
                         '-svm_learn=xfile-gfp_to_svm_lite=xfile-lightgbm=close-lightgbm_config=sfile' \
-                        '-catboost=close-xgboost=close' \
-                        '-xgboost=close-xgboost_config=sfile')
+                        '-catboost=close' \
+                        '-xgboost=close-xgboost_config=sfile-xgb_test=sfile')
 if cmdline.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
   usage(1)
@@ -239,6 +240,7 @@ train_svml = "#{mdir}/train.svml"
 cmd = "#{cmd} #{train_gfp}"
 execute_cmd(cmd, verbose, [train_svml, "#{mdir}/bit_xref.dat", "#{mdir}/bit_subset.dat"])
 
+xgb_test = nil
 if lightgbm
   model_file = "#{mdir}/LightGBM_model.txt"
   cmd = "#{lightgbm} data=#{mdir}/train.svml output_model=#{model_file}"
@@ -249,6 +251,14 @@ elsif xgboost
   # need to interpolate the number of training rounds
   uri = File.absolute_path(train_svml)
   cmd = "#{xgboost} data=#{uri}?format=libsvm"
+  if cmdline.option_present('xgb_test')
+    test_fname = cmdline.value('xgb_test')
+    test_svml = Tempfile.new('xgboost_test')
+    cmd_test = "#{gfp_make} #{fingerprints} #{test_fname} | #{gfp_to_svm_lite} -l -X #{mdir}/bit_xref.dat -S #{test_svml.path} -"
+    xgb_test = "#{test_svml.path}.svml"
+    execute_cmd(cmd_test, verbose, [xgb_test])
+    cmd = "#{cmd} test:data=#{xgb_test}?format=libsvm"
+  end
 else
   model_file = "#{mdir}/train.model"
   cmd = "#{svm_learn} #{svm_learn_options} #{train_svml} #{model_file}"
@@ -316,7 +326,7 @@ else
   model.threshold_b = get_threshold_b(model_file)
   model.bit_subset = 'bit_xref.dat'
   model.bit_xref = bit_xref
-  model.train_gfp = train_gfp
+  model.train_gfp = 'train.gfp'
   model.support_vectors = 'support_vectors.gfp'
   File.write("#{mdir}/model.dat", GfpModel::SvmfpModel.encode(model))
   File.write("#{mdir}/model.json", GfpModel::SvmfpModel.encode_json(model))

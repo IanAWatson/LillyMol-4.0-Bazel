@@ -75,7 +75,7 @@ models = []
 model_dirs.each do |dir|
   models << Model.new(dir)
 end
-$stderr << models << "\n"
+# $stderr << models << "\n"
 
 if ARGV.empty?
   $stderr << "Insufficient arguments\n"
@@ -111,7 +111,7 @@ models.each do |model|
   mnames << '-M ' << model.model_data_fname
 end
 mnames = mnames.join(' ')
-$stderr << mnames << "\n"
+# $stderr << mnames << "\n"
 
 models.each do |model|
   cmd = "#{gfp_make}  #{model.gfp} #{smiles_files} | #{evaluate} -M #{model.model_data_fname} -"

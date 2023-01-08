@@ -45,7 +45,7 @@ class Model
     raise "Missing #{@model_data_fname}" unless File.size?(@model_data_fname)
 
     @data = GfpModel::CatboostModel.decode(File.read(@model_data_fname))
-    $stderr << @data
+    # $stderr << @data
   end
 
   def gfp
@@ -90,7 +90,7 @@ models = []
 model_dirs.each do |dir|
   models << Model.new(dir)
 end
-$stderr << models << "\n"
+# $stderr << models << "\n"
 
 if ARGV.empty?
   $stderr << "Insufficient arguments\n"
@@ -143,7 +143,7 @@ models.each do |model|
   mnames << '-M ' << model.model_data_fname
 end
 mnames = mnames.join(' ')
-$stderr << mnames << "\n"
+# $stderr << mnames << "\n"
 
 def paste_files(file1, file2, destination, verbose)
   cmd = "paste -d' ' #{file1} #{file2} > #{destination.path}"
