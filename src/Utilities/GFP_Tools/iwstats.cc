@@ -144,6 +144,7 @@ usage (int rc)
   cerr << " -m <col/name>  do analysis by data in column <col> or descriptor name <name>\n";
   cerr << " -L <fname>     write residuals to <fname>\n";
   cerr << " -I <stem>      write binary protos to file with stem <stem>\n";
+  cerr << " -y             ignore erroneous input file(s)\n";
   cerr << " -v             verbose output\n";
 
   exit (rc);
@@ -2291,7 +2292,7 @@ parse_dash_p (const const_IWSubstring & p,
 static int
 iwstats (int argc, char ** argv)
 {
-  Command_Line cl(argc, argv, "ve:E:p:s:jwn:t:P:M:qR:zc:TA:b:hr:ko:a:f:u:U:i:Km:dF:D:L:I:");
+  Command_Line cl(argc, argv, "ve:E:p:s:jwn:t:P:M:qR:zc:TA:b:hr:ko:a:f:u:U:i:Km:dF:D:L:I:y");
 
   if (cl.unrecognised_options_encountered())
   {
@@ -2790,6 +2791,12 @@ iwstats (int argc, char ** argv)
       cerr << "Residuals written to '" << fname << "'\n";
   }
 
+  int ignore_bad_files = 0;
+  if (cl.option_present('y')) {
+    ignore_bad_files = 1;
+  }
+
+
   IWStats::IWStats proto;
 
   int rc = 0;
@@ -2799,6 +2806,9 @@ iwstats (int argc, char ** argv)
     if (! read_the_data(fname, experimental_column, predicted_column, marker_column, marker_column_name, zdata))
     {
       cerr << "Error reading data file '" << fname << "'\n";
+      if (ignore_bad_files) {
+        continue;
+      }
       rc = 1;
       break;
     }

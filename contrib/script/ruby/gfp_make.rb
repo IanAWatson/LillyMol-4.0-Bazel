@@ -134,6 +134,11 @@ end
 # can process that kind of fingerprint.
 fps = config_fingerprints(config_dirs, verbose)
 
+# List fingerprints recoginsed
+# fps.each do |k, v|
+#   $stderr << "#{k} #{v}\n"
+# end
+
 # For each fp_option, a mapping to an object that knows how to
 # generate that command line component.
 fp_option_to_known_fp = {}

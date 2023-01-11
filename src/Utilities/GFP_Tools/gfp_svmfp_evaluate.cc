@@ -94,23 +94,25 @@ ReadBinaryProto(IWString& fname,
 // may have different fingerprints. Need to wait till we can 
 // handle multiple gfp configs at once.
 int
-ReadSingleGfp(const std::string& fname) {
-  iwstring_data_source input(fname);
+ReadSingleGfp(const IWString& mdir, const std::string& fname) {
+  IWString path;
+  path << mdir << '/' << fname;
+  iwstring_data_source input(path);
   if (! input.good()) {
-    cerr << "ReadSingleGfp:cannot open '" << fname << "'\n";
+    cerr << "ReadSingleGfp:cannot open '" << path << "'\n";
     return 0;
   }
 
   IW_TDT tdt;
   if (! tdt.next(input)) {
-    cerr << "ReadSingleGfp:cannot read '" << fname << "'\n";
+    cerr << "ReadSingleGfp:cannot read '" << path << "'\n";
     return 0;
   }
 
   IW_General_Fingerprint notused;
   int fatal = 0;
   if (! notused.construct_from_tdt(tdt, fatal)) {
-    cerr << "ReadSingleGfp:bad gfp data in '" << fname << "'\n";
+    cerr << "ReadSingleGfp:bad gfp data in '" << path << "'\n";
     return 0;
   }
 
@@ -316,7 +318,7 @@ SvmModel::Initialise(const GfpModel::SvmfpModel& model_proto,
 #endif
 
   // Establish gfp state.
-  if (! ReadSingleGfp(model_proto.train_gfp())) {
+  if (! ReadSingleGfp(dir, model_proto.train_gfp())) {
     cerr << "SvmModel::Initialise:cannot read " << model_proto.train_gfp() << '\n';
     return 0;
   }
@@ -425,7 +427,7 @@ SvmModel::ReadSupportVectors(iwstring_data_source& input) {
     }
   }
 
-  if (verbose) {
+  if (verbose > 1) {
     cerr << "Support vectors initialized\n";
   }
 
@@ -674,7 +676,7 @@ GfpSvmfpEvaluate(int argc, char** argv) {
     IWString fname = cl.string_value('M', i);
     const IWString dir_name = iwmisc::IWDirname(fname);
     GfpModel::SvmfpModel model;
-    cerr << "fname " << fname << " dir_name '" << dir_name << "'\n";
+    // cerr << "fname " << fname << " dir_name '" << dir_name << "'\n";
     if (! ReadBinaryProto(fname, model)) {
       cerr << "Cannot read model proto file '" << fname << "'\n"; 
       return 1;

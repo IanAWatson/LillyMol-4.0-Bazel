@@ -1004,7 +1004,7 @@ StratifiedSample::ReadSmilesRecord(const const_IWSubstring& line) {
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vc:n:f:A:R:E:Cab");
+  Command_Line cl(argc, argv, "vc:n:f:A:R:E:CabS:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
