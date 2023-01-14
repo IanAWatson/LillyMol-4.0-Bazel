@@ -245,13 +245,13 @@ exit 0
 
 # For when scoring a .svml file works.
 models.each do |model|
-  tmpsvml = Tempfile.new('lgbm.svml')
+  tmpsvml = Tempfile.new('lctb.svml')
   cmd = "#{gfp_make}  #{model.gfp} #{smiles_files} |" \
          "gfp_to_svm_lite -l -X #{model.bit_xref} -S - -O svml - > #{tmpsvml.path}"
   execute_cmd(cmd, verbose, [tmpsvml.path])
 
-  tmplog = Tempfile.new('lgbm.log')
-  tmpresult = Tempfile.new('lgbm.txt')
+  tmplog = Tempfile.new('lctb.log')
+  tmpresult = Tempfile.new('lctb.txt')
   cmd = "#{evaluate} calc --model-file=#{mdir}/Catboost.model.bin " \
         "--input-path=libsvm://#{tmpsvml.path} --output-path=#{tmpresult.path} " \
         "--output-columns=Probability,Class,SampleId > #{tmplog.path}"
@@ -260,8 +260,8 @@ models.each do |model|
 
   predictions = File.readlines(tmpresult.path)
   raise "Size mismatch #{ids.size} and #{predictions.size}" unless ids.size == predictions.size
-  # Generate a combined file
-  tmpcombined = Tempfile.new('lgbmb.txt')
+  # TODO:ianwatson Generate a combined file
+  tmpcombined = Tempfile.new('lctbb.txt')
   if model.is_classification
     generate_classification_data(model, predictions, ids)
   else

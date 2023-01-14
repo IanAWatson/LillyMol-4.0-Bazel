@@ -153,6 +153,31 @@ BitXref::Build(const GfpBitSubset::GfpBitToFeature& proto) {
   }
 
   _flatten_sparse_counted = proto.params().flatten_sparse_fingerprints();
+
+#ifdef ECHO_BITS
+  cerr << "BitXref::Build\n";
+  for (const auto& [key, value] : _tag_to_bit_to_feature) {
+    cerr << " tag " << key << '\n';
+    for (const auto& [b, x]: value) {
+      cerr << "  bit " << b << " to " << x << '\n';
+    }
+  }
+#endif
+  return 1;
+}
+
+int
+BitXref::DebugPrint(std::ostream& output) const {
+  output << "BitXref::DebugPrint:contains " << _tag_to_bit_to_feature.size() << " tag to feature items\n";
+  output << "nfixed " << _nfixed << " nsparse " << _nsparse << '\n';
+  for (int i = 0; i < _nsparse; ++i) {
+    const BitToFeature* b2f = _sparse[i];
+    output << " sparse fingerprint " << i << '\n';
+    for (const auto [b, f] : *b2f) {
+      output << "    bit " << b << " feature " << f << '\n';
+    }
+  }
+
   return 1;
 }
 
@@ -244,6 +269,7 @@ BitXref::WriteSvmlFeatures(const IW_General_Fingerprint& gfp,
       if (iter == b2f->end()) {
         continue;
       }
+      // cerr << "Bit " << b << " mapped to feature " << iter->second << '\n';
       feature_counts[ndx].feature = iter->second;
       if (_flatten_sparse_counted) {
         feature_counts[ndx].count = 1;
@@ -318,14 +344,14 @@ BitXref::PopulateFeatureVector(const IW_General_Fingerprint& gfp,
                                std::vector<T>& features) const {
   std::fill(features.begin(), features.end(), 0.0);
   int rc = 0;
-  cerr << "PopulateFeatureVector: _nfixed " << _nfixed << " sparse " << _nsparse << '\n';
+  // cerr << "PopulateFeatureVector: _nfixed " << _nfixed << " sparse " << _nsparse << '\n';
   for (int i = 0; i < _nfixed; ++i) {
     IWDYFP& fp = gfp[i];
     int j = 0;
     int bit;
     while ((bit = fp.next_on_bit(j)) >= 0) {
       const auto iter = _fixed[i]->find(bit);
-      cerr << "Checking fixed bit " << bit << " missing " << (iter == _fixed[i]->end()) << '\n';
+      // cerr << "Checking fixed bit " << bit << " missing " << (iter == _fixed[i]->end()) << '\n';
       if (iter == _fixed[i]->end()) {
         continue;
       }
@@ -342,7 +368,7 @@ BitXref::PopulateFeatureVector(const IW_General_Fingerprint& gfp,
     int count;
     while (sfp.next_bit_set(j, bit, count)) {
       const auto iter = _sparse[i]->find(bit);
-      cerr << "Checking bit " << bit << " missing " << (iter == _sparse[i]->end()) << '\n';
+      // cerr << "Checking bit " << bit << " missing " << (iter == _sparse[i]->end()) << '\n';
       if (iter == _sparse[i]->end()) {
         continue;
       }

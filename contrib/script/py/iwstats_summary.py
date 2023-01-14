@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from dataclasses import field, fields
 from itertools import count
 import math
+from statistics import mean
 from typing import Dict, List, Set
 
 from scipy import stats
@@ -21,6 +22,7 @@ from contrib.script.py.lib import iwstats_pb2
 FLAGS = flags.FLAGS
 flags.DEFINE_multi_string('pattern', [], 'pattern definining each series of results, will contain %d')
 flags.DEFINE_string('osep', ' ', 'output token separator')
+flags.DEFINE_enum('sort', '', ['', 'rsquared', 'qsquared', 'ae50', 'rms', 'ae95', 'bsquared'], 'Sort output by a response')
 
 @dataclass
 class Options:
@@ -31,6 +33,8 @@ class Options:
   pattern: List[str] = field(default_factory=list)
   # output token separator.
   osep: str = ' '
+
+  sortby: str = ''
 
 # The various measures that are extracted from the protos.
 @dataclass
@@ -235,13 +239,98 @@ def make_comparisons(results: List[Results],
     tokens.append(ltgt_symbol(field_name, means))
     print(options.osep.join(tokens))
 
+@dataclass
+class ResultAndFile:
+  """When sorting we associate a value with a vile and sort.
+  """
+  fname: str
+  # The number of values that generated `value`.
+  n: int
+  # The mean value derived from one of the items in Results.
+  value: float
+
+  def __init__(self, f: str):
+    self.fname = f
+    self.n = 0
+    self.value = 0.0
+
+def do_sort_results(results: List[Results],
+               fnames: List[str],
+               options: Options) -> None:
+  """Sort the data in `results` by a field and write.
+  Args:
+    results: List of Results protos
+    fnames: the file name asspeciated with each proto
+    options:
+  """
+
+  for_sort: List[ResultAndFile] = []
+  for ndx, result in enumerate(results):
+    res = ResultAndFile(fnames[ndx])
+    if options.sort == 'rsquared':
+      res.value = mean(result.rsquared)
+      res.n = len(result.rsquared)
+    elif options.sort == 'qsquared':
+      res.value = mean(result.qsquared)
+      res.n = len(result.qsquared)
+    elif options.sort == 'ae50':
+      res.value = mean(result.ae50)
+      res.n = len(result.ae50)
+    elif options.sort == 'ae95':
+      res.value = mean(result.ae95)
+      res.n = len(result.ae95)
+    elif options.sort == 'rms':
+      res.value = mean(result.rms)
+      res.n = len(result.rms)
+    elif options.sort == 'bsquared':
+      res.value = mean(result.bsquared)
+      res.n = len(result.bsquared)
+
+    for_sort.append(res)
+
+  for_sort.sort(key=lambda r: r.value)
+
+  header = ['file', 'N', options.sort]
+  print(options.osep.join(header))
+
+  for result in for_sort:
+    res = [result.fname, str(result.n), f'{result.value:.4f}']
+    print(options.osep.join(res))
+
+def do_sort(protos: List[iwstats_pb2.IWStats],
+               fnames: List[str],
+               options: Options) -> None:
+  """Sort the data in `protos` by a field and write.
+  Args:
+    protos: List of iwstats_pb2.IWStats protos
+    fnames: the file name asspeciated with each proto
+    options:
+  """
+  results: List[Results] = []
+  # All results must be for the same response
+  common_pred = ''
+  for proto in protos:
+    res = Results()
+    for file in proto.stats:
+      for data in file.stats:
+        if len(common_pred) == 0:
+          common_pred = data.pred
+        elif data.pred != common_pred:
+          logging.fatal('Predicted name mismatch %s vs %s', common_pred, data.pred)
+
+        do_append(data, res)
+
+    results.append(res)
+
+  return do_sort_results(results, fnames, options)
+
 def comparison(protos: List[iwstats_pb2.IWStats],
                fnames: List[str],
                options: Options) -> None:
-  """
+  """Do pairwise comparisons of the data in `protos`.
   Args:
-    protos:
-    fnames:
+    protos: List of iwstats.iwstats protos
+    fnames: the file name asspeciated with each proto
     options:
   """
   results: List[Results] = []
@@ -279,18 +368,26 @@ def main(argv):
       proto.ParseFromString(reader.read())
 
     summary(options, proto)
+    return
+
+  # IF there are multiple inputs on the command line, we might be making
+  # pairwise comparisons, or we might be sorting
+  # In both cases, the first thing is to assemble all the data.
+  protos = []
+  fnames = []
+  for fname in argv[1:]:
+    fnames.append(fname)
+    proto = iwstats_pb2.IWStats()
+    with open(fname, 'rb') as reader:
+      proto.ParseFromString(reader.read())
+      protos.append(proto)
+
+  if len(FLAGS.sort) > 0:
+    options.sort = FLAGS.sort
+    do_sort(protos, fnames, options)
   elif len(argv) != 3:
     logging.fatal('Can only perform pairwise comparisons')
   else:
-    protos = []
-    fnames = []
-    for fname in argv[1:]:
-      fnames.append(fname)
-      proto = iwstats_pb2.IWStats()
-      with open(fname, 'rb') as reader:
-        proto.ParseFromString(reader.read())
-        protos.append(proto)
-
     comparison(protos, fnames, options)
 
 if __name__ == '__main__':

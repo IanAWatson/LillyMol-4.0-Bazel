@@ -309,7 +309,7 @@ GfpBitsRetained::ImposeSupport() {
   return rc;
 }
 
-// Convert an unordered_map to a BitXref proto.
+// Convert an unordered_map to a BitSubset proto.
 GfpBitSubset::BitSubset
 MakeSubsetProto(const std::unordered_map<gfp_bit_type_t, uint32_t>& count) {
   GfpBitSubset::BitSubset result;
@@ -815,6 +815,7 @@ GfpToSvmLite(IW_TDT& tdt,
     return 1;
   }
 
+  // Or we could/should get the id from `gfp`.
   IWString id;
   if (! tdt.dataitem_value(identifier_tag, id, 0) || id.empty()) {
     cerr << "Cannot extract" << identifier_tag << " from " << tdt << '\n';
@@ -1085,6 +1086,7 @@ GfpToSvmLite(int argc, char** argv) {
     // Generate both protos, even if only one needed. Should be cheap.
     args.bit_subset.Build(bit_xref.ToBitSubsetProto());
     args.bit_xref.Build(bit_xref.ToBitXrefProto());
+    // args.bit_xref.DebugPrint(cerr);
   } else if (cl.option_present('U')) {
     IWString fname = cl.string_value('U');
     if (! args.bit_subset.Build(fname)) {

@@ -3,7 +3,7 @@ import sys
 from typing import List
 
 #import catboost as cb
-from catboost import CatBoostClassifier, Pool
+from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 import numpy as np
 from scipy.sparse import csr_matrix
 
@@ -137,27 +137,28 @@ def catboost_score(argv):
 
   model = get_model_proto(mdir)
 
-  with open(id_file, "r") as inp:
-    ids = inp.readlines()
+  with open(id_file, "r") as reader:
+    ids = reader.readlines()
   logging.vlog(1, f"Read {len(ids)} identifiers from {id_file}")
 
   data = Pool(f"libsvm://{svml_file}")
 
-  classifier = CatBoostClassifier()
-
   model_file_name = os.path.join(mdir, "Catboost.model.bin")
-  classifier.load_model(model_file_name)
 
   response = model.metadata.response_name
 
   if model.metadata.class_label_translation:
+    classifier = CatBoostClassifier()
+    classifier.load_model(model_file_name)
     class_label_translation = get_class_label_translation(mdir, model)
     class_number_to_string = hash_to_list(class_label_translation)
     pred = classifier.predict(data, prediction_type='Probability')
     write_classification_result(ids, response, class_number_to_string, pred)
   else:
+    regressor = CatBoostRegressor()
+    regressor.load_model(model_file_name)
     scaling = get_response_scaling(mdir, model)
-    pred = classifier.predict(data, prediction_type="RawFormulaVal")
+    pred = regressor.predict(data, prediction_type="RawFormulaVal")
     write_regression_result(ids, response, scaling, pred)
 
 

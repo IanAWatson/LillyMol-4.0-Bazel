@@ -101,6 +101,8 @@ class BitXref {
     // Initialisation from proto.
     int Build(const GfpBitSubset::GfpBitToFeature& proto);
 
+    int DebugPrint(std::ostream& output) const;
+
     // Once the GFP environment is set up, initialise.
     // Fails if any fingerprints in _bit_to_feature are not present.
     int InitialiseGfpKnown(const IW_General_Fingerprint& gfp);
