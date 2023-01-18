@@ -10,7 +10,7 @@ def usage
   exit(1)
 end
 
-cl = IWCmdline.new('-v-trpct=ipos-nsplit=ipos-niter=ipos-A=sfile-fp=sfile-catboost=close-xgboost=close-xgboost_config=sfile-lightgbm=close-lightgbm_config=sfile')
+cl = IWCmdline.new('-v-trpct=ipos-nsplit=ipos-niter=ipos-A=sfile-fp=sfile-catboost=close-xgboost=close-xgboost_config=sfile-lightgbm=close-lightgbm_config=sfile-i=ipos')
 
 if cl.unrecognised_options_encountered
   $stderr << "unrecognised_options_encountered\n"
@@ -106,13 +106,19 @@ stem = if cl.option_present('stem')
     'model'
   end
 
+support = if cl.option_present('p')
+    cl.value('p')
+  else
+    1
+  end
+
 fingerprints.each do |fp|
   fp.chomp!
   fps = fp.gsub(/ /, '')
   preds = []
   (0...nsplit).each do |split|
     mdir = "#{stem}_#{fps}_#{split}"
-    cmd = "svmfp_make.sh -mdir #{mdir} -gfp #{fp} -gfp -A #{activity_fname} #{train_files[split]}"
+    cmd = "svmfp_make.sh -p #{support} -mdir #{mdir} -gfp #{fp} -gfp -A #{activity_fname} #{train_files[split]}"
     execute_cmd(cmd, verbose, [])
     pred = "#{stem}_#{fps}_#{split}.pred"
     cmd = "svmfp_evaluate.sh -mdir #{mdir} #{test_files[split]} > #{pred}"

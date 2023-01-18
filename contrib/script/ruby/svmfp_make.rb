@@ -165,7 +165,6 @@ if xgboost
     usage(1)
   end
   xgboost = "xgboost #{xgboost_config} model_dir=#{mdir}"
-  $stderr << "Copying #{xgboost_config} to #{mdir}\n"
   FileUtils.cp(xgboost_config, mdir)
 end
 
