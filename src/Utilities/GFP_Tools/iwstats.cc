@@ -2289,6 +2289,94 @@ parse_dash_p (const const_IWSubstring & p,
   return 1;
 }
 
+// when sorting values accumulated in a proto, we need to keep track of
+// a file name and the mean of some values.
+
+struct FnameAndValue {
+  public:
+    IWString fname;
+    float value;
+  public:
+    FnameAndValue();
+};
+
+FnameAndValue::FnameAndValue() {
+  value = 0.0f;
+}
+
+// Data has been accumulated in `proto`. Generate summary statistics for the
+// first item only - too complex otherwise.
+static void
+SummaryStats(const IWStats::IWStats& proto, std::ostream& output) {
+  const int nfiles = proto.stats().size();
+  if (nfiles == 0) {
+    cerr << "SummaryStats:no data\n";
+    return;
+  }
+
+  static constexpr char kSep = ' ';
+
+  Accumulator<double> acc;
+  for (int i = 0; i < nfiles; ++i) {
+    acc.extra(proto.stats(i).stats(0).rms_error());
+  }
+  output << "RMS" << kSep << 'N' << kSep << nfiles << kSep << static_cast<float>(acc.average()) << '\n';
+
+  acc.reset();
+  for (int i = 0; i < nfiles; ++i) {
+    acc.extra(proto.stats(i).stats(0).rsquared());
+  }
+  output << "rsquared" << kSep << 'N' << kSep << nfiles << kSep << static_cast<float>(acc.average()) << '\n';
+
+  acc.reset();
+  for (int i = 0; i < nfiles; ++i) {
+    acc.extra(proto.stats(i).stats(0).qsquared());
+  }
+  output << "qsquared" << kSep << 'N' << kSep << nfiles << kSep << static_cast<float>(acc.average()) << '\n';
+
+  acc.reset();
+  for (int i = 0; i < nfiles; ++i) {
+    acc.extra(proto.stats(i).stats(0).ae50());
+  }
+  output << "ae50" << kSep << 'N' << kSep << nfiles << kSep << static_cast<float>(acc.average()) << '\n';
+
+  acc.reset();
+  for (int i = 0; i < nfiles; ++i) {
+    acc.extra(proto.stats(i).stats(0).ae95());
+  }
+  output << "ae95" << kSep << 'N' << kSep << nfiles << kSep << static_cast<float>(acc.average()) << '\n';
+
+  acc.reset();
+  for (int i = 0; i < nfiles; ++i) {
+    acc.extra(proto.stats(i).stats(0).bsquared());
+  }
+  output << "bsquared" << kSep << 'N' << kSep << nfiles << kSep << static_cast<float>(acc.average()) << '\n';
+
+#ifdef SORT_IF_MULTIPLE_THINGS_PRESENT
+  // Not implemented yet, maybe...
+  const auto low_to_high = [](const FnameAndValue& fv1, const FnameAndValue& fv2) {
+    return fv1.value < fv2.value;
+  };
+  const auto high_to_low = [](const FnameAndValue& fv1, const FnameAndValue& fv2) {
+    return fv1.value > fv2.value;
+  };
+  std::unique_ptr<FnameAndValue[]> results = std::make_unique<FnameAndValue[]>(nfiles);
+  for (int i = 0; i < nfiles; ++i) {
+    const IWStats::IWStatsFile& data = proto.stats(i);
+    results[i].fname = data.fname();
+    const IWStats::Stats& stats = data.stats(0);
+    results[i].value = stats.rms_error();
+  }
+
+  std::sort(results.get(), results.get() + nfiles, low_to_high);
+  for (int i = 0; i < nfiles; ++i) {
+    output << results[i].fname << kSep << results[i].value << '\n';
+  }
+#endif
+
+  return;
+}
+
 static int
 iwstats (int argc, char ** argv)
 {
@@ -2803,7 +2891,8 @@ iwstats (int argc, char ** argv)
   for (const char* fname : cl) {
     resizable_array_p<Predicted_Values> zdata(2000);
 
-    if (! read_the_data(fname, experimental_column, predicted_column, marker_column, marker_column_name, zdata))
+    if (! read_the_data(fname, experimental_column, predicted_column, marker_column,
+                        marker_column_name, zdata))
     {
       cerr << "Error reading data file '" << fname << "'\n";
       if (ignore_bad_files) {
@@ -2866,14 +2955,18 @@ iwstats (int argc, char ** argv)
   if (nullptr != column_titles)
     delete [] column_titles;
 
-  if (! stem_for_proto_files.empty()) {
-    IWString fname;
-    fname << stem_for_proto_files << ".dat";
-    if (! iwmisc::WriteBinaryProto<IWStats::IWStats>(proto, fname)) {
-      cerr << "Cannot write IWStats::stats proto to '" << fname << "'\n";
-      return 1;
-    }
+  if (stem_for_proto_files.empty()) {
+    return rc;
   }
+
+  IWString fname;
+  fname << stem_for_proto_files << ".dat";
+  if (! iwmisc::WriteBinaryProto<IWStats::IWStats>(proto, fname)) {
+    cerr << "Cannot write IWStats::stats proto to '" << fname << "'\n";
+    return 1;
+  }
+
+  SummaryStats(proto, cerr);
 
   return rc;
 }
