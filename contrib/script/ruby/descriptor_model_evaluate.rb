@@ -3,6 +3,7 @@
 require 'tempfile'
 
 require_relative 'lib/iwcmdline.rb'
+require_relative 'lib/gfp_model_pb'
 
 def usage
   $stderr << "Score a molecular descriptor model built with descriptor_model_make\n"
@@ -21,6 +22,12 @@ def execute_cmd(cmd, verbose, files_created)
   end
 
   true
+end
+
+# Return the proto contents of "#{mdir}/model.dat"
+def get_model_proto(fname)
+  raise "#{fname} not present" unless File.size?(fname)
+  GfpModel::DescriptorModel.decode(File.read(fname))
 end
 
 # Compute one or more descriptor sets for `smiles`.
@@ -55,7 +62,7 @@ def convert_to_libsvm(verbose, input, destination)
     f = line.chomp.split
     destination << "0";
     f[1..].each_with_index do |token, ndx|
-      destination << " #{ndx}:#{token}"
+      destination << " #{ndx + 1}:#{token}"
     end
     destination << "\n"
   end
@@ -100,10 +107,15 @@ def main
     exit 1
   end
 
-  scripts = cl.values('desc')
-  if scripts.empty?
-    scripts << 'iwdescr -O all'
+  model_proto = get_model_proto("#{mdir}/model.dat")
+
+  xgboost_config = "#{mdir}/xgboost.config"
+  unless File.size?(xgboost_config)
+    $stderr << "#{xgboost_config} missing or empty\n"
+    exit 1
   end
+
+  scripts = model_proto.descriptor_generator
 
   descriptors = Tempfile.new("descriptor_model_eval")
   dpath = descriptors.path
@@ -117,20 +129,19 @@ def main
   libsvm = Tempfile.new("descriptor_model_eval.libsvm")
   convert_to_libsvm(verbose, dpath, libsvm)
   libsvm.close(unlink_now=false)
-  system("cp #{libsvm.path} .")
 
   cmd = 'xgboost'
-  cmd << " #{mdir}/xgboost.conf"
+  cmd << " #{xgboost_config}"
   cmd << " test:data=#{libsvm.path}"
   cmd << ' task=pred'
-  cmd << " model_in=#{mdir}/0500.model"
+  cmd << " model_in=#{mdir}/#{model_proto.model_file}"
   tmp_pred = Tempfile.new("descriptor_model_pred")
   tmp_pred.close(unlink_now = false)
   cmd << " name_pred=#{tmp_pred.path}"
   execute_cmd(cmd, verbose, [tmp_pred.path])
   ids = get_ids(smiles)
   ndx = 0
-  $stdout << "ID Activity\n"
+  $stdout << "ID #{model_proto.metadata.response_name}\n"
   File.readlines(tmp_pred.path).each do |line|
     $stdout << "#{ids[ndx]} #{line}"
     ndx += 1

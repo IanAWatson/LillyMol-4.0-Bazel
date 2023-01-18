@@ -1,26 +1,29 @@
 # Build a descriptor model.
 # Takes a smiles file and an activity file, together with a list
 # of commands that can generate descriptors, iwdescr.sh by default
+# frozen_string_literal: true
 
 require 'date'
 require 'fileutils'
 require 'tempfile'
 require 'google/protobuf'
 
-require_relative 'lib/iwcmdline.rb'
+require_relative 'lib/iwcmdline'
+require_relative 'lib/gfp_model_pb'
 
 def usage
   $stderr << "Build a molecular descriptor model\n"
   $stderr << " -A <fname>   activity file data (mandatory)\n"
   $stderr << " -mdir <dir>  create model in <mdir>\n"
   $stderr << " -xgboost ... -xgboost  build an xgboost model\n"
+  $stderr << " -xgboost_config <fname> xgboost config file\n"
   $stderr << " -desc <script>  specify one or more tools that generate descriptors\n"
   $stderr << " -c            classification model\n"
   exit
 end
 
 def execute_cmd(cmd, verbose, files_created)
-  $stderr << "Executing '#{cmd}\n" if verbose
+  $stderr << "Executing '#{cmd}'\n" if verbose
   system(cmd)
   files_created.each do |fname|
     unless File.size?(fname)
@@ -40,26 +43,31 @@ def compute_descriptors(verbose, smiles, scripts, destination)
     return true
   end
 
+  unlink_now = false
   # Multiple scripts, we just execute each and join the resulting files
   tempfiles = []
   scripts.each do |script|
-    tmp = Tempfile.new("compute_descriptors").path
-    cmd = "#{script} #{smiles} > #{tmp}"
-    execute_cmd(cmd, verbose, [tmp])
-    tempfiles.push(tmp)
+    tmp = Tempfile.new('compute_descriptors')
+    tmp.close(unlink_now)
+    cmd = "#{script} #{smiles} > #{tmp.path}"
+    execute_cmd(cmd, verbose, [tmp.path])
+    tempfiles.push(tmp.path)
   end
 
   cmd = "concat_files #{tempfiles.join(' ')} > #{destination}"
   execute_cmd(cmd, verbose, [destination])
-  return true
+  true
 end
 
-def convert_to_libsvm(verbose, descriptors, activity_fname, destination)
+# Convert `descriptor_file` to libsvm form as `destination_fname`.
+# `activity_fname` is a descriptor file holding the activity data.
+# We return the response name.
+def convert_to_libsvm(verbose, descriptor_file, activity_fname, destination_fname)
   activity = {}
-  first_line = true
+  response_name = ''
   File.readlines(activity_fname).each do |line|
-    if first_line
-      first_line = false
+    if response_name.empty?
+      response_name = line.chomp.split[1]
       next
     end
     f = line.chomp.split
@@ -67,31 +75,59 @@ def convert_to_libsvm(verbose, descriptors, activity_fname, destination)
   end
 
   $stderr << "Read #{activity.size} activity values from #{activity_fname}\n" if verbose
-  first_line = true
-  File.readlines(descriptors).each do |line|
-    if first_line
-      first_line = false
-      next
-    end
-    f = line.chomp.split
-    unless activity.key?(f[0])
-      $stderr << "No activity for #{f[0]}\n"
-      return false
-    end
-    destination << activity[f[0]]
-    # $stderr << "id #{f[0]} activity #{activity[f[0]]}\n"
+  File.open(destination_fname, 'w') do |destination|
+    first_line = true
+    File.readlines(descriptor_file).each do |line|
+      if first_line
+        first_line = false
+        next
+      end
+      f = line.chomp.split
+      unless activity.key?(f[0])
+        $stderr << "No activity for #{f[0]}\n"
+        return false
+      end
+      destination << activity[f[0]]
+      # $stderr << "id #{f[0]} activity #{activity[f[0]]}\n"
 
-    f[1..].each_with_index do |token, ndx|
-      destination << " #{ndx + 1}:#{token}"
+      f[1..].each_with_index do |token, ndx|
+        destination << " #{ndx + 1}:#{token}"
+      end
+      destination << "\n"
     end
-    destination << "\n"
   end
 
-  true
+  response_name
+end
+
+# A model file has been created in `mdir`. return the name.
+# Note that this will silently fail of there are multiple model
+# files in the directory and the one we want is not the first found.
+def get_xgboost_model_file(mdir)
+  maybe = Dir.children(mdir).filter { |fname| /^\d+\.model$/.match(fname) }
+
+  if maybe.empty?
+    $stderr << "No model file in #{mdir}\n"
+    return nil
+  end
+
+  return maybe.first
+end
+
+# The metadata attribute is common among all model types.
+def populate_metadata(model, response_name, classification)
+  model.metadata = GfpModel::ModelMetadata.new
+  model.metadata.date_built = Time.now.to_s
+  model.metadata.response_name = response_name
+  if classification
+    model.metadata.class_label_translation = 'class_label_translation.dat'
+  else
+    model.metadata.response_scaling = 'response_scaling.dat'
+  end
 end
 
 def main
-  cl = IWCmdline.new('-v-A=sfile-mdir=s-xgboost=close-desc=s-C')
+  cl = IWCmdline.new('-v-A=sfile-mdir=s-xgboost=close-xgboost_config=sfile-desc=s-C')
 
   if cl.unrecognised_options_encountered
     $stderr << "unrecognised_options_encountered\n"
@@ -115,6 +151,13 @@ def main
     usage
   end
 
+  unless cl.option_present('xgboost_config')
+    $stderr << "Must specify xgboost config file via the -xgboost_config option\n"
+    usage
+  end
+
+  xgboost_config = cl.value('xgboost_config')
+
   smiles = ARGV[0]
 
   mdir = cl.value('mdir')
@@ -127,35 +170,47 @@ def main
   end
 
   scripts = cl.values('desc')
-  if scripts.empty?
-    scripts << 'iwdescr -O all'
-  end
+  scripts << 'iwdescr -O all' if scripts.empty?
 
-  descriptors = Tempfile.new("descriptor_model")
+  descriptors = Tempfile.new('descriptor_model')
   dpath = descriptors.path
-  descriptors.close(unlink_now=false)
+  unlink_now = false
+  descriptors.close(unlink_now)
   compute_descriptors(verbose, smiles, scripts, dpath)
   unless File.size?(dpath)
     $stderr << "Descriptor file #{dpath} not generated\n"
     exit 1
   end
 
-  libsvm = Tempfile.new("descriptor_model.libsvm")
-  convert_to_libsvm(verbose, dpath, cl.value('A'), libsvm)
-  libsvm.close(unlink_now=false)
+  libsvm = "#{mdir}/train.libsvm"
+  response_name = convert_to_libsvm(verbose, dpath, cl.value('A'), libsvm)
 
-  cmd = "xgboost"
+  cmd = String.new
+  cmd << 'xgboost'
+  cmd << ' ' << xgboost_config
   cmd << ' ' << cl.value('xgboost') if cl.option_present('xgboost')
-  if cl.option_present('C')
-    cmd << " objective=binary:logistic"
-  else
-    cmd << " objective=reg:squarederror"
-  end
+  cmd << if cl.option_present('C')
+            ' objective=binary:logistic'
+          else
+            ' objective=reg:squarederror'
+          end
   cmd << " model_dir=#{mdir}"
-  cmd << " data=#{libsvm.path}?format=libsvm"
+  cmd << " data=#{libsvm}?format=libsvm"
   execute_cmd(cmd, verbose, [])
-  #FileUtils.cp
 
+  model = GfpModel::DescriptorModel.new
+  populate_metadata(model, response_name, cl.option_present('C'))
+  scripts.each do |script|
+    model.descriptor_generator << script
+  end
+
+  model.model_file = get_xgboost_model_file(mdir)
+
+  File.write("#{mdir}/model.dat", GfpModel::DescriptorModel.encode(model))
+  File.write("#{mdir}/model.json", GfpModel::DescriptorModel.encode_json(model))
+  FileUtils.cp(xgboost_config, "#{mdir}/xgboost.config")
+  FileUtils.cp(smiles, mdir)
+  FileUtils.cp(cl.value('A'), "#{mdir}/train.activity")
 end
 
 main

@@ -51,6 +51,8 @@ def get_threshold_b(model_file)
 end
 
 # A model file has been created in `mdir`. return the name.
+# Note that this will silently fail of there are multiple model
+# files in the directory and the one we want is not the first found.
 def get_xgboost_file(mdir)
   maybe = Dir.children(mdir).filter { |fname| /^\d+\.model$/.match(fname) }
 
