@@ -718,11 +718,9 @@ ProfileBits(const IW_General_Fingerprint& gfp,
              GfpBitsRetained& bit_xref) {
   const auto [nfixed, nsparse] = GetNumberFingerprints();
 
-  cerr << "Profiling " << nfixed << " fixed fingerprints id " << gfp.id() << '\n';
   for (int i = 0; i < nfixed; ++i) {
     bit_xref.ProfileBits(gfp[i], i);
   }
-  cerr << "Profiling " << nsparse << " sparse fingerprints\n";
   for (int i = 0; i < nsparse; ++i) {
     bit_xref.ProfileBits(gfp.sparse_fingerprint(i), i);
   }

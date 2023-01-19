@@ -61,7 +61,10 @@ def get_xgboost_file(mdir)
     return nil
   end
 
-  return maybe.first
+  # sort by time modified and take the most recent.
+
+  maybe.sort_by! { |t| File.mtime("#{mdir}/#{t}") }
+  return maybe.last
 end
 
 # `activity_file` has been identified as containing classification data.
