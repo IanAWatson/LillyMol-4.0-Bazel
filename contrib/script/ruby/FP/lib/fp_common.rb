@@ -47,7 +47,7 @@ end
 #  Raise an exception if both atom type forms are specified.
 def parse_fp_token_inner(fp)
   return nil, nil if fp.empty?
-  $stderr << "parse_fp_token_inner processing #{fp}\n"
+  # $stderr << "parse_fp_token_inner processing #{fp}\n"
   f = fp.split(':')
   ust_atype = if f.length == 1
                nil

@@ -447,10 +447,12 @@ GfpBitsRetained::writeBitXrefProto(IWString& fname) const {
 int
 GfpBitsRetained::ProfileBits(const IWDYFP& fp,
                 int fpnum) {
-  int bit = 0;
-  while (fp.next_on_bit(bit)) {
+  int ndx = 0;
+  int bit;
+  while ((bit = fp.next_on_bit(ndx)) >= 0) {
     UpdateHash(_dense_count[fpnum], bit);
   }
+
   return 1;
 }
 
@@ -716,9 +718,11 @@ ProfileBits(const IW_General_Fingerprint& gfp,
              GfpBitsRetained& bit_xref) {
   const auto [nfixed, nsparse] = GetNumberFingerprints();
 
+  cerr << "Profiling " << nfixed << " fixed fingerprints id " << gfp.id() << '\n';
   for (int i = 0; i < nfixed; ++i) {
     bit_xref.ProfileBits(gfp[i], i);
   }
+  cerr << "Profiling " << nsparse << " sparse fingerprints\n";
   for (int i = 0; i < nsparse; ++i) {
     bit_xref.ProfileBits(gfp.sparse_fingerprint(i), i);
   }
@@ -1083,9 +1087,12 @@ GfpToSvmLite(int argc, char** argv) {
     }
     bit_xref.ConvertToCrossReference();
     WriteProtos(bit_xref, fname);
+    cerr << "Protos written, building subset\n";
     // Generate both protos, even if only one needed. Should be cheap.
     args.bit_subset.Build(bit_xref.ToBitSubsetProto());
+    cerr << "Subset built, building xref\n";
     args.bit_xref.Build(bit_xref.ToBitXrefProto());
+    cerr << "xref built\n";
     // args.bit_xref.DebugPrint(cerr);
   } else if (cl.option_present('U')) {
     IWString fname = cl.string_value('U');

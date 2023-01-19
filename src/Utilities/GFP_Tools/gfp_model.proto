@@ -85,3 +85,13 @@ message XGBoostModel {
   // The entire xgboost command line used for training.
   string training_cmdline = 7;
 }
+
+message DescriptorModel {
+  ModelMetadata metadata = 1;
+
+  // One of more executables that will convert a smiles
+  // to descriptor file.
+  repeated string descriptor_generator = 2;
+
+  string model_file = 3;
+}
