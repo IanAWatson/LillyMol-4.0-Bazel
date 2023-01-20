@@ -188,6 +188,10 @@ FingerprintSubset::Initialise(Command_Line& cl)
     return 0;
   }
 
+  for (Substructure_Query* q : _queries) {
+    q->set_find_unique_embeddings_only(1);
+  }
+
   if (cl.option_present('z')) {
     const_IWSubstring z;
     for (int i = 0; cl.value('z', z, i); ++i) {
@@ -289,6 +293,7 @@ FingerprintSubset::Process(Molecule& m, IWString_and_File_Descriptor& output)
       continue;
     }
 
+    // cerr << "Got " << nhits << " matches to query " << q->comment() << '\n';
     for (const Set_of_Atoms* e : sresults.embeddings()) {
       Process(m, *e, output);
       ++got_match;
