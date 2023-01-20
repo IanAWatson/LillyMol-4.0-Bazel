@@ -75,6 +75,13 @@ class FingerprintSubset {
 
   Atom_Typing_Specification _atom_typing;
 
+  // We can optionally apply an isotopic label to the matched atoms.
+  // Note that currently we reset any isotopic information on the input
+  // molecule. For each match, apply the isotope to the molecule and then
+  // clear all isotopic information.
+  // Fix if this ever becomes a problem.
+  int _isotope;
+
   FileType _input_type;
 
   Chemical_Standardisation _chemical_standardisation;
@@ -94,6 +101,7 @@ class FingerprintSubset {
                     IWString_and_File_Descriptor& output);
   int IWFP(Molecule& m, const uint32_t* atype, const int* in_subset,
            IWString_and_File_Descriptor& output);
+  int MaybeApplyIsotopes(Molecule& m, const Set_of_Atoms& embedding) const;
   int DoOutput(Molecule& m, const Sparse_Fingerprint_Creator& sfc,
                IWString_and_File_Descriptor& output);
 
@@ -122,6 +130,7 @@ FingerprintSubset::FingerprintSubset()
   _fptype = FingerprintType::kLinear;
   _ignore_molecules_not_matching_any_queries = 0;
   _input_type = FILE_TYPE_INVALID;
+  _isotope = 0;
 }
 
 int
@@ -243,6 +252,16 @@ FingerprintSubset::Initialise(Command_Line& cl)
     _fptype = FingerprintType::kLinear;
   }
 
+  if (cl.option_present('I')) {
+    if (! cl.value('I', _isotope) || _isotope < 1) {
+      cerr << "Invalid isotope (-I) specification\n";
+      return 0;
+    }
+    if (_verbose) {
+      cerr << "Will apply isotope " << _isotope << " to matched atoms\n";
+    }
+  }
+
   if (1 == cl.number_elements() && 0 == strcmp("-", cl[0])) {  //  reading a pipe, assume smiles
     _input_type = FILE_TYPE_SMI;
   }
@@ -295,6 +314,9 @@ FingerprintSubset::Process(Molecule& m, IWString_and_File_Descriptor& output)
 
     // cerr << "Got " << nhits << " matches to query " << q->comment() << '\n';
     for (const Set_of_Atoms* e : sresults.embeddings()) {
+      if (_isotope > 0) {
+        m.transform_to_non_isotopic_form();
+      }
       Process(m, *e, output);
       ++got_match;
     }
@@ -342,6 +364,8 @@ FingerprintSubset::Process(Molecule& m, const Set_of_Atoms& embedding,
 {
   ++_molecules_read;
 
+  MaybeApplyIsotopes(m, embedding);
+
   const int matoms = m.natoms();
   std::unique_ptr<int[]> in_subset(new_int(matoms));
   embedding.set_vector(in_subset.get(), 1);
@@ -368,6 +392,15 @@ FingerprintSubset::Process(Molecule& m, const Set_of_Atoms& embedding,
 
   cerr << "Should not come to here\n";
   return 0;
+}
+
+int
+FingerprintSubset::MaybeApplyIsotopes(Molecule& m, const Set_of_Atoms& embedding) const {
+  if (_isotope <= 0) {
+    return 0;
+  }
+
+  return m.set_isotope(embedding, _isotope);
 }
 
 int
@@ -518,7 +551,7 @@ MoleculeSubsetFingerprint(FingerprintSubset& fingerprint_subset, const char* fna
 int
 Main(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcJ:R:s:q:P:F:z:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcJ:R:s:q:P:F:z:I:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

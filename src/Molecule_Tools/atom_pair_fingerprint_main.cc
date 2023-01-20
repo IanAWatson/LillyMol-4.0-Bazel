@@ -1,9 +1,10 @@
 // Compute atom pair fingerprints.
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
+
 using std::cerr;
-using std::endl;
 
 #include "Foundational/accumulator/accumulator.h"
 #include "Foundational/cmdline/cmdline.h"
@@ -54,7 +55,7 @@ fingerprint_writer::FingerprintWriter fp_writer;
 void
 usage(int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Computes atom pair fingerprints\n";
   cerr << "  -r <sep>      minimum bond separation (def 1)\n";
   cerr << "                set to 0 to get single atom type fingerprint included\n";
@@ -211,7 +212,7 @@ DoAtomPairFingerprintPipe(iwstring_data_source& input,
       continue;
 
     if (! DoAtomPairFingerprintPipe(line, atom_pair_fp_gen, output)) {
-      cerr << "AtomPairFingerprintPipe:invalid input " << line << "' line " << input.lines_read() << endl;
+      cerr << "AtomPairFingerprintPipe:invalid input " << line << "' line " << input.lines_read() << '\n';
       return 0;
     }
 
@@ -231,7 +232,7 @@ DoAtomPairFingerprint(const char * fname, FileType input_type,
   if (function_as_tdt_filter) {
     iwstring_data_source input(fname);
     if (! input.good()) {
-      cerr << "AtomPairFingerprint::cannot open filter " << fname << endl;
+      cerr << "AtomPairFingerprint::cannot open filter " << fname << '\n';
       return 0;
     }
 
@@ -305,7 +306,7 @@ DoAtomPairFingerprint(int argc, char ** argv)
   if (cl.option_present('R'))
   {
     if (! cl.value('R', max_separation) || max_separation < min_separation) {
-      cerr << "Max separation (-R) must be larger than min_separation " << min_separation << endl;
+      cerr << "Max separation (-R) must be larger than min_separation " << min_separation << '\n';
       return 1;
     }
 
