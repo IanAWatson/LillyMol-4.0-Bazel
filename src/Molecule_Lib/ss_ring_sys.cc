@@ -482,11 +482,10 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
 int
 Substructure_Ring_System_Specification::_ring_size_counts_matched(const resizable_array<int> & ring_sizes_encountered) const
 {
+  // cerr << " Checking " << ring_sizes_encountered.number_elements() << " ring sizes found\n";
+  // cerr << "_ring_size_count contains " << _ring_size_count.size() << " items\n";
   for (int i = 3; i < ring_sizes_encountered.number_elements(); ++i)
   {
-    if (0 == ring_sizes_encountered[i])
-      continue;
-
 //  cerr << "Substructure_Ring_System_Specification::_ring_size_counts_matched:encountered " << ring_sizes_encountered[i] << " rings of size " << i << endl;
     // Find any ring size count specification for this ring size.
     for (const RingSizeCount* rsc : _ring_size_count)
@@ -494,7 +493,7 @@ Substructure_Ring_System_Specification::_ring_size_counts_matched(const resizabl
       if (rsc->ring_size() != i)
         continue;
 
-//    cerr << "Found ring size count for " << i << " atoms, matches " << rsc->Matches(ring_sizes_encountered[i]) << endl;
+      // cerr << "Found ring size count for " << i << " atoms, matches " << rsc->Matches(ring_sizes_encountered[i]) << endl;
 
       if (rsc->Matches(ring_sizes_encountered[i]))
         return 1;

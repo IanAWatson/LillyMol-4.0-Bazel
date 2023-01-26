@@ -2891,16 +2891,14 @@ Substructure_Ring_System_Specification::ConstructFromProto(const SubstructureSea
 
   for (const auto& ring_size_count : proto.ring_size_count()) {
     RingSizeCount * r = new RingSizeCount();
-    if (! r->ConstructFromProto(ring_size_count))
-    {
+    if (! r->ConstructFromProto(ring_size_count)) {
       cerr << "Substructure_Ring_System_Specification::ConstructFromProto:invalid ring size\n";
       cerr << ring_size_count.ShortDebugString() << endl;
       delete r;
       return 0;
     }
 
-    if (ring_sizes_encountered[ring_size_count.ring_size()])
-    {
+    if (ring_sizes_encountered[ring_size_count.ring_size()]) {
       cerr << "Substructure_Ring_System_Specification::ConstructFromProto:duplicate ring size specificiation in ring size count\n";
       cerr << proto.ShortDebugString() << endl;
       delete r;

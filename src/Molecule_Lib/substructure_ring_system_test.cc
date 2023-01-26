@@ -106,9 +106,11 @@ TEST_F(TestSubstructureRingSystem, TestNoRingsNoMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+  constexpr int kExpected = 0;
 
-  EXPECT_TRUE(_DoPermutationTests(0));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingIsRingSystem)
@@ -133,9 +135,11 @@ TEST_F(TestSubstructureRingSystem, TestRingIsRingSystem)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 3);
+  constexpr int kExpected = 3;
 
-  EXPECT_TRUE(_DoPermutationTests(3));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingMatches1)
@@ -160,9 +164,11 @@ TEST_F(TestSubstructureRingSystem, TestRingMatches1)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 4);
+  constexpr int kExpected = 4;
 
-  EXPECT_TRUE(_DoPermutationTests(4));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingMatches2)
@@ -187,9 +193,11 @@ TEST_F(TestSubstructureRingSystem, TestRingMatches2)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 9);
+  constexpr int kExpected = 9;
 
-  EXPECT_TRUE(_DoPermutationTests(9));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingHitsNeededNoMatch)
@@ -214,9 +222,11 @@ TEST_F(TestSubstructureRingSystem, TestRingHitsNeededNoMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 0);
+  constexpr int kExpected = 0;
 
-  EXPECT_TRUE(_DoPermutationTests(0));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestCubane)
@@ -241,9 +251,11 @@ TEST_F(TestSubstructureRingSystem, TestCubane)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 8);
+  constexpr int kExpected = 8;
 
-  EXPECT_TRUE(_DoPermutationTests(8));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingSizes)
@@ -269,9 +281,11 @@ TEST_F(TestSubstructureRingSystem, TestRingSizes)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  EXPECT_EQ(_query.substructure_search(_m, _sresults), 5);
+  constexpr int kExpected = 5;
 
-  EXPECT_TRUE(_DoPermutationTests(5));
+  EXPECT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingSizesExtra)
@@ -293,9 +307,11 @@ TEST_F(TestSubstructureRingSystem, TestRingSizesExtra)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 6);
+  constexpr int kExpected = 6;
 
-  EXPECT_TRUE(_DoPermutationTests(6));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingSizeCountMatches)
@@ -320,9 +336,11 @@ TEST_F(TestSubstructureRingSystem, TestRingSizeCountMatches)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 6);
+  constexpr int kExpected = 6;
 
-  EXPECT_TRUE(_DoPermutationTests(6));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingSizeCountNoMatches)
@@ -347,9 +365,10 @@ TEST_F(TestSubstructureRingSystem, TestRingSizeCountNoMatches)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 0);
+  constexpr int kExpected = 0;
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(0));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestRingSizeCountMultipleMatches)
@@ -378,9 +397,40 @@ TEST_F(TestSubstructureRingSystem, TestRingSizeCountMultipleMatches)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 7);
+  constexpr int kExpected = 7;
 
-  EXPECT_TRUE(_DoPermutationTests(7));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
+}
+
+TEST_F(TestSubstructureRingSystem, TestRingSizeCountNoRing)
+{
+  _string_proto = R"(
+    query {
+      ring_system_specifier {
+        ring_size_count {
+          ring_size: 3
+          count: 1
+        }
+      }
+      smarts: "C"
+    }
+  )";
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(_string_proto, &_proto));
+
+  EXPECT_TRUE(_query.ConstructFromProto(_proto)) << "Cannot parse proto " << _proto.ShortDebugString();
+
+  _smiles = "C1CCC1";
+
+  ASSERT_TRUE(_m.build_from_smiles(_smiles));
+
+  constexpr int kExpected = 0;
+
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAromaticRingCountNone)
@@ -402,9 +452,11 @@ TEST_F(TestSubstructureRingSystem, TestAromaticRingCountNone)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 0);
+  constexpr int kExpected = 0;
 
-  EXPECT_TRUE(_DoPermutationTests(0));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAromaticRingCountOne)
@@ -426,9 +478,11 @@ TEST_F(TestSubstructureRingSystem, TestAromaticRingCountOne)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 1);
+  constexpr int kExpected = 1;
 
-  EXPECT_TRUE(_DoPermutationTests(1));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAromaticRingCountTwo)
@@ -450,9 +504,11 @@ TEST_F(TestSubstructureRingSystem, TestAromaticRingCountTwo)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 1);
+  constexpr int kExpected = 1;
 
-  EXPECT_TRUE(_DoPermutationTests(1));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestNonAromaticRingNone)
@@ -474,9 +530,11 @@ TEST_F(TestSubstructureRingSystem, TestNonAromaticRingNone)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 0);
+  constexpr int kExpected = 0;
 
-  EXPECT_TRUE(_DoPermutationTests(0));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestNonAromaticRingMatchesOne)
@@ -546,9 +604,11 @@ TEST_F(TestSubstructureRingSystem, TestNonAromaticRingMatchesNoSpiro)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), 0);
+  constexpr int kExpected = 0;
 
-  EXPECT_TRUE(_DoPermutationTests(0));
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
+
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionNoneFused)
@@ -570,11 +630,11 @@ TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionNoneFused)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 3;
+  constexpr int kExpected = 3;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionOneFused)
@@ -596,11 +656,11 @@ TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionOneFused)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;
+  constexpr int kExpected = 0;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionOneFusedMatches)
@@ -622,11 +682,11 @@ TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionOneFusedMatches)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 4;
+  constexpr int kExpected = 4;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionThreeFusedMatches)
@@ -648,11 +708,11 @@ TEST_F(TestSubstructureRingSystem, TestDegreeOfFusionThreeFusedMatches)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 9;
+  constexpr int kExpected = 9;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAtomsInSystemNoSpiro)
@@ -674,11 +734,11 @@ TEST_F(TestSubstructureRingSystem, TestAtomsInSystemNoSpiro)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;
+  constexpr int kExpected = 0;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAtomsInSystemXSpiro)
@@ -700,11 +760,11 @@ TEST_F(TestSubstructureRingSystem, TestAtomsInSystemXSpiro)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 9;
+  constexpr int kExpected = 9;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestNumberSpinachGroupsNoSPiro)
@@ -727,11 +787,11 @@ TEST_F(TestSubstructureRingSystem, TestNumberSpinachGroupsNoSPiro)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;
+  constexpr int kExpected = 0;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestNumberSpinachGroupsNoMatch)
@@ -753,11 +813,11 @@ TEST_F(TestSubstructureRingSystem, TestNumberSpinachGroupsNoMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;  // Not all in the same ring system.
+  constexpr int kExpected = 0;  // Not all in the same ring system.
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestNumberSpinachGroupsMatch)
@@ -779,11 +839,11 @@ TEST_F(TestSubstructureRingSystem, TestNumberSpinachGroupsMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 2;
+  constexpr int kExpected = 2;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestNumberNonSpinachGroupsMatch)
@@ -805,11 +865,11 @@ TEST_F(TestSubstructureRingSystem, TestNumberNonSpinachGroupsMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 2;
+  constexpr int kExpected = 2;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAtomsInSpinachNone)
@@ -831,11 +891,11 @@ TEST_F(TestSubstructureRingSystem, TestAtomsInSpinachNone)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;
+  constexpr int kExpected = 0;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestAtomsInSpinachMatch)
@@ -857,11 +917,11 @@ TEST_F(TestSubstructureRingSystem, TestAtomsInSpinachMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 2;
+  constexpr int kExpected = 2;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestLengthOfSpinachGroup)
@@ -883,11 +943,11 @@ TEST_F(TestSubstructureRingSystem, TestLengthOfSpinachGroup)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 2;
+  constexpr int kExpected = 2;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestLengthOfSpinachGroupNoMatch)
@@ -909,11 +969,11 @@ TEST_F(TestSubstructureRingSystem, TestLengthOfSpinachGroupNoMatch)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;
+  constexpr int kExpected = 0;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingNone)
@@ -935,11 +995,11 @@ TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingNone)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0;
+  constexpr int kExpected = 0;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 // Hmmm, this does not work as expected. A reasonable expectation would be
@@ -964,11 +1024,11 @@ TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingSpiro)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 0; //  should be 12;
+  constexpr int kExpected = 0; //  should be 12;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingOne)
@@ -990,11 +1050,11 @@ TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingOne)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 14;
+  constexpr int kExpected = 14;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingTwo)
@@ -1016,11 +1076,11 @@ TEST_F(TestSubstructureRingSystem, TestDistanceToAnotherRingTwo)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 16;
+  constexpr int kExpected = 16;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 TEST_F(TestSubstructureRingSystem, TestStronglyFusedNone)
@@ -1042,11 +1102,11 @@ TEST_F(TestSubstructureRingSystem, TestStronglyFusedNone)
 
   ASSERT_TRUE(_m.build_from_smiles(_smiles));
 
-  constexpr int expected_nhits = 24;
+  constexpr int kExpected = 24;
 
-  ASSERT_EQ(_query.substructure_search(_m, _sresults), expected_nhits);
+  ASSERT_EQ(_query.substructure_search(_m, _sresults), kExpected);
 
-  EXPECT_TRUE(_DoPermutationTests(expected_nhits));
+  EXPECT_TRUE(_DoPermutationTests(kExpected));
 }
 
 }  // namespace
