@@ -362,8 +362,7 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
       continue;
 
     if (_ring_size_count.number_elements() > 0 &&
-        !_ring_size_counts_matched(ring_sizes_encountered))
-    {
+        !_ring_size_counts_matched(ring_sizes_encountered)) {
       system_rejected = 1;
       continue;
     }
@@ -482,21 +481,27 @@ Substructure_Ring_System_Specification::_matches(Molecule_to_Match & target,
 int
 Substructure_Ring_System_Specification::_ring_size_counts_matched(const resizable_array<int> & ring_sizes_encountered) const
 {
-  // cerr << " Checking " << ring_sizes_encountered.number_elements() << " ring sizes found\n";
-  // cerr << "_ring_size_count contains " << _ring_size_count.size() << " items\n";
-  for (int i = 3; i < ring_sizes_encountered.number_elements(); ++i)
-  {
-//  cerr << "Substructure_Ring_System_Specification::_ring_size_counts_matched:encountered " << ring_sizes_encountered[i] << " rings of size " << i << endl;
+#ifdef DEBUG_RING_SIZE_COUNTS_MATCHED
+  cerr << " Checking " << ring_sizes_encountered.number_elements() << " ring sizes found\n";
+  cerr << "_ring_size_count contains " << _ring_size_count.size() << " items\n";
+#endif
+  for (int i = 3; i < ring_sizes_encountered.number_elements(); ++i) {
+#ifdef DEBUG_RING_SIZE_COUNTS_MATCHED
+    cerr << "Substructure_Ring_System_Specification::_ring_size_counts_matched:encountered " << ring_sizes_encountered[i] << " rings of size " << i << endl;
+#endif
     // Find any ring size count specification for this ring size.
-    for (const RingSizeCount* rsc : _ring_size_count)
-    {
-      if (rsc->ring_size() != i)
+    for (const RingSizeCount* rsc : _ring_size_count) {
+      if (rsc->ring_size() != i) {
         continue;
+      }
 
-      // cerr << "Found ring size count for " << i << " atoms, matches " << rsc->Matches(ring_sizes_encountered[i]) << endl;
+#ifdef DEBUG_RING_SIZE_COUNTS_MATCHED
+      cerr << "Found ring size count for " << i << " atoms, matches " << rsc->Matches(ring_sizes_encountered[i]) << endl;
+#endif
 
-      if (rsc->Matches(ring_sizes_encountered[i]))
+      if (rsc->Matches(ring_sizes_encountered[i])) {
         return 1;
+      }
 
       return 0;
     }
