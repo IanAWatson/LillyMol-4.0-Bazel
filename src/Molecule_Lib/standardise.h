@@ -1,5 +1,5 @@
-#ifndef IW_CHEMSTD_H
-#define IW_CHEMSTD_H
+#ifndef MOLECULE_LIB_STANDARDISE_H
+#define MOLECULE_LIB_STANDARDISE_H
 
 /*
   For each transformation we keep track of things processed
@@ -522,4 +522,4 @@ extern int display_standard_chemical_standardisation_options (std::ostream &, ch
 
 extern void set_update_chemical_standardisation_accumulators (int s);
 
-#endif
+#endif  // MOLECULE_LIB_STANDARDISE_H

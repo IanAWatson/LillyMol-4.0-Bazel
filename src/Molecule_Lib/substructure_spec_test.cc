@@ -1452,6 +1452,7 @@ TEST_P(TestRanges, TestH) {
   ASSERT_TRUE(_m.build_from_smiles(params.smiles));
   ASSERT_TRUE(_query.create_from_smarts(params.smarts));
   //std::cerr << "TestingH '" << params.smiles << "' smarts '" << params.smarts << " xpt " << params.nhits << '\n';
+
   EXPECT_EQ(_query.substructure_search(&_m), params.nhits);
 }
 INSTANTIATE_TEST_SUITE_P(TestRanges, TestRanges, testing::Values(

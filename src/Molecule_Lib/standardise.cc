@@ -429,27 +429,51 @@ Chemical_Standardisation::Activate(const IWString& directive,
   }
   else if (CS_ALLpm == tmp)
   {
-    _transform_plus_minus.activate();
-    if (verbose)
-      cerr << "CS: all charge separated [X+]-[Y-] will be transformed to X=Y\n";
+    if (negation) {
+      _transform_plus_minus.deactivate();
+      if (verbose)
+        cerr << "CS: all charge separated [X+]-[Y-] will be not transformed to X=Y\n";
+    } else {
+      _transform_plus_minus.activate();
+      if (verbose)
+        cerr << "CS: all charge separated [X+]-[Y-] will be transformed to X=Y\n";
+    }
   }
   else if (CS_NITRO == tmp)
   {
-    _transform_nitro.activate();
-    if (verbose)
-      cerr << "CS: nitro groups will be transformed to N(=O)=O\n";
+    if (negation) {
+      _transform_nitro.deactivate();
+      if (verbose)
+        cerr << "CS: nitro groups will not be transformed to N(=O)=O\n";
+    } else {
+      _transform_nitro.activate();
+      if (verbose)
+        cerr << "CS: nitro groups will be transformed to N(=O)=O\n";
+    }
   }
   else if (CS_NpOm == tmp)
   {
-    _transform_nplus_ominus.activate();
-    if (verbose)
-      cerr << "CS: charge separated [N+]-[O-] will be transformed to N=O\n";
+    if (negation) {
+      _transform_nplus_ominus.deactivate();
+      if (verbose)
+        cerr << "CS: charge separated [N+]-[O-] will be not transformed to N=O\n";
+    } else {
+      _transform_nplus_ominus.activate();
+      if (verbose)
+        cerr << "CS: charge separated [N+]-[O-] will be transformed to N=O\n";
+    }
   }
   else if (CS_NpNm == tmp)
   {
-    _transform_n_charge_sep.activate();
-    if (verbose)
-      cerr << "CS: charge separated [N+]-[N-] will be transformed to N=N\n";
+    if (negation) {
+      _transform_n_charge_sep.deactivate();
+      if (verbose)
+        cerr << "CS: charge separated [N+]-[N-] will not be transformed to N=N\n";
+    } else {
+      _transform_n_charge_sep.activate();
+      if (verbose)
+        cerr << "CS: charge separated [N+]-[N-] will be transformed to N=N\n";
+    }
   }
   else if (CS_XH == tmp)
   {
@@ -468,78 +492,161 @@ Chemical_Standardisation::Activate(const IWString& directive,
   }
   else if (CS_SpCm == tmp)
   {
-    _transform_splus_cminus.activate();
-    if (verbose)
-      cerr << "[S+]-[C-] will be transformed to S=C\n";
+    if (negation) {
+      _transform_splus_cminus.deactivate();
+      if (verbose)
+        cerr << "[S+]-[C-] will not be transformed to S=C\n";
+    } else {
+      _transform_splus_cminus.activate();
+      if (verbose)
+        cerr << "[S+]-[C-] will be transformed to S=C\n";
+    }
   }
   else if (CS_Om == tmp)
   {
-    _transform_ominus.activate();
-    if (verbose)
-      cerr << "All free [O-] groups will be protonated\n";
+    if (negation) {
+      _transform_ominus.deactivate();
+      if (verbose)
+        cerr << "All free [O-] groups will not be protonated\n";
+    } else {
+      _transform_ominus.activate();
+      if (verbose)
+        cerr << "All free [O-] groups will be protonated\n";
+    }
   }
   else if (CS_Nm == tmp)
   {
-    _transform_nminus.activate();
-    if (verbose)
-      cerr << "All [N-] groups will be protonated\n";
+    if (negation) {
+      _transform_nminus.deactivate();
+      if (verbose)
+        cerr << "All [N-] groups will not be protonated\n";
+    } else {
+      _transform_nminus.activate();
+      if (verbose)
+        cerr << "All [N-] groups will be protonated\n";
+    }
   }
   else if (CS_AMINE == tmp)
   {
-    _transform_amines.activate();
-    if (verbose)
-      cerr << "All charged amines will be deprotonated\n";
+    if (negation) {
+      _transform_amines.deactivate();
+      if (verbose)
+        cerr << "All charged amines will not be deprotonated\n";
+    } else {
+      _transform_amines.activate();
+      if (verbose)
+        cerr << "All charged amines will be deprotonated\n";
+    }
   }
   else if (CS_COVM == tmp)
   {
-    _transform_covalent_metals.activate();
-    if (verbose)
-      cerr << "Will break bonds to covalently bonded Na and K\n";
+    if (negation) {
+      _transform_covalent_metals.deactivate();
+      if (verbose)
+        cerr << "Will not break bonds to covalently bonded Na and K\n";
+    } else {
+      _transform_covalent_metals.activate();
+      if (verbose)
+        cerr << "Will break bonds to covalently bonded Na and K\n";
+    }
   }
   else if (CS_ISOLC == tmp)
   {
-    _transform_single_atom_ions.activate();
-
-    if (verbose)
-      cerr << "Isolated metals and halogens will be assigned charges\n";
+    if (negation) {
+      _transform_single_atom_ions.deactivate();
+      if (verbose)
+        cerr << "Isolated metals and halogens will not be assigned charges\n";
+    } else {
+      _transform_single_atom_ions.activate();
+      if (verbose)
+        cerr << "Isolated metals and halogens will be assigned charges\n";
+    }
   }
   else if (CS_GUAND == tmp)
   {
-    _transform_guanidine.activate();
-
-    if (verbose)
-      cerr << "Guanidines will be transformed\n";
+    if (negation) {
+      _transform_guanidine.deactivate();
+      if (verbose)
+        cerr << "Guanidines will not be transformed\n";
+    } else {
+      _transform_guanidine.activate();
+      if (verbose)
+        cerr << "Guanidines will be transformed\n";
+    }
   }
   else if (CS_GUANDR == tmp)
   {
-    _transform_guanidine_ring.activate();
-
-    if (verbose)
-      cerr << "Ring guanidines will be transformed\n";
+    if (negation) {
+      _transform_guanidine_ring.deactivate();
+      if (verbose)
+        cerr << "Ring guanidines will not be transformed\n";
+    } else {
+      _transform_guanidine_ring.activate();
+      if (verbose)
+        cerr << "Ring guanidines will be transformed\n";
+    }
   }
   else if (CS_NRMCH == tmp)
   {
-    _remove_hydrogens.activate();
-    _remove_hydrogens_attached_to_chiral_centres = 0;
+    if (negation) {
+      _remove_hydrogens.deactivate();
+      _remove_hydrogens_attached_to_chiral_centres = 1;
+      if (verbose) {
+        cerr << "Will not remove explicit Hydrogens\n";
+      }
+    } else {
+      _remove_hydrogens.activate();
+      _remove_hydrogens_attached_to_chiral_centres = 0;
+      if (verbose) {
+        cerr << "Will remove explicit Hydrogens\n";
+      }
+    }
   }
   else if (CS_ACID == tmp)
   {
-    _protonate_carboxyllic_acids.activate();
-    _protonate_sulfinic_acids.activate();
-    _protonate_sulfonic_acids.activate();
-    _protonate_sulfur_acids.activate();
-    _protonate_phosphorous_acids.activate();
+    if (negation) {
+      _protonate_carboxyllic_acids.deactivate();
+      _protonate_sulfinic_acids.deactivate();
+      _protonate_sulfonic_acids.deactivate();
+      _protonate_sulfur_acids.deactivate();
+      _protonate_phosphorous_acids.deactivate();
 
-    if (verbose)
-      cerr << "All acids will be protonated\n";
+      if (verbose) {
+        cerr << "All acids will not be protonated\n";
+      }
+    } else {
+      _protonate_carboxyllic_acids.activate();
+      _protonate_sulfinic_acids.activate();
+      _protonate_sulfonic_acids.activate();
+      _protonate_sulfur_acids.activate();
+      _protonate_phosphorous_acids.activate();
+
+      if (verbose) {
+        cerr << "All acids will be protonated\n";
+      }
+    }
   }
   else if (CS_EHLST == tmp)
   {
-    _explicit_hydrogens_last.activate();
+    if (negation) {
+      _explicit_hydrogens_last.deactivate();
+      if (verbose) {
+        cerr << "Will not move explicit Hydrogens to last in the connection table\n";
+      }
+    } else {
+      _explicit_hydrogens_last.activate();
+      if (verbose) {
+        cerr << "Will move explicit Hydrogens to last in the connection table\n";
+      }
+    }
   }
   else if (CS_FMRK == tmp)
   {
-    _from_mrk_standardisations.activate();
+    if (negation) {
+      _from_mrk_standardisations.deactivate();
+    } else {
+      _from_mrk_standardisations.activate();
+    }
   }
   else if (CS_RNPNM == tmp)
   {
@@ -552,7 +659,17 @@ Chemical_Standardisation::Activate(const IWString& directive,
   }
   else if (CS_AZID == tmp)
   {
-    _transform_azid.activate();
+    if (negation) {
+      _transform_azid.deactivate();
+      if (verbose) {
+        cerr << "Will not transform azids to \n";
+      }
+    } else {
+      _transform_azid.activate();
+      if (verbose) {
+        cerr << "Will transform azids to \n";
+      }
+    }
   }
   else if (CS_MSDUR == tmp)
   {

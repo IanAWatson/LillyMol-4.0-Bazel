@@ -1,5 +1,5 @@
-#ifndef IWSTRING_H
-#define IWSTRING_H 1
+#ifndef FOUNDATIONAL_IWSTRING_IWSTRING_H
+#define FOUNDATIONAL_IWSTRING_IWSTRING_H 1
 
 #if (__GNUC__ == 3)
 #if defined(linux)
@@ -19,8 +19,8 @@
 #else
 #include <sstream>
 #endif
-#include <vector>
 #include <string>
+#include <vector>
 
 #if defined (__STRING__) || defined (_CPP_STRING) || defined (_IOSTREAM_) || defined (__STD_IOSTREAM__) || defined (_STLP_IOSTREAM) || defined (_GLIBCXX_STRING)
 #define IW_STD_STRING_DEFINED 1
@@ -1213,6 +1213,6 @@ const_IWSubstring::split_into_directive_and_value (const_IWSubstring & directive
   return 0;
 }
 
-#endif
+#endif  // SPLIT_DV_IMPLEMENTATION
 
-#endif
+#endif  // FOUNDATIONAL_IWSTRING_IWSTRING_H

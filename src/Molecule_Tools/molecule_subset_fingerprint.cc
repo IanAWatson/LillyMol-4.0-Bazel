@@ -37,6 +37,9 @@ Usage(int rc)
   cerr << " -J <tag>          generate fingerprints with tag <tag>\n";
   cerr << " -F <fptype>       Fingperint type: linear, ec, ap\n";
   cerr << " -P <atype>        atom type specification\n";
+  cerr << " -m                merge all substructure matches into a single match\n";
+  cerr << " -I <iso>          place isotope <iso> on matched atoms \n";
+  cerr << " -z i              ignore molecules not matching the query\n";
   cerr << " -l                strip to largest fragment\n";
   cerr << " -v                verbose output\n";
 
@@ -74,6 +77,10 @@ class FingerprintSubset {
   linear_fingerprint::LinearFingerprintGenerator _linear_fp;
 
   Atom_Typing_Specification _atom_typing;
+
+  // By default, each substructure query generates a separate fingerprint.
+  // We can instead combine all matches and generate a single fingerprint.
+  int _merge_multiple_matches;
 
   // We can optionally apply an isotopic label to the matched atoms.
   // Note that currently we reset any isotopic information on the input
@@ -129,6 +136,7 @@ FingerprintSubset::FingerprintSubset()
   _radius = 0;
   _fptype = FingerprintType::kLinear;
   _ignore_molecules_not_matching_any_queries = 0;
+  _merge_multiple_matches = 0;
   _input_type = FILE_TYPE_INVALID;
   _isotope = 0;
 }
@@ -252,6 +260,13 @@ FingerprintSubset::Initialise(Command_Line& cl)
     _fptype = FingerprintType::kLinear;
   }
 
+  if (cl.option_present('m')) {
+    _merge_multiple_matches = 1;
+    if (_verbose) {
+      cerr << "Multiple substructure matches merged\n";
+    }
+  }
+
   if (cl.option_present('I')) {
     if (! cl.value('I', _isotope) || _isotope < 1) {
       cerr << "Invalid isotope (-I) specification\n";
@@ -304,6 +319,13 @@ FingerprintSubset::Process(Molecule& m, IWString_and_File_Descriptor& output)
   Molecule_to_Match target(&m);
   Substructure_Results sresults;
 
+  const int matoms = m.natoms();
+
+  std::unique_ptr<int[]> all_hits;
+  if (_merge_multiple_matches) {
+    all_hits.reset(new_int(matoms));
+  }
+
   int got_match = 0;
 
   for (Substructure_Query* q : _queries) {
@@ -317,9 +339,23 @@ FingerprintSubset::Process(Molecule& m, IWString_and_File_Descriptor& output)
       if (_isotope > 0) {
         m.transform_to_non_isotopic_form();
       }
-      Process(m, *e, output);
+      if (all_hits) {
+        e->set_vector(all_hits.get(), 1);
+      } else {
+        Process(m, *e, output);
+      }
       ++got_match;
     }
+  }
+
+  if (all_hits) {
+    Set_of_Atoms e;
+    for (int i = 0; i < matoms; ++i) {
+      if (all_hits[i]) {
+        e << i;
+      }
+    }
+    Process(m, e, output);
   }
 
   if (got_match) {
@@ -551,7 +587,7 @@ MoleculeSubsetFingerprint(FingerprintSubset& fingerprint_subset, const char* fna
 int
 Main(int argc, char** argv)
 {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcJ:R:s:q:P:F:z:I:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcJ:R:s:q:P:F:z:I:m:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);
