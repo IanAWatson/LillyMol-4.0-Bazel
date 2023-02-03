@@ -3392,7 +3392,7 @@ Chemical_Standardisation::_process(Molecule & m)
   }
 
   if (! _processing_needed(current_molecule_data)) {
-    cerr << "No processing needed\n";
+    // cerr << "No processing needed\n";
     return rc;
   }
 
