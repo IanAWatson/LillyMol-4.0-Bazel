@@ -14,6 +14,7 @@
 
 #include "gfp.h"
 #include "sparse_collection.h"
+#include "tanimoto_float.h"
 #include "tversky.h"
 #include "various_distance_metrics.h"
 
@@ -186,20 +187,52 @@ static int default_multiconformer_sparse_distance_metric = SPARSE_DISTANCE_METRI
 
 static int * _dense_fingerprint_distance_metric = nullptr;
 
-/*
-  With continuous properties, there are also a number of distance metrics we can use
-*/
 
-#define CONTINUOUS_PROPERTY_DISTANCE_METRIC_RATIO 0
-#define CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP1  1
-#define CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP2  2
-#define CONTINUOUS_PROPERTY_DISTANCE_METRIC_CART  3
-#define CONTINUOUS_PROPERTY_DISTANCE_METRIC_DICE  4
 
-static similarity_type_t continuous_property_distance_metric_exp1_value = 0.0;
-static similarity_type_t continuous_property_distance_metric_exp2_value = 0.0;
+static similarity_type_t continuous_property_distance_metric_expt1_value = 0.0;
+static similarity_type_t continuous_property_distance_metric_expt2_value = 0.0;
 
-static int _continuous_property_distance_metric = CONTINUOUS_PROPERTY_DISTANCE_METRIC_RATIO;
+static ContinuousPropertyDistanceMetric continuous_property_distance_metric = 
+                        ContinuousPropertyDistanceMetric::kRatio;
+void set_continuous_property_distance_metric(ContinuousPropertyDistanceMetric metric) {
+  switch (metric) {
+    case ContinuousPropertyDistanceMetric::kRatio:
+      continuous_property_distance_metric = metric;
+      break;
+    case ContinuousPropertyDistanceMetric::kDice:
+      continuous_property_distance_metric = metric;
+      break;
+    case ContinuousPropertyDistanceMetric::kCart:
+      continuous_property_distance_metric = metric;
+      break;
+    case ContinuousPropertyDistanceMetric::kExpt1:
+      continuous_property_distance_metric = metric;
+      break;
+    case ContinuousPropertyDistanceMetric::kExpt2:
+      continuous_property_distance_metric = metric;
+      break;
+    default:
+      cerr << "set_continuous_property_distance_metric:unknown metric\n";
+  }
+}
+
+const char*
+ToString(ContinuousPropertyDistanceMetric metric) {
+  switch(metric) {
+    case ContinuousPropertyDistanceMetric::kRatio:
+      return "ratio";
+    case ContinuousPropertyDistanceMetric::kDice:
+      return "dice";
+    case ContinuousPropertyDistanceMetric::kCart:
+      return "cartesian";
+    case ContinuousPropertyDistanceMetric::kExpt1:
+      return "expt1";
+    case ContinuousPropertyDistanceMetric::kExpt2:
+      return "expt2";
+    default:
+      return "huh";
+  }
+}
 
 #define INTEGER_PROPERTY_DISTANCE_METRIC_RATIO 0
 #define INTEGER_PROPERTY_DISTANCE_METRIC_DICE 1
@@ -1066,15 +1099,27 @@ Molecular_Properties_Continuous::similarity(const Molecular_Properties_Continuou
   }
 #endif
 
-  if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_CART == _continuous_property_distance_metric)
-    return static_cast<similarity_type_t>(1.0) - cartesian_distance(rhs);
-  if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP1 == _continuous_property_distance_metric)
-    return static_cast<similarity_type_t>(1.0) - exp1_distance(rhs);
-  if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP2 == _continuous_property_distance_metric)
-    return static_cast<similarity_type_t>(1.0) - exp2_distance(rhs);
-  if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_DICE == _continuous_property_distance_metric)
-    return static_cast<similarity_type_t>(1.0) - dice_coefficient(rhs);
+  static constexpr similarity_type_t kOne = static_cast<similarity_type_t>(1.0f);
 
+  switch (continuous_property_distance_metric) {
+    case ContinuousPropertyDistanceMetric::kRatio:
+      return kOne - ratio_distance(rhs);
+    case ContinuousPropertyDistanceMetric::kDice:
+      return kOne - dice_coefficient(rhs);
+    case ContinuousPropertyDistanceMetric::kCart:
+      return kOne - cartesian_distance(rhs);
+    case ContinuousPropertyDistanceMetric::kExpt1:
+      return kOne - expt1_distance(rhs);
+    case ContinuousPropertyDistanceMetric::kExpt2:
+      return kOne - expt2_distance(rhs);
+    default:
+      cerr << "Molecular_Properties_Continuous::similarity:metric not found\n";
+      return 0.0f;
+  }
+}
+
+similarity_type_t
+Molecular_Properties_Continuous::ratio_distance(const Molecular_Properties_Continuous& rhs) const {
   similarity_type_t rc;
 
   if (_property[0] > rhs._property[0])
@@ -1135,26 +1180,26 @@ Molecular_Properties_Continuous::cartesian_distance(const Molecular_Properties_C
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::exp1_distance(const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::expt1_distance(const Molecular_Properties_Continuous & rhs) const
 {
   double rc = 0.0;
 
   for (int i = 0; i < _nproperties; i++)
   {
-    rc += exp(continuous_property_distance_metric_exp1_value * fabs(_property[i] - rhs._property[i]));
+    rc += exp(continuous_property_distance_metric_expt1_value * fabs(_property[i] - rhs._property[i]));
   }
 
   return static_cast<similarity_type_t>(1.0 - rc / _nproperties);
 }
 
 similarity_type_t
-Molecular_Properties_Continuous::exp2_distance(const Molecular_Properties_Continuous & rhs) const
+Molecular_Properties_Continuous::expt2_distance(const Molecular_Properties_Continuous & rhs) const
 {
   double rc = 0.0;
 
   for (int i = 0; i < _nproperties; i++)
   {
-    rc += exp(continuous_property_distance_metric_exp2_value * fabs((_property[i] - rhs._property[i]) * (_property[i] - rhs._property[i])));
+    rc += exp(continuous_property_distance_metric_expt2_value * fabs((_property[i] - rhs._property[i]) * (_property[i] - rhs._property[i])));
   }
 
   return static_cast<similarity_type_t>(1.0 - rc / _nproperties);
@@ -3429,33 +3474,33 @@ parse_desc_specification(const const_IWSubstring & p,
     }
     else if ("cartesian" == token)
     {
-      _continuous_property_distance_metric = CONTINUOUS_PROPERTY_DISTANCE_METRIC_CART; 
+      continuous_property_distance_metric = ContinuousPropertyDistanceMetric::kCart; 
     }
-    else if (token.starts_with("exp1="))
+    else if (token.starts_with("expt1="))
     {
-      _continuous_property_distance_metric = CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP1; 
+      continuous_property_distance_metric = ContinuousPropertyDistanceMetric::kExpt1;
       token.remove_leading_chars(5);
-      if (! token.numeric_value(continuous_property_distance_metric_exp1_value))
+      if (! token.numeric_value(continuous_property_distance_metric_expt1_value))
       {
-        cerr << "Invalid exp1 qualifier '" << token << "'\n";
+        cerr << "Invalid expt1 qualifier '" << token << "'\n";
         return 0;
       }
 
-      if (continuous_property_distance_metric_exp1_value > 0.0)
-        continuous_property_distance_metric_exp1_value = - continuous_property_distance_metric_exp1_value;
+      if (continuous_property_distance_metric_expt1_value > 0.0)
+        continuous_property_distance_metric_expt1_value = - continuous_property_distance_metric_expt1_value;
     }
-    else if (token.starts_with("exp2="))
+    else if (token.starts_with("expt2="))
     {
-      _continuous_property_distance_metric = CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP2; 
+      continuous_property_distance_metric = ContinuousPropertyDistanceMetric::kExpt2; 
       token.remove_leading_chars(5);
-      if (! token.numeric_value(continuous_property_distance_metric_exp2_value))
+      if (! token.numeric_value(continuous_property_distance_metric_expt2_value))
       {
-        cerr << "Invalid exp2 qualifier '" << token << "'\n";
+        cerr << "Invalid expt2 qualifier '" << token << "'\n";
         return 0;
       }
 
-      if (continuous_property_distance_metric_exp2_value > 0.0)
-        continuous_property_distance_metric_exp2_value = - continuous_property_distance_metric_exp2_value;
+      if (continuous_property_distance_metric_expt2_value > 0.0)
+        continuous_property_distance_metric_expt2_value = - continuous_property_distance_metric_expt2_value;
     }
     else if (token.starts_with("scale="))
     {
@@ -3472,7 +3517,7 @@ parse_desc_specification(const const_IWSubstring & p,
     }
     else if ("dice" == token)
     {
-      _continuous_property_distance_metric = CONTINUOUS_PROPERTY_DISTANCE_METRIC_DICE;
+      continuous_property_distance_metric = ContinuousPropertyDistanceMetric::kDice;
     }
     else if (0 == molecular_property_continuous_tag.length())
     {
@@ -3491,17 +3536,14 @@ parse_desc_specification(const const_IWSubstring & p,
     cerr << number_continuous_molecular_properties << " descriptors.";
   else
     cerr << "all descriptors.";
-  if (_property_weight_continuous >= 0.0)
+
+  if (_property_weight_continuous >= 0.0) {
     cerr << " weight " << _property_weight_continuous;
-  if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_RATIO == _continuous_property_distance_metric)
-    ;
-  else if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_CART == _continuous_property_distance_metric)
-    cerr << ", cartesian distances\n";
-  else if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP1 == _continuous_property_distance_metric)
-    cerr << ", exp1 distances\n";
-  else if (CONTINUOUS_PROPERTY_DISTANCE_METRIC_EXP2 == _continuous_property_distance_metric)
-    cerr << ", exp2 distances\n";
-  cerr << endl;
+  }
+
+  cerr << "metric " << ToString(continuous_property_distance_metric);
+
+  cerr << '\n';
 
   return 1;
 }

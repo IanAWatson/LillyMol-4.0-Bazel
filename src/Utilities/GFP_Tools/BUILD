@@ -121,6 +121,18 @@ ruby_proto_compile(
 )
 
 cc_binary(
+  name = "properties_benchmark",
+  srcs = [
+      "properties_benchmark.cc",
+  ],
+  deps = [
+      ":gfp",
+      ":tanimoto_float",
+        "@benchmark//:benchmark",
+  ],
+)
+
+cc_binary(
     name = "descriptor_file_to_01_fingerprints",
     srcs = [
         "descriptor_file_to_01_fingerprints.cc",
@@ -605,6 +617,7 @@ cc_library(
     ],
     deps = [
         "gfp_to_svm_lite_cc_proto",
+        ":tanimoto_float",
         "//Foundational/accumulator:accumulator",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/data_source:iwstring_data_source",

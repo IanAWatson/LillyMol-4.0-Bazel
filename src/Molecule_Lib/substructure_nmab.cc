@@ -86,7 +86,8 @@ no_matched_atom_path(const Atom ** atoms, atom_number_t destination,
 //#define DEBUG_NMAB_SATISFIED
 
 int
-Single_Substructure_Query::_nmab_satisfied(Molecule_to_Match& target, Query_Atoms_Matched & matched_atoms) const
+Single_Substructure_Query::_nmab_satisfied(Molecule_to_Match& target,
+                                Query_Atoms_Matched & matched_atoms) const
 {
 #ifdef DEBUG_NMAB_SATISFIED
   cerr << "XJXJXJ checking " <<  _nmab.size() << " nmab\n";
@@ -930,7 +931,9 @@ NMAB_Operator::Matches(Molecule_to_Match& target, const Set_of_Atoms& unmatched_
     return 1;
   }
 
-//cerr << "Number of matches " << matches << "\n";
+#ifdef DEBUG_NMAB_SATISFIED
+  cerr << "NMAB_Operator::Matches:Number of matches " << matches << " will return " << _relational_matches(matches) << '\n';
+#endif
 
   return _relational_matches(matches);
 }

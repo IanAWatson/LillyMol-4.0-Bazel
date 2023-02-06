@@ -21,6 +21,15 @@ class Tversky;
 
 typedef float iwproperty_t;
 
+// With continuous properties, there are a number of distance metrics we can use.
+
+enum class ContinuousPropertyDistanceMetric {
+    kRatio = 0,
+    kDice = 1,
+    kCart = 2,
+    kExpt1 = 3,
+    kExpt2 = 4,
+};
 
 /*
   All the build_from_contiguous_storage methods have an ambiguity in
@@ -56,7 +65,13 @@ class Molecular_Properties
 
     T sum () const { return sum_vector(_property, _nproperties);}
 
-    const void * build_from_contiguous_storage (const void *, int);
+    // Assumes that `from` points to an initialized class object immediately
+    // followed by the properties.
+    // If `allocate_array` is true, then we allocate _property and copy into it.
+    const void * build_from_contiguous_storage (const void *from, int allocate_array);
+
+    void build_from_array(const T* from, int n);
+
     void * copy_to_contiguous_storage (void *) const;
     void * copy_to_contiguous_storage_gpu (void *) const;
 };
@@ -93,28 +108,45 @@ Molecular_Properties<T>::copy_to_contiguous_storage_gpu (void * p) const
 
 template <typename T>
 const void *
-Molecular_Properties<T>::build_from_contiguous_storage (const void * p,
+Molecular_Properties<T>::build_from_contiguous_storage(const void * from,
                                 int allocate_array)
 {
   if (allocate_array && nullptr != _property)
     delete [] _property;
 
-  memcpy(this, p, sizeof(*this));
+  memcpy(this, from, sizeof(*this));
 
-  p = reinterpret_cast<const unsigned char *>(p) + sizeof(*this);
+  from = reinterpret_cast<const unsigned char *>(from) + sizeof(*this);
 
   if (allocate_array)
   {
     _property = new T[_nproperties];
-    copy_vector(_property, reinterpret_cast<const T *>(p), _nproperties);
+    copy_vector(_property, reinterpret_cast<const T *>(from), _nproperties);
   }
   else {
-    _property = (T *) (p);   // dangerous cast
+    _property = (T *) (from);   // dangerous cast
   }
 
-  p = reinterpret_cast<const T *>(p) + _nproperties;
+  from = reinterpret_cast<const T *>(from) + _nproperties;
 
-  return p;
+  return from;
+}
+
+template <typename T>
+void
+Molecular_Properties<T>::build_from_array(const T* from, int n) {
+  // If there is any mismatch, create anew.
+  if (_property != nullptr || _nproperties != n) {
+    delete [] _property;
+    _property = nullptr;
+  }
+
+  _nproperties = n;
+  if (_property == nullptr) {
+    _property = new T[_nproperties];
+  }
+
+  std::copy_n(from, n, _property);
 }
 
 extern int set_number_integer_molecular_properties (int);
@@ -126,7 +158,7 @@ class Molecular_Properties_Integer : public Molecular_Properties<int>
 {
   private:
   public:
-    Molecular_Properties_Integer ();
+    Molecular_Properties_Integer();
 
     int construct_from_tdt_fp_record (const const_IWSubstring &);
 
@@ -155,9 +187,10 @@ class Molecular_Properties_Continuous : public Molecular_Properties<float>
 
     similarity_type_t similarity  (const Molecular_Properties_Continuous &) const;
     similarity_type_t cartesian_distance (const Molecular_Properties_Continuous &) const;
-    similarity_type_t exp1_distance (const Molecular_Properties_Continuous &) const;
-    similarity_type_t exp2_distance (const Molecular_Properties_Continuous &) const;
+    similarity_type_t expt1_distance (const Molecular_Properties_Continuous &) const;
+    similarity_type_t expt2_distance (const Molecular_Properties_Continuous &) const;
     similarity_type_t dice_coefficient (const Molecular_Properties_Continuous &) const;
+    similarity_type_t ratio_distance(const Molecular_Properties_Continuous& rhs) const;
 };
 
 #include "fixed_size_counted_fingerprint.h"
@@ -372,6 +405,8 @@ extern int need_to_call_initialise_fingerprints (const Command_Line &);
 
 extern void set_convert_sparse_fingerprint_to_bits (int);
 extern void set_convert_sparse_fingerprint_to_fixed_width_counted (int);
+
+extern void set_continuous_property_distance_metric(ContinuousPropertyDistanceMetric metric);
 
 extern int count_tdts_in_file (iwstring_data_source & input, const IWString & identifier_tag);
 
