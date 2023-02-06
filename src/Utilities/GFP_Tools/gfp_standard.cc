@@ -39,9 +39,9 @@ GFP_Standard::build_mk(IWDYFP & fp)
   if (bits_in_mk == max_uint)
   {
     bits_in_mk = fp.nbits();
-    if (bits_in_mk > (sizeof(_mk) * IW_BITS_PER_BYTE) || 0 != bits_in_mk % 32)
+    if (bits_in_mk > (sizeof(_mk) * IW_BITS_PER_BYTE) || 0 != bits_in_mk % 64)
     {
-      cerr << "GFP_Standard::build_mk:maccskeys must be multiple of 32 bits, " << bits_in_mk << " invalid\n";
+      cerr << "GFP_Standard::build_mk:maccskeys must be multiple of 64 bits, " << bits_in_mk << " invalid\n";
       abort();
     }
   }
