@@ -57,3 +57,43 @@ message SmilesIdCount {
   string atype = 3;
   uint32 n = 4;
 }
+
+// when looking up a molecule constraints can be imposed.
+
+message Query {
+  // The region of the molecule to be replaced must
+  // be defined. Thst is done by some number of queries.
+  // If there are two queries defined, that defines a
+  // region with two connections, if three queries...
+  // In all cases, the first matched atom in each query
+  // is taken as an the region to be replaced.
+  // Once N atoms are identified, that defines an
+  // interiour of the molecule that is then targeted
+  // for removal and replacement.
+  repeated string smarts = 1;
+  // Or as an inline query, or query file.
+  repeated string query = 2;
+  repeated string query_file = 3;
+
+  // What do we do if an input molecule does not match
+  // any of the queries.
+  bool ignore_molecules_not_hitting_query = 4;
+
+  // We can introduce some uncertainty into the
+  // distances that are matched. These are specified
+  // in string form, 2,3,8 for example. These correspond
+  // to the distances in the database.
+  repeated string distances = 5;
+
+  // We can require certain substructures to be in
+  // the replacement.
+  repeated string must_have_smarts = 6;
+  repeated string must_have_query = 7;
+  repeated string must_have_query_file = 8;
+
+  // And substructures that cannot be present
+
+  repeated string reject_smarts = 9;
+  repeated string reject_query = 10;
+  repeated string reject_query_file = 11;
+}

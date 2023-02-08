@@ -926,16 +926,16 @@ Options::MakeCoreAndSubstituents(Molecule& m,
   // Now that for each matched atom, we know the adjacent atom that will be
   // retained, break those bonds.
 
-  if (atoms_in_substituents.size() != matched_atoms.size()) {
+  if (atoms_in_substituents->size() != matched_atoms.size()) {
     cerr << "Size mismatch btw atoms and attachments\n";
     return 0;
   }
 
   Molecule mcopy(m);
-  int n = atoms_in_substituents.number_elements();
+  int n = atoms_in_substituents->number_elements();
   for (int i = 0; i < n; ++i) {
     atom_number_t a1 = matched_atoms[i];
-    atom_number_t a2 = atoms_in_substituents[i];
+    atom_number_t a2 = (*atoms_in_substituents)[i];
     if (! mcopy.remove_bond_between_atoms(a1, a2)) {
       cerr << "Cannot remove bond btw " << a1 << " and " << a2 << " in " << mcopy.smiles() << '\n';
       return 0;
@@ -943,7 +943,7 @@ Options::MakeCoreAndSubstituents(Molecule& m,
   }
 
   std::unique_ptr<int> to_remove(new_int(mcopy.natoms()));
-  matched_atoms.set_vector(to_remove.get());
+  matched_atoms.set_vector(to_remove.get(), 1);
 
   IdentifyAtomsBeingRemoved(mcopy, matched_atoms[0], to_remove.get());
 
