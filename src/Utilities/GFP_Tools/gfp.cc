@@ -2,6 +2,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <new>
@@ -708,6 +709,8 @@ Molecular_Properties<T>::~Molecular_Properties()
 
 Molecular_Properties_Continuous::Molecular_Properties_Continuous()
 {
+  _sum = 0.0f;
+
   if (number_continuous_molecular_properties <= 0)
   {
     _nproperties = 0;
@@ -770,6 +773,8 @@ Molecular_Properties_Continuous::construct_from_descriptor_record(const const_IW
 
     _property[i] = _property[i] * individual_property_scaling_factor;
   }
+
+  _sum = std::accumulate(_property, _property + number_continuous_molecular_properties, 0.0f);
 
   return 1;
 }
@@ -1208,6 +1213,12 @@ Molecular_Properties_Continuous::expt2_distance(const Molecular_Properties_Conti
 similarity_type_t
 Molecular_Properties_Continuous::dice_coefficient(const Molecular_Properties_Continuous & rhs) const
 {
+  // AvxTanimoto works, but since AvxTanimoto is only for 8 words, turn off by default.
+  // AvxTanimoto is about 4x faster than the scalar implementation below.
+  // But if the alternative is the 8 integer molecular properties, that is still
+  // about 2x faster than avx float.
+  // return tanimoto_float::AvxTanimoto(_property, rhs._property, _nproperties);
+
   float bits_in_common = static_cast<float>(0.0);
   float na = static_cast<float>(0.0);
   float nb = static_cast<float>(0.0);

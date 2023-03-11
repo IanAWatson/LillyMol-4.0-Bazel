@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <utility>
 
 #include "fingerprint_writer.h"
 
@@ -74,6 +75,8 @@ FingerprintWriter::Initialise(Command_Line& cl,
       _output_type = OutputType::kFixed;
     } else if (opt == "sparse") {
       _output_type = OutputType::kSparse;
+    } else if (opt == "svml") {
+      _output_type = OutputType::kSvml;
     } else if (opt.starts_with("tag=")) {
       opt.remove_leading_chars(4);
       if (! OkTag(opt)) {
@@ -94,7 +97,9 @@ FingerprintWriter::Initialise(Command_Line& cl,
   // If tag has been specified, it must be of valid form.
 
   if (_tag.empty()) {
-    if (_output_type != OutputType::kDescriptor) {
+    if (_output_type == OutputType::kDescriptor) {
+    } else if (_output_type == OutputType::kSvml) {
+    } else {
       cerr << "FingerprintWriter:Initialise:no tag, but not descriptor output\n";
       return 0;
     }
@@ -196,6 +201,8 @@ FingerprintWriter::WriteFingerprint(const IWString& mname,
       return WriteFixedFingerprint(sfc, output);
     case OutputType::kDescriptor:
       return WriteDescriptors(mname, sfc, output);
+    case OutputType::kSvml:
+      return WriteSvml(sfc, output);
     default:
       cerr << "FingerprintWriter::WriteFixedFingerprint:what to write?\n";
       return 0;
@@ -244,6 +251,38 @@ FingerprintWriter::WriteFixedFingerprint(
     _fixed.set_bit(bit % _nbits);
   }
   output << _tag << _fixed.DaylightAsciiRepresentationIncludingNsetInfo() << ">\n";
+
+  return 1;
+}
+
+int
+FingerprintWriter::WriteSvml(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output) {
+  static constexpr char kColon = ':';
+
+  const auto n = sfc.nbits();
+
+  std::unique_ptr<std::pair<uint32_t, int>[]> for_sort = std::make_unique<std::pair<uint32_t, int>[]>(n);
+
+  int ndx = 0;
+  for (const auto& [bit, count] : sfc.bits_found()) {
+    for_sort[ndx].first = bit;
+    for_sort[ndx].second = count;
+    ++ndx;
+  }
+
+  std::sort(for_sort.get(), for_sort.get() + n, [](const std::pair<uint32_t, int>& fp1,
+                                                   const std::pair<uint32_t, int>& fp2) {
+    return fp1.first < fp2.first;
+  });
+
+  for (uint32_t i = 0; i < n; ++i) {
+    if (i > 0) {
+      output << _output_column_separator;
+    }
+    output << for_sort[i].first << kColon << for_sort[i].second;
+  }
+
+  output << '\n';
 
   return 1;
 }

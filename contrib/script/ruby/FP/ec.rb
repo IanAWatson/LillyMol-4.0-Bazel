@@ -41,6 +41,7 @@ class EC
 
     atype ||= 'UST:Y'
     cmd << " -P #{atype}"
+    cmd << " -m"
 
     cmd
   end

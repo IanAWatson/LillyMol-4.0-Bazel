@@ -1,5 +1,7 @@
 // Question of whether integer or float properties are faster
 
+#include <stdalign.h>
+
 #include <random>
 
 #include <benchmark/benchmark.h>
@@ -46,8 +48,8 @@ BM_TestFloat(benchmark::State& state) {
   std::uniform_real_distribution<float> property(0.0, 255.0);
 
   constexpr const int kNproperties = 8;
-  float prop1[kNproperties];
-  float prop2[kNproperties];
+  alignas(64) float prop1[kNproperties];
+  alignas(64) float prop2[kNproperties];
   for (int i = 0; i < kNproperties; ++i) {
     prop1[i] = property(rng);
     prop2[i] = property(rng);

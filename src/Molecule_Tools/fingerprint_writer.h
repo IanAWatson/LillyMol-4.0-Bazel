@@ -21,7 +21,8 @@ class FingerprintWriter {
     enum class OutputType {
       kSparse,
       kFixed,
-      kDescriptor
+      kDescriptor,
+      kSvml,
     };
 
     OutputType _output_type;
@@ -60,6 +61,7 @@ class FingerprintWriter {
     int WriteFixedFingerprint(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
     int WriteSparseFingerprint(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
     int WriteDescriptors(const IWString& mname, const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
+    int WriteSvml(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
 
     int ChangeOutputTypeIfNeeded(const IWString& new_tag);
 
@@ -77,6 +79,10 @@ class FingerprintWriter {
 
     int IsWritingDescriptors() const {
       return _output_type == OutputType::kDescriptor;
+    }
+
+    int IsWritingSvml() const {
+      return _output_type == OutputType::kSvml;
     }
 
     const IWString& FingerprintTag() const {

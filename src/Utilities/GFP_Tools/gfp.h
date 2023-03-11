@@ -2,6 +2,7 @@
 #define IWGFP_H
 
 #include <sys/types.h>
+
 #include <iostream>
 #include <optional>
 
@@ -143,7 +144,7 @@ Molecular_Properties<T>::build_from_array(const T* from, int n) {
 
   _nproperties = n;
   if (_property == nullptr) {
-    _property = new T[_nproperties];
+    _property = new(std::align_val_t(32)) T[_nproperties];
   }
 
   std::copy_n(from, n, _property);
@@ -176,6 +177,9 @@ class Molecular_Properties_Integer : public Molecular_Properties<int>
 class Molecular_Properties_Continuous : public Molecular_Properties<float>
 {
   private:
+    // When computing some distance measures, knowing the sum can be helpful.
+    float _sum;
+ 
   public:
     Molecular_Properties_Continuous ();
 

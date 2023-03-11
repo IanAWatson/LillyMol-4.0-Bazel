@@ -8,6 +8,7 @@
 #include "Foundational/iwstring/iw_stl_hash_map.h"
 
 #include "Molecule_Lib/allowed_elements.h"
+#include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/charge_assigner.h"
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/etrans.h"
@@ -78,6 +79,8 @@ struct FileconvConfig {
 
   Donor_Acceptor_Assigner donor_acceptor_assigner;
 
+  Atom_Typing_Specification atom_typing;
+
   Structure_Fixing structure_fixing;
 
   int fragment_count = 0;
@@ -147,6 +150,8 @@ struct FileconvConfig {
 
   int convert_isotopes_to_atom_map_numbers = 0;
   int convert_atom_map_numbers_to_isotopes = 0;
+
+  int isotopes_are_atom_types = 0;
 
   resizable_array<int> convert_specific_isotopes;
   resizable_array<int> convert_specific_isotopes_new_isotope;
@@ -471,6 +476,7 @@ struct FileconvConfig {
   int ConvertIsotopesToAtomMapNumbers(Molecule& m);
   int ConvertAtomMapNumbersToIsotopes(Molecule& m);
   int AtomMapNumbersAreAtomNumbers(Molecule& m);
+  int AtomTypesToIsotopes(Molecule& m);
   int MakeImplicitHydrogensExplicit(Molecule& m);
   int RemoveNonOrganicChirality(Molecule& m);
   void SortByFragmentSize(Molecule& m);

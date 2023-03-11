@@ -1694,8 +1694,8 @@ do_create_julia_file_for_histogram_plot(const IWHistogram & nearest_neighbour_hi
     cerr << "Last non zero distance " << (last_non_zero * 0.01) << '\n';
 
   IWString stem = fname;
-  assert (stem.ends_with(".r"));
-  stem.chop(2);
+  assert (stem.ends_with(".jl"));
+  stem.chop(3);
 
   IWString png = stem;
   png << ".png";

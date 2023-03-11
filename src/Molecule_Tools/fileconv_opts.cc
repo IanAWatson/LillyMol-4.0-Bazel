@@ -68,6 +68,7 @@ FileconvConfig::DefaultValues() {
   chemical_standardisation.deactivate();
   charge_assigner.deactivate();
   donor_acceptor_assigner.deactivate();
+  // no method, TODO atom_typing.deactivate();
 
   fragment_count = 0;
   reduce_to_largest_fragment = 0;
@@ -115,6 +116,8 @@ FileconvConfig::DefaultValues() {
 
   convert_isotopes_to_atom_map_numbers = 0;
   convert_atom_map_numbers_to_isotopes = 0;
+
+  isotopes_are_atom_types = 0;
 
   convert_specific_isotopes_query.resize(0);
   convert_specific_isotopes_query_new_isotope.resize(0);
@@ -1152,6 +1155,30 @@ FileconvConfig::ConvertAtomMapNumbersToIsotopes(Molecule& m) {
   }
 
   return rc;
+}
+
+int
+FileconvConfig::AtomTypesToIsotopes(Molecule& m) {
+  if (! atom_typing.active()) {
+    cerr << "FileconvConfig::AtomTypesToIsotopes:not active\n";
+    return 0;
+  }
+
+  const int matoms = m.natoms();
+  std::unique_ptr<uint32_t[]> atype = std::make_unique<uint32_t[]>(matoms);
+  atom_typing.assign_atom_types(m, atype.get());
+
+  static constexpr int kOverflow = 9999999;
+
+  for (int i = 0; i < matoms; ++i) {
+    if (atype[i] <= std::numeric_limits<int>::max()) {
+      m.set_isotope(i, atype[i]);
+    } else {
+      m.set_isotope(i, kOverflow);
+    }
+  }
+
+  return 1;
 }
 
 int
@@ -2557,6 +2584,9 @@ FileconvConfig::ApplyAllFiltersInner(Molecule& m,
     ConvertIsotopesToAtomMapNumbers(m);
   else if (convert_atom_map_numbers_to_isotopes)
     ConvertAtomMapNumbersToIsotopes(m);
+  else if (isotopes_are_atom_types) {
+    AtomTypesToIsotopes(m);
+  }
 
   if (atom_number_to_atom_map_number) {
     AtomMapNumbersAreAtomNumbers(m);
@@ -3665,6 +3695,13 @@ FileconvConfig::ParseMiscOptions(Command_Line& cl, char flag) {
       if (verbose) {
         cerr << "Will report element counts\n";
       }
+    } else if (y.starts_with("atype=")) {
+      y.remove_leading_chars(6);
+      if (! atom_typing.build(y)) {
+        cerr << "Invalid atom typing specification '" << y << "'\n";
+        return 0;
+      }
+      isotopes_are_atom_types = 1;
     } else if ("help" == y) {
       DisplayDashYOptions(cerr, 'Y', 2);
     } else {
