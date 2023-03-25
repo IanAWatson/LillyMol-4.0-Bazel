@@ -119,7 +119,7 @@ extract_identifier (const IWString & buffer,
 
   if (! identifier_rx)
     ;
-  else if iwre2::RE2PartialMatch(*identifier_rx, id)
+  else if (iwre2::RE2PartialMatch(id, *identifier_rx))
     ;
   else if (ignore_identifiers_not_matching_rx)
   {
@@ -296,7 +296,7 @@ extract_identifier_from_tdt (const_IWSubstring buffer,    // not passed by refer
 
   if (! identifier_rx)
     ;
-  else if (iwre2::RE2PartialMatch(*identifier_rx, id))
+  else if (iwre2::RE2PartialMatch(id, *identifier_rx))
     ;
   else if (ignore_identifiers_not_matching_rx)
   {
