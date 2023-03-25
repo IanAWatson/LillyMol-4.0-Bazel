@@ -61,7 +61,7 @@ Ring_Extraction_Replacement_Conditions::initialise (Command_Line & cl,
 
     if (f.numeric_value(_isotope_for_ring_fusion))
     {
-      if (_isotope_for_ring_fusion <= 0)
+      if (_isotope_for_ring_fusion == 0)
       {
         cerr << "Invalid isotope for ring fusion '" << f << "'\n";
         return 3;
@@ -405,7 +405,7 @@ Ring_Extraction_Replacement_Conditions::append_connectivity_smarts (Molecule & m
   else
     smarts << 'A';
 
-  int iso = m.isotope(zatom);
+  isotope_t iso = m.isotope(zatom);
 
   if (0 == iso)
 //  smarts << "R1D" << count_included_connections(m, zatom, include_atom) << ']';

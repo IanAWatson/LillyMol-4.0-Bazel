@@ -932,7 +932,7 @@ do_positive_negative_acceptor_donor (const Molecule & m,
 
 static int
 identify_matched_atoms (Molecule & m,
-                        const int * isotope,
+                        const isotope_t * isotope,
                         resizable_array_p<Coords_and_Stuff> & c)
 {
   int matches_this_molecule = 0;     // the number of queries finding a match
@@ -1423,7 +1423,7 @@ write_all_distances (Molecule & m,
 
 static int
 distance_between_features (Molecule & m,
-                           const int * isotopes,
+                           const isotope_t * isotopes,
                            const int nfeatures,
                            IWString & output)
 {
@@ -1476,8 +1476,8 @@ distance_between_features (Molecule & m,
 }
 
 static int
-preprocess (Molecule & m,
-            int * & isotopes)
+preprocess(Molecule & m,
+           std::unique_ptr<isotope_t[]>& isotopes)
 {
   if (reduce_to_largest_fragment)
     m.reduce_to_largest_fragment();
@@ -1492,8 +1492,8 @@ preprocess (Molecule & m,
   {
     if (queries.number_elements())    // may contain an isotopic query, so shield the isotopes
     {
-      isotopes = new int[m.natoms()];
-      m.get_isotopes(isotopes);
+      isotopes.reset(new isotope_t[m.natoms()]);
+      m.get_isotopes(isotopes.get());
       m.transform_to_non_isotopic_form();
     }
 
@@ -1537,13 +1537,11 @@ distance_between_features (data_source_and_type<Molecule> & input,
     if (do_spatial_distances && 1 == molecules_read)
       check_for_coordinates(*m);
 
-    int * isotopes = nullptr;
+    std::unique_ptr<isotope_t[]> isotopes;
 
     preprocess(*m, isotopes);
 
-    std::unique_ptr<int[]> free_isotopes(isotopes);    // may be nullptr
-
-    if (! distance_between_features(*m, isotopes, nfeatures, output))
+    if (! distance_between_features(*m, isotopes.get(), nfeatures, output))
       return 0;
 
     output.write_if_buffer_holds_more_than(32768);
@@ -1573,13 +1571,11 @@ distance_between_features_filter_process (Molecule & m,
                                           const int nfeatures,
                                           IWString_and_File_Descriptor & output)
 {
-  int * isotopes = nullptr;
+  std::unique_ptr<isotope_t[]> isotopes;
 
   preprocess(m, isotopes);
 
-  std::unique_ptr<int[]> free_isotopes(isotopes);
-
-  return distance_between_features(m, isotopes, nfeatures, output);
+  return distance_between_features(m, isotopes.get(), nfeatures, output);
 }
 
 static int

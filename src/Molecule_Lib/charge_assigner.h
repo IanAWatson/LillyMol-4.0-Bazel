@@ -33,9 +33,9 @@ class Charge_Assigner : public resizable_array_p<Substructure_Hit_Statistics>
 //  Another possibility is to replace the atoms with a different element
 
     const Element * _positive_element;
-    int _positive_isotope;
+    isotope_t _positive_isotope;
     const Element * _negative_element;
-    int _negative_isotope;
+    isotope_t _negative_isotope;
 
 //  We can isotopically label the positive and negative atoms with
 //  the atomic number of the atom from which they were derived

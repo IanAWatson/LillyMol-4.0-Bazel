@@ -214,7 +214,7 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     int _all_bonds_become_type_any;
 
     // Jul 2022. An isotope designates match any atom type.
-    int _isotope_means_match_any_atom;
+    isotope_t _isotope_means_match_any_atom;
 
     // Nov 2022. All information about atom types is lost.
     int _ignore_atom_type;
@@ -281,7 +281,7 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     int preserve_smallest_ring_size() const { return _preserve_smallest_ring_size;}
     int bonds_preserve_ring_membership() const { return _bonds_preserve_ring_membership;}
     int all_bonds_become_type_any() const { return _all_bonds_become_type_any;}
-    int isotope_means_match_any_atom() const { return _isotope_means_match_any_atom;}
+    isotope_t isotope_means_match_any_atom() const { return _isotope_means_match_any_atom;}
     int ignore_atom_type() const { return _ignore_atom_type;}
     int only_include_isotopically_labeled_atoms() const { return _only_include_isotopically_labeled_atoms;}
     int must_have_substituent_at_every_isotopic_atom() const { return _must_have_substituent_at_every_isotopic_atom;}
@@ -312,11 +312,11 @@ class Molecule_to_Query_Specifications : public MDL_File_Data
     void set_preserve_smallest_ring_size(int s) { _preserve_smallest_ring_size = s;}
     void set_bonds_preserve_ring_membership(int s) { _bonds_preserve_ring_membership = s;}
     void set_all_bonds_become_type_any(int s) { _all_bonds_become_type_any = s;}
-    void set_isotope_means_match_any_atom(int s) { _isotope_means_match_any_atom = s;}
+    void set_isotope_means_match_any_atom(isotope_t s) { _isotope_means_match_any_atom = s;}
     void set_ignore_atom_type(int s) { _ignore_atom_type = s;}
     void set_only_include_isotopically_labeled_atoms(int s) { _only_include_isotopically_labeled_atoms = s;}
     void set_must_have_substituent_at_every_isotopic_atom(int s) { _must_have_substituent_at_every_isotopic_atom = s;}
-    void set_isotope_count_means_extra_connections(int s) { _isotope_means_match_any_atom = s;}
+    void set_isotope_count_means_extra_connections(isotope_t s) { _isotope_means_match_any_atom = s;}
 
     int parse_directives(const const_IWSubstring &);
 

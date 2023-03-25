@@ -861,7 +861,7 @@ MDL_File_Supporting_Material::create_mdl_atom(const const_IWSubstring & ss, int 
       return nullptr;
   }
 
-  int iso = 0;    // never used with mdl files
+  isotope_t iso = 0;    // never used with mdl files
 
   const Element * e = get_element_from_symbol(zsymbol, iso);
   if (nullptr == e)
@@ -2864,7 +2864,7 @@ MDL_File_Supporting_Material::translate_input_bond_type(int bt) const
 }
 
 int
-Molecule::_contains_isotope_above(int s) const
+Molecule::_contains_isotope_above(isotope_t s) const
 {
   for (auto i = 0; i < _number_elements; ++i)
   {

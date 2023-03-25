@@ -13,6 +13,7 @@
 #include "Foundational/iwqsort/iwqsort.h"
 
 #include "Molecule_Lib/aromatic.h"
+#include "Molecule_Lib/atom_typing.h"
 #include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/rwsubstructure.h"
@@ -28,7 +29,7 @@ using std::cerr;
 
 void
 Usage(int rc) {
-  cerr << " -P <fname>    file of labelled rings created by ring_extraction\n";
+  cerr << " -R <fname>    file of labelled rings created by ring_extraction\n";
   cerr << " -s <smarts>   only replace rings matched by <smarts>\n";
   cerr << " -q <query>    only replace rings matched by <query>\n";
   cerr << " -u            unique molecules only\n";
@@ -38,11 +39,13 @@ Usage(int rc) {
   cerr << " -Y <query>    product molecules MUST     match a query in <query>\n";
   cerr << " -N <query>    product molecules must NOT match any queries in <query>\n";
   cerr << " -D <query>    discard any replacement ring that matches <query>\n";
-  cerr << " -I            remove isotopes from product molecules\n";
+  cerr << " -I .          remove isotopes from product molecules\n";
+  cerr << " -I <n>        change all existing isotopes to <n> (useful if atom types used)\n";
   cerr << " -w            sort output by precedent count\n";
-  cerr << " -c                remove chirality\n";
-  cerr << " -l                strip to largest fragment\n";
-  cerr << " -v                verbose output\n";
+  cerr << " -X ...        more options\n";
+  cerr << " -c            remove chirality\n";
+  cerr << " -l            strip to largest fragment\n";
+  cerr << " -v            verbose output\n";
 
   ::exit(rc);
 }
@@ -76,7 +79,7 @@ class Replacement {
 
     int SubstructureSearch(Molecule_to_Match& target, Substructure_Results& sresults);
 
-    int MakeVariant(Molecule& m, const Set_of_Atoms& embedding, std::unique_ptr<Molecule>& result) const;
+    int MakeVariant(Molecule& m, const Set_of_Atoms& embedding, const uint32_t* atypes, std::unique_ptr<Molecule>& result) const;
 };
 
 int
@@ -116,7 +119,24 @@ UnsetImplicitHydrogenInformation(Molecule& m) {
 }
 
 int
-Replacement::MakeVariant(Molecule& parent, const Set_of_Atoms& embedding, std::unique_ptr<Molecule>& result) const {
+EnvironmentMatch(const Molecule& m,
+                 atom_number_t zatom,
+                 atom_number_t to_join,
+                 const uint32_t* atypes) {
+  if (! atypes) {
+    return 1;
+  }
+
+  const isotope_t iso = m.isotope(zatom);
+  // cerr << " atom " << zatom << " iso " << m.isotope(zatom) << " to_join " << to_join << " atype " << atypes[to_join] << " eq " << (iso == atypes[to_join]) << '\n';
+  return iso == atypes[to_join];
+}
+
+int
+Replacement::MakeVariant(Molecule& parent,
+                         const Set_of_Atoms& embedding,
+                         const uint32_t* atypes,
+                         std::unique_ptr<Molecule>& result) const {
   std::unique_ptr<Molecule> m = std::make_unique<Molecule>(parent);
   const int initial_natoms = m->natoms();
   const int initial_aromatic_count = parent.aromatic_atom_count();
@@ -135,9 +155,9 @@ Replacement::MakeVariant(Molecule& parent, const Set_of_Atoms& embedding, std::u
   embedding.set_vector(to_remove.get(), 1);
 
   resizable_array<const Bond*> remove_bonds;
-  remove_bonds.reserve(10);
+  remove_bonds.reserve(10);  // approximately.
 
-  int esize = embedding.number_elements();
+  const int esize = embedding.number_elements();
   for (int i = 0; i < esize; ++i) {
     const atom_number_t a = embedding[i];
     const Atom& atom = m->atom(a);
@@ -148,6 +168,9 @@ Replacement::MakeVariant(Molecule& parent, const Set_of_Atoms& embedding, std::u
       }
       if (! b->is_single_bond()) {
         continue;
+      }
+      if (! EnvironmentMatch(_m, i, o, atypes)) {
+        return 0;
       }
       // cerr << "From atom " << a << " make bond " << (initial_natoms + i) << " to " << o << '\n';
       remove_bonds << b;
@@ -220,6 +243,8 @@ class RingReplacement {
 
     int _write_parent_molecule;
 
+    Atom_Typing_Specification _atype;
+
     // One per -P option.
     int _nreplacements;
     resizable_array_p<Replacement>* _rings;
@@ -248,6 +273,9 @@ class RingReplacement {
     // Remove isotopes from product molecules.
     int _remove_isotopes;
 
+    // Translate all isotopes to a single value.
+    isotope_t _translate_isotopes;
+
     int _sort_output_by_precedent = 0;
 
     FileType _input_type;
@@ -260,7 +288,7 @@ class RingReplacement {
     int ReadReplacementRings(iwstring_data_source& input, int ndx);
     int OkSupport(const Replacement& r);
     int IsUnique(Molecule& m);
-    int Process(resizable_array_p<Molecule>& mols, int ndx);
+    int Process(resizable_array_p<Molecule>& mols, int ndx, const uint32_t* atypes);
     int Write(const resizable_array_p<Molecule>& mols, IWString_and_File_Descriptor& output);
 
   public:
@@ -303,6 +331,7 @@ RingReplacement::RingReplacement() {
   _molecules_formed = 0;
 
   _remove_isotopes = 0;
+  _translate_isotopes = 0;
 
   _sort_output_by_precedent = 0;
 
@@ -374,7 +403,7 @@ RingReplacement::Initialise(Command_Line& cl) {
   }
 
   if (cl.option_present('N')) {
-    if (! process_queries(cl, _products_must_not_have, _verbose, 'X')) {
+    if (! process_queries(cl, _products_must_not_have, _verbose, 'N')) {
       cerr << "Cannot read products must not have queries (-X)\n";
       return 0;
     }
@@ -412,29 +441,47 @@ RingReplacement::Initialise(Command_Line& cl) {
     }
   }
 
-  if (! cl.option_present('P')) {
-    cerr << "Must specify one of more sets of replacement rings via the -P option\n";
+  if (! cl.option_present('R')) {
+    cerr << "Must specify one of more sets of replacement rings via the -R option\n";
     return 0;
   }
 
-  _nreplacements = cl.option_count('P');
+  _nreplacements = cl.option_count('R');
 
   _rings = new resizable_array_p<Replacement>[_nreplacements];
 
-  if (cl.option_present('P')) {
-    IWString p;
-    for (int i = 0; cl.value('P', p, i); ++i) {
-      if (! ReadReplacementRings(p, i)) {
-        cerr << "Cannot read replacement rings '" << p << "'\n";
+  if (cl.option_present('R')) {
+    IWString r;
+    for (int i = 0; cl.value('R', r, i); ++i) {
+      if (! ReadReplacementRings(r, i)) {
+        cerr << "Cannot read replpcement rings '" << r << "'\n";
         return 0;
       }
     }
   }
 
   if (cl.option_present('I')) {
-    _remove_isotopes = 1;
-    if (_verbose) {
-      cerr << "Will remove isotopes from product molecules\n";
+    const_IWSubstring i = cl.string_value('I');
+    if (i == '.') {
+      _remove_isotopes = 1;
+      if (_verbose) {
+        cerr << "Will remove isotopes from product molecules\n";
+      }
+    } else if (i.numeric_value(_translate_isotopes)) {
+      if (_verbose) {
+        cerr << "Will translate all isotopes to " << _translate_isotopes << '\n';
+      }
+    } else {
+      cerr << "Unrecognised -I qualifier '" << i << "'\n";
+      return 1;
+    }
+  }
+
+  if (cl.option_present('P')) {
+    const_IWSubstring p = cl.string_value('P');
+    if (! _atype.build(p)) {
+      cerr << "Invalid atom type specification '" << p  << "'\n";
+      return 0;
     }
   }
 
@@ -542,7 +589,9 @@ RingReplacement::Report(std::ostream& output) const {
   if (_molecules_read == 0) {
     return 1;
   }
-  output << _replacement_rings_discarded_for_count << " replacement rings discarded for support below " << _min_examples_needed << '\n';
+  if (_min_examples_needed) {
+    output << _replacement_rings_discarded_for_count << " replacement rings discarded for support below " << _min_examples_needed << '\n';
+  }
   output << _duplicates_suppressed << " duplicates suppressed\n";
   output << "Formed " << _molecules_formed << " molecules\n";
 
@@ -560,19 +609,37 @@ RingReplacement::Process(Molecule& m,
                          IWString_and_File_Descriptor& output) {
   ++_molecules_read;
 
+
+  std::unique_ptr<uint32_t[]> atypes;
+  if (_atype.active()) {
+    atypes.reset(new uint32_t[m.natoms()]);
+    _atype.assign_atom_types(m, atypes.get());
+  }
+
   resizable_array_p<Molecule> generated;
   generated << new Molecule(m);
 
-  if (! Process(generated, 0)) {
+  if (! Process(generated, 0, atypes.get())) {
     return 0;
   }
 
   return Write(generated, output);
 }
 
+void
+TranslateIsotopes(Molecule& m, isotope_t iso) {
+  const int matoms = m.natoms();
+  for (int i = 0; i < matoms; ++i) {
+    if (m.isotope(i)) {
+      m.set_isotope(i, iso);
+    }
+  }
+}
+
 int
 RingReplacement::Process(resizable_array_p<Molecule>& mols,
-                         int ndx) {
+                         int ndx,
+                         const uint32_t* atypes) {
 
   resizable_array_p<Molecule> generated_here;
   generated_here.reserve(10 * mols.size());
@@ -588,7 +655,7 @@ RingReplacement::Process(resizable_array_p<Molecule>& mols,
 
       for (const Set_of_Atoms* e : sresults.embeddings()) {
         std::unique_ptr<Molecule> variant;
-        if (! r->MakeVariant(*m, *e, variant)) {
+        if (! r->MakeVariant(*m, *e, atypes, variant)) {
           continue;
         }
         if (!IsUnique(*variant)) {
@@ -596,6 +663,8 @@ RingReplacement::Process(resizable_array_p<Molecule>& mols,
         }
         if (_remove_isotopes) {
           variant->transform_to_non_isotopic_form();
+        } else if (_translate_isotopes) {
+          TranslateIsotopes(*variant, _translate_isotopes);
         }
         variant->reduce_to_largest_fragment();
 
@@ -609,7 +678,7 @@ RingReplacement::Process(resizable_array_p<Molecule>& mols,
   mols.transfer_in(generated_here);
 
   if (ndx < _nreplacements - 1) {
-    return Process(mols, ndx + 1);
+    return Process(mols, ndx + 1, atypes);
   }
 
   return 1;
@@ -692,7 +761,7 @@ ReplaceCore(RingReplacement& ring_replacement,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcY:N:P:s:q:uapn:D:Iw");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcY:N:R:P:s:q:uapn:D:I:wX:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

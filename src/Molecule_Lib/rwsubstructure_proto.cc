@@ -2989,7 +2989,7 @@ Elements_Needed::ConstructFromProto(const SubstructureSearch::ElementsNeeded& pr
   else if (proto.has_atomic_symbol())
   {
     const IWString s = proto.atomic_symbol();
-    int notused;
+    isotope_t notused;
     const Element * e = get_element_from_symbol(s, notused);
     if (nullptr == e)
     {

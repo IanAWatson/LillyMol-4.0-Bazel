@@ -14,7 +14,7 @@ void
 Element_Matcher::_default_values ()
 {
   _e = nullptr;
-  _isotope = -1;
+  _isotope = 0;
 
   _match_organic_only = 0;
   _match_non_organic_only = 0;
@@ -75,7 +75,7 @@ Element_Matcher::operator_less_less (std::ostream & os) const
 {
   os << "Element Matcher:match";
 
-  if (_isotope >= 0)
+  if (_isotope > 0)
     os << " isotope " << _isotope;
      
   if (_e)
@@ -138,7 +138,7 @@ Element_Matcher::construct_from_string (const const_IWSubstring & directive)
   if (0 == s.length())
     return 1;
 
-  _isotope = -1;
+  _isotope = 0;
 
   while (s.length() > 0 && isdigit(s[0]))
   {
@@ -265,7 +265,7 @@ Element_Matcher::debug_print (std::ostream & os) const
   assert (os.good());
 
   os << "Element matcher ";
-  if (_isotope >= 0)
+  if (_isotope > 0)
     os << "isotope " << _isotope << ' ';
   if (nullptr != _e)
     os << "element '" << _e->symbol() << "'";
@@ -300,7 +300,7 @@ Element_Matcher::set_element (const Element * e)
 //#define DEBUG_ELEMENT_MATCHER_MATCHES
 
 int
-Element_Matcher::matches (const Element * e, int iso)
+Element_Matcher::matches (const Element * e, isotope_t iso)
 {
   assert (e->ok());
 
@@ -311,7 +311,7 @@ Element_Matcher::matches (const Element * e, int iso)
 
   int isotope_matched = 0;   // we need to record the fact that something matched
 
-  if (_isotope < 0)    // not active, do not check
+  if (_isotope == 0)    // not active, do not check
     ;
   else if (iso != _isotope)
     return 0;
@@ -392,7 +392,7 @@ Set_of_Element_Matches::construct_from_command_line (Command_Line & cl,
 }
 
 int
-Set_of_Element_Matches::matches (const Element * e, int iso)
+Set_of_Element_Matches::matches (const Element * e, isotope_t iso)
 {
   for (int i = 0; i < _number_elements; i++)
   {

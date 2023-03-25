@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <time.h>
 
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -764,7 +765,7 @@ static int
 do_increment_isotopic_labels_to_indicate_queries_matching(const Molecule& m,
                                                           const Set_of_Atoms& embedding,
                                                           const int na,
-                                                          int* atom_isotopic_label) {
+                                                          isotope_t* atom_isotopic_label) {
   const int matoms = m.natoms();
 
   for (auto i = 0; i < na; ++i) {
@@ -788,7 +789,7 @@ apply_isotopic_labels_embedding(const Molecule& m,
                                 int query_number,
                                 const Substructure_Results& sresults,
                                 int embedding_number,
-                                int* atom_isotopic_label) {
+                                isotope_t* atom_isotopic_label) {
   const Set_of_Atoms* embedding = sresults.embedding(embedding_number);
 
   // cerr << "Processing embedding " << (*embedding) << endl;
@@ -882,7 +883,7 @@ apply_isotopic_labels_embedding(const Molecule& m,
 }
 
 static void
-do_label_matched_atoms_via_atom_map_numbers(Molecule& m, const int* atom_isotopic_label) {
+do_label_matched_atoms_via_atom_map_numbers(Molecule& m, const isotope_t* atom_isotopic_label) {
   const int matoms = m.natoms();
 
   for (int i = 0; i < matoms; ++i) {
@@ -898,8 +899,8 @@ label_match_and_write_to_stream_for_individually_labelled_matches(
     int query_number,
     const Substructure_Results& sresults,
     int embedding_number,
-    int* atom_isotopic_label) {
-  set_vector(atom_isotopic_label, m.natoms(), 0);
+    isotope_t* atom_isotopic_label) {
+  set_vector(atom_isotopic_label, m.natoms(), static_cast<isotope_t>(0));
 
   apply_isotopic_labels_embedding(m, query_number, sresults, embedding_number, atom_isotopic_label);
 
@@ -913,7 +914,7 @@ label_match_and_write_to_stream_for_individually_labelled_matches(
 
 static int
 label_matches_and_write_to_stream_for_individually_labelled_matches(
-    Molecule& m, int query_number, const Substructure_Results& sresults, int* atom_isotopic_label) {
+    Molecule& m, int query_number, const Substructure_Results& sresults, isotope_t* atom_isotopic_label) {
   for (int i = 0; i < sresults.number_embeddings(); i++) {
     if (i > 0)
       m.transform_to_non_isotopic_form();
@@ -935,8 +936,8 @@ label_matches_and_write_to_stream_for_individually_labelled_matches(
   Molecule mcopy(*m);
   mcopy.set_name(m->name());
 
-  int* tmp = new int[mcopy.natoms()];
-  std::unique_ptr<int[]> free_tmp(tmp);
+  isotope_t* tmp = new isotope_t[mcopy.natoms()];
+  std::unique_ptr<isotope_t[]> free_tmp(tmp);
 
   return label_matches_and_write_to_stream_for_individually_labelled_matches(mcopy,
                                                                              query_number,
@@ -948,7 +949,7 @@ static int
 label_atoms_hit(Molecule* m,
                 int query_number,
                 const Substructure_Results& sresults,
-                int* atom_isotopic_label) {
+                isotope_t* atom_isotopic_label) {
   int ne = sresults.number_embeddings();
 
   for (int i = 0; i < ne; i++) {
@@ -985,7 +986,7 @@ do_single_query(Molecule_to_Match& target,
                 Substructure_Hit_Statistics* query,
                 Substructure_Results& sresults,
                 const Element** element_labels,
-                int* atom_isotopic_label) {
+                isotope_t* atom_isotopic_label) {
   int nmatches = query->substructure_search(target, sresults);
 
   if (0 == nmatches)
@@ -1041,7 +1042,7 @@ do_all_queries(Molecule& m,
                Substructure_Results* sresults,
                int* hits,
                const Element** element_labels,
-               int* atom_isotopic_label) {
+               isotope_t* atom_isotopic_label) {
   int rc = 0;
 
   if (useUserAtomTypes) {
@@ -1173,12 +1174,13 @@ tsubstructure(Molecule& m,
 
   int matoms = m.natoms();
 
-  int* atom_isotopic_label;
+  isotope_t* atom_isotopic_label;
 
   if (label_matched_atoms || label_by_query_atom_number || label_by_query_number ||
       increment_isotopic_labels_to_indicate_queries_matching || negative_j_offset ||
       positive_j_offset) {
-    atom_isotopic_label = new_int(matoms);
+    atom_isotopic_label = new isotope_t[matoms];
+    std::fill_n(atom_isotopic_label, matoms, 0);
     if (negative_j_offset || positive_j_offset ||
         increment_isotopic_labels_to_indicate_queries_matching)
       m.get_isotopes(atom_isotopic_label);

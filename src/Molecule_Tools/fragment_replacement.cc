@@ -615,8 +615,8 @@ Options::DoReplacement(Molecule& m,
   }
 
   // Now the harder case where isotopes must match.
-  if (fragment.isotope(f1) == m.atomic_number(a11) &&
-      fragment.isotope(f2) == m.atomic_number(a21)) {
+  if (fragment.isotope(f1) == static_cast<isotope_t>(m.atomic_number(a11)) &&
+      fragment.isotope(f2) == static_cast<isotope_t>(m.atomic_number(a21))) {
     mcopy.add_bond(xref[a11], initial_mcopy_atoms + f1, SINGLE_BOND);
     mcopy.add_bond(xref[a21], initial_mcopy_atoms + f2, SINGLE_BOND);
     Write(mcopy, proto, output);
@@ -624,8 +624,8 @@ Options::DoReplacement(Molecule& m,
     mcopy.remove_bond_between_atoms(xref[a21], initial_mcopy_atoms + f2);
   }
 
-  if (fragment.isotope(f1) == m.atomic_number(a21) &&
-      fragment.isotope(f2) == m.atomic_number(a11)) {
+  if (fragment.isotope(f1) == static_cast<isotope_t>(m.atomic_number(a21)) &&
+      fragment.isotope(f2) == static_cast<isotope_t>(m.atomic_number(a11))) {
     mcopy.add_bond(xref[a11], initial_mcopy_atoms + f2, SINGLE_BOND);
     mcopy.add_bond(xref[a21], initial_mcopy_atoms + f1, SINGLE_BOND);
     return Write(mcopy, proto, output);

@@ -1085,7 +1085,7 @@ Bond_list::unset_all_permanent_aromatic_bonds()
 }
 
 atom_number_t
-Molecule::atom_with_isotope(const int iso) const
+Molecule::atom_with_isotope(const isotope_t iso) const
 {
   for (int i = 0; i < _number_elements; i++)
   {

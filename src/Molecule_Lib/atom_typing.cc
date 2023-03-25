@@ -276,6 +276,8 @@ Atom_Typing_Specification::_parse_user_specified_type(const const_IWSubstring & 
       _user_specified_type |= IWATTYPE_USP_N;
     else if ('u' == c)
       _user_specified_type |= IWATTYPE_USP_U;
+    else if ('b' == c)
+      _user_specified_type |= IWATTYPE_USP_B;
     else if ('i' == c)
       _user_specified_type |= IWATTYPE_USP_I;
     else if ('f' == c)
@@ -2109,7 +2111,8 @@ Atom_Typing_Specification::_perform_shell_iteration_v2 (Molecule & m,
   return rc;
 }
 
-static constexpr int kCarbon = 6007;
+static constexpr int kCarbon = 3001;
+static constexpr int kNitrogen = 6007;
 static constexpr int kOxygen = 9001;
 
 template <typename T>
@@ -2125,10 +2128,10 @@ Atom_Typing_Specification::_ust_assign_atom_types_z_prime_numbers(const Molecule
     switch (m.atomic_number(i))
     {
       case 6:
-        atype[i] = 3001;
+        atype[i] = kCarbon;
         break;
       case 7:
-        atype[i] = kCarbon;
+        atype[i] = kNitrogen;
         break;
       case 8:
         atype[i] = kOxygen;
@@ -2598,6 +2601,27 @@ Atom_Typing_Specification::_ust_assign_atom_types_unsaturated(const Molecule & m
   return 1;
 }
 
+template <typename T>
+int
+Atom_Typing_Specification::_ust_assign_atom_types_unsaturated_x_aromatic(Molecule & m,
+                                                T * atype) const
+{
+  for (int i = m.natoms() - 1; i >= 0; i--)
+  {
+    if (m.is_aromatic(i)) {
+      continue;
+    }
+
+    const Atom * a = m.atomi(i);
+    const int acon = a->ncon();
+    const int nbonds = a->nbonds();
+
+    atype[i] += 7878 + (9 * nbonds - acon);
+  }
+
+  return 1;
+}
+
 
 template <typename T>
 int
@@ -2884,6 +2908,10 @@ Atom_Typing_Specification::_assign_user_specified_type(Molecule & m,
       _ust_assign_atom_types_unsaturated(m, atype);
       t = t ^ IWATTYPE_USP_U;
     }
+    else if (t & IWATTYPE_USP_B) {
+      _ust_assign_atom_types_unsaturated_x_aromatic(m, atype);
+      t = t ^ IWATTYPE_USP_B;
+    }
     else if (t & IWATTYPE_USP_S)
     {
       _ust_assign_atom_types_smallest_ring(m, atype);
@@ -2940,6 +2968,8 @@ Atom_Typing_Specification::_append_tag_for_user_specified_type(IWString & tag) c
     tag << 'R';
   if (IWATTYPE_USP_U & _user_specified_type)
     tag << 'U';
+  if (IWATTYPE_USP_B & _user_specified_type)
+    tag << 'B';
   if (IWATTYPE_USP_I & _user_specified_type)
     tag << 'I';
   if (IWATTYPE_USP_F & _user_specified_type)

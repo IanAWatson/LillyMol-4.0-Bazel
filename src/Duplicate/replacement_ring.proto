@@ -3,16 +3,24 @@ syntax = "proto3";
 package RplRing;
 
 message ReplacementRing {
+  // The replacement ring expressed as smiles.
   string smi = 1;
 
+  // The replacement ring expressed as smarts.
+  // Must have same atom order as `smi`.
   string smt = 2;
 
+  // The name of the first exemplar of this ring.
+  // Suggest using msort to sort the input by heavy atom count.
   string id = 3;
 
+  // What kind of ring system this is.
   string label = 4;
 
+  // The number of exemplars.
   uint32 n = 5;
 
+  // Whether there are connections marked in the smiles.
   bool conn = 6;
 
   // the unique smiles is not needed for processing, but needed for aggregating

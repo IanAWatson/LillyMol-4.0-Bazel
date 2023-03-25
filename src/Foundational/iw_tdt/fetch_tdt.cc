@@ -5,11 +5,14 @@
 
 #include <stdlib.h>
 #include <fstream>
+#include <iostream>
 
-#include "cmdline.h"
-#include "iwstring_data_source.h"
-#include "iw_stl_hash_map.h"
-#include "iwcrex.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/iwre2.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+
+using std::cerr;
 
 const char * prog_name = NULL;
 
@@ -17,7 +20,7 @@ static int verbose = 0;
 
 static IWString identifier_tag ("PCN<");
 
-static IW_Regular_Expression identifier_rx;
+static std::unique_ptr<RE2> identifier_rx;
 
 static int ignore_identifiers_not_matching_rx = 0;
 
@@ -57,7 +60,7 @@ static int invert_fetching_operation = 0;
 static void
 usage (int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Fetches a subset of TDT's from a file of TDT's\n";
   cerr << prog_name << " options <identifier_file> <tdt_file>\n";
   cerr << " -T <tag>       tag for identifiers\n";
@@ -114,19 +117,19 @@ extract_identifier (const IWString & buffer,
   if (remove_leading_zeros)
     id.remove_leading_chars('0');
 
-  if (! identifier_rx.active ())
+  if (! identifier_rx)
     ;
-  else if (identifier_rx.matches (id))
+  else if iwre2::RE2PartialMatch(*identifier_rx, id)
     ;
   else if (ignore_identifiers_not_matching_rx)
   {
-    cerr << "Ignoring identifier '" << id << "' not matching '" << identifier_rx.source () << "'\n";
+    cerr << "Ignoring identifier '" << id << "' not matching '" << identifier_rx->pattern () << "'\n";
     fatal = 0;
     return 0;
   }
   else
   {
-    cerr << "Invalid identifier '" << id << "' does not match '" << identifier_rx.source () << "'\n";
+    cerr << "Invalid identifier '" << id << "' does not match '" << identifier_rx->pattern () << "'\n";
     fatal = 1;
     return 0;
   }
@@ -291,19 +294,19 @@ extract_identifier_from_tdt (const_IWSubstring buffer,    // not passed by refer
   if (remove_leading_zeros)
     id.remove_leading_chars('0');
 
-  if (! identifier_rx.active ())
+  if (! identifier_rx)
     ;
-  else if (identifier_rx.matches (id))
+  else if (iwre2::RE2PartialMatch(*identifier_rx, id))
     ;
   else if (ignore_identifiers_not_matching_rx)
   {
-    cerr << "Ignoring identifier '" << id << "' not matching '" << identifier_rx.source () << "'\n";
+    cerr << "Ignoring identifier '" << id << "' not matching '" << identifier_rx->pattern () << "'\n";
     fatal = 0;
     return 0;
   }
   else
   {
-    cerr << "Invalid identifier '" << id << "' does not match '" << identifier_rx.source () << "'\n";
+    cerr << "Invalid identifier '" << id << "' does not match '" << identifier_rx->pattern () << "'\n";
     fatal = 1;
     return 0;
   }
@@ -331,7 +334,7 @@ read_offsets (iwstring_data_source & tdt_file,
         ;
       else
       {
-        cerr << "No '" << identifier_tag << "' tag in TDT, line " << tdt_file.lines_read () << endl;
+        cerr << "No '" << identifier_tag << "' tag in TDT, line " << tdt_file.lines_read () << '\n';
         return 0;
       }
 
@@ -442,8 +445,7 @@ fetch_tdt (int argc, char ** argv)
   {
     const_IWSubstring p = cl.string_value ('p');
 
-    if (! identifier_rx.set_pattern (p))
-    {
+    if (! iwre2::RE2Reset(identifier_rx, p)) {
       cerr << "Invalid identifier regexp '" << p << "'\n";
       return 5;
     }
@@ -568,7 +570,7 @@ fetch_tdt (int argc, char ** argv)
 #ifdef DEBUG_FETCH_TDT
   for (IW_STL_Hash_Map<IWString, off_t>::const_iterator i = offset.begin(); i != offset.end(); ++i)
   {
-    cerr << "Item '" << (*i).first << "' at " << (*i).second << endl;
+    cerr << "Item '" << (*i).first << "' at " << (*i).second << '\n';
   }
 #endif
 
@@ -631,7 +633,7 @@ fetch_tdt (int argc, char ** argv)
         ;
       else
       {
-        cerr << "Cannot echo TDT for '" << (*f).first << "' at offset " << o << endl;
+        cerr << "Cannot echo TDT for '" << (*f).first << "' at offset " << o << '\n';
         return 6;
       }
     }

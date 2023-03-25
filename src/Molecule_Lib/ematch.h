@@ -16,7 +16,7 @@ class Element_Matcher
   private:
     const Element * _e;
 
-    int _isotope;
+    isotope_t _isotope;
 
     int _match_organic_only;
     int _match_non_organic_only;
@@ -48,9 +48,9 @@ class Element_Matcher
 
     const Element * element () const { return _e;}
 
-    int isotope () const { return _isotope;}
+    isotope_t isotope () const { return _isotope;}
 
-    int matches (const Element *, int = 0);    // = 0 parameter is isotope
+    int matches (const Element *, isotope_t iso = 0);
 };
 
 extern std::ostream &
@@ -65,7 +65,7 @@ class Set_of_Element_Matches : public resizable_array_p<Element_Matcher>
 
     int construct_from_command_line (Command_Line &, int, char);
 
-    int matches (const Element *, int = 0);    // = 0 parameter is isotope
+    int matches (const Element *, isotope_t = 0);    // = 0 parameter is isotope
 };
 
 extern void display_element_matcher_syntax (std::ostream & os);

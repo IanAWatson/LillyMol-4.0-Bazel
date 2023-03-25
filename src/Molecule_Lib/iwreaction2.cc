@@ -812,7 +812,7 @@ write_isotopically_labelled_smiles(Molecule & m,
 {
   int matoms = m.natoms();
 
-  int * isosave = new int[matoms]; std::unique_ptr<int[]> free_isosave(isosave);
+  isotope_t * isosave = new isotope_t[matoms]; std::unique_ptr<isotope_t[]> free_isosave(isosave);
 
   m.get_isotopes(isosave);
 

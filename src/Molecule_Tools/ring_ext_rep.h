@@ -80,11 +80,11 @@ class Ring_Extraction_Replacement_Conditions
 
     int _ring_aromaticity_needed;
 
-    int _isotope_for_ring_fusion;
+    isotope_t _isotope_for_ring_fusion;
 
     const Element * _ring_fusion_element;
 
-    int _isotope_for_substitution_points;
+    isotope_t _isotope_for_substitution_points;
 
     int _include_substituents;
 

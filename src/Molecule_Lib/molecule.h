@@ -1,6 +1,7 @@
 #ifndef IW_MOLECULE_H
 #define IW_MOLECULE_H 1
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -374,7 +375,7 @@ class Make_Implicit_Hydrogens_Explicit
   private:
     atom_number_t _a;
 
-    int _isotope;
+    isotope_t _isotope;
     int _dimensionality;
 
   public:
@@ -382,10 +383,10 @@ class Make_Implicit_Hydrogens_Explicit
 
     void reset() { _a = INVALID_ATOM_NUMBER;}
 
-    int isotope() const { return _isotope;}
+    isotope_t isotope() const { return _isotope;}
     int dimensionality() const { return _dimensionality;}
 
-    void set_isotope(int s) { _isotope = s;}
+    void set_isotope(isotope_t s) { _isotope = s;}
     void set_dimensionality(int s) { _dimensionality = s;}
 
     atom_number_t a() const { return _a;}
@@ -825,20 +826,21 @@ class Molecule : private resizable_array_p<Atom>
     int   set_atomic_number(atom_number_t a, atomic_number_t);
 
     int   number_isotopic_atoms() const;
-    int   number_isotopic_atoms(int) const;
+    int   number_isotopic_atoms(isotope_t iso) const;
     int   transform_to_non_isotopic_form();
-    int   set_isotope (atom_number_t, int);
-    int   set_isotope_no_perturb_canonical_ordering(atom_number_t a, int iso);
+    int   set_isotope (atom_number_t zatom, isotope_t iso);
+    int   set_isotope_no_perturb_canonical_ordering(atom_number_t a, isotope_t iso);
     int   set_userAtomType(atom_number_t a, int atomType);
     int   unset_isotopes(const int *);   // anything > 0 will be set to 0
     int   unset_isotopes() { return transform_to_non_isotopic_form();}
-    int   set_isotope(const Set_of_Atoms &, int);
-    void  get_isotopes(int *) const;
-    int   isotope(atom_number_t) const;
+    int   set_isotope(const Set_of_Atoms &, isotope_t);
+    void  get_isotopes(isotope_t *) const;
+    isotope_t   isotope(atom_number_t) const;
+    // Returns 1 if successful, zero otherwise.
     int   increment_isotope(atom_number_t, int);
-    int   maximum_isotope() const;
+    isotope_t   maximum_isotope() const;
     //    First atom with isotope 'iso'
-    atom_number_t atom_with_isotope(int iso) const;
+    atom_number_t atom_with_isotope(isotope_t iso) const;
 
     void  set_isotope_to_atom_number_no_perturb_canonical_ordering();
 
@@ -1229,7 +1231,7 @@ class Molecule : private resizable_array_p<Atom>
     int    remove_atoms(Set_of_Atoms &);
     int    remove_atoms(const int *);
     int    remove_many_atoms(const int *);      // more efficient version - with molecules having lots of atoms
-    int    remove_all_atoms_with_isotope(int);
+    int    remove_all_atoms_with_isotope(isotope_t);
     int    delete_fragment(int);
     //     Delete a set of fragment numbers.
     int    delete_fragments(const resizable_array<int> &);

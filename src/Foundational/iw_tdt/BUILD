@@ -20,6 +20,21 @@ cc_library(
     ],
 )
 
+cc_binary( 
+    name = "fetch_tdt",
+    srcs = [
+        "fetch_tdt.cc",
+    ],
+    deps = [
+      ":iw_tdt",
+        "//Foundational/iwmisc:iwconfig",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwstring:iwstring",
+    ],
+)
+
 cc_binary (
     name = "tdt_sort",
     srcs = [

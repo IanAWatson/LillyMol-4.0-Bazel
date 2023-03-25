@@ -1501,7 +1501,7 @@ debug_print_all_elements(std::ostream & os)
 */
 
 const Element *
-get_element_from_symbol(const char *name, int nchars, int & isotope)
+get_element_from_symbol(const char *name, int nchars, isotope_t & isotope)
 {
   assert (nullptr != name);
   assert (nchars > 0);
@@ -1615,19 +1615,19 @@ get_element_from_symbol_no_case_conversion(const IWString & s)
 }
 
 const Element *
-get_element_from_symbol (const char *name, int & isotope)
+get_element_from_symbol (const char *name, isotope_t & isotope)
 {
   return get_element_from_symbol(name, static_cast<int>(::strlen(name)), isotope);
 }
 
 const Element *
-get_element_from_symbol (const const_IWSubstring & name, int & isotope)
+get_element_from_symbol (const const_IWSubstring & name, isotope_t & isotope)
 {
   return get_element_from_symbol(name.rawchars(), name.nchars(), isotope);
 }
 
 const Element *
-get_element_from_symbol (const IWString & name, int & isotope)
+get_element_from_symbol (const IWString & name, isotope_t & isotope)
 {
   return get_element_from_symbol(name.rawchars(), name.length(), isotope);
 }
@@ -1639,7 +1639,7 @@ get_element_from_symbol (const IWString & name, int & isotope)
 */
 
 const Element *
-get_element_from_symbol (char name, int & isotope)
+get_element_from_symbol (char name, isotope_t & isotope)
 {
   IWString tmp = name;
 
@@ -1940,9 +1940,9 @@ get_element_from_atomic_number (atomic_number_t z)
 }
 
 int
-Element::append_smiles_symbol (IWString & smiles,
+Element::append_smiles_symbol(IWString & smiles,
                                aromaticity_type_t arom, 
-                               int isotope) const
+                               isotope_t isotope) const
 {
   if (isotope && include_isotopes_in_smiles)
   {

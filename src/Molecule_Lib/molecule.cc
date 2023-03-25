@@ -3023,7 +3023,7 @@ Molecule::number_isotopic_atoms() const
 }
 
 int
-Molecule::number_isotopic_atoms(int iso) const
+Molecule::number_isotopic_atoms(isotope_t iso) const
 {
   assert(ok());
 
@@ -3112,7 +3112,7 @@ Molecule::set_isotopes(const T * iso)
 }
 
 template int Molecule::set_isotopes(const int *);
-template int Molecule::set_isotopes(const unsigned int *);
+template int Molecule::set_isotopes(const isotope_t *);
 
 int
 Molecule::unset_isotopes(const int * iso)
@@ -3136,7 +3136,7 @@ Molecule::unset_isotopes(const int * iso)
 
 int
 Molecule::set_isotope(const Set_of_Atoms & s,
-                      int iso)
+                      isotope_t iso)
 {
   for (const atom_number_t i : s)
   {
@@ -3152,7 +3152,7 @@ Molecule::set_isotope(const Set_of_Atoms & s,
 }
 
 void
-Molecule::get_isotopes(int * iso) const
+Molecule::get_isotopes(isotope_t * iso) const
 {
   assert(nullptr != iso);
 
@@ -3165,7 +3165,7 @@ Molecule::get_isotopes(int * iso) const
 }
 
 int
-Molecule::set_isotope(atom_number_t a, int iso)
+Molecule::set_isotope(atom_number_t a, isotope_t iso)
 {
   assert(ok_atom_number(a));
 
@@ -3205,7 +3205,7 @@ Molecule::set_isotope_to_atom_number_no_perturb_canonical_ordering()
 
 int
 Molecule::set_isotope_no_perturb_canonical_ordering(atom_number_t a,
-                                int iso)
+                                isotope_t iso)
 {
   assert(ok_atom_number(a));
 
@@ -3216,7 +3216,7 @@ Molecule::set_isotope_no_perturb_canonical_ordering(atom_number_t a,
   return 1;
 }
 
-int
+isotope_t
 Molecule::isotope(atom_number_t a) const
 {
   assert(ok_atom_number(a));
@@ -3232,10 +3232,10 @@ Molecule::userAtomType(atom_number_t a) const
   return _things[a]->userAtomType();
 }
 
-int
+isotope_t
 Molecule::maximum_isotope() const
 {
-  int maxi = _things[0]->isotope();
+  isotope_t maxi = _things[0]->isotope();
 
   for (int i = 1; i < _number_elements; i++)
   {
@@ -3254,17 +3254,25 @@ Molecule::increment_isotope(atom_number_t zatom,
 
 //int current_isotope = _things[zatom]->isotope();
 
-  int new_isotope = _things[zatom]->isotope() + incr;
+  if (incr == 0) {
+    return 1;
+  }
 
-  if (new_isotope < 0)
-  {
-    cerr << "Molecule::increment_isotope:out of range, from " << _things[zatom]->isotope() << " increment " << incr << endl;
+  isotope_t current_iso = _things[zatom]->isotope();
+
+  // Guard against underflow and overflow.
+  // Or should underflow and overflow just set to 0 and max?
+  if (incr < 0) {
+    if (static_cast<isotope_t>(-incr) > current_iso) {
+      cerr << "Molecule::increment_isotope:cannot increment " << current_iso << " by incr\n";
+      return 0;
+    }
+  } else if (std::numeric_limits<isotope_t>::max() - current_iso < static_cast<isotope_t>(incr)) {
+    cerr << "Molecule::increment_isotope:cannot increment " << current_iso << " by incr\n";
     return 0;
   }
 
-  _things[zatom]->set_isotope(new_isotope);
-
-  _invalidate_for_changed_isotope();
+  _things[zatom]->set_isotope(current_iso + incr);
 
   return 1;
 }
@@ -4312,18 +4320,17 @@ Molecule::remove_all(atomic_number_t to_remove)
 }
 
 int
-Molecule::remove_all_atoms_with_isotope(int iso)
+Molecule::remove_all_atoms_with_isotope(isotope_t iso)
 {
   int rc = 0;
 
-  for (int i = 0; i < _number_elements; i++)
-  {
-    if (iso != _things[i]->isotope())
+  for (int i = _number_elements - 1; i >= 0; --i) {
+    if (_things[i]->isotope() != iso) {
       continue;
+    }
 
     remove_atom(i);
-    i--;
-    rc++;
+    ++rc;
   }
 
   return rc;
@@ -5378,13 +5385,13 @@ int
 write_isotopically_labelled_smiles(Molecule & m, const bool uniq, T & output)
 {
   const int matoms = m.natoms();
-  int * isosave = new int[matoms]; std::unique_ptr<int[]> free_isosave(isosave);
+  isotope_t * isosave = new isotope_t[matoms]; std::unique_ptr<isotope_t[]> free_isosave(isosave);
 
   m.get_isotopes(isosave);
 
   for (int i = 0; i < matoms; ++i)
   {
-    m.set_isotope(i, i);
+    m.set_isotope(i, static_cast<isotope_t>(i));
   }
 
   if (uniq)

@@ -102,6 +102,9 @@ class CoreReplacement {
 
     int OpenDatabase();
     int HandleNoQueryMatch(Molecule& m, IWString_and_File_Descriptor& output);
+
+    uint32_t GetHashValue(Molecule& m, const Set_of_Atoms& matched_atoms);
+
     int Process(Molecule& m,
         const Set_of_Atoms& matched_atoms,
         IWString_and_File_Descriptor& output);
@@ -116,7 +119,7 @@ class CoreReplacement {
                  const Set_of_Atoms& matched_atoms,
                  const int* to_be_removed,
                  IWString_and_File_Descriptor& output);
-    int Process2(Molecule& m,
+    int Process(Molecule& m,
                  const Set_of_Atoms& matched_atoms,
                  uint32_t hash,
                  const int* to_be_removed,
@@ -125,12 +128,28 @@ class CoreReplacement {
                  const Set_of_Atoms& matched_atoms,
                  const int* to_be_removed,
                  IWString_and_File_Descriptor& output);
+    int Process3(Molecule& m,
+                          const Set_of_Atoms& matched_atoms,
+                          uint32_t hash,
+                          const int * to_be_removed,
+                          IWString_and_File_Descriptor& output);
+    int DoReplacement(Molecule& m,
+                      const Set_of_Atoms& matched_atoms,
+                      const embedded_fragment::EmbeddedFragment& fragment,
+                      const int * to_be_removed,
+                      IWString_and_File_Descriptor& output);
     int DoReplacement2(Molecule& m,
                        const Set_of_Atoms& matched_atoms,
-                       const embedded_fragment::EmbeddedFragment& fragment,
                        const int * to_be_removed,
+                       const Molecule& fragment,
+                       IWString_and_File_Descriptor& output);
+    int DoReplacement3(Molecule& m,
+                       const Set_of_Atoms& matched_atoms,
+                       const int * to_be_removed,
+                       const Molecule& fragment,
                        IWString_and_File_Descriptor& output);
     int MeetsSupportRequirement(const EmbeddedFragment& fragment);
+    int MeetsAtomCountRequirement(const EmbeddedFragment& fragment) const;
     int FragmentContainsNeededSubstructure(Molecule& m);
     int OkAtomCount(int number_atoms_removed, const Molecule& fragment);
 
@@ -397,43 +416,42 @@ CoreReplacement::Process(Molecule& m,
   return Process(m, matched_atoms, to_be_removed.get(), output);
 }
 
+uint32_t
+CoreReplacement::GetHashValue(Molecule& m,
+             const Set_of_Atoms& matched_atoms) {
+  atom_number_t a1 = matched_atoms[0];
+  atom_number_t a2 = matched_atoms[1];
+  if (matched_atoms.size() == 2) {
+    return _hasher.Value(m.atomic_number(a1), m.atomic_number(a2), m.bonds_between(a1, a2));
+  }
+
+  atom_number_t a3 = matched_atoms[2];
+  return _hasher.Value(m.atomic_number(a1), m.atomic_number(a2), m.atomic_number(a3),
+                       m.bonds_between(a1, a2), m.bonds_between(a1, a3),
+                       m.bonds_between(a2, a3));
+}
+
 int
 CoreReplacement::Process(Molecule& m,
                          const Set_of_Atoms& matched_atoms,
                          const int* to_be_removed,
                          IWString_and_File_Descriptor& output) {
-  cerr << " breaking " << _bonds_to_break << " bonds\n";
-  if (matched_atoms.size() == 2) {
-    return Process2(m, matched_atoms, to_be_removed, output);
+  if (matched_atoms.size() > 3) {
+    cerr << "CoreReplacement::Process:do not know how to handle " << _bonds_to_break << " bonds broken\n";
+    return 0;
   }
 
-  if (matched_atoms.size() == 3) {
-    return Process3(m, matched_atoms, to_be_removed, output);
-  }
+  uint32_t hash = GetHashValue(m, matched_atoms);
 
-  cerr << "CoreReplacement::Process:do not know how to handle " << _bonds_to_break << " bonds broken\n";
-  return 0;
+  return Process(m, matched_atoms, hash, to_be_removed, output);
 }
 
 int
-CoreReplacement::Process2(Molecule& m,
+CoreReplacement::Process(Molecule& m,
                          const Set_of_Atoms& matched_atoms,
-                          const int* to_be_removed,
-                          IWString_and_File_Descriptor& output) {
-  assert(matched_atoms.size() == 2);
-  atom_number_t a1 = matched_atoms[0];
-  atom_number_t a2 = matched_atoms[1];
-  uint32_t hash = _hasher.Value(m.atomic_number(a1), m.atomic_number(a2), m.bonds_between(a1, a2));
-
-  return Process2(m, matched_atoms, hash, to_be_removed, output);
-}
-
-int
-CoreReplacement::Process2(Molecule& m,
-                          const Set_of_Atoms& matched_atoms,
-                          uint32_t hash,
-                          const int* to_be_removed,
-                          IWString_and_File_Descriptor& output) {
+                         uint32_t hash,
+                         const int* to_be_removed,
+                         IWString_and_File_Descriptor& output) {
   MDB_val key;
   key.mv_data = &hash;
   key.mv_size = sizeof(hash);
@@ -463,7 +481,7 @@ CoreReplacement::Process2(Molecule& m,
       return 0;
     }
 
-    if (! DoReplacement2(m, matched_atoms, fragment, to_be_removed, output)) {
+    if (! DoReplacement(m, matched_atoms, fragment, to_be_removed, output)) {
       cerr << "CoreReplacement::Process2:failure\n";
       return 0;
     }
@@ -475,12 +493,16 @@ CoreReplacement::Process2(Molecule& m,
 }
 
 int
-CoreReplacement::DoReplacement2(Molecule& m,
-                                const Set_of_Atoms& matched_atoms,
-                                const embedded_fragment::EmbeddedFragment& fragment,
-                                const int * to_be_removed,
-                                IWString_and_File_Descriptor& output) {
+CoreReplacement::DoReplacement(Molecule& m,
+                               const Set_of_Atoms& matched_atoms,
+                               const embedded_fragment::EmbeddedFragment& fragment,
+                               const int * to_be_removed,
+                               IWString_and_File_Descriptor& output) {
   if (! MeetsSupportRequirement(fragment)) {
+    return 1;
+  }
+
+  if (! MeetsAtomCountRequirement(fragment)) {
     return 1;
   }
 
@@ -500,18 +522,59 @@ CoreReplacement::DoReplacement2(Molecule& m,
     return 0;
   }
 
-  Molecule mcopy(m);
-  mcopy.add_molecule(&frag);
+  switch (matched_atoms.size()) {
+    case 2:
+      return DoReplacement2(m, matched_atoms, to_be_removed, frag, output);
+    case 3:
+      return DoReplacement3(m, matched_atoms, to_be_removed, frag, output);
+    default:
+      cerr << "CoreReplacement::DoReplacement:cannot handle " << matched_atoms.size() << " atoms\n";
+      return 0;
+  }
 
+  return 0;  // should not come here
+}
+
+// Atoms `to_be_removed` are going to be removed from a molecule
+// containing `matoms` atoms.
+// Fill in `xref` which is a mapping from old atom numbers to atom
+// numbers in what is left.
+// Returns the number of items that remain.
+int
+EstablishXref(const int* to_be_removed,
+              int matoms,
+              int * xref) {
+  int rc = 0;
+  for (int i = 0; i < matoms; ++i) {
+    if (to_be_removed[i]) {
+      xref[i] = -1;
+    } else {
+      xref[i] = rc;
+      ++rc;
+    }
+  }
+  return rc;
+}
+
+int
+CoreReplacement::DoReplacement2(Molecule& m,
+                                const Set_of_Atoms& matched_atoms,
+                                const int * to_be_removed,
+                                const Molecule& fragment,
+                                IWString_and_File_Descriptor& output) {
+  Molecule mcopy(m);
+  mcopy.add_molecule(&fragment);
   return 1;
 }
 
 int
-CoreReplacement::Process3(Molecule& m,
-                         const Set_of_Atoms& matched_atoms,
-                          const int* to_be_removed,
-                          IWString_and_File_Descriptor& output) {
-  assert(matched_atoms.size() == 3);
+CoreReplacement::DoReplacement3(Molecule& m,
+                                const Set_of_Atoms& matched_atoms,
+                                const int * to_be_removed,
+                                const Molecule& fragment,
+                                IWString_and_File_Descriptor& output) {
+  Molecule mcopy(m);
+  mcopy.add_molecule(&fragment);
   return 1;
 }
 
@@ -558,6 +621,26 @@ CoreReplacement::MeetsSupportRequirement(const EmbeddedFragment& fragment) {
   if (fragment.count() < _min_support_needed) {
     return 0;
   }
+
+  return 1;
+}
+
+int
+CoreReplacement::MeetsAtomCountRequirement(const EmbeddedFragment& fragment) const {
+#ifdef FINISHTHIS
+  if (_min_fragment_atom_count == 0 && _max_fragment_atom_count == 0) {
+    return 1;
+  }
+  const_IWSubstring smiles = fragment.smiles();
+  int atoms_in_fragment = count_atoms_in_smiles(smiles);
+  if (atoms < _min_fragment_atom_count) {
+    return 0;
+  }
+  if (_max_fragment_atom_count > 0 && atoms_in_fragment > _max_fragment_atom_count) {
+    return 0;
+  }
+#endif
+
   return 1;
 }
 

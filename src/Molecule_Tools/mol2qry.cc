@@ -277,7 +277,7 @@ int
 expand_isotopes(MDL_Molecule & m,
                 atom_number_t zatom,
                 int radius,
-                int iso)
+                isotope_t iso)
 {
   const Atom * a = m.atomi(zatom);
 

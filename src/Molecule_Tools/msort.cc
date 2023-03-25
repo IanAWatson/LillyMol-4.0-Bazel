@@ -851,7 +851,7 @@ IsotopeOnMatchedAtom(Molecule& m, Substructure_Query& query) {
 
   // Open question about what should be returned. Since this
   // is what I needed when I implemented this, it is max.
-  int highest_isotope = 0;
+  isotope_t highest_isotope = 0;
   for (int i = 0; i < nhits; ++i) {
     const Set_of_Atoms * e = sresults.embedding(i);
     const atom_number_t a = e->item(0);

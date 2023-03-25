@@ -25,12 +25,15 @@
 
 #define VALENCE_NOT_DEFINED -5
 
+// Isotopes are restricted to 32 bit unsigned values.
+using isotope_t = uint32_t;
+
 class Element {
   private:
     atomic_number_t _atomic_number;
     IWString _symbol;
     IWString _aromatic_symbol;        // save doing run-time conversions
-    int _normal_isotope;              // count of protons + neutrons for most abundant
+    isotope_t _normal_isotope;        // count of protons + neutrons for most abundant
     atomic_mass_t _atomic_mass;       // closely related to _normal_isotope
     int _organic;
     int _metal;
@@ -104,9 +107,9 @@ class Element {
 
     int read_ptable_record (const const_IWSubstring &);
 
-    int append_smiles_symbol (IWString & smiles, aromaticity_type_t arom, int isotope) const;
+    int append_smiles_symbol (IWString & smiles, aromaticity_type_t arom, isotope_t isotope) const;
 
-    int normal_isotope () const { return _normal_isotope;}
+    isotope_t normal_isotope () const { return _normal_isotope;}
 
     int organic () const { return _organic;}
     void set_organic (int o) { _organic = o;}
@@ -161,10 +164,10 @@ extern void  debug_print_all_elements (std::ostream &);
   All the get_element_from_symbol variants convert the first char to uppercase
 */
 
-extern const Element * get_element_from_symbol (const char *, int, int &);
-extern const Element * get_element_from_symbol (const char *, int &);
-extern const Element * get_element_from_symbol (const const_IWSubstring &, int &);
-extern const Element * get_element_from_symbol (const IWString &, int &);
+extern const Element * get_element_from_symbol (const char *, int, isotope_t &);
+extern const Element * get_element_from_symbol (const char *, isotope_t &);
+extern const Element * get_element_from_symbol (const const_IWSubstring &, isotope_t &);
+extern const Element * get_element_from_symbol (const IWString &, isotope_t &);
 extern const Element * get_element_from_symbol (char);
 
 extern const Element * get_element_from_symbol_no_case_conversion (const char * s, int nchars);

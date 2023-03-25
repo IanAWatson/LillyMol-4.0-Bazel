@@ -90,6 +90,10 @@
 
 #define IWATTYPE_USP_O one_bit_32[19]
 
+// Unsaturated, but aromatic NOT included.
+
+#define IWATTYPE_USP_B one_bit_32[20]
+
 #define IWATTYPE_PPHORE 262144
 
 // The atomic symbol hash value - useful for non periodic table elements
@@ -136,6 +140,7 @@ class Atom_Typing_Specification
     template <typename T> int _ust_assign_atom_types_isotope (const Molecule & m, T * atype) const;
     template <typename T> int _ust_assign_atom_types_heteroatom (const Molecule & m, T * atype) const;
     template <typename T> int _ust_assign_atom_types_unsaturated (const Molecule & m, T * atype) const;
+    template <typename T> int _ust_assign_atom_types_unsaturated_x_aromatic (Molecule & m, T * atype) const;
     template <typename T> int _ust_assign_atom_types_pi_boolean (Molecule & m, T * atype) const;
     template <typename T> int _ust_assign_atom_types_ring_fusion (Molecule & m, T * atype) const;
     template <typename T> int _ust_assign_atom_types_aromatic_all_the_same (Molecule & m, T * atype) const;

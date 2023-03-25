@@ -6,6 +6,7 @@
 #ifndef IW_ATOM_H
 #define IW_ATOM_H 1
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -43,7 +44,7 @@ class Atom : public resizable_array <Bond *>, public Coordinates
 
     short _permanent_aromatic;
 
-    int _isotope;
+    isotope_t _isotope;
     int _userAtomType;
 
     void * _user_specified_void_ptr;
@@ -73,8 +74,8 @@ class Atom : public resizable_array <Bond *>, public Coordinates
 
     int audit() const;
 
-    int  isotope() const { return _isotope;}
-    void set_isotope(int i) { _isotope = i;}
+    isotope_t  isotope() const { return _isotope;}
+    void set_isotope(isotope_t i) { _isotope = i;}
     int  is_isotope() const;
     
     int  userAtomType() const { return _userAtomType;}

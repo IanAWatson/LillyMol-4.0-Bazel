@@ -4,13 +4,16 @@
 
 #include <stdlib.h>
 #include <fstream>
+#include <iostream>
 
-#include "cmdline.h"
-#include "iw_stl_hash_map.h"
-#include "misc.h"
+#include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwmisc/iwre2.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/fetch_via_regexp.h"
+#include "Foundational/iw_tdt/iw_tdt.h"
 
-#include "iw_tdt.h"
-#include "fetch_via_regexp.h"
+using std::cerr;
 
 const char * prog_name = NULL;
 
@@ -56,7 +59,7 @@ static int strip_leading_zeros = 0;
 static void
 usage (int rc)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
   cerr << "Fetches a subset of TDT's from a file of TDT's\n";
   cerr << prog_name << " options <identifier_file> <tdt_file>\n";
   cerr << " -T <tag>       tag for identifiers\n";

@@ -260,7 +260,7 @@ class MFingerprint
 
     int * _hcount;
 
-    int * _isotope;
+    isotope_t * _isotope;
 
     int _path_length;     // the length (in bonds) of the current path
 
@@ -365,7 +365,7 @@ MFingerprint::MFingerprint (Molecule & m,
 
   if (lfpd->max_path_length_isotopic_bits() >= 0)
   {
-    _isotope = new int[_matoms];
+    _isotope = new isotope_t[_matoms];
     m.get_isotopes(_isotope);
   }
   else
@@ -810,7 +810,8 @@ MFingerprint::_do_isotope_bits (int istart,
   cerr << "MFingerprint::_do_isotope_bits:setting " << (zbit % bits_per_iwmfingerprint) << endl;
 #endif
 
-  bits[zbit]++;      BIT_FORMED(zbit, bits, "isotope")
+  bits[zbit]++;
+  BIT_FORMED(zbit, bits, "isotope")
 }
 
 template <typename T>

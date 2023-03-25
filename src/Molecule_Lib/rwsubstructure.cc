@@ -2696,7 +2696,7 @@ Substructure_Atom::create_from_molecule (Molecule & m,
   else if (mqs.ignore_atom_type()) {
     // Do nothing
   }
-  else if (mqs.isotope_means_match_any_atom() &&
+  else if (mqs.isotope_means_match_any_atom() && a->isotope() > 0 &&
            a->isotope() == mqs.isotope_means_match_any_atom()) {
   }
   else if (e->is_in_periodic_table())

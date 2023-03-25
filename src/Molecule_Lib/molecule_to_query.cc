@@ -179,7 +179,7 @@ Molecule_to_Query_Specifications::Molecule_to_Query_Specifications()
 
   _all_bonds_become_type_any = 0;
     
-  _isotope_means_match_any_atom = -1;
+  _isotope_means_match_any_atom = 0;
 
   _ignore_atom_type = 0;
 

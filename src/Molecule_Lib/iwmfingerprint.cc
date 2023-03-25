@@ -476,7 +476,7 @@ class MFingerprint
 
     int * _hcount;
 
-    int * _isotope;
+    isotope_t * _isotope;
 
     int _path_length;     // the length (in bonds) of the current path
 
@@ -589,7 +589,7 @@ MFingerprint::MFingerprint (Molecule & m,
 
   if (max_path_length_isotopic_bits >= 0)
   {
-    _isotope = new int[_matoms];
+    _isotope = new isotope_t[_matoms];
     m.get_isotopes(_isotope);
   }
   else
@@ -1221,7 +1221,7 @@ MFingerprint::_do_isotope_bits (int * bvector) const
 
   atom_number_t astart = _path[0];
 
-  int i0 = _isotope[astart];
+  isotope_t i0 = _isotope[astart];
   if (0 == _path_length)
   {
     unsigned int b = 77265 + _path_hash_value[0] * 87 + i0 % 87;
@@ -1237,7 +1237,7 @@ MFingerprint::_do_isotope_bits (int * bvector) const
 
   atom_number_t astop = _path[_path_length];
 
-  int i1 = _isotope[astop];
+  isotope_t i1 = _isotope[astop];
 
   if (i0 > i1)
     _do_isotope_bits(0, _path_length, 1, bvector);

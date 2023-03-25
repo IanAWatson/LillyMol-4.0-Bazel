@@ -11,6 +11,7 @@
 #include "Foundational/iwmisc/iwre2.h"
 #include "Foundational/iw_tdt/iw_tdt.h"
 #include "Foundational/data_source/iwstring_data_source.h"
+#include "Foundational/iwmisc/proto_support.h"
 #include "Foundational/iwstring/iw_stl_hash_set.h"
 
 #include "Molecule_Lib/aromatic.h"
