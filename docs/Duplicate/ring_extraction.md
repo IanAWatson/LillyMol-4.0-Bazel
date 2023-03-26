@@ -92,11 +92,11 @@ to make this more robust.
 A useful atom typing might be `UST:ABCHY`. This consists of five atomic properties,
 and as such, is likely over-specified. The comonents are
 
-. A aromatic
-. B unsaturation (excluding aromatic)
-. C number of connections
-. H number of hydrogens.
-. Y compressed atomic number - heavy halogens equivalent.
+* A aromatic
+* B unsaturation (excluding aromatic)
+* C number of connections
+* H number of hydrogens.
+* Y compressed atomic number - heavy halogens equivalent.
 
 Using a very precise atom typing like this should raise the probability of your
 newly generated molecules being synthetically feasible, but at the cost of generating
@@ -153,7 +153,7 @@ The files are named according to a convention. `a` refers to an aromatic ring, a
 `A` refers to an aliphatic ring. So `CHEMBL_5a6a.smi` contains 5/6 fused aromatic
 ring systems. By convention, ring systems are named in increasing ring size, and
 aromatic before aliphatic. Take a look at structures included with the files to
-make sure you understand what this naming.
+make sure you understand this naming.
 
 ### ring_replacement
 The usage message for `ring_replacement` is,
