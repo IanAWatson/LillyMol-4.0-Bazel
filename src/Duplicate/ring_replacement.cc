@@ -70,6 +70,11 @@ class Replacement {
     // save for debugging.
     IWString _smarts;
 
+  // private functions.
+
+    void ReportValenceErrors(const Molecule& parent, Molecule& m, std::ostream& output) const;
+    void SetName(const IWString& parent_name, Molecule& m) const;
+
   public:
     int BuildFromProto(const RplRing::ReplacementRing& proto);
 
@@ -108,6 +113,36 @@ Replacement::BuildFromProto(const RplRing::ReplacementRing& proto) {
 int
 Replacement::SubstructureSearch(Molecule_to_Match& target, Substructure_Results& sresults) {
   return _query.substructure_search(target, sresults);
+}
+
+// Provide detailed information on valence errors in `m`.
+void
+Replacement::ReportValenceErrors(const Molecule& parent, Molecule& m, std::ostream& output) const {
+  if (m.valence_ok()) {
+    return;
+  }
+
+  output << "Invalid valence '" << m.smiles() << ' ' << parent.name() << ' ' << _id << '\n';
+  for (int i = 0; i < m.natoms(); ++i) {
+    if (! m.valence_ok(i)) {
+      output << " atom " << i << ' ' << m.smarts_equivalent_for_atom(i) << '\n';
+    }
+  }
+}
+
+// Install a new name in `m` derived from `parent_name` and `_id`.
+void
+Replacement::SetName(const IWString& parent_name,
+                     Molecule& m) const {
+  IWString name;
+  name << parent_name;
+  name << " %% " << _id;
+  if (! _label.empty()) {
+    name << '.' << _label;
+  }
+  name << ' ' << _count;
+
+  m.set_name(name);
 }
 
 void
@@ -206,28 +241,13 @@ Replacement::MakeVariant(Molecule& parent,
   UnsetImplicitHydrogenInformation(*m);
 
   if (int final_aromatic_atoms = m->aromatic_atom_count(); final_aromatic_atoms < initial_aromatic_count) {
-    cerr << "Warning loss of aromaticty " << parent.unique_smiles() << " vs " << m->unique_smiles() << '\n';
+    cerr << "Warning loss of aromaticty " << parent.smiles() << " vs " << m->smiles() << '\n';
     cerr << initial_aromatic_count << " vs " << final_aromatic_atoms << " aromatic atoms\n";
   }
 
-  if (! m->valence_ok()) {
-    cerr << "Invalid valence '" << m->smiles() << ' ' << parent.name() << ' ' << _id << '\n';
-    for (int i = 0; i < m->natoms(); ++i) {
-      if (! m->valence_ok(i)) {
-        cerr << " atom " << i << ' ' << m->smarts_equivalent_for_atom(i) << '\n';
-      }
-    }
-    return 0;
-  }
+  ReportValenceErrors(parent, *m, cerr);
 
-  IWString name;
-  name << parent.name();
-  name << " %% " << _id;
-  if (! _label.empty()) {
-    name << '.' << _label;
-  }
-  name << ' ' << _count;
-  m->set_name(name);
+  SetName(parent.name(), *m);
 
   result.reset(m.release());
 
@@ -698,6 +718,9 @@ RingReplacement::IsUnique(Molecule& m) {
   }
 
   _seen.insert(m.unique_smiles());
+
+  // Make sure we do not write unique smiles.
+  m.invalidate_smiles();
 
   return 1;
 }

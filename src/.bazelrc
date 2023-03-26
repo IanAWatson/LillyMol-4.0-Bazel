@@ -1,4 +1,7 @@
-build --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lz
+# Static executables
+# build --cxxopt=-std=c++17 --cxxopt=-fPIC --cxxopt=-march=core-avx2 --linkopt=-static
+
+build --cxxopt=-std=c++17 --cxxopt=-march=core-avx2
 build:asan --strip=never
 build:asan --copt -fsanitize=address
 build:asan --copt -DADDRESS_SANITIZER

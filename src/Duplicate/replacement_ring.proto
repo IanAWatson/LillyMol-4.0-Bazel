@@ -21,6 +21,7 @@ message ReplacementRing {
   uint32 n = 5;
 
   // Whether there are connections marked in the smiles.
+  // Note that this is not being used in ring_replacement now.
   bool conn = 6;
 
   // the unique smiles is not needed for processing, but needed for aggregating
