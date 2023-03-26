@@ -223,7 +223,10 @@ Replacement::MakeVariant(Molecule& parent,
   IWString name;
   name << parent.name();
   name << " %% " << _id;
-  name << '.' << _label << ' ' << _count;
+  if (! _label.empty()) {
+    name << '.' << _label;
+  }
+  name << ' ' << _count;
   m->set_name(name);
 
   result.reset(m.release());

@@ -10,9 +10,12 @@
 
 #include "google/protobuf/text_format.h"
 
+#define IWQSORT_FO_IMPLEMENTATION
+
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
 #include "Foundational/iwstring/iw_stl_hash_map.h"
+#include "Foundational/iwqsort/iwqsort.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/atom_typing.h"
@@ -36,8 +39,8 @@ constexpr char kCloseSquareBracket = ']';
 
 void
 Usage(int rc) {
-  cerr << "Extracts rings and creates ReplacementRing protos\n";
-  cerr << " -S <stem>         create files with <stem>\n";
+  cerr << "Extracts rings and ring systems creating ReplacementRing protos that can be used by ring_replacement\n";
+  cerr << " -S <stem>         create ring data files with <stem>\n";
   cerr << " -R <rsize>        max ring size to process (def 7)\n";
   cerr << " -k                also generate smarts with connectivity not specified\n";
   cerr << " -x                transform within ring aliphatic double bonds to type any\n";
@@ -559,6 +562,8 @@ ExtractRings::LabelAttachmentPoints(Molecule& parent,
   return rc;
 }
 
+// When building a canonical label, information needed about the
+// component rings in a ring system.
 struct RType {
   int rsize;
   int aromatic;
@@ -585,14 +590,37 @@ operator<< (IWString& buffer, const RType& rtype) {
   return buffer;
 }
 
+// For sorting ring types.
+//First on ring size then aromaticity
+struct
+CompareRType {
+  int operator()(const RType& rt1, const RType& rt2) const {
+    if (rt1.rsize < rt2.rsize) {
+      return -1;
+    }
+    if (rt1.rsize > rt2.rsize) {
+      return 1;
+    }
+    if (rt1.aromatic > rt2.aromatic) {
+      return -1;
+    }
+    if (rt1.aromatic < rt2.aromatic) {
+      return 1;
+    }
+    return 0;
+  }
+};
+
+// Maybe return a canonical name for the ring system defined
+// by the atoms `ring_sys[i] == sys`.
 std::optional<IWString>
 ExtractRings::CanonicalRingName(Molecule& m,
                         const int * ring_sys,
                         int sys) const {
   m.compute_aromaticity_if_needed();
 
+  // Gather the rings in the system.
   std::vector<RType> rtype;
-
   for (const Ring* r : m.sssr_rings()) {
     if (r->count_members_set_in_array(ring_sys, sys) == 0) {
       continue;
@@ -606,17 +634,10 @@ ExtractRings::CanonicalRingName(Molecule& m,
   if (rtype.size() > 1) {
     if (rtype.size() > _max_ring_system_size) {
       return std::nullopt;
-
     }
-    std::sort(rtype.begin(), rtype.end(), [](const RType& rt1, const RType& rt2) {
-      if (rt1.rsize < rt2.rsize) {
-        return true;
-      }
-      if (rt1.aromatic > rt2.aromatic) {
-        return true;
-      }
-      return false;
-    });
+
+    static CompareRType cmp;
+    iwqsort(rtype.data(), rtype.size(), cmp);
   }
 
   IWString result;
@@ -632,19 +653,21 @@ GetPosition(const resizable_array<atom_number_t>& order, int n) {
   return order.index(n);
 }
 
+// A smarts `smt` has been formed, if we are doing substructure checks, return
+// true if `smt` matches `m`.
 int
 ExtractRings::MaybeCheckSubstructureMatch(Molecule& m, const IWString& smt) {
   if (! _substructure_search_starting_molecule) {
     return 1;
   }
 
-  Molecule_to_Match target(&m);
   Substructure_Query query;
   if (! query.create_from_smarts(smt)) {
     cerr << "ExtractRings::MaybeCheckSubstructureMatch:invalid smarts '" << smt << "'\n";
     return 0;
   }
 
+  Molecule_to_Match target(&m);
   Substructure_Results sresults;
   if (query.substructure_search(target, sresults)) {
     return 1;
@@ -751,6 +774,7 @@ ExtractRings::GenerateSmarts(Molecule& m,
     if (m.ring_bond_count(i)) {
       smt << 'x' << m.ring_bond_count(i);
     }
+    // This is inefficient, we could precomute the string ring membership(s) for each atom.
     for (const Ring* r : m.sssr_rings()) {
       if (r->contains(i)) {
         smt << 'r' << r->size();
@@ -868,14 +892,14 @@ ExtractRings::WriteRings(IWString_and_File_Descriptor& output,
 }
 
 int
-ReplaceCore(ExtractRings& extract_rings,
+ReplaceRings(ExtractRings& extract_rings,
             Molecule& m,
             IWString_and_File_Descriptor& output) {
   return extract_rings.Process(m);
 }
 
 int
-ReplaceCore(ExtractRings& extract_rings,
+ReplaceRings(ExtractRings& extract_rings,
             data_source_and_type<Molecule>& input,
             IWString_and_File_Descriptor& output) {
   Molecule * m;
@@ -886,7 +910,7 @@ ReplaceCore(ExtractRings& extract_rings,
       continue;
     }
 
-    if (! ReplaceCore(extract_rings, *m, output)) {
+    if (! ReplaceRings(extract_rings, *m, output)) {
       return 0;
     }
   }
@@ -895,7 +919,7 @@ ReplaceCore(ExtractRings& extract_rings,
 }
 
 int
-ReplaceCore(ExtractRings& extract_rings,
+ReplaceRings(ExtractRings& extract_rings,
             const char * fname,
             IWString_and_File_Descriptor& output) {
   FileType input_type = extract_rings.input_type();
@@ -909,17 +933,17 @@ ReplaceCore(ExtractRings& extract_rings,
     return 0;
   }
 
-  return ReplaceCore(extract_rings, input, output);
+  return ReplaceRings(extract_rings, input, output);
 }
 
 
 int
-ReplaceCore(ExtractRings& extract_rings,
+ReplaceRings(ExtractRings& extract_rings,
             iwstring_data_source& input,
             IWString_and_File_Descriptor& output) {
   IWString fname;
   while (input.next_record(fname)) {
-    if (! ReplaceCore(extract_rings, fname.null_terminated_chars(), output)) {
+    if (! ReplaceRings(extract_rings, fname.null_terminated_chars(), output)) {
       cerr << "Fatal error processing '" << fname << "'\n";
       return 0;
     }
@@ -966,10 +990,10 @@ Main(int argc, char** argv) {
       tmp.remove_leading_chars(2);
       iwstring_data_source input;
       if (! input.open(tmp.null_terminated_chars())) {
-        cerr << "ReplaceCore:cannot open '" << tmp << "'\n";
+        cerr << "ReplaceRings:cannot open '" << tmp << "'\n";
         return 0;
       }
-      if (! ReplaceCore(extract_rings, input, output)) {
+      if (! ReplaceRings(extract_rings, input, output)) {
         cerr << "Fatal error processing '" << fname << "'\n";
         return 1;
       }
@@ -977,7 +1001,7 @@ Main(int argc, char** argv) {
       continue;
     }
 
-    if (! ReplaceCore(extract_rings, fname, output)) {
+    if (! ReplaceRings(extract_rings, fname, output)) {
       cerr << "Fatal error processing '" << fname << "'\n";
       return 1;
     }
