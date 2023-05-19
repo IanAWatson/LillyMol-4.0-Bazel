@@ -6,6 +6,8 @@
 #include <optional>
 #include <ostream>
 
+#include "absl/strings/string_view.h"
+
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
@@ -131,7 +133,8 @@ ReadTextProto(IWString& fname) {
       cerr << "ReadTextProto:cannot read\n";
       return std::nullopt;
     }
-    google::protobuf::stringpiece_internal::StringPiece string_piece(data.data(), data.size());
+    //google::protobuf::stringpiece_internal::StringPiece string_piece(data.data(), data.size());
+    absl::string_view string_piece(data.data(), data.size());
     google::protobuf::util::JsonParseOptions options;
     auto status = google::protobuf::util::JsonStringToMessage(string_piece, &result, options);
     if (! status.ok()) {

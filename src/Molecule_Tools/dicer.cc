@@ -7342,6 +7342,8 @@ dicer(int argc, char** argv)
     ;
   else if (write_smiles_and_complementary_smiles)
     ;
+  else if (name_for_fragment_statistics_file.length() > 0)
+    ;
   else {
     cerr << "NO output specified\n";
     usage(4);
