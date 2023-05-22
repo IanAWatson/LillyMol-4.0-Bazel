@@ -202,9 +202,10 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
+        "@lmdb//:lmdb",
     ],
-    linkopts = [
-        "-llmdb",
+    tags = [
+        "lmdb",
     ],
 )
 
@@ -369,9 +370,7 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
-    ],
-    linkopts = [
-        "-llmdb",
+        "@lmdb//:lmdb",
     ],
     tags = [
         "lmdb",
@@ -1205,6 +1204,18 @@ cc_binary(
 #)
 
 cc_binary(
+    name = "scaffolds",
+    srcs = [
+        "scaffolds_main.cc",
+    ],
+    deps = [
+        ":scaffolds_lib",
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ],
+)
+
+cc_binary(
     name = "separated_atoms",
     srcs = [
         "separated_atoms.cc",
@@ -1698,6 +1709,22 @@ cc_library(
 )
 
 cc_library(
+    name = "scaffolds_lib",
+    srcs = [
+        "scaffolds.cc",
+    ],
+    hdrs = [
+        "scaffolds.h",
+    ],
+    deps = [
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/iwstring:iwstring",
+        "//Foundational/iwmisc:iwmisc",
+        "//Molecule_Lib:iwmolecule"
+    ],
+)
+
+cc_library(
     name = "topological_torsion_lib",
     srcs = [
         "topological_torsion.cc",
@@ -1867,6 +1894,19 @@ cc_test(
 )
 
 cc_test(
+    name = "scaffolds_test",
+    srcs = [
+        "scaffolds_test.cc",
+    ],
+    deps = [
+        ":scaffolds_lib",
+        "@googletest//:gtest_main",
+        "@googletest//:gtest",
+        "//Molecule_Lib:moleculeio",
+    ]
+)
+
+cc_test(
     name = "topological_torsion_test",
     srcs = [
         "topological_torsion_test.cc",
@@ -1878,9 +1918,6 @@ cc_test(
         "//Molecule_Lib:moleculeio",
     ],
     timeout="short",
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(

@@ -3,7 +3,7 @@
 namespace iw_absl_hash {
 using namespace highwayhash;  // not good style.
 
-templace <typename H>
+template <typename H>
 H abslHashValue(H h, const IWString& s) {
   if (s.empty()) {
     return H::combine(std::move(h), 709902);   // arbitrary number.

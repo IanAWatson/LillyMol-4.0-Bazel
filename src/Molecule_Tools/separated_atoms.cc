@@ -880,14 +880,14 @@ FragToMap::Recurse(Molecule& m,
 // breakable bond, set `has_breakable_bond`.
 // We assume the arrays are zero'd on entry.
 int
-ReplaceCore(FragToMap& frag_to_map,
+SeparatedAtoms(FragToMap& frag_to_map,
             Molecule& m,
             GenerateFragments& proc) {
   return frag_to_map.Process(m, proc);
 }
 
 int
-ReplaceCore(FragToMap& frag_to_map,
+SeparatedAtoms(FragToMap& frag_to_map,
             data_source_and_type<Molecule>& input,
             GenerateFragments& proc) {
   Molecule * m;
@@ -898,7 +898,7 @@ ReplaceCore(FragToMap& frag_to_map,
       continue;
     }
 
-    if (! ReplaceCore(frag_to_map, *m, proc)) {
+    if (! SeparatedAtoms(frag_to_map, *m, proc)) {
       return 0;
     }
   }
@@ -907,7 +907,7 @@ ReplaceCore(FragToMap& frag_to_map,
 }
 
 int
-ReplaceCore(FragToMap& frag_to_map,
+SeparatedAtoms(FragToMap& frag_to_map,
             const char * fname,
             GenerateFragments& proc) {
   FileType input_type = frag_to_map.input_type();
@@ -921,7 +921,7 @@ ReplaceCore(FragToMap& frag_to_map,
     return 0;
   }
 
-  return ReplaceCore(frag_to_map, input, proc);
+  return SeparatedAtoms(frag_to_map, input, proc);
 }
 
 int
@@ -957,7 +957,7 @@ Main(int argc, char** argv) {
 
   GenerateFragments proc;
   for (const char* fname : cl) {
-    if (! ReplaceCore(frag_to_map, fname, proc)) {
+    if (! SeparatedAtoms(frag_to_map, fname, proc)) {
       cerr << "Fatal error processing '" << fname << "'\n";
       return 1;
     }
@@ -971,6 +971,7 @@ Main(int argc, char** argv) {
 }
 
 }  // namespace frag_to_map
+
 int
 main(int argc, char** argv) {
   int rc = frag_to_map::Main(argc, argv);

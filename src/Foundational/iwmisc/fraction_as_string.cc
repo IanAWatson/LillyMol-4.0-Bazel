@@ -117,6 +117,7 @@ Fraction_as_String::append_number(IWString & s,
     return;
   }
 
+  // std::cerr << " cmp " << f << " with " << _minval << " to " << _maxval << '\n';
   if (f < _minval || f > _maxval)
   {
     _append_number_no_string_rep(s, f);

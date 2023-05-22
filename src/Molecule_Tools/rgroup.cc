@@ -192,7 +192,7 @@ RGroup_Construction_Current_State::write_parent_molecule_if_needed (Molecule & m
 
 static int
 do_remove_explicit_hydrogens_not_attached_to_isotope (Molecule & m,
-                                                      int iso)
+                                                      isotope_t iso)
 {
   int rc = 0;
 

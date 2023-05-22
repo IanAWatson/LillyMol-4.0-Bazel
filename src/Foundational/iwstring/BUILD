@@ -41,10 +41,8 @@ cc_library(
     deps = [
          "//Foundational/iwaray:iwaray",
          "//Foundational/iwmisc:iwconfig",
+         "@zlib//:zlib",
     ],
-    linkopts = [
-        "-lm",
-    ]
 )
 
 cc_binary(

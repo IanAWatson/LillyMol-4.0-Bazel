@@ -162,6 +162,7 @@ cc_library(
     ],
     deps = [
 	"@com_google_protobuf//:protobuf",
+        "@com_google_absl//absl/strings:strings",
         "//Foundational/data_source:iwstring_data_source",
         "//Foundational/iwstring:iwstring",
     ],
@@ -190,6 +191,17 @@ cc_test(
         ":iwmisc",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_test(
+    name = "fraction_as_string_test",
+    srcs = [
+        "fraction_as_string_test.cc",
+    ],
+    deps = [
+        ":iwmisc",
+        "@googletest//:gtest_main",
+    ]
 )
 
 cc_test  (

@@ -13,9 +13,17 @@ TEST(TestIWString, TestAsString) {
   const std::string as_string = s.AsString();
   EXPECT_EQ(as_string, "hello");
 }
+
 TEST(TestConstIWSubstring, TestAsString) {
   const_IWSubstring s("hello");
   const std::string as_string = s.AsString();
   EXPECT_EQ(as_string, "hello");
 }
+
+TEST(TestInitializerList, TestInitializerList) {
+  resizable_array<IWString> foo({"abc", "def"});
+  EXPECT_EQ(foo.size(), 2);
+  EXPECT_THAT(foo, testing::ElementsAre("abc", "def"));
+}
+
 }  // namespace

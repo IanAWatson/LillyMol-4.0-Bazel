@@ -774,11 +774,7 @@ Molecule::create_subset(Molecule & subset,
   int directional_bonds_may_be_present = 0;
   int wedge_bonds_may_be_present = 0;
 
-  int nb = _bond_list.number_elements();
-  for (int i = 0; i < nb; i++)
-  {
-    const Bond * b = _bond_list[i];
-
+  for (const Bond* b : _bond_list) {
     atom_number_t a1 = b->a1();
     if (xref[a1] < 0)
       continue;
