@@ -1482,6 +1482,55 @@ class Elements_Needed
     int matches(Molecule_to_Match & target) const;
 };
 
+// We can sometimes speed up searches by doing an initial scan of the
+// bond list.
+// Note that we deliberately only support atomic numbers as ints, rather than
+// using the atomic_symbol_hash_value. While it is an int today, maybe it becomes
+// unsigned later. And that need is too obscure.
+class RequiredBond {
+  private:
+    // element and number of connections of first atom.
+    int _atomic_number_1;
+    int _ncon1;
+
+    bond_type_t _btype;
+
+    // element and number of connections of second atom.
+    int _atomic_number_2;
+    int _ncon2;
+
+    // How many instances needed for a match, defaults to 1.
+    // Note that we do not support zero, could be changed.
+    int _min_count;
+
+  // private functions.
+    int MatchesSingle(const Molecule& m) const;
+    int MatchesDouble(const Molecule& m) const;
+    int MatchesTriple(const Molecule& m) const;
+
+  public:
+    RequiredBond();
+
+    int ConstructFromProto(const SubstructureSearch::RequiredBond& proto);
+    int BuildProto(SubstructureSearch::RequiredBond& proto) const;
+
+    int Matches(const Molecule& m) const;
+};
+
+#ifdef THIS_ISNOTNEEDED
+// Instantiated from a SubstructureSearch::RequiredBond proto.
+class RequiredBonds {
+  private:
+    resizable_array_p<RequiredBond> _required_bonds;
+
+  public:
+    int ConstructFromProto(const SubstructureSearch::SingleSubstructureQuery& proto);
+    int BuildProto(SubstructureSearch::SingleSubstructureQuery& proto) const;
+
+    int Matches(const Molecule& m) const;
+};
+#endif
+
 /*
   These next two classes were never implemented
 */
@@ -2260,6 +2309,10 @@ class Single_Substructure_Query
 
     resizable_array_p<Elements_Needed> _elements_needed;
 
+    // A set of bond specifications that are checked before any
+    // atom matching is done.
+    resizable_array_p<RequiredBond> _required_bonds;
+
 //  Sometimes it is useful to put constraints on the number of ring
 //  atoms which are matched
 
@@ -2608,6 +2661,8 @@ class Single_Substructure_Query
 
     int _match_elements_needed(Molecule_to_Match & target_molecule) const;
 
+    int RequiredBondsMatch(const Molecule& m);
+
     int _aromatic_atoms_matches(Molecule_to_Match& target_molecule) const;
 
 //  Function to handle _ring_specification
@@ -2660,6 +2715,7 @@ class Single_Substructure_Query
     int _parse_ring_system_specifier(const SubstructureSearch::SingleSubstructureQuery& proto);
     int _parse_element_hits_needed_object(const msi_object & msi);
     int _parse_element_hits_needed(const SubstructureSearch::SingleSubstructureQuery& proto);
+    int _parse_required_bonds(const SubstructureSearch::SingleSubstructureQuery& proto);
     int _parse_elements_needed_object(const msi_object & msi);
     int _parse_elements_needed(const SubstructureSearch::SingleSubstructureQuery& proto);
     int _construct_from_msi_object(const msi_object &, int *);

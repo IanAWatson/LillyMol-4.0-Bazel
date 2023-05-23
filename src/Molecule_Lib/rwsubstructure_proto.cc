@@ -32,10 +32,11 @@ using std::endl;
 #include "Molecule_Lib/substructure.pb.h"
 #include "Molecule_Lib/target.h"
 
-constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t no_limit = std::numeric_limits<uint32_t>::max();
+static constexpr char kCloseBrace = '}';
 
 // Having unbalanced braces in the code messes up matching in the editor.
-constexpr char open_brace = '{';
+constexpr char kOpenBrace = '{';
 
 using google::protobuf::Descriptor;
 using google::protobuf::FieldDescriptor;
@@ -1916,7 +1917,7 @@ Substructure_Environment::construct_from_proto(const SubstructureSearch::Substru
     const_IWSubstring x = smarts;
     const char * s = smarts.data();
 
-    if (x.length() && (isdigit(s[0]) || '>' == s[0] || '<' == s[0] || s[0] == open_brace)) {
+    if (x.length() && (isdigit(s[0]) || '>' == s[0] || '<' == s[0] || s[0] == kOpenBrace)) {
       int chars_consumed = substructure_spec::SmartsNumericQualifier(s, smarts.length(), _hits_needed);
       if (chars_consumed == 0) {
         cerr << "Substructure_Environment::construct_from_proto:invalid numeric qualifier '" << x << "'\n";
@@ -2389,6 +2390,12 @@ Single_Substructure_Query::_construct_from_proto(const SubstructureSearch::Singl
   {
     if (! _parse_elements_needed(proto))
       return 0;
+  }
+
+  if (proto.required_bond_size() > 0) {
+    if (! _parse_required_bonds(proto)) {
+      return 0;
+    }
   }
 
   if (proto.has_compress_embeddings())
@@ -2960,15 +2967,29 @@ Single_Substructure_Query::_parse_elements_needed(const SubstructureSearch::Sing
 {
   for (const auto & spec : proto.elements_needed())
   {
-    Elements_Needed * e = new Elements_Needed();
-    if (! e->ConstructFromProto(spec))
-    {
+    std::unique_ptr<Elements_Needed> e = std::make_unique<Elements_Needed>();
+    if (! e->ConstructFromProto(spec)) {
       cerr << "Single_Substructure_Query::_parse_elements_needed:invalid " << spec.ShortDebugString() << "\n";
-      delete e;
       return 0;
     }
 
-    _elements_needed.add(e);
+    _elements_needed << e.release();
+  }
+
+  return 1;
+}
+
+int
+Single_Substructure_Query::_parse_required_bonds(const SubstructureSearch::SingleSubstructureQuery& proto) {
+  for (const auto & spec : proto.required_bond())
+  {
+    std::unique_ptr<RequiredBond> reqb = std::make_unique<RequiredBond>();
+    if (! reqb->ConstructFromProto(spec)) {
+      cerr << "Single_Substructure_Query::_parse_required_bonds:invalid " << spec.ShortDebugString() << "\n";
+      return 0;
+    }
+
+    _required_bonds << reqb.release();
   }
 
   return 1;
@@ -3514,8 +3535,117 @@ Substructure_Atom_Environment::BuildFromProto(const SubstructureSearch::Substruc
   return 1;
 }
 
+int
+RequiredBond::ConstructFromProto(const SubstructureSearch::RequiredBond& proto) {
+  if (proto.has_atomic_number_1()) {
+    _atomic_number_1 = proto.atomic_number_1();
+  } else if (proto.has_atomic_symbol_1()) {
+    const IWString s = proto.atomic_symbol_1();
+    isotope_t notused;
+    const Element* e = get_element_from_symbol(s, notused);
+    if (e == nullptr) {
+      cerr << "RequiredBond::ConstructFromProto:unrecognised symbol '" << s << "'\n";
+      return 0;
+    }
+    _atomic_number_1 = e->atomic_number();
+  } else {
+    cerr << "RequiredBond::ConstructFromProto:must specify first atom type\n";
+    cerr << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  if (proto.has_btype()) {
+    if (proto.btype() == SubstructureSearch::SS_SINGLE_BOND) {
+      _btype = SINGLE_BOND;
+    } else if (proto.btype() == SubstructureSearch::SS_DOUBLE_BOND) {
+      _btype = DOUBLE_BOND;
+    } else if (proto.btype() == SubstructureSearch::SS_TRIPLE_BOND) {
+      _btype = TRIPLE_BOND;
+    } else {
+      cerr << "RequiredBond::ConstructFromProto:Unrecognised bond type\n";
+      cerr << proto.ShortDebugString() << '\n';
+      return 0;
+    }
+  } else {
+    _btype = SINGLE_BOND;
+  }
+
+  if (proto.has_atomic_number_2()) {
+    _atomic_number_2 = proto.atomic_number_2();
+  } else if (proto.has_atomic_symbol_2()) {
+    const IWString s = proto.atomic_symbol_2();
+    isotope_t notused;
+    const Element* e = get_element_from_symbol(s, notused);
+    if (e == nullptr) {
+      cerr << "RequiredBond::ConstructFromProto:unrecognised symbol '2 " << s << "'\n";
+      return 0;
+    }
+    _atomic_number_2 = e->atomic_number();
+  } else {
+    cerr << "RequiredBond::ConstructFromProto:must specify first atom type\n";
+    cerr << proto.ShortDebugString() << '\n';
+    return 0;
+  }
+
+  if (proto.has_min_count()) {
+    _min_count = proto.min_count();
+    if (_min_count <= 0) {
+      cerr << "RequiredBond::ConstructFromProto:invalid min count\n";
+      cerr << proto.ShortDebugString() << '\n';
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int
+RequiredBond::BuildProto(SubstructureSearch::RequiredBond& proto) const {
+  proto.set_atomic_number_1(_atomic_number_1);
+  if (_btype == SINGLE_BOND) {
+    proto.set_btype(SubstructureSearch::SS_SINGLE_BOND);
+  } else if (_btype == DOUBLE_BOND) {
+    proto.set_btype(SubstructureSearch::SS_DOUBLE_BOND);
+  } else if (_btype == TRIPLE_BOND) {
+    proto.set_btype(SubstructureSearch::SS_TRIPLE_BOND);
+  } else {
+    cerr << "RequiredBond::BuildProto:what kind of bond do I have " << _btype << '\n';
+    return 0;
+  }
+  proto.set_atomic_number_2(_atomic_number_2);
+
+  return 1;
+}
+
+#ifdef NOTNEEDED_ASDASD
+int
+RequiredBonds::ConstructFromProto(const SubstructureSearch::SingleSubstructureQuery& proto) {
+  for (const auto& p : proto.required_bond()) {
+    std::unique_ptr<RequiredBond> b = std::make_unique<RequiredBond>();
+    if (! b->ConstructFromProto(p)) {
+      cerr << "RequiredBonds::ConstructFromProto invalid required bond\n";
+      cerr << p.ShortDebugString() << '\n';
+      return 0;
+    }
+
+    _required_bonds << b.release();
+  }
+
+  return 1;
+}
+
+int
+RequiredBonds::BuildProto(SubstructureSearch::SingleSubstructureQuery& proto) const {
+  for (const RequiredBond* reqb : _required_bonds) {
+    SubstructureSearch::RequiredBond* p = proto.add_required_bond();
+    reqb->BuildProto(*p);
+  }
+
+  return 1;
+}
+#endif
+
 namespace iwsubstructure {
-constexpr char kCloseBrace = '}';
 
 std::optional<std::string>
 GetNextQueryTextProto(iwstring_data_source& input) {

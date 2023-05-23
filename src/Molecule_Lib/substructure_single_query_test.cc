@@ -3,8 +3,10 @@
 #include "aromatic.h"
 #include "substructure.h"
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "googlemock/include/gmock/gmock.h"
+#include "googletest/include/gtest/gtest.h"
+//#include "gmock/gmock.h"
+//#include "gtest/gtest.h"
 #include "google/protobuf/text_format.h"
 
 namespace {
@@ -2138,5 +2140,119 @@ TEST_F(TestSubstructure, TestLinkAtomsNoMatches)
 
   EXPECT_TRUE(_DoPerumationsTests(0));
 }
+
+struct ProtoSmilesExpected {
+  std::string string_proto;
+  IWString smiles;
+  int expected_matches;
+};
+
+class TestRequiredBonds : public testing::TestWithParam<ProtoSmilesExpected> {
+  protected:
+    SubstructureSearch::SubstructureQuery _proto;
+    Substructure_Query _query;
+    Molecule _m;
+};
+
+TEST_P(TestRequiredBonds, TestRequired) {
+  const auto params = GetParam();
+
+  ASSERT_TRUE(_m.build_from_smiles(params.smiles));
+
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(params.string_proto, &_proto));
+  ASSERT_TRUE(_query.ConstructFromProto(_proto));
+
+  EXPECT_EQ(_query.substructure_search(&_m), params.expected_matches) <<
+    "Mismatch " << params.smiles << " q " << params.string_proto;
+}
+INSTANTIATE_TEST_SUITE_P(TestRequiredBonds, TestRequiredBonds, testing::Values(
+  ProtoSmilesExpected{ 
+R"pb(
+query {
+  smarts: "CC"
+  unique_embeddings_only: true
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 6
+  }
+}
+)pb", {"CC"}, 1},
+
+  ProtoSmilesExpected{ 
+R"pb(
+query {
+  smarts: "CC"
+  unique_embeddings_only: true
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 7
+  }
+}
+)pb", {"CC"}, 0},
+
+  ProtoSmilesExpected{ 
+R"pb(
+query {
+  smarts: "CCC"
+  unique_embeddings_only: true
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 6
+    min_count: 2
+  }
+}
+)pb", {"CC"}, 0},
+
+  ProtoSmilesExpected{ 
+R"pb(
+query {
+  smarts: "CCC"
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 6
+    min_count: 2
+  }
+}
+)pb", {"CCC"}, 2},
+
+  ProtoSmilesExpected{ 
+R"pb(
+query {
+  smarts: "CCN"
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 6
+  }
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 7
+  }
+}
+)pb", {"CCN"}, 1},
+
+  // double bond
+  ProtoSmilesExpected{ 
+R"pb(
+query {
+  smarts: "CC=N"
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_SINGLE_BOND
+    atomic_number_2: 6
+  }
+  required_bond {
+    atomic_number_1: 6
+    btype: SS_DOUBLE_BOND
+    atomic_number_2: 7
+  }
+}
+)pb", {"CC=N"}, 1}
+));
 
 }  // namespace

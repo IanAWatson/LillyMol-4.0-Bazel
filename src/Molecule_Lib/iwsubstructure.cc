@@ -2403,6 +2403,35 @@ Single_Substructure_Query::substructure_search(Molecule_to_Match & target_molecu
 {
   assert (target_molecule.ok());
 
+  // Before any atom matching.
+  if (_required_bonds.empty()) {
+  } else if (! RequiredBondsMatch(*target_molecule.molecule())) {
+    return 0;
+  }
+
+#ifdef BOND_FILTER_UP_FRONT
+  // this works great, add it to the proto...
+  const Molecule * q = target_molecule.molecule();
+  bool got_match = false;
+  for (const Bond* b : q->bond_list()) {
+    if (! b->is_single_bond()) {
+      continue;
+    }
+    atomic_number_t z1 = q->atomic_number(b->a1());
+    atomic_number_t z2 = q->atomic_number(b->a2());
+    if (z1 == 6 && z2 == 8) {
+      got_match = true;
+      break;
+    } else if (z1 == 8 && z2 == 6) {
+      got_match = true;
+      break;
+    }
+  }
+  if (! got_match) {
+    return 0;
+  }
+#endif
+
   const int matoms = target_molecule.natoms();
 
   results.initialise(matoms);     // no returns before this.
@@ -3221,6 +3250,17 @@ MatchedAtomMatch::Matches(Query_Atoms_Matched& matched_query_atoms,
 #endif
         return 0;
       }
+    }
+  }
+
+  return 1;
+}
+
+int
+Single_Substructure_Query::RequiredBondsMatch(const Molecule& m) {
+  for (const RequiredBond* b : _required_bonds) {
+    if (! b->Matches(m)) {
+      return 0;
     }
   }
 

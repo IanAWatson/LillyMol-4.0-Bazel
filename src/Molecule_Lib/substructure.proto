@@ -93,6 +93,29 @@ message ElementsNeeded {
   optional uint32 max_hits_needed = 5;
 }
 
+// Sometimes we can speed up a query by specifying one or more
+// bonds that must be present in the molecule. This is implemented as
+// a scan over the bond list, before any atom matching is attempted.
+message RequiredBond {
+  // The first atom.
+  oneof ElementSpecifier1 {
+    uint32 atomic_number_1 = 1;
+    string atomic_symbol_1 = 2;
+  }
+
+  // The bond between them - defaults to single.
+  optional BondType btype = 3;
+
+  // The second atom.
+  oneof ElementSpecifier2 {
+    uint32 atomic_number_2 = 4;
+    string atomic_symbol_2 = 5;
+  }
+
+  // If specified, molecule must have at least this many occurrences, def 1.
+  optional uint32 min_count = 6;
+}
+
 message NoMatchedAtomsBetween {
   optional uint32 a1 = 1;
   optional uint32 a2 = 2;
@@ -935,6 +958,8 @@ message SingleSubstructureQuery {
   // Only search the molecule if elements_needed is satisfied.
   repeated ElementsNeeded elements_needed = 104;
 
+  repeated RequiredBond required_bond = 123;
+
   // Only search the molecule if aromatic_atoms is satisfied.
   repeated uint32 aromatic_atoms = 105;
   optional uint32 min_aromatic_atoms = 106;
@@ -974,7 +999,7 @@ message SingleSubstructureQuery {
   // Bond separation between matched atoms.
   repeated SeparatedAtoms separated_atoms = 121;
 
-  // Next to assign 123
+  // Next to assign 124
 }
 
 // A SubstructureQuery is merely a collection of individual
