@@ -13,6 +13,7 @@
 
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwstring/iw_stl_hash_set.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
@@ -98,6 +99,9 @@ class CoreReplacement {
 
     separated_atoms::Hasher _hasher;
 
+    // We do not produce duplicates, including beginning molecules.
+    IW_STL_Hash_Set _seen;
+
   // Private functions
 
     int OpenDatabase();
@@ -153,6 +157,8 @@ class CoreReplacement {
     int FragmentContainsNeededSubstructure(Molecule& m);
     int OkAtomCount(int number_atoms_removed, const Molecule& fragment);
 
+    int AlreadySeen(const IWString& usmi);
+
   public:
     CoreReplacement();
 
@@ -190,18 +196,18 @@ CoreReplacement::CoreReplacement() {
 
 int
 CoreReplacement::OpenDatabase() {
-  int status =  mdb_env_create(&mdb_env);
-  if (status != 0) {
+  if (int status =  mdb_env_create(&mdb_env);
+      status != 0) {
     cerr << "CoreReplacement::OpenDatabase:cannot create environment, status " << status << '\n';
     return 0;
   }
 
 
-  unsigned int flags = MDB_RDONLY;
+  const unsigned int flags = MDB_RDONLY;
   mdb_mode_t mode = O_RDONLY | MDB_NOLOCK;
 
-  status = mdb_env_open(mdb_env, _database_name.null_terminated_chars(), flags, mode);
-  if (status != 0) {
+  if (auto status = mdb_env_open(mdb_env, _database_name.null_terminated_chars(), flags, mode);
+      status != 0) {
     cerr << "CoreReplacement::OpenDatabase:cannot open environment '" << _database_name << " status " << status << '\n';
     return 0;
   }
@@ -476,7 +482,7 @@ CoreReplacement::Process(Molecule& m,
     google::protobuf::io::ArrayInputStream zero_copy_array(line.data(), line.nchars());
 
     if (!google::protobuf::TextFormat::Parse(&zero_copy_array, &fragment)) {
-      cerr << "CoreReplacement:Process2:cannot parse proto from db, key " << hash << '\n';
+      cerr << "CoreReplacement:Process:cannot parse proto from db, key " << hash << '\n';
       cerr << line << '\n';
       return 0;
     }
@@ -556,6 +562,10 @@ EstablishXref(const int* to_be_removed,
   return rc;
 }
 
+// insert `fragment` into `m`.
+// `matched_atoms` are the join points in `m`.
+// Note that there may be ambiguity in how the fragment
+// gets joined
 int
 CoreReplacement::DoReplacement2(Molecule& m,
                                 const Set_of_Atoms& matched_atoms,
@@ -563,7 +573,9 @@ CoreReplacement::DoReplacement2(Molecule& m,
                                 const Molecule& fragment,
                                 IWString_and_File_Descriptor& output) {
   Molecule mcopy(m);
+  const int initial_natoms = mcopy.natoms();
   mcopy.add_molecule(&fragment);
+
   return 1;
 }
 
@@ -574,10 +586,15 @@ CoreReplacement::DoReplacement3(Molecule& m,
                                 const Molecule& fragment,
                                 IWString_and_File_Descriptor& output) {
   Molecule mcopy(m);
+  const int initial_natoms = mcopy.natoms();
   mcopy.add_molecule(&fragment);
+
   return 1;
 }
 
+// Return true if either
+// _fragment_must_contain is empty
+// One of the queries in _fragment_must_contain matches `m`.
 int
 CoreReplacement::FragmentContainsNeededSubstructure(Molecule& m) {
   if (_fragment_must_contain.empty()) {
@@ -585,8 +602,9 @@ CoreReplacement::FragmentContainsNeededSubstructure(Molecule& m) {
   }
 
   Molecule_to_Match target(&m);
+  Substructure_Results sresults;
   for (Substructure_Hit_Statistics* q : _fragment_must_contain) {
-    if (q->substructure_search(target)) {
+    if (q->substructure_search(target, sresults)) {
       return 1;
     }
   }

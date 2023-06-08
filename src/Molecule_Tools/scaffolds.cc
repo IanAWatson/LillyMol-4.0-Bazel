@@ -2,12 +2,15 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <unordered_set>
 
 #include "Foundational/iwmisc/combinations.h"
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwmisc/proto_support.h"
 
-#include "scaffolds.h"
+#include "Molecule_Tools/scaffolds.h"
+#include "Molecule_Tools/scaffolds.pb.h"
 
 namespace scaffolds {
 
@@ -88,7 +91,6 @@ PerMoleculeData::Seen(Molecule& m) {
 }
 
 ScaffoldFinder::ScaffoldFinder() {
-  _process_single_ring_systems = 1;
   _max_systems_lost = 0;
   _min_systems_in_subset = 0;
 
@@ -96,7 +98,28 @@ ScaffoldFinder::ScaffoldFinder() {
 }
 
 int
-ScaffoldFinder::Initialise(Command_Line& cl) {
+ScaffoldFinder::Initialise(Command_Line& cl, char flag) {
+  if (! cl.option_present(flag)) {
+    return 1;
+  }
+
+  IWString fname = cl.string_value(flag);
+
+  std::optional<Scaffolds::ScaffoldsOptions> maybe_options =
+       iwmisc::ReadTextProto<Scaffolds::ScaffoldsOptions>(fname);
+   if (! maybe_options) {
+     cerr << "ScaffoldFinder::Initialise:cannot read proto '" << fname << "'\n";
+     return 0;
+   }
+
+  return Initialise(*maybe_options);
+}
+
+int 
+ScaffoldFinder::Initialise(const Scaffolds::ScaffoldsOptions& proto) {
+  _config = proto;
+  cerr << _config.ShortDebugString() << '\n';
+
   return 1;
 }
 
@@ -104,13 +127,13 @@ ScaffoldFinder::Initialise(Command_Line& cl) {
 // and a subset that contains `in_subset` ring systems is OK wrt any
 // constraints on ring systems lost or a minimum count.
 int
-ScaffoldFinder::OkSubsetSize(int in_molecule, int in_subset) const {
-  if (_max_systems_lost > 0 &&
-      (in_molecule - in_subset) > _max_systems_lost) {
+ScaffoldFinder::OkSubsetSize(uint32_t in_molecule, uint32_t in_subset) const {
+  if (_config.max_systems_lost() > 0 &&
+      (in_molecule - in_subset) > _config.max_systems_lost()) {
     return 0;
   }
 
-  if (_min_systems_in_subset > 0 && in_subset < _min_systems_in_subset) {
+  if (_config.min_systems_in_subset() > 0 && in_subset < _config.min_systems_in_subset()) {
     return 0;
   }
 
@@ -119,7 +142,7 @@ ScaffoldFinder::OkSubsetSize(int in_molecule, int in_subset) const {
 
 int
 ScaffoldFinder::MakeScaffolds(Molecule& m,
-                 ::resizable_array_p<Molecule>& results) {
+                              Scaffolds::ScaffoldData& result) {
   const int nr = m.nrings();
   if (nr == 0) {
     return 1;
@@ -142,9 +165,9 @@ ScaffoldFinder::MakeScaffolds(Molecule& m,
   subset.set_name(m.name());
   // cerr << "Subset is " << subset.smiles() << '\n';
 
-  int rc = Process(subset, results);
+  int rc = Process(subset, result);
 
-  ++_generated[results.size()];
+  ++_generated[result.subset_size()];
 
   return rc;
 }
@@ -223,21 +246,23 @@ LabelLinkerRegions(Molecule& m,
 // `m` is the scaffold of an incoming molecule.
 int
 ScaffoldFinder::Process(Molecule& m,
-                  ::resizable_array_p<Molecule>& results) {
+                        Scaffolds::ScaffoldData& result) {
   PerMoleculeData pmd(m);
 
-  int nsys = pmd.nsys();
+  uint32_t nsys = pmd.nsys();
 #ifdef DEBUG_SCAFFOLD_FINDER
   cerr << "Scaffold molecule " << m.smiles() << " has " << m.nrings() << " ringa and " << nsys << " ring systems\n";
 #endif
+
+  result.set_ring_sys(nsys);
 
   ++_nsys[nsys];
 
   // If just 1 ring system in the molecule, process it directly.
   if (nsys == 1) {
-    std::unique_ptr<Molecule> mcopy = std::make_unique<Molecule>(m);
-    mcopy->set_name(m.name());  // need to do more with name...
-    results << mcopy.release();
+    Scaffolds::ScaffoldSubset* s = result.add_subset();
+    s->set_smi(m.smiles().AsString());
+    s->set_ring_sys(1);
     return 1;
   }
 
@@ -278,7 +303,7 @@ ScaffoldFinder::Process(Molecule& m,
   combinations::Combinations comb(count);
 
   while (comb.Next(state)) {
-    const int nset = std::count(state.begin(), state.end(), 1);
+    const uint32_t nset = std::count(state.begin(), state.end(), 1);
 #ifdef DEBUG_SCAFFOLD_FINDER
     for (int a: state) {
       cerr << ' ' << a;
@@ -293,12 +318,12 @@ ScaffoldFinder::Process(Molecule& m,
       continue;
     }
 
-    if (! _process_single_ring_systems && nset == 1) {
+    if (nset < _config.min_systems_in_subset()) {
       continue;
     }
     // cerr << "Will be processed\n";
 
-    Process(m, state, pmd, systems_reachable.get(), results);
+    Process(m, state, pmd, systems_reachable.get(), result);
   }
 
   return 1;
@@ -347,7 +372,7 @@ ScaffoldFinder::Process(const Molecule& m,
                  const std::vector<int>& state,
                  PerMoleculeData& pmd,
                  const resizable_array<int>* systems_reachable,
-                 resizable_array_p<Molecule>& results) {
+                 Scaffolds::ScaffoldData& result) {
   assert(state.size() > 1);
 
   const int matoms = m.natoms();
@@ -366,10 +391,13 @@ ScaffoldFinder::Process(const Molecule& m,
 #endif
 
   const int n = state.size();
+  int nsys = 0;
   for (int i = 0; i < n; ++i) {
     if (state[i] == 0) {
       continue;
     }
+
+    ++nsys;
     for (int j = 0; j < matoms; ++j) {
       if (ring_sys[j] == i + 1) {
         atoms_in_subset[j] = 1;
@@ -408,25 +436,30 @@ ScaffoldFinder::Process(const Molecule& m,
   cerr << '\n';
 #endif
 
-  std::unique_ptr<Molecule> subset = std::make_unique<Molecule>();
-  m.create_subset(*subset, atoms_in_subset, 1);
+  Molecule subset;
+  m.create_subset(subset, atoms_in_subset, 1);
   // cerr << "Subset " << subset->smiles() << '\n';
-  if (subset->number_fragments() > 1) {
+  if (subset.number_fragments() > 1) {
     return 0;
   }
 
-  return AddToResultsIfUnique(subset, pmd, results);
+  return AddToResultsIfUnique(subset, pmd, nsys, result);
 }
 
 int
-ScaffoldFinder::AddToResultsIfUnique(std::unique_ptr<Molecule>& candidate,
+ScaffoldFinder::AddToResultsIfUnique(Molecule& candidate,
                 PerMoleculeData& pmd,
-                resizable_array_p<Molecule>& results) {
-  if (pmd.Seen(*candidate)) {
+                int nsys,
+                Scaffolds::ScaffoldData& result) {
+  if (pmd.Seen(candidate)) {
     return 0;
   }
 
-  results << candidate.release();
+  Scaffolds::ScaffoldSubset* subset = result.add_subset();
+  subset->set_smi(candidate.smiles().AsString());
+  subset->set_ring_sys(nsys);
+
+  // cerr << "Added unique " << candidate.smiles() << " result now contains " << result.subset_size() << " items\n";
 
   return 1;
 }

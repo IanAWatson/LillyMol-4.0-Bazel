@@ -12,6 +12,8 @@
 
 #include "Molecule_Lib/molecule.h"
 
+#include "Molecule_Tools/scaffolds.pb.h"
+
 namespace scaffolds {
 
 // Avoid passing around a bunch of separate arguments.
@@ -90,10 +92,8 @@ class PerMoleculeData {
 
 class ScaffoldFinder {
 
-  // When fingerprinting ring system combinations, what do we do
-  // if there is just 1 of several different ring systems to be
-  // processed.
-  int _process_single_ring_systems;
+  // All settable configuration options in the proto.
+  Scaffolds::ScaffoldsOptions _config;
 
   // Keep track of the number of ring systems in the incoming molecules.
   extending_resizable_array<int> _nsys;
@@ -110,27 +110,29 @@ class ScaffoldFinder {
 
   // private functions.
 
-    int OkSubsetSize(int in_molecule, int in_subset) const;
+    int OkSubsetSize(uint32_t in_molecule, uint32_t in_subset) const;
 
     int Process(Molecule& m,
-                 ::resizable_array_p<Molecule>& results);
+                 Scaffolds::ScaffoldData& results);
     int Process(const Molecule& m,
                  const std::vector<int>& state,
                  PerMoleculeData& pmd,
                  const resizable_array<int>* systems_reachable,
-                 ::resizable_array_p<Molecule>& results);
+                 Scaffolds::ScaffoldData& results);
 
-    int AddToResultsIfUnique(std::unique_ptr<Molecule>& candidate,
-                PerMoleculeData& pmd,
-                resizable_array_p<Molecule>& results);
+    int AddToResultsIfUnique(Molecule& candidate,
+                 PerMoleculeData& pmd,
+                 int nsys,
+                 Scaffolds::ScaffoldData& result);
 
   public:
     ScaffoldFinder();
 
-    int Initialise(Command_Line& cl);
+    int Initialise(Command_Line& cl, char flag);
+    int Initialise(const Scaffolds::ScaffoldsOptions& proto);
 
     // Place in `results` all scaffold subsets of `m`.
-    int MakeScaffolds(Molecule& m, ::resizable_array_p<Molecule>& results);
+    int MakeScaffolds(Molecule& m, Scaffolds::ScaffoldData& results);
 
     int Report(std::ostream& output) const;
 };

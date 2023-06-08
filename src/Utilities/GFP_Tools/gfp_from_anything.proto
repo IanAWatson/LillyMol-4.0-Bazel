@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package GfpFromAnything;
+
+message XRef {
+  // Conversion from token to bit number.
+  map<string, uint32> xref = 1;
+}

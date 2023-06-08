@@ -59,6 +59,22 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "scaffolds_proto",
+    srcs = [
+        "scaffolds.proto",
+    ],
+    deps = [
+    ],
+)
+
+cc_proto_library(
+    name = "scaffolds_cc_proto",
+    deps = [
+        ":scaffolds_proto",
+    ],
+)
+
+proto_library(
     name = "substructure_results_proto",
     srcs = [
         "substructure_results.proto",
@@ -1717,10 +1733,12 @@ cc_library(
         "scaffolds.h",
     ],
     deps = [
+        ":scaffolds_cc_proto",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iwstring:iwstring",
         "//Foundational/iwmisc:iwmisc",
-        "//Molecule_Lib:iwmolecule"
+        "//Molecule_Lib:iwmolecule",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -1736,7 +1754,7 @@ cc_library(
         "//Foundational/iwstring:iwstring",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
-        "//Molecule_Lib:iwmolecule"
+        "//Molecule_Lib:iwmolecule",
     ],
     linkopts = [
         "-lz"
@@ -1754,7 +1772,7 @@ cc_library(
     deps = [
         "//Foundational/iwstring:iwstring",
         "//Foundational/iwmisc:iwmisc",
-        "//Molecule_Lib:iwmolecule"
+        "//Molecule_Lib:iwmolecule",
     ],
 )
 
@@ -1797,7 +1815,7 @@ cc_test(
         ":core_replacement_lib",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-        "//Molecule_Lib:iwmolecule"
+        "//Molecule_Lib:iwmolecule",
     ],
 )
 

@@ -2,6 +2,20 @@ load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
 load("@rules_proto_grpc//ruby:defs.bzl", "ruby_proto_compile", "ruby_proto_library")
 
 proto_library(
+    name = "gfp_from_anything_proto",
+    srcs = [
+        "gfp_from_anything.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "gfp_from_anything_cc_proto",
+    deps = [
+        ":gfp_from_anything_proto",
+    ],
+)
+
+proto_library(
     name = "gfp_proto",
     srcs = [
         "gfp.proto",
@@ -163,6 +177,21 @@ cc_binary(
     ],
     tags = [
         "catboost",
+    ],
+)
+
+cc_binary(
+    name = "gfp_from_anything",
+    srcs = [
+        "gfp_from_anything.cc",
+    ],
+    deps = [
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "//Foundational/iwstring:absl_hash",
+        "@com_google_absl//absl/hash:hash",
+        "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
 

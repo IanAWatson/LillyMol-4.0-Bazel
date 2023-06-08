@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package Scaffolds;
+
+// This is used to initialise a Scaffolds object.
+message ScaffoldsOptions {
+  // when generating subsets, how many ring systems must be in a subset
+  // in order for that subset to be generated. Likely value will be 2,
+  // since generating single ring/ring systems subsets seems unattractive.
+  uint32 min_systems_in_subset = 1;
+
+  // We can impose a limit o the number of ring systems lost during
+  // subset formation.
+  uint32 max_systems_lost = 2;
+
+  // We can optionally leave an isotope on those atoms that join the
+  // scaffold to the spinach. But note this does not address the atoms
+  // that are in the scaffold and attach to linkers that might be broken.
+  // TODO:ianwatson figure out something. Maybe a special isotope that
+  // marks such atoms that can be placed and removed as needed, or a
+  // vector... Messy..
+  uint32 isotope = 15;
+}
+
+message ScaffoldSubset {
+  // The smiles of this scaffold.
+  optional string smi = 1;
+
+  // The number of ring systems in this subset.
+  optional uint32 ring_sys = 2;
+}
+
+message ScaffoldData {
+  // The smiles of the parent molecule.
+  optional string smi = 1;
+
+  // The name of the parent molecule.
+  optional string par = 2;
+
+  // The number of ring systems in the parent.
+  optional uint32 ring_sys = 3;
+
+  // Thought about adding the scaffold of the parent, but it
+  // can be obtained by looking for the subset that has
+  // the same number of ring systems as the parent.
+
+  repeated ScaffoldSubset subset = 4;
+}

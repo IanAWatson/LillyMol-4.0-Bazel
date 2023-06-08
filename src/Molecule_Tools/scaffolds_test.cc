@@ -20,7 +20,7 @@ class TestScaffolds : public testing::TestWithParam<MoleculeResult> {
 
     scaffolds::ScaffoldFinder _scaffold_finder;
 
-    resizable_array_p<Molecule> _scaffolds;
+    Scaffolds::ScaffoldData _scaffolds;
 
     // To do the final test, we convert the scaffold molecules to string form.
     resizable_array<IWString> _scaffold_smiles;
@@ -43,15 +43,18 @@ TEST_P(TestScaffolds, TestScaffolds) {
   std::cerr << "params.results.size() " << params.results.size() << '\n';
 #endif
 
-  EXPECT_EQ(_scaffolds.size(), params.results.size());
+  EXPECT_EQ(_scaffolds.subset_size(), params.results.number_elements());
 
-  if (_scaffolds.empty()) {
+  if (_scaffolds.subset().empty()) {
     return;
   }
 
-  for (Molecule* m : _scaffolds) {
+  for (const auto& p : _scaffolds.subset()) {
+    Molecule m;
+    const IWString smiles = p.smi();
+    m.build_from_smiles(smiles);
     // std::cerr << "Generated " << m->smiles() << '\n';
-    _scaffold_smiles << m->smiles();
+    _scaffold_smiles << m.smiles();
   }
 
 #ifdef DEBUG_TEST_ADASD

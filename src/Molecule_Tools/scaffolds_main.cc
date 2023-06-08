@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "google/protobuf/text_format.h"
+
 #include "Foundational/cmdline/cmdline.h"
 
 #include "Molecule_Lib/aromatic.h"
@@ -11,6 +13,7 @@
 #include "Molecule_Lib/standardise.h"
 
 #include "Molecule_Tools/scaffolds.h"
+#include "Molecule_Tools/scaffolds.pb.h"
 
 namespace scaffolds_main {
 
@@ -27,9 +30,20 @@ class LocalOptions {
 
     int _remove_chirality;
 
+    int _non_ring_molecules_skipped;
+
     Chemical_Standardisation _chemical_standardisation;
 
     int _write_parent;
+
+    // Output can be either as smiles or proto.
+    int _write_smiles;
+
+  // private functions
+ 
+    int WriteSmiles(Molecule& parent,
+                    const Scaffolds::ScaffoldData& result,
+                    IWString_and_File_Descriptor& output) const;
 
   public:
     LocalOptions();
@@ -38,16 +52,24 @@ class LocalOptions {
 
     int Preprocess(Molecule& m);
 
+    void AnotherNonRingMolecule() {
+      ++_non_ring_molecules_skipped;
+    }
+
     int Write(Molecule& parent,
-              resizable_array_p<Molecule>& results,
+              const Scaffolds::ScaffoldData& result,
               IWString_and_File_Descriptor& output);
+
+    int Report(std::ostream& output) const;
 };
 
 LocalOptions::LocalOptions() {
   _molecules_read = 0;
   _reduce_to_largest_fragment = 0;
   _remove_chirality = 0;
+  _non_ring_molecules_skipped = 0;
   _write_parent = 0;
+  _write_smiles = 1;
 }
 
 int
@@ -82,6 +104,13 @@ LocalOptions::Initialise(Command_Line& cl) {
     }
   }
 
+  if (cl.option_present('y')) {
+    _write_smiles = 0;
+    if (_verbose) {
+      cerr << "Will write as proto form\n";
+    }
+  }
+
   return 1;
 }
 
@@ -108,17 +137,51 @@ LocalOptions::Preprocess(Molecule& m) {
 
 int
 LocalOptions::Write(Molecule& parent,
-                    resizable_array_p<Molecule>& results,
+                    const Scaffolds::ScaffoldData& result,
                     IWString_and_File_Descriptor& output) {
   static constexpr char kSep = ' ';
+
+  if (_write_smiles) {
+    return WriteSmiles(parent, result, output);
+  }
+
+  static google::protobuf::TextFormat::Printer printer;
+  printer.SetSingleLineMode(true);
 
   if (_write_parent) {
     output << parent.smiles() << kSep << parent.name() << kSep << "parent\n";
   }
 
-  const int n = results.size();
-  for (int i = 0; i < n; ++i) {
-    output << results[i]->smiles() << kSep << parent.name() << '.' << i << '\n';
+  std::string buffer;
+
+  printer.PrintToString(result, &buffer);
+  output << buffer << '\n';
+  output.write_if_buffer_holds_more_than(8192);
+
+  return 1;
+
+  for (const Scaffolds::ScaffoldSubset& subset : result.subset()) {
+    printer.PrintToString(subset, &buffer);
+    output << buffer << '\n';
+    output.write_if_buffer_holds_more_than(8192);
+  }
+
+  return 1;
+}
+
+int
+LocalOptions::WriteSmiles(Molecule& parent,
+                    const Scaffolds::ScaffoldData& result,
+                    IWString_and_File_Descriptor& output) const {
+  static constexpr char kSep = ' ';
+  if (_write_parent) {
+    output << parent.smiles() << kSep << parent.name() << '\n';
+  }
+
+  int ndx = 0;
+  for (const auto& subset : result.subset()) {
+    output << subset.smi() << kSep << parent.name() << '.' << ndx << kSep << subset.ring_sys() << '\n';
+    ++ndx;
     output.write_if_buffer_holds_more_than(8192);
   }
 
@@ -127,6 +190,8 @@ LocalOptions::Write(Molecule& parent,
 
 void
 Usage(int rc) {
+  cerr << " -G <fname>             config containing Scaffolds::ScaffoldsOptions text proto\n";
+  cerr << " -y                     output as Scaffolds::ScaffoldData textproto\n";
   ::exit(rc);
 }
   
@@ -135,14 +200,20 @@ Scaffolds(LocalOptions& local_options,
           ScaffoldFinder& make_scaffolds,
           Molecule& m,
           IWString_and_File_Descriptor& output) {
-  resizable_array_p<Molecule> results;
+  if (m.nrings() == 0) {
+    local_options.AnotherNonRingMolecule();
+    return 1;
+  }
 
-  if (! make_scaffolds.MakeScaffolds(m, results)) {
+  Scaffolds::ScaffoldData result;
+  result.set_smi(m.smiles().AsString());
+  result.set_par(m.name().AsString());
+
+  if (! make_scaffolds.MakeScaffolds(m, result)) {
     return 0;
   }
-  cerr << "Writing " << results.size() << " results\n";
 
-  return local_options.Write(m, results, output);
+  return local_options.Write(m, result, output);
 }
 
 int
@@ -154,11 +225,9 @@ Scaffolds(LocalOptions& local_options,
   while ((m = input.next_molecule()) != nullptr) {
     std::unique_ptr<Molecule> free_m(m);
 
-    cerr << "Read " << m->smiles() << '\n';
     if (! local_options.Preprocess(*m)) {
       return 0;
     }
-    cerr << "After preprocessing " << m->smiles() << '\n';
 
     if (! Scaffolds(local_options, make_scaffolds, *m, output)) {
       return 0;
@@ -190,7 +259,7 @@ Scaffolds(LocalOptions& local_options,
 
 int
 Scaffolds(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vi:A:E:g:clp");
+  Command_Line cl(argc, argv, "vi:A:E:g:clpG:y");
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
     return 1;
@@ -216,7 +285,7 @@ Scaffolds(int argc, char** argv) {
 
   scaffolds::ScaffoldFinder make_scaffolds;
 
-  if (! make_scaffolds.Initialise(cl)) {
+  if (! make_scaffolds.Initialise(cl, 'G')) {
     cerr << "Cannot initialise calculation\n";
     return 1;
   }
