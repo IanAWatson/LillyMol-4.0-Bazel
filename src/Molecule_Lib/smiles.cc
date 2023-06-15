@@ -26,6 +26,8 @@
 
 static unsigned int random_smiles_default_seed = 3172776704;
 
+static constexpr char kCloseParen = ')';
+
 /*
   We have various classes that guide the atom ordering when building a smiles
   Each class must have two methods, next_starting_atom, and next_atom with the
@@ -45,7 +47,8 @@ class Atom_Chooser_Default
 };
 
 int
-Atom_Chooser_Default::next_starting_atom(const Molecule & m, const int * zorder, atom_number_t & a, const int * include_atom) const
+Atom_Chooser_Default::next_starting_atom(const Molecule & m, const int * zorder,
+                                         atom_number_t & a, const int * include_atom) const
 {
   const int matoms = m.natoms();
 
@@ -61,10 +64,7 @@ Atom_Chooser_Default::next_starting_atom(const Molecule & m, const int * zorder,
     if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
-    const Chiral_Centre * c = m.chiral_centre_at_atom(i);
-
-    if (c && include_chiral_info)
-    {
+    if (include_chiral_info && m.chiral_centre_at_atom(i) != nullptr) {
       if (INVALID_ATOM_NUMBER == atom_to_return_if_nothing_else_found)
         atom_to_return_if_nothing_else_found = i;
     }
@@ -194,10 +194,7 @@ Atom_Chooser_Lowest_Rank::next_starting_atom (const Molecule & m,
     if (include_atom != nullptr && 0 == include_atom[i])
       continue;
 
-    const Chiral_Centre * c = m.chiral_centre_at_atom(i);
-
-    if (c && include_chiral_info)
-    {
+    if (include_chiral_info && m.chiral_centre_at_atom(i) != nullptr) {
       if (INVALID_ATOM_NUMBER == atom_to_return_if_nothing_else_found || _rank[i] < rank_last_resort_atom)
       {
         atom_to_return_if_nothing_else_found = i;
@@ -1703,7 +1700,7 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
     const char oparen = open_paren.pop();
 
     if (' ' != oparen)
-      clse_paren += ')';
+      clse_paren += kCloseParen;
 
     sfi.set_prev_and_zatom(previous_atom, zatom);
 
@@ -1729,7 +1726,7 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
     {
       _process_atom_for_smiles(sfi, smiles);
       if (clse_paren.number_elements() && ' ' != clse_paren.pop())
-        smiles += ')';
+        smiles += kCloseParen;
       continue;
     }
 
@@ -1824,7 +1821,7 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
         cerr << "No connections, but " << ring_opening_bonds.number_elements() << " ring openings\n";
       assert( (include_atom == nullptr) ? (ring_opening_bonds.empty()) : 1);
       if (clse_paren.number_elements() && ' ' != clse_paren.pop())
-        smiles += ')';
+        smiles += kCloseParen;
       continue;
     }
 
@@ -1850,7 +1847,7 @@ Molecule::_construct_smiles_for_fragment(Smiles_Formation_Info & sfi,
 
   while (clse_paren.number_elements()) {
     if (' ' != clse_paren.pop())
-      smiles += ')';
+      smiles += kCloseParen;
   }
 
   return 1;
@@ -3477,7 +3474,7 @@ fetch_ring_number(const char * s,
       ring_number = 10 * ring_number + j;
       s++;
     }
-    else if (')' == *s)
+    else if (kCloseParen == *s)
     {
       characters_processed = i + 3;
       return 1;

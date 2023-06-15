@@ -807,12 +807,14 @@ Molecule::_smi_process_new_chiral_centre(Chiral_Centre * c,
 Chiral_Centre *
 Molecule::chiral_centre_at_atom(atom_number_t a) const
 {
-  int nc = _chiral_centres.number_elements();
-  for (int i = 0; i < nc; i++)
-  {
-    Chiral_Centre * cc = _chiral_centres[i];
-    if (a == cc->a())
-      return cc;
+  if (_chiral_centres.empty()) {
+    return nullptr;
+  }
+
+  for (Chiral_Centre* c : _chiral_centres) {
+    if (c->a() == a) {
+      return c;
+    }
   }
 
   return nullptr;
@@ -822,6 +824,9 @@ Chiral_Centre *
 Molecule::remove_no_delete_chiral_centre_at_atom(atom_number_t zatom)
 {
   int nc = _chiral_centres.number_elements();
+  if (nc == 0) {
+    return nullptr;
+  }
 
   for (int i = 0; i < nc; i++)
   {

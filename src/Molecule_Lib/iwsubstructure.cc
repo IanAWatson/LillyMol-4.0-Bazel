@@ -1945,12 +1945,10 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
 int
 Single_Substructure_Query::_match_elements_needed(Molecule_to_Match & target_molecule) const
 {
-  int ne = _elements_needed.number_elements();
-
-  for (int i = 0; i < ne; i++)
-  {
-    if (! _elements_needed[i]->matches(target_molecule))
+  for (const Elements_Needed* e : _elements_needed) {
+    if (! e->matches(target_molecule)) {
       return 0;
+    }
   }
 
   return 1;
