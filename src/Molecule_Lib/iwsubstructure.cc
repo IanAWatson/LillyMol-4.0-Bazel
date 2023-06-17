@@ -526,16 +526,14 @@ Single_Substructure_Query::_determine_if_spinach_specifications_are_present()
 void
 Single_Substructure_Query::_determine_if_symmetry_groups_present()
 {
-  const int n = _root_atoms.number_elements();
-
   _first_root_atom_with_symmetry_group = -1;
 
 //cerr << "Single_Substructure_Query::_determine_if_symmetry_groups_present:checking " << n << " root atoms\n";
 
-  for (int i = 0; i < n; ++i)
-  {
-    if (_root_atoms[i]->symmetry_groups_present())
-    {
+  const int nr = _root_atoms.number_elements();
+
+  for (int i = 0; i < nr; ++i) {
+    if (_root_atoms[i]->symmetry_groups_present()) {
       _first_root_atom_with_symmetry_group = i;
       break;
     }
@@ -766,9 +764,8 @@ Single_Substructure_Query::_fused_system_id_conditions_satisfied(Query_Atoms_Mat
   }
 #endif
 
-  for (int i = 0; i < nm; i++)
-  {
-    const Substructure_Atom * sai = matched_query_atoms[i];
+  for (int i = 0; i < nm; ++i) {
+    const Substructure_Atom* sai = matched_query_atoms[i];
 
     int fsidi = sai->fused_system_id();
     
@@ -2646,25 +2643,21 @@ Single_Substructure_Query::_examine_bond_specifications()
     }
   }
 
-  int ne = _environment.number_elements();
-  for (int i = 0; i < ne; i++)
-  {
-    Substructure_Environment * e = _environment[i];
-    if (e->involves_aromatic_bond_specifications(_need_to_compute_ring_membership))
-    {
-      _need_to_compute_aromaticity = 1;
-      break;
+  if (! _environment.empty()) {
+    for (Substructure_Environment* e : _environment) {
+      if (e->involves_aromatic_bond_specifications(_need_to_compute_ring_membership)) {
+        _need_to_compute_aromaticity = 1;
+        break;
+      }
     }
   }
 
-  nr = _environment_rejections.number_elements();
-  for (int i = 0; i < nr; i++)
-  {
-    Substructure_Environment * r = _environment_rejections[i];
-    if (r->involves_aromatic_bond_specifications(_need_to_compute_ring_membership))
-    {
-      _need_to_compute_aromaticity = 1;
-      break;
+  if (! _environment_rejections.empty()) {
+    for (Substructure_Environment* r : _environment_rejections) {
+      if (r->involves_aromatic_bond_specifications(_need_to_compute_ring_membership)) {
+        _need_to_compute_aromaticity = 1;
+        break;
+      }
     }
   }
 
@@ -2932,9 +2925,8 @@ Single_Substructure_Query::highest_initial_atom_number () const
 {
   int rc = -1;
 
-  for (int i = 0; i < _root_atoms.number_elements(); i++)
-  {
-    int h = _root_atoms[i]->highest_initial_atom_number();
+  for (const Substructure_Atom* r : _root_atoms) {
+    int h = r->highest_initial_atom_number();
 
     if (h > rc)
       rc = h;
