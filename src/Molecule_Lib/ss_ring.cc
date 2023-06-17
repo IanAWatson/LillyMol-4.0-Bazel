@@ -237,24 +237,16 @@ int
 Substructure_Ring_Specification::matches(Molecule_to_Match & target,
                                 std::unique_ptr<int[]>& matched_by_global_specs)
 {
-  if (SUBSTRUCTURE_NOT_SPECIFIED != _aromatic)
-    target.molecule()->compute_aromaticity();
+  Molecule * m = target.molecule();
 
-  int nr = target.nrings();
+  if (SUBSTRUCTURE_NOT_SPECIFIED != _aromatic)
+    m->compute_aromaticity_if_needed();
 
   extending_resizable_array<int> hits_in_fragment;    // used if _all_hits_in_same_fragment specified
-  Molecule * m;
-  if (_all_hits_in_same_fragment)
-    m = target.molecule();
-  else
-    m = nullptr;
 
   int nhits = 0;
 
-  for (int i = 0; i < nr; i++)
-  {
-    const Ring * r = target.ringi(i);
-
+  for (const Ring* r : m->sssr_rings()) {
     int rsize = r->number_elements();
 
 #ifdef DEBUG_SS_RING_MATCHES
@@ -262,17 +254,19 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
           _ring_size.matches(rsize) << endl;
 #endif
 
-    if (! _ring_size.matches(rsize))
+    if (_ring_size.is_set() && ! _ring_size.matches(rsize))
       continue;
 
 //  cerr << "Ring has " << r->fused_ring_neighbours() << endl;
-    if (! _fused.matches(r->fused_ring_neighbours()))
+    if (_fused.is_set() && ! _fused.matches(r->fused_ring_neighbours()))
       continue;
 
-    if (! _largest_number_of_bonds_shared_with_another_ring.matches(r->largest_number_of_bonds_shared_with_another_ring()))
+    if (_largest_number_of_bonds_shared_with_another_ring.is_set() && 
+        ! _largest_number_of_bonds_shared_with_another_ring.matches(r->largest_number_of_bonds_shared_with_another_ring()))
       continue;
 
-    if (! _strongly_fused_ring_neighbours.matches(r->strongly_fused_ring_neighbours()))
+    if (_strongly_fused_ring_neighbours.is_set() && 
+        ! _strongly_fused_ring_neighbours.matches(r->strongly_fused_ring_neighbours()))
       continue;
 
     if (SUBSTRUCTURE_NOT_SPECIFIED == _aromatic)
@@ -282,82 +276,80 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
     else if (_aromatic && r->is_non_aromatic())
       continue;
 
-    if (_ncon.is_set() || _attached_heteroatom_count.is_set() || _heteroatom_count.is_set())
-    {
+    // If we need connections, compute them.
+    if (_ncon.is_set() || _attached_heteroatom_count.is_set() || _heteroatom_count.is_set()) {
       int rcon   = 0;
       int rh     = 0;
       int ahc    = 0;
-      for (int j = 0; j < rsize; j++)
-      {
-        atom_number_t k = r->item(j);
+      for (atom_number_t k : *r) {
+        const Atom* a = m->atomi(k);
   
-        Target_Atom & a = target[k];
-  
-        if (_is_heteroatom[a.atomic_number()])
+        if (_is_heteroatom[a->atomic_number()])
           rh++;
   
-        int acon = a.ncon();
+        const int acon = a->ncon();
+        // If 2 connected, there can be nothing attached.
+        if (acon == 2) {
+          continue;
+        }
 
-        if (acon > 2)        // if only 2 connections, all nbrs in ring
-          rcon += acon - 2;    // two of its neighbours must be in the ring
+        // Two connections are in the ring
+        rcon += acon - 2;
 
-        if (_attached_heteroatom_count.is_set())    // only compute if needed
-        {
-          for (int l = 0; l < acon; l++)
-          {
-            const Bond_and_Target_Atom & bata = a.other(l);
+        if (_attached_heteroatom_count.is_set()) {   // only compute if needed
+          for (const Bond* b : *a) {
+            atom_number_t exocyclic = b->other(k);
 
-            const Target_Atom * n = bata.other();
-
-            if (r->contains(n->atom_number()))
+            // Skip if in the ring.
+            if (r->contains(exocyclic)) {
               continue;
+            }
 
-            if (_is_heteroatom[n->atomic_number()])
+            if (_is_heteroatom[m->atomic_number(exocyclic)]) {
               ahc++;
+            }
           }
         }
       }
 
-      if (! _ncon.matches(rcon))
+      if (_ncon.is_set() && ! _ncon.matches(rcon))
         continue;
   
-      if (! _attached_heteroatom_count.matches(ahc))
+      if (_attached_heteroatom_count.is_set() && ! _attached_heteroatom_count.matches(ahc))
         continue;
   
 #ifdef DEBUG_SS_RING_MATCHES
       cerr << "rh = " << rh << " match " << _heteroatom_count.matches(rh) << endl;
 #endif
 
-      if (! _heteroatom_count.matches(rh))
+      if (! _heteroatom_count.matches(rh)) {
         continue;
+      }
     }
 
-    if (_fused_aromatic_neighbours.is_set())
-    {
+    if (_fused_aromatic_neighbours.is_set()) {
       const int arfsn = ss_ring::fused_aromatic_neighbours(*r);
 
-      if (! _fused_aromatic_neighbours.matches(arfsn))
+      if (! _fused_aromatic_neighbours.matches(arfsn)) {
         continue;
+      }
     }
 
-    if (_fused_non_aromatic_neighbours.is_set())
-    {
+    if (_fused_non_aromatic_neighbours.is_set()) {
       int narfsn = ss_ring::fused_non_aromatic_neighbours(*r);
 
       if (! _fused_non_aromatic_neighbours.matches(narfsn))
         continue;
     }
 
-    if (_within_ring_unsaturation.is_set())
-    {
+    if (_within_ring_unsaturation.is_set()) {
       int ring_unsaturation = ss_ring::compute_within_ring_unsaturation(r, target);
 
       if (! _within_ring_unsaturation.matches(ring_unsaturation))
         continue;
     }
 
-    if (_atoms_with_pi_electrons.is_set())
-    {
+    if (_atoms_with_pi_electrons.is_set()) {
       int awpe = ss_ring::compute_atoms_with_pi_electrons(r, target);
       if (! _atoms_with_pi_electrons.matches(awpe))
         continue;
@@ -370,8 +362,7 @@ Substructure_Ring_Specification::matches(Molecule_to_Match & target,
     cerr << "now have " << nhits << " environment hits\n";
 #endif
 
-    if (_all_hits_in_same_fragment)
-    {
+    if (_all_hits_in_same_fragment) {
       atom_number_t a = r->item(0);
       hits_in_fragment[m->fragment_membership(a)]++;
     }
