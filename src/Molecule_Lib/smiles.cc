@@ -2612,14 +2612,12 @@ Molecule::_find_raw_rings(const atom_number_t previous_atom,
   Set_of_Atoms to_process;
   to_process.resize(acon);
 
-  for (int i = 0; i < acon; i++)
-  {
-    const atom_number_t j = c->other(current_atom, i);
+  for (const Bond* b : *c) {
+    const atom_number_t j = b->other(current_atom);
     if (previous_atom == j)
       continue;
 
-    if (already_done[j])
-    {
+    if (already_done[j]) {
 //    cerr << "From atom " << current_atom << " found new ring to atom " << j << endl;
       Ring * tmp = new Ring;
       tmp->resize(6);
