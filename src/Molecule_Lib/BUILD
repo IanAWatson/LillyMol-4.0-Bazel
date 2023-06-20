@@ -537,6 +537,20 @@ cc_library(
     ],
 )
 
+cc_library (
+    name = "llymol_lemon",
+    srcs = [
+        "llymol_lemon.cc",
+    ],
+    hdrs = [
+        "llymol_lemon.h",
+    ],
+    deps = [
+        ":iwmolecule",
+        "@lemon//:lemon",
+    ],
+)
+
 cc_library(
     name = "space_vector",
     srcs = [
