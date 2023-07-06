@@ -148,6 +148,9 @@ static int ignore_molecules_with_no_atoms = 0;
 // Many of the features are int forms.
 static IWDigits iwdigits;
 
+// Many are fractional.
+static Fraction_as_String fraction_as_string;
+
 enum IWDescr_Enum
 {
   iwdescr_natoms,
@@ -1696,6 +1699,7 @@ write_the_output(Molecule & m,
     if (! descriptor[i].active())
       continue;
 
+    // Add this to iwdigits and fraction_as_string
     output << output_separator;
 
     float v;
@@ -8434,6 +8438,7 @@ iwdescr(int argc, char ** argv)
   }
 
   iwdigits.initialise(1024);
+  fraction_as_string.initialise(0.0, 100.0, 3);
   if (cl.option_present('d')) {
     iwdigits.append_to_each_stored_string(".");
     if (verbose) {

@@ -960,16 +960,17 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
     cerr << "Matching atom with " << _components.number_elements() << " components, underlying specifier match " << m << " match or rej " << _match_as_match_or_rejection << endl;
 #endif
   
-    if (m && 0 == _match_as_match_or_rejection)    // matches, but we are a rejection criterion
-    {
+    if (m && 0 == _match_as_match_or_rejection) {    // matches, but we are a rejection criterion
       return 0;
     }
 
-    if (0 == m && 0 != _match_as_match_or_rejection)    // no match, but we must match
+    if (0 == m && 0 != _match_as_match_or_rejection) {    // no match, but we must match
       return 0;
+    }
 
-    if (0 == m)
+    if (0 == m) {
       return ! _match_as_match_or_rejection;
+    }
   }
 
 #ifdef DEBUG_ATOM_MATCHES
@@ -1014,8 +1015,7 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
       if (tmp)
         _preference_value_current_match += _components[i]->preference_value();
 
-      if (_operator.evaluate(result))
-      {
+      if (_operator.evaluate(result)) {
         if (0 == result)       // the expression is false
           return ! _match_as_match_or_rejection;
 
@@ -1028,8 +1028,7 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
     }
   }
 
-  if (_environment.number_elements())
-  {
+  if (_environment.number_elements()) {
 #ifdef DEBUG_ATOM_MATCHES
     cerr << "Checking " << _environment.number_elements() << " environment components\n";
 #endif
@@ -1061,8 +1060,7 @@ Substructure_Atom::_matches(Target_Atom & target, const int * already_matched)
 
   for (Substructure_Atom_Specifier* a : _preferences)
   {
-    if (a->matches(target))
-    {
+    if (a->matches(target)) {
 #ifdef DEBUG_PREFERENCE_STUFF
       cerr << "Preference component " << i << " matches, value " << a->preference_value() << endl;
 #endif
@@ -2033,29 +2031,31 @@ Substructure_Atom::determine_start_stop(const Molecule_to_Match & target,
   if (!_match_as_match_or_rejection)  // Too complex otherwise.
     return 1;
 
-  const int na = _element.number_elements();
+// If we have no info about atomic numbers, we must search the whole target
+  if (_element.empty()) {
+    return 1;
+  }
 
-  assert (_element_unique_id.number_elements() == na);
+  assert (_element_unique_id.number_elements() == _element.number_elements());
 
 #ifdef DEBUG_DETERMINE_START_STOP
   cerr << "Determining start/stop points, matoms = " << matoms << " na = " << na << endl;
-  for (int i = 0; i < na; i++)
+  for (int i = 0; i < _element.number_elements(); i++)
   {
     cerr << " z = " << _element[i]->atomic_number();
   }
-  if (na > 0)
+  if (_element.number_elements() > 0)
     cerr << endl;
 #endif
 
-// If we have no info about atomic numbers, we must search the whole target
-
-  if (0 == na)
-    return 1;
-
   atomic_number_t z = _element[0]->atomic_number();
 
-  if (z < 0)    // we have one or more non periodic table items, too hard
+  // We have one or more non periodic table items, too hard
+  if (z < 0) {
     return 1;
+  }
+
+  const int na = _element.number_elements();
 
   istart = target.first(z);
 
@@ -2063,8 +2063,7 @@ Substructure_Atom::determine_start_stop(const Molecule_to_Match & target,
   cerr << "First occurrence of atomic number " << z << " at " << istart << endl;
 #endif
 
-  if (istart >= 0)
-  {
+  if (istart >= 0) {
     istop = target.last(z) + 1;
     if (1 == na)
       return 1;
@@ -2548,6 +2547,27 @@ Substructure_Atom::add_component(Substructure_Atom_Specifier* spec) {
 
   if (_components.size() > 1) {
     _operator.add_operator(IW_LOGEXP_AND);
+  }
+
+  return 1;
+}
+
+// Currently we assume that all informaton is in the Substructure_Atom_Specifier, but
+// lpnger term, maybe that is not the best.
+int
+Substructure_Atom::BuildMolecule(Molecule& m, uint32_t* atype, uint32_t* btype) const {
+  if (! _components.empty()) {
+    return 0;
+  }
+  Substructure_Atom_Specifier&me = *this;
+  if (! me.BuildMolecule(m, atype, btype)) {
+    return 0;
+  }
+
+  for (const Substructure_Atom* c : _children) {
+    if (! c->BuildMolecule(m, atype, btype)) {
+      return 0;
+    }
   }
 
   return 1;

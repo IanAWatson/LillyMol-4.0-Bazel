@@ -31,11 +31,11 @@ build:clang_config --crosstool_top=//toolchain:clang_suite
 
 # Use --cpu as a differentiator.
 
-build:clang_config --cpu=skylake
+build:clang_config --cpu=native -c opt
 
 # Use the default Bazel C++ toolchain to build the tools used during the
 # build.
 
 build:clang_config --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
 
-#test --cxxopt=-std=c++17 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz
+#test --cxxopt=-std=c++20 --copt=-march=core-avx2 --linkopt=-lsnappy --linkopt=-lz

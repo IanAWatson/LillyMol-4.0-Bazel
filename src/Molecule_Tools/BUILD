@@ -336,9 +336,6 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1424,9 +1421,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1446,9 +1440,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 

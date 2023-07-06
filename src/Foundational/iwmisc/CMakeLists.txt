@@ -1,4 +1,7 @@
 project(iwmisc)
+
+include_directories(BEFORE ${Protobuf_INCLUDE_DIR})
+
 set(source_files
   ${CMAKE_CURRENT_SOURCE_DIR}/append_first_token_of_name.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/dash_d.cc

@@ -299,8 +299,6 @@ FileconvConfig::DefaultValues() {
 
 void
 Usage(int rc = 1) {
-  cerr << "In usage\n";
-  cerr.flush();
   cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << "\n";
   cerr << "usage: fileconv -i <input type> -o <output type> file1 file2...\n";
   cerr << "The following options are recognised\n";

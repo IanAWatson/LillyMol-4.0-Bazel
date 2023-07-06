@@ -42,11 +42,11 @@ add_custom_command(
 
 # Libraries
  
-set(maccskeys_fn5_srcs
-  maccskeys_fn5.cc
+set(maccskeys_srcs
+  maccskeys.cc
 )
-add_library(maccskeys_fn5_lib ${maccskeys_fn5_srcs})
-target_include_directories(maccskeys_fn5_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(maccskeys_lib ${maccskeys_srcs})
+target_include_directories(maccskeys_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(partial_symmetry_srcs
   partial_symmetry.cc
@@ -278,18 +278,18 @@ set(linear_fingerprint_libs
 add_executable(linear_fingerprint ${linear_fingerprint_srcs})
 target_link_libraries(linear_fingerprint LINK_PUBLIC ${linear_fingerprint_libs})
 
-# maccskeys_fn5
-set(maccskeys_fn5_srcs
-  maccskeys_fn5_main.cc
+# maccskeys
+set(maccskeys_srcs
+  maccskeys_main.cc
 )
-set(maccskeys_fn5_libs
+set(maccskeys_libs
   sparse_fp_creator
-  maccskeys_fn5_lib
+  maccskeys_lib
   ${common_libs}
   ${third_party_libs}
 )
-add_executable(maccskeys_fn5 ${maccskeys_fn5_srcs})
-target_link_libraries(maccskeys_fn5 LINK_PUBLIC ${maccskeys_fn5_libs})
+add_executable(maccskeys ${maccskeys_srcs})
+target_link_libraries(maccskeys LINK_PUBLIC ${maccskeys_libs})
 
 # make_these_molecules
 set(make_these_molecules_srcs
@@ -424,7 +424,7 @@ set(random_molecular_permutations_libs
   iw_tdt
   gfp_standard
   linear_path_fingerprint_lib
-  maccskeys_fn5_lib
+  maccskeys_lib
   sparse_fp_creator
   ${common_libs}
   ${third_party_libs}

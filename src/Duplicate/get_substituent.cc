@@ -33,11 +33,11 @@ Usage(int rc) {
   cerr << " -M <natoms>   maximum number of atoms in each substituent\n";
   cerr << " -X <length>   maximum distance from the attachment point\n";
   cerr << " -Y <smarts>   queries that must     be present in the substituent\n";
+  cerr << " -y            all -Y queries must match - default is any match\n";
   cerr << " -N <smarts>   queries that must not be present in the substituent\n";
   cerr << " -z i          ignore molecules not matching the query\n";
   cerr << " -I <iso>      isotopically label substituents\n";
-  cerr << " -Y <smarts>   substituents must match\n";
-  cerr << " -N <smarts>   substituents must not match\n";
+  cerr << " -p            prepend the smiles of each fragment\n";
   cerr << " -c                remove chirality\n";
   cerr << " -l                strip to largest fragment\n";
   cerr << " -v                verbose output\n";
@@ -64,6 +64,12 @@ class GetSubstituent {
 
     resizable_array_p<Substructure_Query> _must_have;
     resizable_array_p<Substructure_Query> _must_not_have;
+
+    int _all_must_have_queries_must_match;
+
+    // We normally write a textproto, but it can be convenient
+    // to write the smiles as the first token.
+    int _prepend_smiles;
 
     int _ignore_molecules_not_matching_query;
     int _molecules_not_matching_query;
@@ -121,8 +127,12 @@ GetSubstituent::GetSubstituent() {
 
   _max_length = std::numeric_limits<int>::max();
 
+  _all_must_have_queries_must_match = 0;
+
   _ignore_molecules_not_matching_query = 0;
   _molecules_not_matching_query = 0;
+
+  _prepend_smiles = 0;
 
   _isotope = 0;
   _input_type = FILE_TYPE_INVALID;
@@ -225,6 +235,13 @@ GetSubstituent::Initialise(Command_Line& cl) {
       }
       _must_have << q.release();
     }
+
+    if (cl.option_present('y')) {
+      _all_must_have_queries_must_match = 1;
+      if (_verbose) {
+        cerr << "All must-have (-Y) queries must match\n";
+      }
+    }
   }
 
   if (cl.option_present('N')) {
@@ -246,6 +263,13 @@ GetSubstituent::Initialise(Command_Line& cl) {
     }
     if (_verbose) {
       cerr << "Will only find fragments shorter than " << _max_length << " bonds from the attachment point\n";
+    }
+  }
+
+  if (cl.option_present('p')) {
+    _prepend_smiles = 1;
+    if (_verbose) {
+      cerr << "Will prepend the smiles to each textproto output record\n";
     }
   }
 
@@ -310,6 +334,9 @@ GetSubstituent::WriteFragments(IWString_and_File_Descriptor& output) const {
 
   for (const auto& [usmi, frag] : _fragments) {
     printer.PrintToString(frag, &buffer);
+    if (_prepend_smiles) {
+      output << usmi << ' ';
+    }
     output << buffer << '\n';
     output.write_if_buffer_holds_more_than(8192);
   }
@@ -401,6 +428,8 @@ GetSubstituent::OkQueries(Molecule& m) {
     if (q->substructure_search(target, sresults)) {
       got_must_have = 1;
       break;
+    } else if (_all_must_have_queries_must_match) {
+      return 0;
     }
   }
 
@@ -543,7 +572,7 @@ GetSubstituents(GetSubstituent& get_substituents,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lcz:s:q:m:M:I:Y:N:X:");
+  Command_Line cl(argc, argv, "vE:A:i:g:lcz:s:q:m:M:I:Y:N:X:p");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

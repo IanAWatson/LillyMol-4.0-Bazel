@@ -160,6 +160,42 @@ cc_library(
 """,
 )
 
+new_local_repository(
+    name = "libcxxwrap",
+    path = "/home/ian/LillyMol-4.0-Bazel/third_party",
+    build_file_content = """
+cc_library(
+    name = "libcxxwrap",
+    srcs = glob(
+          ["lib/*.so"],
+    ),
+    hdrs = glob(
+            ["include/jlcxx/*.hpp"],
+    ),
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+new_local_repository(
+    name = "julia",
+    path = "/home/ian/pub/julia-1.9.1",
+    build_file_content = """
+cc_library(
+    name= "julia",
+    srcs = glob(
+        ["lib/*.so"],
+    ),
+    hdrs = glob(
+        ["include/julia/*.h"],
+    ),
+    strip_include_prefix = "include/julia",
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
 load("@com_grail_bazel_toolchain//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 
 bazel_toolchain_dependencies()
