@@ -2551,24 +2551,3 @@ Substructure_Atom::add_component(Substructure_Atom_Specifier* spec) {
 
   return 1;
 }
-
-// Currently we assume that all informaton is in the Substructure_Atom_Specifier, but
-// lpnger term, maybe that is not the best.
-int
-Substructure_Atom::BuildMolecule(Molecule& m, uint32_t* atype, uint32_t* btype) const {
-  if (! _components.empty()) {
-    return 0;
-  }
-  Substructure_Atom_Specifier&me = *this;
-  if (! me.BuildMolecule(m, atype, btype)) {
-    return 0;
-  }
-
-  for (const Substructure_Atom* c : _children) {
-    if (! c->BuildMolecule(m, atype, btype)) {
-      return 0;
-    }
-  }
-
-  return 1;
-}
