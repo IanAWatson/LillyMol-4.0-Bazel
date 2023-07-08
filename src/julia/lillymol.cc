@@ -3,6 +3,7 @@
 
 #include "jlcxx/jlcxx.hpp"
 
+#include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
 
 namespace lillymol_julia {
@@ -80,9 +81,19 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.set_const("SMI", FILE_TYPE_SMI);
   mod.set_const("SDF", FILE_TYPE_SDF);
 
-  mod.add_type<Set_of_Atoms>("Set_of_Atoms")
+  mod.add_type<Set_of_Atoms>("SetOfAtoms")
     .constructor<>()
     .method("contains", &Set_of_Atoms::contains)
+  ;
+
+  mod.add_type<Chemical_Standardisation>("ChemicalStandardisation")
+    .method("activate_all", &Chemical_Standardisation::activate_all)
+    .method("process", 
+      [](Chemical_Standardisation& s, jlcxx::BoxedValue<Molecule>& boxed_mol)->int {
+        Molecule& m = jlcxx::unbox<Molecule&>(boxed_mol);
+        return s.process(m);
+      }
+    )
   ;
     
   mod.add_type<Bond>("Bond")
@@ -93,6 +104,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return ToBondType(b);
       }
     )
+    .method("other", &Bond::other)
     .method("is_single_bond",
       [](const Bond& b)->bool{
         return b.is_single_bond();
@@ -205,12 +217,20 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       [](const Atom& a)->bool{
         return a.fully_saturated();
       }
-    )
+    );
+
+    mod.set_override_module(jl_base_module);
+    mod.method("getindex",
+      [](const Atom& a, int i)->const Bond&{
+        return *a[i-1];
+      }
+    );
+    mod.unset_override_module();
   ;
 
   mod.add_type<Molecule>("Molecule")
     .constructor<>()
-    .constructor<jlcxx::cxxint_t>(false) // no finalizer
+    //.constructor<jlcxx::cxxint_t>(false) // no finalizer
     .method("ok",
       [](const Molecule& m)->bool{
         return m.ok();
@@ -241,6 +261,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.natoms(asymbol.c_str());
       }
     )
+    .method("atomic_number", &Molecule::atomic_number)
     .method("nrings",
       [](Molecule& m) {
         return m.nrings();
@@ -271,6 +292,14 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("is_aromatic", &Molecule::is_aromatic)
     .method("atom", &Molecule::atom)
   ;
+
+  mod.set_override_module(jl_base_module);
+  mod.method("getindex",
+    [](const Molecule& m, int i)->const Atom&{
+      return m[i-1];
+    }
+  );
+  mod.unset_override_module();
 }
 
 }  // namespace lillymol_julia
