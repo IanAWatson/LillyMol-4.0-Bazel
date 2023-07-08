@@ -127,6 +127,16 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
   ;
 
+  mod.add_type<Mol2Graph>("Mol2Graph")
+    .method("set_exclude_triple_bonds_from_graph_reduction", &Mol2Graph::set_exclude_triple_bonds_from_graph_reduction)
+    .method("set_revert_all_directional_bonds_to_non_directional", &Mol2Graph::set_revert_all_directional_bonds_to_non_directional)
+    .method("set_preserve_cc_double_bonds_no_heteroatoms ", &Mol2Graph::set_preserve_cc_double_bonds_no_heteroatoms )
+    .method("set_preserve_cc_double_bonds_saturated ", &Mol2Graph::set_preserve_cc_double_bonds_saturated )
+    .method("set_append_molecular_formula ", &Mol2Graph::set_append_molecular_formula )
+    .method("set_aromatic_distinguishing_formula", &Mol2Graph::set_aromatic_distinguishing_formula)
+    .method("set_remove_chiral_centres ", &Mol2Graph::set_remove_chiral_centres )
+  ;
+
   mod.add_type<Chemical_Standardisation>("ChemicalStandardisation")
     .method("activate_all", &Chemical_Standardisation::activate_all)
     .method("process", 
@@ -269,6 +279,9 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     mod.unset_override_module();
   ;
 
+  mod.add_type<Bond_list>("BondList")
+  ;
+
   mod.add_type<Molecule>("Molecule")
     .constructor<>()
     //.constructor<jlcxx::cxxint_t>(false) // no finalizer
@@ -323,6 +336,13 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("name",
       [](const Molecule& m)->std::string{
         return m.name().AsString();
+      }
+    )
+    .method("molecular_formula",
+      [](Molecule& m)->std::string{
+        IWString tmp;
+        m.isis_like_molecular_formula(tmp);
+        return std::string(tmp.data(), tmp.size());
       }
     )
     .method("natoms",
@@ -394,6 +414,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("ring_containing_atom", &Molecule::ring_containing_atom)
+#ifdef NOT_WORKING_YET
     .method("sssr_rings",
       [](Molecule& m)->std::vector<const Ring*>{
         std::vector<const Ring*> result;
@@ -404,6 +425,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return result;
       }
     )
+#endif
     .method("label_atoms_by_ring_system",
       [](Molecule& m)->std::vector<int>{
         const int matoms = m.natoms();
@@ -451,7 +473,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
 
-    .method("build_from_smiles", static_cast<int (Molecule::*)(const std::string& smiles)>(&Molecule::build_from_smiles))
+    .method("build_from_smiles", 
+      [](Molecule& m, const std::string& s)->bool{
+        return m.build_from_smiles(s);
+      }
+    )
     .method("smiles", 
       [](Molecule& m)->std::string{
         return m.smiles().AsString();
@@ -479,6 +505,73 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("is_aromatic", &Molecule::is_aromatic)
     .method("atom", &Molecule::atom)
+
+    .method("change_to_graph_form",
+      [](Molecule& m) {
+        return m.change_to_graph_form();
+      }
+    )
+    .method("change_to_graph_form",
+      [](Molecule& m, const Mol2Graph& mol2graph) {
+        return m.change_to_graph_form(mol2graph);
+      }
+    )
+    .method("smiles_atom_order",
+      [](Molecule& m)->std::vector<int>{
+        const int matoms = m.natoms();
+        std::unique_ptr<int[]> tmp = std::make_unique<int[]>(matoms);
+        m.smiles_atom_order(tmp.get());
+        return std::vector<int>(tmp.get(), tmp.get() + matoms);
+      }
+    )
+    .method("atom_order_in_smiles",
+      [](Molecule& m)->std::vector<int>{
+        const resizable_array<int>& order = m.atom_order_in_smiles();
+        std::vector<int> result;
+        result.reserve(m.natoms());
+        std::copy(order.cbegin(), order.cend(), std::back_inserter(result));
+        return result;
+      }
+    )
+    .method("bond", 
+      [](const Molecule& m, atom_number_t a) {
+        return m.bondi(a);
+      }
+    )
+    .method("bond_between_atoms", &Molecule::bond_between_atoms)
+
+    //.method("compute_canonical_ranking", &Molecule::compute_canonical_ranking)
+    .method("canonical_rank", &Molecule::canonical_rank)
+    .method("canonical_ranks",
+      [](Molecule& m)->std::vector<int> {
+        const int * c = m.canonical_ranks();
+        return std::vector<int>(c, c + m.natoms());
+      }
+    )
+    .method("symmetry_class", &Molecule::symmetry_class)
+    .method("number_symmetry_classes", &Molecule::number_symmetry_classes)
+    .method("symmetry_equivalents", &Molecule::symmetry_equivalents)
+    .method("symmetry_classes",
+      [](Molecule& m)->std::vector<int>{
+        std::vector<int> result;
+        const int matoms = m.natoms();
+        result.reserve(matoms);
+        const int* sym = m.symmetry_classes();
+        std::copy(sym, sym + matoms, std::back_inserter(result));
+        return result;
+      }
+    )
+    .method("attached_heteroatom_count", &Molecule::attached_heteroatom_count)
+    //.method("multiple_bond_to_heteroatom", &Molecule::multiple_bond_to_heteroatom)
+
+    .method("bond_length", &Molecule::bond_length)
+    .method("bond_angle", &Molecule::bond_angle)
+    .method("dihedral_angle", &Molecule::dihedral_angle)
+    .method("signed_dihedral_angle", &Molecule::signed_dihedral_angle)
+    .method("set_bond_length", &Molecule::set_bond_length)
+    .method("set_bond_angle", &Molecule::set_bond_angle)
+    .method("set_dihedral", &Molecule::set_dihedral)
+      
   ;
 
   mod.set_override_module(jl_base_module);
