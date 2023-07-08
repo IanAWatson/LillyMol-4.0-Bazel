@@ -5,6 +5,7 @@
 
 #include "Molecule_Lib/standardise.h"
 #include "Molecule_Lib/molecule.h"
+#include "Molecule_Lib/path.h"
 
 namespace lillymol_julia {
 
@@ -61,6 +62,22 @@ ToBondType(const Bond& b) {
   return kInvalidBond;
 }
 
+bond_type_t
+BtypeEnumToBtype(const BondType btenum) {
+  switch (btenum) {
+    case kSingleBond:
+      return SINGLE_BOND;
+    case kDoubleBond:
+      return DOUBLE_BOND;
+    case kTripleBond:
+      return TRIPLE_BOND;
+    case kAromaticBond:
+      return AROMATIC_BOND;
+    default:
+      return NOT_A_BOND;
+  }
+}
+
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
   mod.method("greet", &greet);
@@ -84,6 +101,30 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.add_type<Set_of_Atoms>("SetOfAtoms")
     .constructor<>()
     .method("contains", &Set_of_Atoms::contains)
+  ;
+
+  mod.add_type<Ring>("Ring")
+    .constructor<>()
+    .method("ring_number", &Ring::ring_number)
+    .method("fragment_membership", &Ring::fragment_membership)
+    .method("fused_system_identifier", &Ring::fused_system_identifier)
+    .method("fused_ring_neighbours", &Ring::fused_ring_neighbours)
+    .method("fused_neighbour", &Ring::fused_neighbour)
+    .method("largest_number_of_bonds_shared_with_another_ring", &Ring::largest_number_of_bonds_shared_with_another_ring)
+    .method("strongly_fused_ring_neighbours", &Ring::strongly_fused_ring_neighbours)
+    .method("contains_bond", &Ring::contains_bond)
+    .method("contains_both", &Ring::contains_both)
+
+    .method("is_fused",
+      [](const Ring& r)->bool{
+        return r.is_fused();
+      }
+    )
+    .method("is_aromatic",
+      [](const Ring& r)->bool{
+        return r.is_aromatic();
+      }
+    )
   ;
 
   mod.add_type<Chemical_Standardisation>("ChemicalStandardisation")
@@ -236,6 +277,44 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.ok();
       }
     )
+    .method("debug_string", &Molecule::debug_string)
+    .method("empty",
+      [](const Molecule& m)->bool{
+        return m.empty();
+      }
+    )
+    .method("x", &Molecule::x)
+    .method("y", &Molecule::y)
+    .method("z", &Molecule::z)
+    .method("setx", &Molecule::setx)
+    .method("sety", &Molecule::sety)
+    .method("setz", &Molecule::setz)
+
+    .method("add_bond",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2, BondType bt)->bool{
+        return m.add_bond(a1, a2, BtypeEnumToBtype(bt));
+      }
+    )
+    .method("are_bonded",
+      [](const Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
+        return m.are_bonded(a1, a2);
+      }
+    )
+    .method("are_adjacent",
+      [](const Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
+        return m.are_adjacent(a1, a2);
+      }
+    )
+
+    .method("has_formal_charges",
+      [](const Molecule& m)->bool {
+        return m.has_formal_charges();
+      }
+    )
+    .method("number_formally_charged_atoms", &Molecule::number_formally_charged_atoms)
+    .method("net_formal_charge", &Molecule::net_formal_charge)
+
+
     .method("set_name",
       [](Molecule& m, const std::string& s) {
         return m.set_name(s);
@@ -261,6 +340,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.natoms(asymbol.c_str());
       }
     )
+    .method("nedges", &Molecule::nedges)
     .method("atomic_number", &Molecule::atomic_number)
     .method("nrings",
       [](Molecule& m) {
@@ -270,6 +350,104 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("nrings",
       [](Molecule& m, atom_number_t a) {
         return m.nrings(a);
+      }
+    )
+    .method("nrings",
+      [](Molecule& m, atom_number_t a, int rsize) {
+        return m.nrings(a, rsize);
+      }
+    )
+    .method("is_ring_atom",
+      [](Molecule& m, atom_number_t a)->bool{
+        return m.is_ring_atom(a);
+      }
+    )
+    .method("ring_bond_count", 
+      [](Molecule& m, atom_number_t a) {
+        return m.ring_bond_count(a);
+      }
+    )
+    .method("fused_system_size", &Molecule::fused_system_size)
+    .method("rings_with_fused_system_identifier", &Molecule::rings_with_fused_system_identifier)
+    .method("fused_system_identifier", &Molecule::fused_system_identifier)
+    .method("in_same_ring", &Molecule::in_same_ring)
+    .method("in_same_ring_system", &Molecule::in_same_ring_system)
+    .method("ring_membership",
+      [](Molecule& m)->std::vector<int>{
+        const int* r = m.ring_membership();
+        return std::vector<int>(r, r + m.natoms());
+      }
+    )
+    .method("rings_containing_both",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2) {
+        return m.in_same_rings(a1, a2);
+      }
+    )
+    .method("is_part_of_fused_ring_system",
+      [](Molecule& m, atom_number_t a)->bool{
+        return m.is_part_of_fused_ring_system(a);
+      }
+    )
+    .method("ring",
+      [](Molecule& m, int rnum)->const Ring*{
+        return m.ringi(rnum);
+      }
+    )
+    .method("ring_containing_atom", &Molecule::ring_containing_atom)
+    .method("sssr_rings",
+      [](Molecule& m)->std::vector<const Ring*>{
+        std::vector<const Ring*> result;
+        result.reserve(m.nrings());
+        for (const Ring* r : m.sssr_rings()) {
+          result.push_back(r);
+        }
+        return result;
+      }
+    )
+    .method("label_atoms_by_ring_system",
+      [](Molecule& m)->std::vector<int>{
+        const int matoms = m.natoms();
+        std::unique_ptr<int[]> tmp = std::make_unique<int[]>(matoms);
+        m.label_atoms_by_ring_system(tmp.get());
+        return std::vector<int>(tmp.get(), tmp.get() + matoms);
+      }
+    )
+    .method("label_atoms_by_ring_system_including_spiro_fused",
+      [](Molecule& m)->std::vector<int>{
+        const int matoms = m.natoms();
+        std::unique_ptr<int[]> tmp = std::make_unique<int[]>(matoms);
+        m.label_atoms_by_ring_system_including_spiro_fused(tmp.get());
+        return std::vector<int>(tmp.get(), tmp.get() + matoms);
+      }
+    )
+    .method("nrings_including_non_sssr_rings", &Molecule::nrings_including_non_sssr_rings)
+    .method("non_sssr_rings", &Molecule::non_sssr_rings)
+    .method("non_sssr_ring", &Molecule::non_sssr_ring)
+    .method("is_spiro_fused",
+      [](Molecule& m, atom_number_t a)->bool{
+        return m.is_spiro_fused(a);
+      }
+    )
+    .method("is_halogen", &Molecule::is_halogen)
+    .method("ncon",
+      [](const Molecule& m, atom_number_t a) {
+        return m.ncon(a);
+      }
+    )
+    .method("nbonds",
+      [](const Molecule& m, atom_number_t a) {
+        return m.nbonds(a);
+      }
+    )
+    .method("maximum_connectivity", &Molecule::maximum_connectivity)
+    .method("other", &Molecule::other)
+    .method("connections",
+      [](const Molecule& m, atom_number_t a)->std::vector<atom_number_t>{
+        std::vector<atom_number_t> result;
+        for (atom_number_t o : m.connections(a)) {
+          result.push_back(o);
+        }
+        return result;
       }
     )
 
@@ -287,6 +465,16 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("random_smiles", 
       [](Molecule& m)->std::string{
         return m.random_smiles().AsString();
+      }
+    )
+    .method("unique_kekule_smiles", 
+      [](Molecule& m)->std::string{
+        return m.UniqueKekuleSmiles().AsString();
+      }
+    )
+    .method("isotopically_labelled_smiles",
+      [](Molecule& m)->std::string{
+        return m.isotopically_labelled_smiles().AsString();
       }
     )
     .method("is_aromatic", &Molecule::is_aromatic)

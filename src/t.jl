@@ -20,6 +20,7 @@ module LillyMol
   # getindex(a::Atom, b::Int)=atom.item(b)
   iterate(m::Molecule, state=1) = (println("foo state $(state) $(atomic_number(m[state]))"); state >= natoms(m) ? nothing : (m[state], state + 1))
   iterate(a::Atom, state=1) = (state >= ncon(a) ? nothing : (a[state], state + 1))
+  iterate(b::Bond, state=1) = (state == 1 ? (b.a1(), 2) : state == 2 ? (b.a2(), 2) : nothing)
   in(z::Int, m::Molecule) = (natoms(m, z) > 0)
   in(atom::Int, a::Atom) = involves(a, atom)
   in(s::SetOfAtoms, a::Int) = contains(s, a)
