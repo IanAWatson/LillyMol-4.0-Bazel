@@ -40,7 +40,7 @@ module LillyMol
   export natoms, smiles, unique_smiles, nrings, build_from_smiles, is_aromatic, set_name, name
   export atomic_number, molecular_formula, nedges, is_ring_atom, fused_system_size, fused_system_identifier
   export rings_with_fused_system_identifier, in_same_ring, in_same_aromatic_ring, in_same_ring_system
-  export ring_membership, rings_containing_both, is_part_of_fused_ring_system, ring
+  export ring_membership, rings_containing_both, is_part_of_fused_ring_system, ring, ring_containing_atom
   export ncon, nbonds, involves, other
   export atomic_number
 
@@ -414,6 +414,33 @@ function test_ring()::Bool
   true
 end
 
+# Broken test
+function test_rings()::Bool
+  m = Molecule()
+  build_from_smiles("C1CC1C2CCC2C3CCCC3") || return false
+  for (i, r) in enumerate(sssr_rings(m))
+  end
+  true
+end
+
+function test_ring_containing_atom()::Bool
+  m = Molecule();
+  build_from_smiles(m, "C1CC1C2CCC2C3CCCC3") || return false
+  for i in 1:3
+    r = ring_containing_atom(m, i)
+    length(r) == 3 || return false
+  end
+  for i in 4:7
+    r = ring_containing_atom(m, i)
+    length(r) == 4 || return false
+  end
+  for i in 8:natoms(m)
+    r = ring_containing_atom(m, i)
+    length(r) == 5 || return false
+  end
+  true
+end
+
 function test_standardise()
   standardise = ChemicalStandardisation()
   activate_all(standardise)
@@ -457,3 +484,5 @@ end
 @test test_rings_containing_both()
 @test test_is_part_of_fused_ring_system()
 @test test_ring()
+@test test_rings() broken=true
+@test test_ring_containing_atom()

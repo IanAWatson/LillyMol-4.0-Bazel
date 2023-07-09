@@ -488,19 +488,34 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return r;
       }
     )
-    .method("ring_containing_atom", &Molecule::ring_containing_atom)
-#ifdef NOT_WORKING_YET
+    .method("ring_containing_atom",
+      [](Molecule& m, atom_number_t a)->Ring{
+        const Ring* r = m.ring_containing_atom(a - 1);
+        if (r == nullptr) {
+          return Ring();
+        }
+        Ring result(*r);
+        result.EachAtomIncrement(1);
+        return result;
+      }
+    )
+
+#ifdef NEEDS_TO_BE_FIXED
+    // Not working LoadError: No appropriate factory for type St6vectorI4RingSaIS0_EE
     .method("sssr_rings",
-      [](Molecule& m)->std::vector<const Ring*>{
-        std::vector<const Ring*> result;
+      [](Molecule& m)->std::vector<Ring>{
+        std::vector<Ring> result;
         result.reserve(m.nrings());
         for (const Ring* r : m.sssr_rings()) {
-          result.push_back(r);
+          Ring tmp(*r);
+          tmp.EachAtomIncrement(1);
+          result.push_back(tmp);
         }
         return result;
       }
     )
-#endif
+#endif // NEEDS_TO_BE_FIXED
+
     .method("label_atoms_by_ring_system",
       [](Molecule& m)->std::vector<int>{
         const int matoms = m.natoms();
@@ -590,6 +605,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.change_to_graph_form();
       }
     )
+    .method("compute_aromaticity_if_needed", &Molecule::compute_aromaticity_if_needed)
     .method("change_to_graph_form",
       [](Molecule& m, const Mol2Graph& mol2graph) {
         return m.change_to_graph_form(mol2graph);
