@@ -196,8 +196,22 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   ;
     
   mod.add_type<Bond>("Bond")
-    .method("a1", &Bond::a1)
-    .method("a2", &Bond::a2)
+    .method("a1",
+      [](const Bond& b) {
+        return b.a1() - 1;
+      }
+    )
+    .method("a1",
+      [](const jlcxx::BoxedValue<const Bond>& boxed_bond) {
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
+        return b.a1();
+      }
+    )
+    .method("a2",
+      [](const Bond& b) {
+        return b.a2() - 1;
+      }
+    )
     .method("btype",
       [](const Bond& b)->BondType{
         return ToBondType(b);
@@ -209,8 +223,20 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return b.is_single_bond();
       }
     )
+    .method("is_single_bond",
+      [](const jlcxx::BoxedValue<Bond>& boxed_bond)->bool{
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
+        return b.is_single_bond();
+      }
+    )
     .method("is_double_bond",
       [](const Bond& b)->bool{
+        return b.is_double_bond();
+      }
+    )
+    .method("is_double_bond",
+      [](const jlcxx::BoxedValue<Bond>& boxed_bond)->bool{
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
         return b.is_double_bond();
       }
     )
@@ -219,13 +245,31 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return b.is_triple_bond();
       }
     )
+    .method("is_triple_bond",
+      [](const jlcxx::BoxedValue<Bond>& boxed_bond)->bool{
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
+        return b.is_triple_bond();
+      }
+    )
     .method("is_aromatic",
       [](const Bond& b)->bool{
         return b.is_aromatic();
       }
     )
+    .method("is_aromatic",
+      [](const jlcxx::BoxedValue<Bond>& boxed_bond)->bool{
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
+        return b.is_aromatic();
+      }
+    )
     .method("is_aromatic_bond",
       [](const Bond& b)->bool{
+        return b.is_aromatic();
+      }
+    )
+    .method("is_aromatic_bond",
+      [](const jlcxx::BoxedValue<Bond>& boxed_bond)->bool{
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
         return b.is_aromatic();
       }
     )
@@ -370,6 +414,16 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("has_formal_charges",
       [](const Molecule& m)->bool {
         return m.has_formal_charges();
+      }
+    )
+    .method("formal_charge",
+      [](const Molecule& m, atom_number_t a){
+        return m.formal_charge(a - 1);
+      }
+    )
+    .method("isotope",
+      [](const Molecule& m, atom_number_t a){
+        return m.isotope(a - 1);
       }
     )
     .method("number_formally_charged_atoms", &Molecule::number_formally_charged_atoms)
@@ -532,15 +586,29 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return std::vector<int>(tmp.get(), tmp.get() + matoms);
       }
     )
-    .method("nrings_including_non_sssr_rings", &Molecule::nrings_including_non_sssr_rings)
+    .method("nrings_including_non_sssr_rings",
+      [](Molecule& m, atom_number_t a){
+        return m.nrings_including_non_sssr_rings(a - 1);
+      }
+    )
     .method("non_sssr_rings", &Molecule::non_sssr_rings)
-    .method("non_sssr_ring", &Molecule::non_sssr_ring)
+    .method("non_sssr_ring",
+      [](Molecule& m, int rnum)->Ring{
+        Ring result(*m.non_sssr_ring(rnum - 1));
+        result.EachAtomIncrement(1);
+        return result;
+      }
+    )
     .method("is_spiro_fused",
       [](Molecule& m, atom_number_t a)->bool{
         return m.is_spiro_fused(a - 1);
       }
     )
-    .method("is_halogen", &Molecule::is_halogen)
+    .method("is_halogen", 
+      [](const Molecule& m, atom_number_t a)->bool{
+        return m.is_halogen(a-1);
+      }
+    )
     .method("ncon",
       [](const Molecule& m, atom_number_t a) {
         return m.ncon(a - 1);
@@ -597,7 +665,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.isotopically_labelled_smiles().AsString();
       }
     )
-    .method("is_aromatic", &Molecule::is_aromatic)
+    .method("is_aromatic", 
+      [](Molecule& m, atom_number_t a)->bool{
+        return m.is_aromatic(a - 1);
+      }
+    )
     .method("atom", &Molecule::atom)
 
     .method("change_to_graph_form",
@@ -631,8 +703,8 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("bond", 
-      [](const Molecule& m, atom_number_t a) {
-        return m.bondi(a - 1);
+      [](const Molecule& m, int ndx) {
+        return m.bondi(ndx - 1);
       }
     )
     .method("bond_between_atoms",
@@ -642,7 +714,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
 
     //.method("compute_canonical_ranking", &Molecule::compute_canonical_ranking)
-    .method("canonical_rank", &Molecule::canonical_rank)
+    .method("canonical_rank",
+      [](Molecule& m, atom_number_t a) {
+        return m.canonical_rank(a - 1);
+      }
+    )
     .method("canonical_ranks",
       [](Molecule& m)->std::vector<int> {
         const int * c = m.canonical_ranks();
@@ -725,6 +801,14 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     }
   );
   mod.unset_override_module();
+
+  mod.method("MolFromSmiles",
+    [](const std::string& smiles)->Molecule{
+      Molecule result;
+      result.build_from_smiles(smiles);
+      return result;
+    }
+  );
 }
 
 }  // namespace lillymol_julia

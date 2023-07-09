@@ -41,7 +41,13 @@ module LillyMol
   export atomic_number, molecular_formula, nedges, is_ring_atom, fused_system_size, fused_system_identifier
   export rings_with_fused_system_identifier, in_same_ring, in_same_aromatic_ring, in_same_ring_system
   export ring_membership, rings_containing_both, is_part_of_fused_ring_system, ring, ring_containing_atom
+  export label_atoms_by_ring_system, label_atoms_by_ring_system_including_spiro_fused
+  export nrings_including_non_sssr_rings, non_sssr_rings, non_sssr_ring, is_spiro_fused, is_halogen
+  export maximum_connectivity, connections, isotopically_labelled_smiles, is_aromatic, atom, formal_charge
+  export isotope, number_formally_charged_atoms, net_formal_charge, bond, bond_between_atoms
+  export compute_aromaticity_if_needed, bond_between_atoms
   export ncon, nbonds, involves, other
+  export is_single_bond, is_double_bond, is_triple_bond, is_aromatic
   export atomic_number
 
   export activate_all, process
@@ -441,6 +447,224 @@ function test_ring_containing_atom()::Bool
   true
 end
 
+function test_label_atoms_by_ring_system()::Bool
+  m = LillyMol.MolFromSmiles("C1CC1C2CCC2C3CCCCC3C")
+  rsys = label_atoms_by_ring_system(m)
+  for i in 1:3
+    rsys[i] == 1 || return false
+  end
+  for i in 4:7
+    rsys[i] == 2 || return false
+  end
+  for i in 8:13
+    rsys[i] == 3 || return false
+  end
+  rsys[14] == 0 || return false
+
+  true
+end
+
+function test_label_atoms_by_ring_system_including_spiro_fused()::Bool
+  m = LillyMol.MolFromSmiles("C1CC12CC2")
+  rsys = label_atoms_by_ring_system_including_spiro_fused(m)
+  for i in 1:natoms(m)
+    rsys[i] == 1 || return false
+  end
+  true
+end
+
+function test_nrings_including_non_sssr_rings()::Bool
+  m = LillyMol.MolFromSmiles("C12C3C4C1C5C2C3C45")
+  for i in 1:natoms(m)
+    nrings_including_non_sssr_rings(m, i) == 3 || return false
+  end
+  true
+end
+
+function test_non_sssr_rings()::Bool
+  m = LillyMol.MolFromSmiles("C12C3C4C1C5C2C3C45")
+  non_sssr_rings(m) == 1 || return false
+  true
+end
+
+function test_non_sssr_ring()::Bool
+  m = LillyMol.MolFromSmiles("C12C3C4C1C5C2C3C45")
+  # 1 == non_sssr_rings(m) || return false
+  r = non_sssr_ring(m, 1)
+  length(r) == 4 || return false
+  true
+end
+
+function test_is_spiro_fused()::Bool
+  m = LillyMol.MolFromSmiles("C1CC12CC2")
+  is_spiro_fused(m, 1) && return false
+  is_spiro_fused(m, 2) && return false
+  is_spiro_fused(m, 3) || return false
+  is_spiro_fused(m, 4) && return false
+  is_spiro_fused(m, 5) && return false
+  true
+end
+
+function test_is_halogen()::Bool
+  m = LillyMol.MolFromSmiles("FC(Cl)(Br)CI")
+  is_halogen(m, 1) || return false
+  is_halogen(m, 2) && return false
+  is_halogen(m, 3) || return false
+  is_halogen(m, 4) || return false
+  is_halogen(m, 5) && return false
+  is_halogen(m, 6) || return false
+  true
+end
+
+function test_ncon_molecule()::Bool
+  m = LillyMol.MolFromSmiles("CCC(C)C(C)(C)C")
+  ncon(m, 1) == 1 || return false
+  ncon(m, 2) == 2 || return false
+  ncon(m, 3) == 3 || return false
+  ncon(m, 5) == 4 || return false
+  true
+end
+
+function test_nbonds_molecule()::Bool
+  m = LillyMol.MolFromSmiles("CCC=CC#C")
+  nbonds(m, 1) == 1 || return false
+  nbonds(m, 2) == 2 || return false
+  nbonds(m, 3) == 3 || return false
+  nbonds(m, 5) == 4 || return false
+  true
+end
+
+function test_maximum_connectivity()::Bool
+  m = Molecule()
+  maximum_connectivity(m) == 0 || return false
+  build_from_smiles(m, "C") || return false
+  maximum_connectivity(m) == 0 || return false
+  build_from_smiles(m, "CC") || return false
+  maximum_connectivity(m) == 1 || return false
+  build_from_smiles(m, "CCC") || return false
+  maximum_connectivity(m) == 2 || return false
+  build_from_smiles(m, "CC(C)C") || return false
+  maximum_connectivity(m) == 3 || return false
+  build_from_smiles(m, "CC(C)(C)C") || return false
+  maximum_connectivity(m) == 4 || return false
+  return true
+end
+
+function test_connections_molecule()::Bool
+  m = Molecule();
+  build_from_smiles(m, "C") || return false
+  c = connections(m, 1)
+  length(c) == 0 || return false
+  build_from_smiles(m, "CC") || return false
+  c = connections(m, 1)
+  length(c) == 1 || return false
+  c[1] == 2 || return false
+  c = connections(m, 2)
+  length(c) == 1 || return false
+  c[1] == 1 || return false
+  build_from_smiles(m, "CCC") || return false
+  c = connections(m, 2)
+  (1 in c && 3 in c) || return false
+  build_from_smiles(m, "CC(C)(C)C") || return false
+  c = connections(m, 2)
+  length(c) == 4 || return false
+  (1 in c && 3 in c && 4 in c && 5 in c) || return false
+  true
+end
+
+function test_isotopically_labelled_smiles()::Bool
+  m = Molecule()
+  build_from_smiles(m, "CNO")
+  s = isotopically_labelled_smiles(m)
+  s == "C[1NH][2OH]" || return false
+  true
+end
+
+function test_is_aromatic()::Bool
+  m = LillyMol.MolFromSmiles("C1CCC1")
+  for i in natoms(m)
+    is_aromatic(m, i) && return false
+  end
+
+  build_from_smiles(m, "c1ccccc1") || return false
+  for i in natoms(m)
+    is_aromatic(m, i) || return false
+  end
+  true
+end
+
+function test_getindex_molecule()::Bool
+  m = LillyMol.MolFromSmiles("[1CH3]NOF")
+  atomic_number(m[1]) == 6 || return false
+  atomic_number(m, 1) == 6 || return false
+  atomic_number(m[2]) == 7 || return false
+  atomic_number(m, 2) == 7 || return false
+  atomic_number(m[3]) == 8 || return false
+  atomic_number(m, 3) == 8 || return false
+  atomic_number(m[4]) == 9 || return false
+  atomic_number(m, 4) == 9 || return false
+  ncon(m[1]) == 1 || return false
+  ncon(m, 1) == 1 || return false
+  ncon(m[2]) == 2 || return false
+  ncon(m, 2) == 2 || return false
+  ncon(m[3]) == 2 || return false
+  ncon(m, 3) == 2 || return false
+  ncon(m[4]) == 1 || return false
+  ncon(m, 4) == 1 || return false
+  formal_charge(m[1]) == 0 || return false
+  formal_charge(m, 1) == 0 || return false
+  isotope(m[1]) == 1 || return false
+  isotope(m, 1) == 1 || return false
+  isotope(m[2]) == 0 || return false
+  isotope(m, 2) == 0 || return false
+  true
+end
+
+function test_number_formally_charged_atoms()::Bool
+  m = LillyMol.MolFromSmiles("NC")
+  number_formally_charged_atoms(m) == 0 || return false
+  build_from_smiles(m, "[NH3+]C")
+  number_formally_charged_atoms(m) == 1 || return false
+  build_from_smiles(m, "C(=O)[O-]")
+  number_formally_charged_atoms(m) == 1 || return false
+  true
+end
+
+function test_net_formal_charge()::Bool
+  m = LillyMol.MolFromSmiles("NC")
+  net_formal_charge(m) == 0 || return false
+  build_from_smiles(m, "[NH3+]C")
+  net_formal_charge(m) == 1 || return false
+  build_from_smiles(m, "C(=O)[O-]")
+  net_formal_charge(m) == -1 || return false
+  true
+end
+
+function test_bond_molecule()::Bool
+  m = LillyMol.MolFromSmiles("CC=CC#C")
+  b = bond(m, 1)
+  println("HERE")
+  is_single_bond(b) || return false
+  is_double_bond(bond(m, 2)) || return false
+  is_triple_bond(bond(m, 4)) || return false
+  println("Triple bond")
+  build_from_smiles(m, "c1ccccc1")
+  compute_aromaticity_if_needed(m)
+  for i in 1:nedges(m)
+    is_aromatic(bond(m, i)) || return false
+  end
+  true
+end
+
+function test_bond_between_atoms()::Bool
+  m = LillyMol.MolFromSmiles("CC=C")
+  b = bond_between_atoms(m, 1, 2)
+  is_single_bond(b) || return false
+  b = bond_between_atoms(m, 2, 3)
+  is_double_bond(b) || return false
+  true
+end
+
 function test_standardise()
   standardise = ChemicalStandardisation()
   activate_all(standardise)
@@ -486,3 +710,21 @@ end
 @test test_ring()
 @test test_rings() broken=true
 @test test_ring_containing_atom()
+@test test_label_atoms_by_ring_system()
+@test test_label_atoms_by_ring_system_including_spiro_fused()
+@test test_nrings_including_non_sssr_rings()
+@test test_non_sssr_rings()
+@test test_non_sssr_ring()
+@test test_is_spiro_fused()
+@test test_is_halogen()
+@test test_ncon_molecule()
+@test test_nbonds_molecule()
+@test test_maximum_connectivity()
+@test test_connections_molecule()
+@test test_isotopically_labelled_smiles()
+@test test_is_aromatic()
+@test test_getindex_molecule()
+@test test_number_formally_charged_atoms()
+@test test_net_formal_charge()
+@test test_bond_molecule()
+@test test_bond_between_atoms()
