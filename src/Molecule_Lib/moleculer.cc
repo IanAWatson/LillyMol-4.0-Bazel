@@ -663,7 +663,7 @@ Molecule::in_same_ring (atom_number_t a1, atom_number_t a2)
 }
 
 int
-Molecule::in_same_rings (atom_number_t a1, atom_number_t a2)
+Molecule::in_same_rings(atom_number_t a1, atom_number_t a2)
 {
   assert (ok_2_atoms(a1, a2));
 

@@ -155,12 +155,21 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       return r.number_elements();
     }
   );
+  mod.method("in",
+    [](const jlcxx::BoxedValue<Ring>& boxed_ring, atom_number_t atom){
+      const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
+      return r.contains(atom);
+    }
+  );
+// collect not working, not sure why...
 //mod.method("collect",
 //  [](const jlcxx::BoxedValue<Ring>& boxed_ring)->std::vector<atom_number_t>{
 //    const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
 //    std::vector<atom_number_t> result;
 //    result.reserve(r.size());
-//    std::copy(r.cbegin(), r.cend(), std::back_inserter(result));
+//    for (atom_number_t a : r) {
+//      result.push_back(a);
+//    }
 //    return result;
 //  }
 //);
@@ -473,8 +482,10 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("ring",
-      [](Molecule& m, int rnum)->const Ring*{
-        return m.ringi(rnum - 1);
+      [](Molecule& m, int rnum)->Ring{
+        Ring r(*m.ringi(rnum - 1));
+        r.EachAtomIncrement(1);
+        return r;
       }
     )
     .method("ring_containing_atom", &Molecule::ring_containing_atom)
@@ -586,18 +597,20 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("smiles_atom_order",
       [](Molecule& m)->std::vector<int>{
-        const int matoms = m.natoms();
-        std::unique_ptr<int[]> tmp = std::make_unique<int[]>(matoms);
-        m.smiles_atom_order(tmp.get());
-        return std::vector<int>(tmp.get(), tmp.get() + matoms);
+        std::vector<int> result(m.natoms());
+        m.smiles_atom_order(result.data());
+        return result;
       }
     )
     .method("atom_order_in_smiles",
       [](Molecule& m)->std::vector<int>{
         const resizable_array<int>& order = m.atom_order_in_smiles();
+        const int matoms = m.natoms();
         std::vector<int> result;
-        result.reserve(m.natoms());
-        std::copy(order.cbegin(), order.cend(), std::back_inserter(result));
+        result.reserve(matoms);
+        for (int i = 0; i < matoms; ++i) {
+          result.push_back(order[i] + 1);
+        }
         return result;
       }
     )

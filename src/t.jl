@@ -31,6 +31,7 @@ module LillyMol
   length(r::Ring) = atoms_in_ring(r)
   # length(r::Ring) = size(r)
   size(m::Molecule) = natoms(m)
+  size(r::Ring) = (atoms_in_ring(r),)
   export getindex
   export iterate
   export length
@@ -390,12 +391,26 @@ end
 
 function test_ring()::Bool
   m = Molecule();
-  build_from_smiles(m, "C1CC1") || return false
+  build_from_smiles(m, "C1CC1C") || return false
   r = ring(m, 1)
+  l = length(r)
   length(r) == 3 || return false
-  for a in r
-    println("  atom $(a)")
+  for i in 1:3
+    i in r || return false
   end
+  atoms = collect(r)
+  for i in 1:3
+    i in atoms || return false
+  end
+  4 in atoms && return false
+
+  build_from_smiles(m, "C1CC1CC1CC1") || return false
+  for i in 1:nrings(m)
+    r = ring(m, i)
+    length(r) == 3 || return false
+  end
+  all([x in ring(m, 1) for x in 1:3]) || return false
+  all([x in ring(m, 2) for x in 5:7]) || return false
   true
 end
 
