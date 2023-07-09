@@ -905,8 +905,9 @@ class Molecule : private resizable_array_p<Atom>
 
     int in_same_ring_no_compute(const atom_number_t &, const atom_number_t & ) const;
     int in_same_ring(atom_number_t, atom_number_t);
-    int in_same_rings(atom_number_t, atom_number_t);
-    int in_same_aromatic_ring(atom_number_t, atom_number_t);
+    // Number of rings containing both atoms
+    int in_same_rings(atom_number_t a1, atom_number_t a2);
+    int in_same_aromatic_ring(atom_number_t a1, atom_number_t a2);
 
     int in_same_ring_system(atom_number_t, atom_number_t);
 

@@ -105,6 +105,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 
   mod.add_type<Ring>("Ring")
     .constructor<>()
+    .method("atoms_in_ring",
+      [](const Ring& r) {
+        return r.number_elements();
+      }
+    )
     .method("ring_number", &Ring::ring_number)
     .method("fragment_membership", &Ring::fragment_membership)
     .method("fused_system_identifier", &Ring::fused_system_identifier)
@@ -126,6 +131,40 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
   ;
+
+  mod.set_override_module(jl_base_module);
+  mod.method("getindex",
+    [](const Ring& a, int i)->atom_number_t{
+      return a[i-1];
+    }
+  );
+  mod.method("getindex",
+    [](const jlcxx::BoxedValue<Ring>& boxed_ring, int ndx)->atom_number_t{
+      const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
+      return r[ndx - 1];
+    }
+  );
+  mod.method("length",
+    [](const Ring& r){
+      return r.number_elements();
+    }
+  );
+  mod.method("length",
+    [](const jlcxx::BoxedValue<Ring>& boxed_ring){
+      const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
+      return r.number_elements();
+    }
+  );
+//mod.method("collect",
+//  [](const jlcxx::BoxedValue<Ring>& boxed_ring)->std::vector<atom_number_t>{
+//    const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
+//    std::vector<atom_number_t> result;
+//    result.reserve(r.size());
+//    std::copy(r.cbegin(), r.cend(), std::back_inserter(result));
+//    return result;
+//  }
+//);
+  mod.unset_override_module();
 
   mod.add_type<Mol2Graph>("Mol2Graph")
     .method("set_exclude_triple_bonds_from_graph_reduction", &Mol2Graph::set_exclude_triple_bonds_from_graph_reduction)
@@ -341,7 +380,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("molecular_formula",
       [](Molecule& m)->std::string{
         IWString tmp;
-        m.isis_like_molecular_formula(tmp);
+        m.isis_like_molecular_formula_dot_between_fragments(tmp);
         return std::string(tmp.data(), tmp.size());
       }
     )
@@ -361,7 +400,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("nedges", &Molecule::nedges)
-    .method("atomic_number", &Molecule::atomic_number)
+    .method("atomic_number",
+      [](const Molecule& m, atom_number_t a) {
+        return m.atomic_number(a - 1);
+      }
+    )
     .method("nrings",
       [](Molecule& m) {
         return m.nrings();
@@ -369,29 +412,50 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("nrings",
       [](Molecule& m, atom_number_t a) {
-        return m.nrings(a);
+        return m.nrings(a - 1);
       }
     )
     .method("nrings",
       [](Molecule& m, atom_number_t a, int rsize) {
-        return m.nrings(a, rsize);
+        return m.nrings(a - 1, rsize);
       }
     )
     .method("is_ring_atom",
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_ring_atom(a);
+        return m.is_ring_atom(a - 1);
       }
     )
     .method("ring_bond_count", 
       [](Molecule& m, atom_number_t a) {
-        return m.ring_bond_count(a);
+        return m.ring_bond_count(a - 1);
       }
     )
-    .method("fused_system_size", &Molecule::fused_system_size)
+    .method("fused_system_size",
+      [](Molecule& m, atom_number_t a){
+        return m.fused_system_size(a - 1);
+      }
+    )
     .method("rings_with_fused_system_identifier", &Molecule::rings_with_fused_system_identifier)
-    .method("fused_system_identifier", &Molecule::fused_system_identifier)
-    .method("in_same_ring", &Molecule::in_same_ring)
-    .method("in_same_ring_system", &Molecule::in_same_ring_system)
+    .method("fused_system_identifier",
+      [](Molecule& m, atom_number_t a) {
+        return m.fused_system_identifier(a - 1);
+      }
+    )
+    .method("in_same_ring",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
+        return m.in_same_ring(a1 - 1, a2 - 1);
+      }
+    )
+    .method("in_same_aromatic_ring",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
+        return m.in_same_aromatic_ring(a1 - 1, a2 - 1);
+      }
+    )
+    .method("in_same_ring_system",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
+        return m.in_same_ring_system(a1 - 1, a2 - 1);
+      }
+    )
     .method("ring_membership",
       [](Molecule& m)->std::vector<int>{
         const int* r = m.ring_membership();
@@ -400,17 +464,17 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("rings_containing_both",
       [](Molecule& m, atom_number_t a1, atom_number_t a2) {
-        return m.in_same_rings(a1, a2);
+        return m.in_same_rings(a1 - 1, a2 - 1);
       }
     )
     .method("is_part_of_fused_ring_system",
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_part_of_fused_ring_system(a);
+        return m.is_part_of_fused_ring_system(a - 1);
       }
     )
     .method("ring",
       [](Molecule& m, int rnum)->const Ring*{
-        return m.ringi(rnum);
+        return m.ringi(rnum - 1);
       }
     )
     .method("ring_containing_atom", &Molecule::ring_containing_atom)
@@ -447,27 +511,31 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("non_sssr_ring", &Molecule::non_sssr_ring)
     .method("is_spiro_fused",
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_spiro_fused(a);
+        return m.is_spiro_fused(a - 1);
       }
     )
     .method("is_halogen", &Molecule::is_halogen)
     .method("ncon",
       [](const Molecule& m, atom_number_t a) {
-        return m.ncon(a);
+        return m.ncon(a - 1);
       }
     )
     .method("nbonds",
       [](const Molecule& m, atom_number_t a) {
-        return m.nbonds(a);
+        return m.nbonds(a - 1);
       }
     )
     .method("maximum_connectivity", &Molecule::maximum_connectivity)
-    .method("other", &Molecule::other)
+    .method("other",
+      [](Molecule& m, atom_number_t atom, int ndx){
+        return m.other(atom - 1, ndx) + 1;
+      }
+    )
     .method("connections",
       [](const Molecule& m, atom_number_t a)->std::vector<atom_number_t>{
         std::vector<atom_number_t> result;
-        for (atom_number_t o : m.connections(a)) {
-          result.push_back(o);
+        for (atom_number_t o : m.connections(a - 1)) {
+          result.push_back(o + 1);
         }
         return result;
       }
@@ -535,10 +603,14 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("bond", 
       [](const Molecule& m, atom_number_t a) {
-        return m.bondi(a);
+        return m.bondi(a - 1);
       }
     )
-    .method("bond_between_atoms", &Molecule::bond_between_atoms)
+    .method("bond_between_atoms",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2){
+        return m.bond_between_atoms(a1 - 1, a2 - 1);
+      }
+    )
 
     //.method("compute_canonical_ranking", &Molecule::compute_canonical_ranking)
     .method("canonical_rank", &Molecule::canonical_rank)
@@ -548,9 +620,20 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return std::vector<int>(c, c + m.natoms());
       }
     )
-    .method("symmetry_class", &Molecule::symmetry_class)
+    .method("symmetry_class", 
+      [](Molecule& m, atom_number_t a) {
+        return m.symmetry_class(a - 1);
+      }
+    )
     .method("number_symmetry_classes", &Molecule::number_symmetry_classes)
-    .method("symmetry_equivalents", &Molecule::symmetry_equivalents)
+    .method("symmetry_equivalents",
+      [](Molecule& m, atom_number_t a)->Set_of_Atoms {
+        Set_of_Atoms result;
+        m.symmetry_equivalents(a - 1, result);
+        result.EachAtomIncrement(1);
+        return result;
+      }
+    )
     .method("symmetry_classes",
       [](Molecule& m)->std::vector<int>{
         std::vector<int> result;
@@ -561,16 +644,48 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return result;
       }
     )
-    .method("attached_heteroatom_count", &Molecule::attached_heteroatom_count)
+    .method("attached_heteroatom_count", 
+      [](const Molecule& m, atom_number_t a) {
+        return m.attached_heteroatom_count(a-1);
+      }
+    )
     //.method("multiple_bond_to_heteroatom", &Molecule::multiple_bond_to_heteroatom)
 
-    .method("bond_length", &Molecule::bond_length)
-    .method("bond_angle", &Molecule::bond_angle)
-    .method("dihedral_angle", &Molecule::dihedral_angle)
-    .method("signed_dihedral_angle", &Molecule::signed_dihedral_angle)
-    .method("set_bond_length", &Molecule::set_bond_length)
-    .method("set_bond_angle", &Molecule::set_bond_angle)
-    .method("set_dihedral", &Molecule::set_dihedral)
+    .method("bond_length",
+      [](const Molecule& m, atom_number_t a1, atom_number_t a2){
+        return m.bond_length(a1 - 1, a2 - 1);
+      }
+    )
+    .method("bond_angle",
+      [](const Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3){
+        return m.bond_angle(a1 - 1, a2 - 1, a3 - 1);
+      }
+    )
+    .method("dihedral_angle",
+      [](const Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4){
+        return m.dihedral_angle(a1 - 1, a2 - 1, a3 - 1, a4 - 1);
+      }
+    )
+    .method("signed_dihedral_angle",
+      [](const Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4){
+        return m.signed_dihedral_angle(a1 - 1, a2 - 1, a3 - 1, a4 - 1);
+      }
+    )
+    .method("set_bond_length",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2, float dist){
+        return m.set_bond_length(a1 - 1, a2 - 1, dist);
+      }
+    )
+    .method("set_bond_angle",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, angle_t angle){
+        return m.set_bond_angle(a1 - 1, a2 - 1, a3 - 1, angle);
+      }
+    )
+    .method("set_dihedral_angle",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4, angle_t angle){
+        return m.set_dihedral(a1 - 1, a2 - 1, a3 - 1, a4 - 1, angle);
+      }
+    )
       
   ;
 

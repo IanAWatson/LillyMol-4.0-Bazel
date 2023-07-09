@@ -321,3 +321,10 @@ Set_of_Atoms::contains_atoms(const atom_number_t a1, const atom_number_t a2) con
 
   return 0;
 }
+
+void
+Set_of_Atoms::EachAtomIncrement(int offset) {
+  for (int i = 0; i < _number_elements; ++i) {
+    _things[i] += offset;
+  }
+}

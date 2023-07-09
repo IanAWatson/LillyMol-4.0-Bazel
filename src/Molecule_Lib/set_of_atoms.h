@@ -52,6 +52,9 @@ class Set_of_Atoms : public resizable_array<atom_number_t>
 
     using value_type = atom_number_t;
     using const_iterator = const atom_number_t*;
+
+    // Add or subtract from each atom number.
+    void EachAtomIncrement(int offset);
 };
 
 template <typename T>
