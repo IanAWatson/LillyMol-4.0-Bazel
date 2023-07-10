@@ -78,6 +78,23 @@ BtypeEnumToBtype(const BondType btenum) {
   }
 }
 
+// Several times we need to use a resizable_array_p of something
+
+template <typename T>
+class ResizableArrayHolder {
+  private:
+    const resizable_array_p<T>& _ref;
+
+  public:
+    ResizableArrayHolder(const resizable_array_p<T>& rhs) {
+      _ref = rhs;
+    }
+
+    const T& operator[](int ndx) const {
+      return _ref[ndx];
+    }
+};
+
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
   mod.method("greet", &greet);
@@ -132,7 +149,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("contains",
       [](const Set_of_Atoms& s, atom_number_t a)->bool{
-        return s.contains(a - 1);
+        return s.contains(a);
       }
     )
   ;
@@ -140,13 +157,13 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.set_override_module(jl_base_module);
   mod.method("getindex",
     [](const Ring& a, int i)->atom_number_t{
-      return a[i-1];
+      return a[i];
     }
   );
   mod.method("getindex",
     [](const jlcxx::BoxedValue<Ring>& boxed_ring, int ndx)->atom_number_t{
       const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
-      return r[ndx - 1];
+      return r[ndx];
     }
   );
 #ifdef RING_LENGTH
@@ -224,7 +241,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.add_type<Bond>("Bond")
     .method("a1",
       [](const Bond& b) {
-        return b.a1() - 1;
+        return b.a1();
       }
     )
     .method("a1",
@@ -235,7 +252,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("a2",
       [](const Bond& b) {
-        return b.a2() - 1;
+        return b.a2();
       }
     )
     .method("a2",
@@ -363,8 +380,8 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("bond_to_atom",
-      [](const Atom& a, atom_number_t o)->const Bond*{
-        return a.bond_to_atom(o);
+      [](const Atom& a, atom_number_t o)->Bond{
+        return *a.bond_to_atom(o);
       }
     )
     .method("is_bonded_to",
@@ -396,15 +413,27 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 
     mod.set_override_module(jl_base_module);
     mod.method("getindex",
-      [](const Atom& a, int i)->const Bond&{
-        return *a[i-1];
+      [](const Atom& a, int i)->Bond{
+        return *a[i];
       }
     );
     mod.unset_override_module();
   ;
 
-  mod.add_type<Bond_list>("BondList")
+  mod.add_type<ResizableArrayHolder<Ring>>("SetOfRings")
   ;
+
+  mod.add_type<Bond_list>("BondList")
+    .constructor<>()
+  ;
+
+  mod.set_override_module(jl_base_module);
+  mod.method("getindex",
+    [](const Bond_list& blist, int i)->Bond{
+      return *blist[i];
+    }
+  );
+  mod.unset_override_module();
 
   mod.add_type<Molecule>("Molecule")
     .constructor<>()
@@ -422,43 +451,43 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("x",
       [](const Molecule& m, atom_number_t a){
-        return m.x(a-1);
+        return m.x(a);
       }
     )
     .method("y",
       [](const Molecule& m, atom_number_t a){
-        return m.y(a-1);
+        return m.y(a);
       }
     )
     .method("z",
       [](const Molecule& m, atom_number_t a){
-        return m.z(a-1);
+        return m.z(a);
       }
     )
     .method("set_x",
       [](Molecule& m, atom_number_t a, float x){
-        return m.setx(a-1, x);
+        return m.setx(a, x);
       }
     )
     .method("set_y",
       [](Molecule& m, atom_number_t a, float y){
-        return m.sety(a-1, y);
+        return m.sety(a, y);
       }
     )
     .method("set_z",
       [](Molecule& m, atom_number_t a, float z){
-        return m.setz(a-1, z);
+        return m.setz(a, z);
       }
     )
 
     .method("add_bond",
       [](Molecule& m, atom_number_t a1, atom_number_t a2, BondType bt)->bool{
-        return m.add_bond(a1 - 1, a2 - 1, BtypeEnumToBtype(bt));
+        return m.add_bond(a1, a2, BtypeEnumToBtype(bt));
       }
     )
     .method("are_bonded",
       [](const Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
-        return m.are_bonded(a1 - 1, a2 - 1);
+        return m.are_bonded(a1, a2);
       }
     )
     .method("has_formal_charges",
@@ -468,12 +497,12 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("formal_charge",
       [](const Molecule& m, atom_number_t a){
-        return m.formal_charge(a - 1);
+        return m.formal_charge(a);
       }
     )
     .method("isotope",
       [](const Molecule& m, atom_number_t a){
-        return m.isotope(a - 1);
+        return m.isotope(a);
       }
     )
     .method("number_formally_charged_atoms", &Molecule::number_formally_charged_atoms)
@@ -514,7 +543,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("nedges", &Molecule::nedges)
     .method("atomic_number",
       [](const Molecule& m, atom_number_t a) {
-        return m.atomic_number(a - 1);
+        return m.atomic_number(a);
       }
     )
     .method("nrings",
@@ -524,48 +553,48 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("nrings",
       [](Molecule& m, atom_number_t a) {
-        return m.nrings(a - 1);
+        return m.nrings(a);
       }
     )
     .method("nrings",
       [](Molecule& m, atom_number_t a, int rsize) {
-        return m.nrings(a - 1, rsize);
+        return m.nrings(a, rsize);
       }
     )
     .method("is_ring_atom",
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_ring_atom(a - 1);
+        return m.is_ring_atom(a);
       }
     )
     .method("ring_bond_count", 
       [](Molecule& m, atom_number_t a) {
-        return m.ring_bond_count(a - 1);
+        return m.ring_bond_count(a);
       }
     )
     .method("fused_system_size",
       [](Molecule& m, atom_number_t a){
-        return m.fused_system_size(a - 1);
+        return m.fused_system_size(a);
       }
     )
     .method("rings_with_fused_system_identifier", &Molecule::rings_with_fused_system_identifier)
     .method("fused_system_identifier",
       [](Molecule& m, atom_number_t a) {
-        return m.fused_system_identifier(a - 1);
+        return m.fused_system_identifier(a);
       }
     )
     .method("in_same_ring",
       [](Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
-        return m.in_same_ring(a1 - 1, a2 - 1);
+        return m.in_same_ring(a1, a2);
       }
     )
     .method("in_same_aromatic_ring",
       [](Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
-        return m.in_same_aromatic_ring(a1 - 1, a2 - 1);
+        return m.in_same_aromatic_ring(a1, a2);
       }
     )
     .method("in_same_ring_system",
       [](Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
-        return m.in_same_ring_system(a1 - 1, a2 - 1);
+        return m.in_same_ring_system(a1, a2);
       }
     )
     .method("ring_membership",
@@ -576,30 +605,26 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("rings_containing_both",
       [](Molecule& m, atom_number_t a1, atom_number_t a2) {
-        return m.in_same_rings(a1 - 1, a2 - 1);
+        return m.in_same_rings(a1, a2);
       }
     )
     .method("is_part_of_fused_ring_system",
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_part_of_fused_ring_system(a - 1);
+        return m.is_part_of_fused_ring_system(a);
       }
     )
     .method("ring",
       [](Molecule& m, int rnum)->Ring{
-        Ring r(*m.ringi(rnum - 1));
-        r.EachAtomIncrement(1);
-        return r;
+        return *m.ringi(rnum);
       }
     )
     .method("ring_containing_atom",
       [](Molecule& m, atom_number_t a)->Ring{
-        const Ring* r = m.ring_containing_atom(a - 1);
+        const Ring* r = m.ring_containing_atom(a);
         if (r == nullptr) {
           return Ring();
         }
-        Ring result(*r);
-        result.EachAtomIncrement(1);
-        return result;
+        return *r;
       }
     )
 
@@ -611,7 +636,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         result.reserve(m.nrings());
         for (const Ring* r : m.sssr_rings()) {
           Ring tmp(*r);
-          tmp.EachAtomIncrement(1);
           result.push_back(tmp);
         }
         return result;
@@ -637,48 +661,46 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("nrings_including_non_sssr_rings",
       [](Molecule& m, atom_number_t a){
-        return m.nrings_including_non_sssr_rings(a - 1);
+        return m.nrings_including_non_sssr_rings(a);
       }
     )
     .method("non_sssr_rings", &Molecule::non_sssr_rings)
     .method("non_sssr_ring",
       [](Molecule& m, int rnum)->Ring{
-        Ring result(*m.non_sssr_ring(rnum - 1));
-        result.EachAtomIncrement(1);
-        return result;
+        return *m.non_sssr_ring(rnum);
       }
     )
     .method("is_spiro_fused",
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_spiro_fused(a - 1);
+        return m.is_spiro_fused(a);
       }
     )
     .method("is_halogen", 
       [](const Molecule& m, atom_number_t a)->bool{
-        return m.is_halogen(a-1);
+        return m.is_halogen(a);
       }
     )
     .method("ncon",
       [](const Molecule& m, atom_number_t a) {
-        return m.ncon(a - 1);
+        return m.ncon(a);
       }
     )
     .method("nbonds",
       [](const Molecule& m, atom_number_t a) {
-        return m.nbonds(a - 1);
+        return m.nbonds(a);
       }
     )
     .method("maximum_connectivity", &Molecule::maximum_connectivity)
     .method("other",
       [](Molecule& m, atom_number_t atom, int ndx){
-        return m.other(atom - 1, ndx) + 1;
+        return m.other(atom, ndx);
       }
     )
     .method("connections",
       [](const Molecule& m, atom_number_t a)->std::vector<atom_number_t>{
         std::vector<atom_number_t> result;
-        for (atom_number_t o : m.connections(a - 1)) {
-          result.push_back(o + 1);
+        for (atom_number_t o : m.connections(a)) {
+          result.push_back(o);
         }
         return result;
       }
@@ -716,7 +738,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("is_aromatic", 
       [](Molecule& m, atom_number_t a)->bool{
-        return m.is_aromatic(a - 1);
+        return m.is_aromatic(a);
       }
     )
     .method("atom", &Molecule::atom)
@@ -746,26 +768,26 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         std::vector<int> result;
         result.reserve(matoms);
         for (int i = 0; i < matoms; ++i) {
-          result.push_back(order[i] + 1);
+          result.push_back(order[i]);
         }
         return result;
       }
     )
     .method("bond", 
       [](const Molecule& m, int ndx) {
-        return m.bondi(ndx - 1);
+        return *m.bondi(ndx);
       }
     )
     .method("bond_between_atoms",
       [](Molecule& m, atom_number_t a1, atom_number_t a2){
-        return m.bond_between_atoms(a1 - 1, a2 - 1);
+        return *m.bond_between_atoms(a1, a2);
       }
     )
 
     //.method("compute_canonical_ranking", &Molecule::compute_canonical_ranking)
     .method("canonical_rank",
       [](Molecule& m, atom_number_t a) {
-        return m.canonical_rank(a - 1);
+        return m.canonical_rank(a);
       }
     )
     .method("canonical_ranks",
@@ -776,15 +798,14 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("symmetry_class", 
       [](Molecule& m, atom_number_t a) {
-        return m.symmetry_class(a - 1);
+        return m.symmetry_class(a);
       }
     )
     .method("number_symmetry_classes", &Molecule::number_symmetry_classes)
     .method("symmetry_equivalents",
       [](Molecule& m, atom_number_t a)->Set_of_Atoms {
         Set_of_Atoms result;
-        m.symmetry_equivalents(a - 1, result);
-        result.EachAtomIncrement(1);
+        m.symmetry_equivalents(a, result);
         return result;
       }
     )
@@ -800,53 +821,58 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("attached_heteroatom_count", 
       [](const Molecule& m, atom_number_t a) {
-        return m.attached_heteroatom_count(a-1);
+        return m.attached_heteroatom_count(a);
       }
     )
     //.method("multiple_bond_to_heteroatom", &Molecule::multiple_bond_to_heteroatom)
 
     .method("bond_length",
       [](const Molecule& m, atom_number_t a1, atom_number_t a2){
-        return m.bond_length(a1 - 1, a2 - 1);
+        return m.bond_length(a1, a2);
       }
     )
     .method("bond_angle",
       [](const Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3){
-        return m.bond_angle(a1 - 1, a2 - 1, a3 - 1);
+        return m.bond_angle(a1, a2, a3);
       }
     )
     .method("dihedral_angle",
       [](const Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4){
-        return m.dihedral_angle(a1 - 1, a2 - 1, a3 - 1, a4 - 1);
+        return m.dihedral_angle(a1, a2, a3, a4);
       }
     )
     .method("signed_dihedral_angle",
       [](const Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4){
-        return m.signed_dihedral_angle(a1 - 1, a2 - 1, a3 - 1, a4 - 1);
+        return m.signed_dihedral_angle(a1, a2, a3, a4);
       }
     )
     .method("set_bond_length",
       [](Molecule& m, atom_number_t a1, atom_number_t a2, float dist){
-        return m.set_bond_length(a1 - 1, a2 - 1, dist);
+        return m.set_bond_length(a1, a2, dist);
       }
     )
     .method("set_bond_angle",
       [](Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, angle_t angle){
-        return m.set_bond_angle(a1 - 1, a2 - 1, a3 - 1, angle);
+        return m.set_bond_angle(a1, a2, a3, angle);
       }
     )
     .method("set_dihedral_angle",
       [](Molecule& m, atom_number_t a1, atom_number_t a2, atom_number_t a3, atom_number_t a4, angle_t angle){
-        return m.set_dihedral(a1 - 1, a2 - 1, a3 - 1, a4 - 1, angle);
+        return m.set_dihedral(a1, a2, a3, a4, angle);
       }
     )
-      
+    .method("bond_list",
+      [](const Molecule& m)->const Bond_list&{
+        return m.bond_list();
+      }
+    )
+
   ;
 
   mod.set_override_module(jl_base_module);
   mod.method("getindex",
     [](const Molecule& m, int i)->const Atom&{
-      return m[i-1];
+      return m[i];
     }
   );
   mod.unset_override_module();

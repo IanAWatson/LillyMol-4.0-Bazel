@@ -18,12 +18,12 @@ module LillyMol
   # Now done in C++
   # getindex(m::Molecule, a::Int)=atom(m, a)
   # getindex(a::Atom, b::Int)=atom.item(b)
-  iterate(m::Molecule, state=1) = (state >= natoms(m) ? nothing : (m[state], state + 1))
-  iterate(a::Atom, state=1) = (state >= ncon(a) ? nothing : (a[state], state + 1))
+  iterate(m::Molecule, state=0) = (state >= natoms(m) ? nothing : (m[state], state + 1))
+  iterate(a::Atom, state=0) = (state >= ncon(a) ? nothing : (a[state], state + 1))
   iterate(b::Bond, state=1) = (state == 1 ? (b.a1(), 2) : state == 2 ? (b.a2(), 2) : nothing)
-  iterate(b::BondList, state=1) = (state >= size(b) ? nothing : (b[state], state + 1))
-  iterate(r::Ring, state=1) = (state > length(r) ? nothing : (r[state], state + 1))
-  iterate(s::SetOfAtoms, state=1) = (state >= s.size() ? nothing : (s[state], state + 1))
+  iterate(b::BondList, state=0) = (state >= size(b) ? nothing : (b[state], state + 1))
+  iterate(r::Ring, state=0) = (state >= length(r) ? nothing : (r[state], state + 1))
+  iterate(s::SetOfAtoms, state=0) = (state >= s.size() ? nothing : (s[state], state + 1))
   in(z::Int, m::Molecule) = (natoms(m, z) > 0)
   in(atom::Int, a::Atom) = involves(a, atom)
   length(m::Molecule) = natoms(m)
@@ -128,7 +128,7 @@ function test_atomic_number()::Bool
   m = Molecule()
   build_from_smiles(m, "FCNO.[U]")
   for (ndx, atom) in enumerate(m)
-    atomic_number(m, ndx) == atomic_numbers[ndx] || return false
+    atomic_number(m, ndx - 1) == atomic_numbers[ndx] || return false
     atomic_number(atom) == atomic_numbers[ndx] || return false
   end
   true
@@ -186,6 +186,7 @@ function test_nrings_atom()::Bool
   for (smi, rings) in smiles_and_nrings
     build_from_smiles(m, smi) || return false
     for (atom, nr) in enumerate(rings)
+      atom = atom - 1
       nrings(m, atom) == nr || return false
     end
   end
@@ -198,26 +199,26 @@ function test_nrings_size()::Bool
     smiles = "C1" * "C"^(rsize-1) * "1"
     build_from_smiles(m, smiles) || return false
     for i in 1:natoms(m)
-      nrings(m, i, rsize) == 1 || return false
+      nrings(m, i - 1, rsize) == 1 || return false
     end
   end
   build_from_smiles(m, "C12CC1C2") || return false
-  nrings(m, 1, 3) == 2 || return false
-  nrings(m, 2, 3) == 1 || return false
-  nrings(m, 3, 3) == 2 || return false
-  nrings(m, 4, 3) == 1 || return false
+  nrings(m, 0, 3) == 2 || return false
+  nrings(m, 1, 3) == 1 || return false
+  nrings(m, 2, 3) == 2 || return false
+  nrings(m, 3, 3) == 1 || return false
   true
 end
 
 function test_is_ring_atom()::Bool
   m = Molecule()
   build_from_smiles(m, "C")
-  is_ring_atom(m, 1) == false || return false
+  is_ring_atom(m, 0) == false || return false
   build_from_smiles(m, "C1CC1C")
+  is_ring_atom(m, 0) == true || return false
   is_ring_atom(m, 1) == true || return false
   is_ring_atom(m, 2) == true || return false
-  is_ring_atom(m, 3) == true || return false
-  is_ring_atom(m, 4) == false || return false
+  is_ring_atom(m, 3) == false || return false
 
   true
 end
@@ -227,16 +228,16 @@ function test_ring_bond_count()::Bool
   build_from_smiles(m, "C")
   ring_bond_count(m, 1) == 0 || return false
   build_from_smiles(m, "C1CC1C")
+  ring_bond_count(m, 0) == 1 || return false
   ring_bond_count(m, 1) == 1 || return false
   ring_bond_count(m, 2) == 1 || return false
-  ring_bond_count(m, 3) == 1 || return false
-  ring_bond_count(m, 4) == 0 || return false
+  ring_bond_count(m, 3) == 0 || return false
 
   build_from_smiles(m, "C12CC2C1") || return false
-  ring_bond_count(m, 1) == 2 || return false
-  ring_bond_count(m, 2) == 1 || return false
-  ring_bond_count(m, 3) == 2 || return false
-  ring_bond_count(m, 4) == 1 || return false
+  ring_bond_count(m, 0) == 2 || return false
+  ring_bond_count(m, 1) == 1 || return false
+  ring_bond_count(m, 2) == 2 || return false
+  ring_bond_count(m, 3) == 1 || return false
 
   true
 end
@@ -244,14 +245,14 @@ end
 function test_fused_system_size()::Bool
   m = Molecule();
   build_from_smiles(m, "C") || return false
-  fused_system_size(m, 1) == 0 || return false
+  fused_system_size(m, 0) == 0 || return false
   build_from_smiles(m, "C1CC1C") || return false
-  fused_system_size(m, 1) == 1 || return false
-  fused_system_size(m, 4) == 0 || return false
+  fused_system_size(m, 0) == 1 || return false
+  fused_system_size(m, 3) == 0 || return false
 
   build_from_smiles(m, "C12CC2C1") || return false
   for i in 1:natoms(m)
-    fused_system_size(m, i) == 2 || return false
+    fused_system_size(m, i - 1) == 2 || return false
   end
   true
 end
@@ -259,13 +260,13 @@ end
 function test_fused_system_identifier()::Bool
   m = Molecule()
   build_from_smiles(m, "CC") || return false
-  fused_system_identifier(m, 1) == fused_system_identifier(m, 2) || return false
+  fused_system_identifier(m, 0) == fused_system_identifier(m, 1) || return false
   build_from_smiles(m, "C1CC1") || return false
+  fused_system_identifier(m, 0) == fused_system_identifier(m, 1) || return false
   fused_system_identifier(m, 1) == fused_system_identifier(m, 2) || return false
-  fused_system_identifier(m, 2) == fused_system_identifier(m, 3) || return false
   build_from_smiles(m, "C12CC2C1") || return false
   for i in 2:natoms(m)
-    fused_system_identifier(m, 1) == fused_system_identifier(m, i) || return false
+    fused_system_identifier(m, 0) == fused_system_identifier(m, i - 1) || return false
   end
   true
 end
@@ -273,15 +274,15 @@ end
 function test_rings_with_fused_system_identifier()::Bool
   m = Molecule()
   build_from_smiles(m, "C1CC1")
-  fsid = fused_system_identifier(m, 1);
+  fsid = fused_system_identifier(m, 0);
   rings_with_fused_system_identifier(m, fsid) == 1 || return false
   build_from_smiles(m, "C1CC1C1CC1")
-  fsid = fused_system_identifier(m, 1);
+  fsid = fused_system_identifier(m, 0);
   rings_with_fused_system_identifier(m, fsid) == 1 || return false
-  fsid = fused_system_identifier(m, 4);
+  fsid = fused_system_identifier(m, 3);
   rings_with_fused_system_identifier(m, fsid) == 1 || return false
   build_from_smiles(m, "C12CC2C1") || return false
-  fsid = fused_system_identifier(m, 4);
+  fsid = fused_system_identifier(m, 3);
   rings_with_fused_system_identifier(m, fsid) == 2 || return false
   true
 end
@@ -289,64 +290,61 @@ end
 function test_in_same_ring()::Bool
   m = Molecule();
   build_from_smiles(m, "CC") || return false
-  in_same_ring(m, 1, 2) && return false
+  in_same_ring(m, 0, 1) && return false
   build_from_smiles(m, "C1CC1C") || return false
+  in_same_ring(m, 0, 1) || return false
   in_same_ring(m, 1, 2) || return false
-  in_same_ring(m, 2, 3) || return false
-  in_same_ring(m, 1, 3) || return false
-  ! in_same_ring(m, 1, 4) || return false
-  ! in_same_ring(m, 2, 4) || return false
-  ! in_same_ring(m, 3, 4) || return false
+  in_same_ring(m, 0, 2) || return false
+  ! in_same_ring(m, 0, 3) || return false
+  ! in_same_ring(m, 1, 3) || return false
+  ! in_same_ring(m, 2, 3) || return false
 
   build_from_smiles(m, "C12CC2C1") || return false
+  in_same_ring(m, 0, 1) || return false
+  in_same_ring(m, 0, 2) || return false
+  in_same_ring(m, 0, 3) || return false
   in_same_ring(m, 1, 2) || return false
-  in_same_ring(m, 1, 3) || return false
-  in_same_ring(m, 1, 4) || return false
+  ! in_same_ring(m, 1, 3) || return false
   in_same_ring(m, 2, 3) || return false
-  ! in_same_ring(m, 2, 4) || return false
-  in_same_ring(m, 3, 4) || return false
 end
 
 function test_in_same_aromatic_ring()::Bool
   m = Molecule()
   build_from_smiles(m, "Oc1cccnc1") || return false
-  for i in 2:7
-    ! in_same_aromatic_ring(m, 1, i) || return false
+  for i in 1:6
+    in_same_aromatic_ring(m, 0, i - 1) && return false
   end
-  for i in 2:7
-    for j in i:7
+  for i in 1:6
+    for j in i:6
       in_same_aromatic_ring(m, i, j) || return false
     end
   end
   build_from_smiles(m, "c12cncc2cccc1") || return false
-  for i in 2:9
-    in_same_aromatic_ring(m, 1, i) || return false
-  end
-  in_same_aromatic_ring(m, 2, 3) || return false
-  in_same_aromatic_ring(m, 2, 4) || return false
-  in_same_aromatic_ring(m, 2, 5) || return false
-  ! in_same_aromatic_ring(m, 2, 6) || return false
-  ! in_same_aromatic_ring(m, 6, 2) || return false
-  ! in_same_aromatic_ring(m, 2, 7) || return false
-  ! in_same_aromatic_ring(m, 7, 2) || return false
-  ! in_same_aromatic_ring(m, 2, 8) || return false
-  ! in_same_aromatic_ring(m, 2, 9) || return false
+  in_same_aromatic_ring(m, 1, 2) || return false
+  in_same_aromatic_ring(m, 1, 3) || return false
+  in_same_aromatic_ring(m, 1, 4) || return false
+  ! in_same_aromatic_ring(m, 1, 5) || return false
+  ! in_same_aromatic_ring(m, 5, 1) || return false
+  ! in_same_aromatic_ring(m, 1, 6) || return false
+  ! in_same_aromatic_ring(m, 6, 1) || return false
+  ! in_same_aromatic_ring(m, 1, 7) || return false
+  ! in_same_aromatic_ring(m, 1, 8) || return false
 end
 
 function test_in_same_ring_system()::Bool
   m = Molecule()
   build_from_smiles(m, "C1CC1CC1CC1") || return false
+  in_same_ring_system(m, 0, 1) || return false
+  in_same_ring_system(m, 0, 2) || return false
   in_same_ring_system(m, 1, 2) || return false
-  in_same_ring_system(m, 1, 3) || return false
-  in_same_ring_system(m, 2, 3) || return false
+  in_same_ring_system(m, 4, 5) || return false
+  in_same_ring_system(m, 4, 6) || return false
   in_same_ring_system(m, 5, 6) || return false
-  in_same_ring_system(m, 5, 7) || return false
-  in_same_ring_system(m, 6, 7) || return false
+  ! in_same_ring_system(m, 2, 3) || return false
   ! in_same_ring_system(m, 3, 4) || return false
-  ! in_same_ring_system(m, 4, 5) || return false
-  ! in_same_ring_system(m, 3, 5) || return false
-  ! in_same_ring_system(m, 2, 6) || return false
-  ! in_same_ring_system(m, 1, 7) || return false
+  ! in_same_ring_system(m, 2, 4) || return false
+  ! in_same_ring_system(m, 1, 5) || return false
+  ! in_same_ring_system(m, 0, 6) || return false
 end
 
 function test_ring_membership()::Bool
@@ -368,59 +366,59 @@ end
 function test_rings_containing_both()::Bool
   m = Molecule();
   build_from_smiles(m, "C1CC1C") || return false
+  rings_containing_both(m, 0, 1) == 1 || return false
+  rings_containing_both(m, 0, 2) == 1 || return false
   rings_containing_both(m, 1, 2) == 1 || return false
-  rings_containing_both(m, 1, 3) == 1 || return false
-  rings_containing_both(m, 2, 3) == 1 || return false
-  rings_containing_both(m, 1, 4) == 0 || return false
-  rings_containing_both(m, 2, 4) == 0 || return false
-  rings_containing_both(m, 3, 4) == 0 || return false
+  rings_containing_both(m, 0, 3) == 0 || return false
+  rings_containing_both(m, 1, 3) == 0 || return false
+  rings_containing_both(m, 2, 3) == 0 || return false
   build_from_smiles(m, "C12CC2C1C") || return false
+  rings_containing_both(m, 0, 1) == 1 || return false
+  rings_containing_both(m, 0, 2) == 2 || return false
+  rings_containing_both(m, 0, 3) == 1 || return false
   rings_containing_both(m, 1, 2) == 1 || return false
-  rings_containing_both(m, 1, 3) == 2 || return false
-  rings_containing_both(m, 1, 4) == 1 || return false
   rings_containing_both(m, 2, 3) == 1 || return false
-  rings_containing_both(m, 3, 4) == 1 || return false
-  rings_containing_both(m, 4, 5) == 0 || return false
+  rings_containing_both(m, 3, 4) == 0 || return false
   true
 end
 
 function test_is_part_of_fused_ring_system()::Bool
   m = Molecule()
   build_from_smiles(m, "CCC") || return false
-  ! is_part_of_fused_ring_system(m, 1) || return false
+  ! is_part_of_fused_ring_system(m, 0) || return false
   build_from_smiles(m, "C1CC1") || return false
+  ! is_part_of_fused_ring_system(m, 0) || return false
   ! is_part_of_fused_ring_system(m, 1) || return false
-  ! is_part_of_fused_ring_system(m, 2) || return false
   build_from_smiles(m, "C12CC2C1CC") || return false
+  is_part_of_fused_ring_system(m, 0) || return false
   is_part_of_fused_ring_system(m, 1) || return false
   is_part_of_fused_ring_system(m, 2) || return false
   is_part_of_fused_ring_system(m, 3) || return false
-  is_part_of_fused_ring_system(m, 4) || return false
-  ! is_part_of_fused_ring_system(m, 5) || return false
+  ! is_part_of_fused_ring_system(m, 4) || return false
 end
 
 function test_ring()::Bool
   m = Molecule();
   build_from_smiles(m, "C1CC1C") || return false
-  r = ring(m, 1)
+  r = ring(m, 0)
   l = length(r)
   length(r) == 3 || return false
-  for i in 1:3
+  for i in 0:2
     i in r || return false
   end
   atoms = collect(r)
-  for i in 1:3
+  for i in 0:2
     i in atoms || return false
   end
-  4 in atoms && return false
+  3 in atoms && return false
 
   build_from_smiles(m, "C1CC1CC1CC1") || return false
   for i in 1:nrings(m)
-    r = ring(m, i)
+    r = ring(m, i - 1)
     length(r) == 3 || return false
   end
-  all([x in ring(m, 1) for x in 1:3]) || return false
-  all([x in ring(m, 2) for x in 5:7]) || return false
+  all([x in ring(m, 0) for x in 0:2]) || return false
+  all([x in ring(m, 1) for x in 4:6]) || return false
   true
 end
 
@@ -436,21 +434,22 @@ end
 function test_ring_containing_atom()::Bool
   m = Molecule();
   build_from_smiles(m, "C1CC1C2CCC2C3CCCC3") || return false
-  for i in 1:3
+  for i in 0:2
     r = ring_containing_atom(m, i)
     length(r) == 3 || return false
   end
-  for i in 4:7
+  for i in 3:6
     r = ring_containing_atom(m, i)
     length(r) == 4 || return false
   end
-  for i in 8:natoms(m)
+  for i in 7:(natoms(m) - 1)
     r = ring_containing_atom(m, i)
     length(r) == 5 || return false
   end
   true
 end
 
+# Fix for zero arrays
 function test_label_atoms_by_ring_system()::Bool
   m = LillyMol.MolFromSmiles("C1CC1C2CCC2C3CCCCC3C")
   rsys = label_atoms_by_ring_system(m)
@@ -468,6 +467,7 @@ function test_label_atoms_by_ring_system()::Bool
   true
 end
 
+# Fix for zero arrays
 function test_label_atoms_by_ring_system_including_spiro_fused()::Bool
   m = LillyMol.MolFromSmiles("C1CC12CC2")
   rsys = label_atoms_by_ring_system_including_spiro_fused(m)
@@ -479,7 +479,7 @@ end
 
 function test_nrings_including_non_sssr_rings()::Bool
   m = LillyMol.MolFromSmiles("C12C3C4C1C5C2C3C45")
-  for i in 1:natoms(m)
+  for i in 0:(natoms(m) - 1)
     nrings_including_non_sssr_rings(m, i) == 3 || return false
   end
   true
@@ -494,47 +494,47 @@ end
 function test_non_sssr_ring()::Bool
   m = LillyMol.MolFromSmiles("C12C3C4C1C5C2C3C45")
   # 1 == non_sssr_rings(m) || return false
-  r = non_sssr_ring(m, 1)
+  r = non_sssr_ring(m, 0)
   length(r) == 4 || return false
   true
 end
 
 function test_is_spiro_fused()::Bool
   m = LillyMol.MolFromSmiles("C1CC12CC2")
+  is_spiro_fused(m, 0) && return false
   is_spiro_fused(m, 1) && return false
-  is_spiro_fused(m, 2) && return false
-  is_spiro_fused(m, 3) || return false
+  is_spiro_fused(m, 2) || return false
+  is_spiro_fused(m, 3) && return false
   is_spiro_fused(m, 4) && return false
-  is_spiro_fused(m, 5) && return false
   true
 end
 
 function test_is_halogen()::Bool
   m = LillyMol.MolFromSmiles("FC(Cl)(Br)CI")
-  is_halogen(m, 1) || return false
-  is_halogen(m, 2) && return false
+  is_halogen(m, 0) || return false
+  is_halogen(m, 1) && return false
+  is_halogen(m, 2) || return false
   is_halogen(m, 3) || return false
-  is_halogen(m, 4) || return false
-  is_halogen(m, 5) && return false
-  is_halogen(m, 6) || return false
+  is_halogen(m, 4) && return false
+  is_halogen(m, 5) || return false
   true
 end
 
 function test_ncon_molecule()::Bool
   m = LillyMol.MolFromSmiles("CCC(C)C(C)(C)C")
-  ncon(m, 1) == 1 || return false
-  ncon(m, 2) == 2 || return false
-  ncon(m, 3) == 3 || return false
-  ncon(m, 5) == 4 || return false
+  ncon(m, 0) == 1 || return false
+  ncon(m, 1) == 2 || return false
+  ncon(m, 2) == 3 || return false
+  ncon(m, 4) == 4 || return false
   true
 end
 
 function test_nbonds_molecule()::Bool
   m = LillyMol.MolFromSmiles("CCC=CC#C")
-  nbonds(m, 1) == 1 || return false
-  nbonds(m, 2) == 2 || return false
-  nbonds(m, 3) == 3 || return false
-  nbonds(m, 5) == 4 || return false
+  nbonds(m, 0) == 1 || return false
+  nbonds(m, 1) == 2 || return false
+  nbonds(m, 2) == 3 || return false
+  nbonds(m, 4) == 4 || return false
   true
 end
 
@@ -557,22 +557,22 @@ end
 function test_connections_molecule()::Bool
   m = Molecule();
   build_from_smiles(m, "C") || return false
-  c = connections(m, 1)
+  c = connections(m, 0)
   length(c) == 0 || return false
   build_from_smiles(m, "CC") || return false
-  c = connections(m, 1)
-  length(c) == 1 || return false
-  c[1] == 2 || return false
-  c = connections(m, 2)
+  c = connections(m, 0)
   length(c) == 1 || return false
   c[1] == 1 || return false
+  c = connections(m, 1)
+  length(c) == 1 || return false
+  c[1] == 0 || return false
   build_from_smiles(m, "CCC") || return false
-  c = connections(m, 2)
-  (1 in c && 3 in c) || return false
+  c = connections(m, 1)
+  (0 in c && 2 in c) || return false
   build_from_smiles(m, "CC(C)(C)C") || return false
-  c = connections(m, 2)
+  c = connections(m, 1)
   length(c) == 4 || return false
-  (1 in c && 3 in c && 4 in c && 5 in c) || return false
+  (0 in c && 2 in c && 3 in c && 4 in c) || return false
   true
 end
 
@@ -587,40 +587,40 @@ end
 function test_is_aromatic()::Bool
   m = LillyMol.MolFromSmiles("C1CCC1")
   for i in natoms(m)
-    is_aromatic(m, i) && return false
+    is_aromatic(m, i - 1) && return false
   end
 
   build_from_smiles(m, "c1ccccc1") || return false
   for i in natoms(m)
-    is_aromatic(m, i) || return false
+    is_aromatic(m, i - 1) || return false
   end
   true
 end
 
 function test_getindex_molecule()::Bool
   m = LillyMol.MolFromSmiles("[1CH3]NOF")
-  atomic_number(m[1]) == 6 || return false
-  atomic_number(m, 1) == 6 || return false
-  atomic_number(m[2]) == 7 || return false
-  atomic_number(m, 2) == 7 || return false
-  atomic_number(m[3]) == 8 || return false
-  atomic_number(m, 3) == 8 || return false
-  atomic_number(m[4]) == 9 || return false
-  atomic_number(m, 4) == 9 || return false
-  ncon(m[1]) == 1 || return false
-  ncon(m, 1) == 1 || return false
+  atomic_number(m[0]) == 6 || return false
+  atomic_number(m, 0) == 6 || return false
+  atomic_number(m[1]) == 7 || return false
+  atomic_number(m, 1) == 7 || return false
+  atomic_number(m[2]) == 8 || return false
+  atomic_number(m, 2) == 8 || return false
+  atomic_number(m[3]) == 9 || return false
+  atomic_number(m, 3) == 9 || return false
+  ncon(m[0]) == 1 || return false
+  ncon(m, 0) == 1 || return false
+  ncon(m[1]) == 2 || return false
+  ncon(m, 1) == 2 || return false
   ncon(m[2]) == 2 || return false
   ncon(m, 2) == 2 || return false
-  ncon(m[3]) == 2 || return false
-  ncon(m, 3) == 2 || return false
-  ncon(m[4]) == 1 || return false
-  ncon(m, 4) == 1 || return false
-  formal_charge(m[1]) == 0 || return false
-  formal_charge(m, 1) == 0 || return false
-  isotope(m[1]) == 1 || return false
-  isotope(m, 1) == 1 || return false
-  isotope(m[2]) == 0 || return false
-  isotope(m, 2) == 0 || return false
+  ncon(m[3]) == 1 || return false
+  ncon(m, 3) == 1 || return false
+  formal_charge(m[0]) == 0 || return false
+  formal_charge(m, 0) == 0 || return false
+  isotope(m[0]) == 1 || return false
+  isotope(m, 0) == 1 || return false
+  isotope(m[1]) == 0 || return false
+  isotope(m, 1) == 0 || return false
   true
 end
 
@@ -646,23 +646,23 @@ end
 
 function test_bond_molecule()::Bool
   m = LillyMol.MolFromSmiles("CC=CC#C")
-  b = bond(m, 1)
+  b = bond(m, 0)
   is_single_bond(b) || return false
-  is_double_bond(bond(m, 2)) || return false
-  is_triple_bond(bond(m, 4)) || return false
+  is_double_bond(bond(m, 1)) || return false
+  is_triple_bond(bond(m, 3)) || return false
   build_from_smiles(m, "c1ccccc1")
   compute_aromaticity_if_needed(m)
   for i in 1:nedges(m)
-    is_aromatic(bond(m, i)) || return false
+    is_aromatic(bond(m, i - 1)) || return false
   end
   true
 end
 
 function test_bond_between_atoms()::Bool
   m = LillyMol.MolFromSmiles("CC=C")
-  b = bond_between_atoms(m, 1, 2)
+  b = bond_between_atoms(m, 0, 1)
   is_single_bond(b) || return false
-  b = bond_between_atoms(m, 2, 3)
+  b = bond_between_atoms(m, 1, 2)
   is_double_bond(b) || return false
   true
 end
@@ -682,11 +682,11 @@ end
 function test_symmetry_class()::Bool
   m = Molecule()
   build_from_smiles(m, "FC(F)(F)C(C)C") || return false
-  symmetry_class(m, 1) == symmetry_class(m, 3) || return false
-  symmetry_class(m, 1) == symmetry_class(m, 4) || return false
-  symmetry_class(m, 6) == symmetry_class(m, 7) || return false
+  symmetry_class(m, 0) == symmetry_class(m, 2) || return false
+  symmetry_class(m, 0) == symmetry_class(m, 3) || return false
+  symmetry_class(m, 5) == symmetry_class(m, 6) || return false
   build_from_smiles(m, "CN")
-  symmetry_class(m, 1) == symmetry_class(m, 2) && return false
+  symmetry_class(m, 0) == symmetry_class(m, 1) && return false
   true
 end
 
@@ -694,15 +694,16 @@ end
 function test_symmetry_equivalents()::Bool
   m = Molecule()
   build_from_smiles(m, "FC(F)(F)C(C)C") || return false
-  s = symmetry_equivalents(m, 1)
+  s = symmetry_equivalents(m, 0)
   length(s) == 2 || return false
-  (3 in s && 4 in s) || return false
+  (2 in s && 3 in s) || return false
   s = symmetry_equivalents(m, 6)
   length(s) == 1 || return false
-  (7 in s) || return false
+  (6 in s) || return false
   true
 end
 
+# Fix for zero arrays
 function test_symmetry_classes()::Bool
   m = Molecule()
   build_from_smiles(m, "FC(F)(F)C(C)C") || return false
@@ -716,46 +717,46 @@ end
 function test_attached_heteroatom_count()::Bool
   m = Molecule()
   build_from_smiles(m, "FC(F)(F)C(C)N") || return false
-  attached_heteroatom_count(m, 1) == 0 || return false
-  attached_heteroatom_count(m, 2) == 3 || return false
-  attached_heteroatom_count(m, 3) == 0 || return false
-  attached_heteroatom_count(m, 5) == 1 || return false
+  attached_heteroatom_count(m, 0) == 0 || return false
+  attached_heteroatom_count(m, 1) == 3 || return false
+  attached_heteroatom_count(m, 2) == 0 || return false
+  attached_heteroatom_count(m, 4) == 1 || return false
+  attached_heteroatom_count(m, 5) == 0 || return false
   attached_heteroatom_count(m, 6) == 0 || return false
-  attached_heteroatom_count(m, 7) == 0 || return false
   true
 end
 
 function test_bond_length()::Bool
   m = Molecule()
   build_from_smiles(m, "C{{0,0,0}}C{{1,1,1}}") || return false
-  @test bond_length(m, 1, 2) ≈ sqrt(3.0) atol=0.001
+  @test bond_length(m, 0, 1) ≈ sqrt(3.0) atol=0.001
   true
 end
 
 function test_bond_angle()::Bool
   m = Molecule()
   build_from_smiles(m, "C{{0,0,0}}C{{1,0,0}}C{{1,1,1}}") || return false
-  @test bond_angle(m, 1, 2, 3) ≈ (π / 2.0) atol=0.001
+  @test bond_angle(m, 0, 1, 2) ≈ (π / 2.0) atol=0.001
   true
 end
 
 function test_dihedral_angle()::Bool
   m = Molecule()
   build_from_smiles(m, "C{{0,0,0}}C{{1,0,0}}C{{1,1,1}}") || return false
-  @test bond_angle(m, 1, 2, 3) ≈ (π / 2.0) atol=0.001
+  @test bond_angle(m, 0, 1, 2) ≈ (π / 2.0) atol=0.001
   true
 end
 
 function test_add_bond()::Bool
   m = Molecule()
   build_from_smiles(m, "C.C") || return false
-  add_bond(m, 1, 2, SINGLE)
+  add_bond(m, 0, 1, SINGLE)
   smiles(m) == "CC" || return false
   build_from_smiles(m, "C.C") || return false
-  add_bond(m, 1, 2, DOUBLE)
+  add_bond(m, 0, 1, DOUBLE)
   smiles(m) == "C=C" || return false
   build_from_smiles(m, "C.C") || return false
-  add_bond(m, 1, 2, TRIPLE)
+  add_bond(m, 0, 1, TRIPLE)
   smiles(m) == "C#C" || return false
   true
 end
@@ -763,17 +764,16 @@ end
 function test_are_bonded()::Bool
   m = Molecule()
   build_from_smiles(m, "C.CC")
-  are_bonded(m, 1, 2) && return false
-  are_bonded(m, 2, 3) || return false
+  are_bonded(m, 0, 1) && return false
+  are_bonded(m, 1, 2) || return false
   true
 end
 
 function test_bond_between_atoms()::Bool
   m = Molecule()
   build_from_smiles(m, "CCC") || return false
-  b = bond_between_atoms(m, 1, 2)
-  println("Bond is $(b)")
-  ((b.a1() == 1 && b.a2() == 2) || (b.a1() == 2 && b.a2() == 1)) || return false
+  b = bond_between_atoms(m, 0, 1)
+  ((a1(b) == 0 && a2(b) == 1) || (a1(b) == 1 && a2(b) == 0)) || return false
   true
 end
 
