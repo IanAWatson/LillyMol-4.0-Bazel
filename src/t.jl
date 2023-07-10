@@ -10,7 +10,7 @@ module LillyMol
   export greet
 
   export FileType
-  export BondType
+  export BondType, SINGLE, DOUBLE, TRIPLE ,AROMATIC
 
   export Molecule, SetOfAtoms, Atom, Bond, ChemicalStandardisation, BondList, Mol2Graph
 
@@ -26,17 +26,18 @@ module LillyMol
   iterate(s::SetOfAtoms, state=1) = (state >= s.size() ? nothing : (s[state], state + 1))
   in(z::Int, m::Molecule) = (natoms(m, z) > 0)
   in(atom::Int, a::Atom) = involves(a, atom)
-  in(s::SetOfAtoms, a::Int) = contains(s, a)
   length(m::Molecule) = natoms(m)
   length(r::Ring) = atoms_in_ring(r)
   # length(r::Ring) = size(r)
   size(m::Molecule) = natoms(m)
   size(r::Ring) = (atoms_in_ring(r),)
+  size(s::SetOfAtoms) = (length(s),)
+  size(s::SetOfAtomsAllocated) = (length(s),)
   export getindex
   export iterate
   export length
   export in
-  export atoms_in_ring
+  export atoms_in_ring, contains
   export natoms, smiles, unique_smiles, nrings, build_from_smiles, is_aromatic, set_name, name
   export atomic_number, molecular_formula, nedges, is_ring_atom, fused_system_size, fused_system_identifier
   export rings_with_fused_system_identifier, in_same_ring, in_same_aromatic_ring, in_same_ring_system
@@ -45,10 +46,13 @@ module LillyMol
   export nrings_including_non_sssr_rings, non_sssr_rings, non_sssr_ring, is_spiro_fused, is_halogen
   export maximum_connectivity, connections, isotopically_labelled_smiles, is_aromatic, atom, formal_charge
   export isotope, number_formally_charged_atoms, net_formal_charge, bond, bond_between_atoms
-  export compute_aromaticity_if_needed, bond_between_atoms
+  export compute_aromaticity_if_needed, bond_between_atoms, number_symmetry_classes, symmetry_class, symmetry_equivalents
+  export symmetry_classes, attached_heteroatom_count, add_bond, are_bonded, bond_between_atoms
+  export bond_length, bond_angle, dihedral_angle
   export ncon, nbonds, involves, other
   export is_single_bond, is_double_bond, is_triple_bond, is_aromatic
   export atomic_number
+  export a1, a2
 
   export activate_all, process
 end
@@ -643,11 +647,9 @@ end
 function test_bond_molecule()::Bool
   m = LillyMol.MolFromSmiles("CC=CC#C")
   b = bond(m, 1)
-  println("HERE")
   is_single_bond(b) || return false
   is_double_bond(bond(m, 2)) || return false
   is_triple_bond(bond(m, 4)) || return false
-  println("Triple bond")
   build_from_smiles(m, "c1ccccc1")
   compute_aromaticity_if_needed(m)
   for i in 1:nedges(m)
@@ -662,6 +664,116 @@ function test_bond_between_atoms()::Bool
   is_single_bond(b) || return false
   b = bond_between_atoms(m, 2, 3)
   is_double_bond(b) || return false
+  true
+end
+
+function test_number_symmetry_classes()::Bool
+  m = LillyMol.MolFromSmiles("C")
+  number_symmetry_classes(m) == 1 || return false
+  build_from_smiles(m, "CC") || return false
+  number_symmetry_classes(m) == 1 || return false
+  build_from_smiles(m, "FC(F)(F)C(C)C") || return false
+  number_symmetry_classes(m) == 4 || return false
+  build_from_smiles(m, "C1CC1") || return false
+  number_symmetry_classes(m) == 1 || return false
+  true
+end
+
+function test_symmetry_class()::Bool
+  m = Molecule()
+  build_from_smiles(m, "FC(F)(F)C(C)C") || return false
+  symmetry_class(m, 1) == symmetry_class(m, 3) || return false
+  symmetry_class(m, 1) == symmetry_class(m, 4) || return false
+  symmetry_class(m, 6) == symmetry_class(m, 7) || return false
+  build_from_smiles(m, "CN")
+  symmetry_class(m, 1) == symmetry_class(m, 2) && return false
+  true
+end
+
+# in SetOfAtomsAllocated is not working
+function test_symmetry_equivalents()::Bool
+  m = Molecule()
+  build_from_smiles(m, "FC(F)(F)C(C)C") || return false
+  s = symmetry_equivalents(m, 1)
+  length(s) == 2 || return false
+  (3 in s && 4 in s) || return false
+  s = symmetry_equivalents(m, 6)
+  length(s) == 1 || return false
+  (7 in s) || return false
+  true
+end
+
+function test_symmetry_classes()::Bool
+  m = Molecule()
+  build_from_smiles(m, "FC(F)(F)C(C)C") || return false
+  c = symmetry_classes(m)
+  c[1] == c[3] || return false
+  c[1] == c[4] || return false
+  c[6] == c[7] || return false
+  true
+end
+
+function test_attached_heteroatom_count()::Bool
+  m = Molecule()
+  build_from_smiles(m, "FC(F)(F)C(C)N") || return false
+  attached_heteroatom_count(m, 1) == 0 || return false
+  attached_heteroatom_count(m, 2) == 3 || return false
+  attached_heteroatom_count(m, 3) == 0 || return false
+  attached_heteroatom_count(m, 5) == 1 || return false
+  attached_heteroatom_count(m, 6) == 0 || return false
+  attached_heteroatom_count(m, 7) == 0 || return false
+  true
+end
+
+function test_bond_length()::Bool
+  m = Molecule()
+  build_from_smiles(m, "C{{0,0,0}}C{{1,1,1}}") || return false
+  @test bond_length(m, 1, 2) ≈ sqrt(3.0) atol=0.001
+  true
+end
+
+function test_bond_angle()::Bool
+  m = Molecule()
+  build_from_smiles(m, "C{{0,0,0}}C{{1,0,0}}C{{1,1,1}}") || return false
+  @test bond_angle(m, 1, 2, 3) ≈ (π / 2.0) atol=0.001
+  true
+end
+
+function test_dihedral_angle()::Bool
+  m = Molecule()
+  build_from_smiles(m, "C{{0,0,0}}C{{1,0,0}}C{{1,1,1}}") || return false
+  @test bond_angle(m, 1, 2, 3) ≈ (π / 2.0) atol=0.001
+  true
+end
+
+function test_add_bond()::Bool
+  m = Molecule()
+  build_from_smiles(m, "C.C") || return false
+  add_bond(m, 1, 2, SINGLE)
+  smiles(m) == "CC" || return false
+  build_from_smiles(m, "C.C") || return false
+  add_bond(m, 1, 2, DOUBLE)
+  smiles(m) == "C=C" || return false
+  build_from_smiles(m, "C.C") || return false
+  add_bond(m, 1, 2, TRIPLE)
+  smiles(m) == "C#C" || return false
+  true
+end
+
+function test_are_bonded()::Bool
+  m = Molecule()
+  build_from_smiles(m, "C.CC")
+  are_bonded(m, 1, 2) && return false
+  are_bonded(m, 2, 3) || return false
+  true
+end
+
+function test_bond_between_atoms()::Bool
+  m = Molecule()
+  build_from_smiles(m, "CCC") || return false
+  b = bond_between_atoms(m, 1, 2)
+  println("Bond is $(b)")
+  ((b.a1() == 1 && b.a2() == 2) || (b.a1() == 2 && b.a2() == 1)) || return false
   true
 end
 
@@ -727,4 +839,20 @@ end
 @test test_number_formally_charged_atoms()
 @test test_net_formal_charge()
 @test test_bond_molecule()
+@test test_bond_between_atoms()
+@test test_number_symmetry_classes()
+@test test_symmetry_class()
+@test test_symmetry_equivalents() broken=true
+@test test_symmetry_classes()
+@test test_attached_heteroatom_count()
+@test test_bond_length()
+@test test_bond_angle()
+#@test test_dihedral_angle()
+#@test test_signed_dihedral_angle()
+#@test test_set_bond_length()
+#@test test_set_bond_angle()
+#@test test_set_dihedral_angle()
+#@test test_xyx_molecule()
+@test test_add_bond()
+@test test_are_bonded()
 @test test_bond_between_atoms()

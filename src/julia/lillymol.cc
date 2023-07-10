@@ -130,6 +130,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return r.is_aromatic();
       }
     )
+    .method("contains",
+      [](const Set_of_Atoms& s, atom_number_t a)->bool{
+        return s.contains(a - 1);
+      }
+    )
   ;
 
   mod.set_override_module(jl_base_module);
@@ -144,6 +149,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       return r[ndx - 1];
     }
   );
+#ifdef RING_LENGTH
   mod.method("length",
     [](const Ring& r){
       return r.number_elements();
@@ -155,10 +161,30 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       return r.number_elements();
     }
   );
+#endif
+  mod.method("length",
+    [](const Set_of_Atoms& s){
+      return s.number_elements();
+    }
+  );
+  mod.method("length",
+    [](const jlcxx::BoxedValue<Set_of_Atoms>& boxed_set_of_atoms){
+      const Set_of_Atoms& s = jlcxx::unbox<Set_of_Atoms&>(boxed_set_of_atoms);
+      return s.number_elements();
+    }
+  );
+#ifdef IN_RING__
   mod.method("in",
     [](const jlcxx::BoxedValue<Ring>& boxed_ring, atom_number_t atom){
       const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
       return r.contains(atom);
+    }
+  );
+#endif
+  mod.method("in",
+    [](const jlcxx::BoxedValue<Set_of_Atoms>& boxed_set_of_atoms, atom_number_t atom){
+      const Set_of_Atoms& s = jlcxx::unbox<Set_of_Atoms&>(boxed_set_of_atoms);
+      return s.contains(atom);
     }
   );
 // collect not working, not sure why...
@@ -210,6 +236,12 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("a2",
       [](const Bond& b) {
         return b.a2() - 1;
+      }
+    )
+    .method("a2",
+      [](const jlcxx::BoxedValue<const Bond>& boxed_bond) {
+        const Bond& b = jlcxx::unbox<const Bond&>(boxed_bond);
+        return b.a2();
       }
     )
     .method("btype",
@@ -388,29 +420,47 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.empty();
       }
     )
-    .method("x", &Molecule::x)
-    .method("y", &Molecule::y)
-    .method("z", &Molecule::z)
-    .method("setx", &Molecule::setx)
-    .method("sety", &Molecule::sety)
-    .method("setz", &Molecule::setz)
+    .method("x",
+      [](const Molecule& m, atom_number_t a){
+        return m.x(a-1);
+      }
+    )
+    .method("y",
+      [](const Molecule& m, atom_number_t a){
+        return m.y(a-1);
+      }
+    )
+    .method("z",
+      [](const Molecule& m, atom_number_t a){
+        return m.z(a-1);
+      }
+    )
+    .method("set_x",
+      [](Molecule& m, atom_number_t a, float x){
+        return m.setx(a-1, x);
+      }
+    )
+    .method("set_y",
+      [](Molecule& m, atom_number_t a, float y){
+        return m.sety(a-1, y);
+      }
+    )
+    .method("set_z",
+      [](Molecule& m, atom_number_t a, float z){
+        return m.setz(a-1, z);
+      }
+    )
 
     .method("add_bond",
       [](Molecule& m, atom_number_t a1, atom_number_t a2, BondType bt)->bool{
-        return m.add_bond(a1, a2, BtypeEnumToBtype(bt));
+        return m.add_bond(a1 - 1, a2 - 1, BtypeEnumToBtype(bt));
       }
     )
     .method("are_bonded",
       [](const Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
-        return m.are_bonded(a1, a2);
+        return m.are_bonded(a1 - 1, a2 - 1);
       }
     )
-    .method("are_adjacent",
-      [](const Molecule& m, atom_number_t a1, atom_number_t a2)->bool{
-        return m.are_adjacent(a1, a2);
-      }
-    )
-
     .method("has_formal_charges",
       [](const Molecule& m)->bool {
         return m.has_formal_charges();
@@ -428,7 +478,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     )
     .method("number_formally_charged_atoms", &Molecule::number_formally_charged_atoms)
     .method("net_formal_charge", &Molecule::net_formal_charge)
-
 
     .method("set_name",
       [](Molecule& m, const std::string& s) {

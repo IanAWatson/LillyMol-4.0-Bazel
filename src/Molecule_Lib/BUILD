@@ -456,8 +456,6 @@ cc_library(
     deps = [
         ":iwmolecule",
     ],
-    linkopts = [
-    ],
 )
 
 cc_library(
@@ -558,9 +556,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -571,9 +566,6 @@ cc_test(
         ":iwmolecule",
         ":moleculeio",
         "@googletest//:gtest_main",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -598,9 +590,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -614,9 +603,6 @@ cc_test(
         ":geometric_constraints_cc_proto",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -629,9 +615,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
         "//Foundational/iwmisc:sparse_fp_creator",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -660,8 +643,18 @@ cc_test(
         "@googletest//:gtest_main",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
+)
+
+cc_test(
+    name = "molecule_test",
+    srcs = [
+        "molecule_test.cc",
+    ],
+    timeout="short",
+    deps = [
+        ":iwmolecule",
+        ":moleculeio",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -677,9 +670,6 @@ cc_test(
         ":substructure_cc_proto",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ]
 )
 
 cc_test(
@@ -734,9 +724,6 @@ cc_test(
         ":substructure_cc_proto",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ]
 )
 
 cc_test(
@@ -750,9 +737,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
     ],
-    linkopts = [
-        "-lz",
-    ]
 )
 
 
@@ -791,9 +775,6 @@ cc_test(
         ":substructure_cc_proto",
         "@googletest//:gtest_main",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -805,9 +786,6 @@ cc_test(
         ":moleculeio",
         ":substructure_cc_proto",
         "@googletest//:gtest_main",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -822,9 +800,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -837,9 +812,6 @@ cc_test(
         ":substructure_cc_proto",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -854,9 +826,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -869,9 +838,6 @@ cc_test(
         ":substructure_cc_proto",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -886,9 +852,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -902,9 +865,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -916,9 +876,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -933,9 +890,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -948,9 +902,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -965,9 +916,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -981,9 +929,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -995,9 +940,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1012,9 +954,6 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -1027,9 +966,6 @@ cc_test(
         ":moleculeio",
         "@googletest//:gtest_main",
         "@googletest//:gtest",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
