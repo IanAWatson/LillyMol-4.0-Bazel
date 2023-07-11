@@ -926,19 +926,22 @@ Molecule::all_atoms_connected(atom_number_t zatom, Set_of_Atoms & connected_atom
 }
 
 int
-Molecule::chop(int new_size)
+Molecule::chop(int items_removed)
 {
   assert(ok());
 
-  assert(new_size > 0);
-
-  if (new_size == _number_elements)
+  if (items_removed <= 0) {
     return 0;
+  }
 
-  assert(new_size < _number_elements);
+  if (items_removed > _number_elements) {
+    cerr << "Molecule::chop:natoms " << _number_elements << " cannot remove " << items_removed << '\n';
+    return 0;
+  }
 
-  return resize(new_size);
+  return resize(_number_elements - items_removed);
 }
+
 int
 Molecule::number_up_or_down_wedge_bonds() const
 {

@@ -1233,7 +1233,7 @@ class Molecule : private resizable_array_p<Atom>
 
     int    remove_atom(atom_number_t);
     int    remove_atoms(Set_of_Atoms &);
-    int    remove_atoms(const int *);
+    template <typename T> int    remove_atoms(const T *);
     int    remove_many_atoms(const int *);      // more efficient version - with molecules having lots of atoms
     int    remove_all_atoms_with_isotope(isotope_t);
     int    delete_fragment(int);
@@ -1248,7 +1248,7 @@ class Molecule : private resizable_array_p<Atom>
     int    remove_all_non_natural_elements();
     int    remove_explicit_hydrogens();    // need to be treated specially because of H property of adjacent atoms
 
-    int    chop(int);
+    int    chop(int items_removed);
 
     int    remove_bonds_to_atom(atom_number_t, int = 0);
     int    remove_bond(int);

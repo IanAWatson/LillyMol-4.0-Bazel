@@ -13,6 +13,7 @@ module LillyMol
   export BondType, SINGLE, DOUBLE, TRIPLE ,AROMATIC
 
   export Molecule, SetOfAtoms, Atom, Bond, ChemicalStandardisation, BondList, Mol2Graph
+  export SetOfRings
 
   import Base: getindex, iterate, in, length
   # Now done in C++
@@ -24,15 +25,20 @@ module LillyMol
   iterate(b::BondList, state=0) = (state >= size(b) ? nothing : (b[state], state + 1))
   iterate(r::Ring, state=0) = (state >= length(r) ? nothing : (r[state], state + 1))
   iterate(s::SetOfAtoms, state=0) = (state >= s.size() ? nothing : (s[state], state + 1))
+  iterate(r::SetOfRings, state=0) = (state >= length(r) ? nothing : (r[state], state + 1))
   in(z::Int, m::Molecule) = (natoms(m, z) > 0)
   in(atom::Int, a::Atom) = involves(a, atom)
   length(m::Molecule) = natoms(m)
   length(r::Ring) = atoms_in_ring(r)
+  length(s::SetOfRings) = rings_in_set(s)
+  length(b::BondList) = bonds_in_set(b)
   # length(r::Ring) = size(r)
   size(m::Molecule) = natoms(m)
   size(r::Ring) = (atoms_in_ring(r),)
   size(s::SetOfAtoms) = (length(s),)
+  size(s::SetOfRings) = (rings_in_set(s),)
   size(s::SetOfAtomsAllocated) = (length(s),)
+  size(b::BondList) = (length(b),)
   export getindex
   export iterate
   export length
@@ -48,6 +54,9 @@ module LillyMol
   export isotope, number_formally_charged_atoms, net_formal_charge, bond, bond_between_atoms
   export compute_aromaticity_if_needed, bond_between_atoms, number_symmetry_classes, symmetry_class, symmetry_equivalents
   export symmetry_classes, attached_heteroatom_count, add_bond, are_bonded, bond_between_atoms
+  export sssr_rings, rings_in_set, bond_list, bonds_in_set, add, remove_atom, remove_atoms, delete_fragment
+  export remove_fragment_containing_atom, remove_all, atomic_symbol, remove_all_non_natural_elements
+  export remove_explicit_hydrogens, valence_ok, remove_bonds_to_atom, remove_bond
   export bond_length, bond_angle, dihedral_angle
   export ncon, nbonds, involves, other
   export is_single_bond, is_double_bond, is_triple_bond, is_aromatic
@@ -165,6 +174,17 @@ function test_molecular_formula()::Bool
     # println("Expct $(mf) get $(molecular_formula(m))")
     mf == molecular_formula(m) || return false
   end
+  true
+end
+
+function test_valence_ok()::Bool
+  m = Molecule()
+  build_from_smiles(m, "CNCCC(C1=CC=CC=C1)OC2=CC=C(C=C2)C(F)(F)F") || return false
+  valence_ok(m) || return false
+  build_from_smiles(m, "[CH2]-C") || return false
+  valence_ok(m) && return false
+  build_from_smiles(m, "CC(C)(C)(C)(C)(C)(C)(C)(C)(C)C") || return false
+  valence_ok(m) && return false
   true
 end
 
@@ -422,11 +442,24 @@ function test_ring()::Bool
   true
 end
 
-# Broken test
+function same_atoms(s1, s2)::Bool
+  length(s1) == length(s2) || return false
+  set1 = Set{Int}()
+  for i in s1
+    push!(set1, i)
+  end
+  for i in s2
+    i in set1 || return false
+  end
+  return true
+end
+
 function test_rings()::Bool
   m = Molecule()
-  build_from_smiles("C1CC1C2CCC2C3CCCC3") || return false
+  build_from_smiles(m, "C1CC1C2CCC2C3CCCC3") || return false
+  expected = [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10, 11]]
   for (i, r) in enumerate(sssr_rings(m))
+    same_atoms(expected[i], r) || return false
   end
   true
 end
@@ -607,6 +640,8 @@ function test_getindex_molecule()::Bool
   atomic_number(m, 2) == 8 || return false
   atomic_number(m[3]) == 9 || return false
   atomic_number(m, 3) == 9 || return false
+  atomic_symbol(m[0]) == "C" || return false
+  atomic_symbol(m, 0) == "C" || return false
   ncon(m[0]) == 1 || return false
   ncon(m, 0) == 1 || return false
   ncon(m[1]) == 2 || return false
@@ -621,6 +656,14 @@ function test_getindex_molecule()::Bool
   isotope(m, 0) == 1 || return false
   isotope(m[1]) == 0 || return false
   isotope(m, 1) == 0 || return false
+  for (ndx, atom) in enumerate(m)
+    ndx = ndx - 1
+    atomic_number(m[ndx]) == atomic_number(atom) || return false
+    atomic_symbol(m[ndx]) == atomic_symbol(atom) || return false
+    ncon(m[ndx]) == ncon(atom) || return false
+    formal_charge(m[ndx]) == formal_charge(atom) || return false
+    isotope(m[ndx]) == isotope(atom) || return false
+  end
   true
 end
 
@@ -777,6 +820,133 @@ function test_bond_between_atoms()::Bool
   true
 end
 
+function test_bond_list()::Bool
+  m = Molecule()
+  build_from_smiles(m, "CC=CC#C")
+  blist = bond_list(m)
+  println("length of bond list $(length(blist))")
+  for i in 1:length(blist)
+    println("i $(i) $(blist[i-1])")
+  end
+# for (i,b) in enumerate(bond_list(m))
+#   println("Bond $(b)")
+# end
+  true
+end
+
+function test_add_molecule()::Bool
+  m1 = LillyMol.MolFromSmiles("C")
+  m2 = LillyMol.MolFromSmiles("N")
+  add(m1, m2)
+  smiles(m1) == "C.N" || return false
+  add(m1, m2)
+  smiles(m1) == "C.N.N" || return false
+  true
+end
+
+function test_remove_atom()::Bool
+  m = LillyMol.MolFromSmiles("CN")
+  remove_atom(m, 0)
+  smiles(m) == "N" || return false
+  true
+end
+
+function test_remove_atoms()::Bool
+  m = LillyMol.MolFromSmiles("CNCOF")
+  s = SetOfAtoms()
+  add(s, 1)
+  add(s, 3)
+  remove_atoms(m, s)
+  smiles(m) == "C.C.F" || return false
+  true
+end
+
+function test_remove_atoms_vector()::Bool
+  m = LillyMol.MolFromSmiles("CNCOF")
+  to_remove = [0, 1, 0, 1, 0]
+  remove_atoms(m, to_remove) == 2 || return false
+  smiles(m) == "C.C.F" || return false
+  true
+end
+
+function test_delete_fragment()::Bool
+  m = LillyMol.MolFromSmiles("CCC.NNN.O")
+  delete_fragment(m, 1)
+  smiles(m) == "CCC.O" || return false
+  true
+end
+
+function test_remove_fragment_containing_atom()::Bool
+  m = LillyMol.MolFromSmiles("C.N.O.S")
+  remove_fragment_containing_atom(m, 1)
+  smiles(m) == "C.O.S" || return false
+  true
+end
+
+function test_remove_all()::Bool
+  m = LillyMol.MolFromSmiles("OC(=O)C")
+  remove_all(m, 8) == 2 || return false
+  smiles(m) == "CC" || return false
+  true
+end
+
+function test_set_auto_create_new_elements()::Bool
+  LillyMol.set_auto_create_new_elements(1)
+  m = LillyMol.MolFromSmiles("[Th][Eq][U]IC[K][Br]O[W]NFO[Xj][Um]PSO[Ve][Rt][La][Zy][D]O[G]")
+  length(m) == 24 || return false
+  true
+end
+
+function test_set_atomic_symbols_can_have_arbitrary_length()::Bool
+  LillyMol.set_atomic_symbols_can_have_arbitrary_length(1)
+  m = LillyMol.MolFromSmiles("[Ala][Gly][Ser][Hello]")
+  natoms(m) == 4 || return false
+  atomic_symbol(m, 0) == "Ala" || return false
+  atomic_number(m, 1) < 0 || return false
+  true
+end
+
+function test_remove_all_non_natural_elements()::Bool
+  LillyMol.set_auto_create_new_elements(1)
+  m = LillyMol.MolFromSmiles("[Xx]C[Yy]")
+  remove_all_non_natural_elements(m) == 2 || return false
+  smiles(m) == "C" || return false
+  true
+end
+
+function test_remove_explicit_hydrogens()::Bool
+  m = LillyMol.MolFromSmiles("[H]C([H])([H])CC")
+  valence_ok(m) || return false
+  remove_explicit_hydrogens(m) == 3 || return false
+  true
+end
+
+# Chop is not exported from base, not sure why it did not work.
+# Seldom used...
+function test_chop()::Bool
+  m = LillyMol.MolFromSmiles("CN")
+  LillyMol.chop(m, 1)
+  smiles(m) == "C" || return false
+  build_from_smiles(m, "CNN") || return false
+  LillyMol.chop(m, 2)
+  smiles(m) == "C" || return false
+  true
+end
+
+function test_remove_bonds_to_atom()::Bool
+  m = LillyMol.MolFromSmiles("FCN")
+  remove_bonds_to_atom(m, 1)
+  smiles(m) == "F.C.N" || return false
+  true
+end
+
+function test_remove_bond()::Bool
+  m = LillyMol.MolFromSmiles("OCN")
+  remove_bond(m, 0)
+  smiles(m) == "O.CN" || return false
+  true
+end
+
 function test_standardise()
   standardise = ChemicalStandardisation()
   activate_all(standardise)
@@ -805,6 +975,7 @@ end
 @test test_atomic_number_in()
 @test test_nedges()
 @test test_molecular_formula()
+@test test_valence_ok()
 @test test_standardise()
 @test test_nrings()
 @test test_nrings_atom()
@@ -820,7 +991,7 @@ end
 @test test_rings_containing_both()
 @test test_is_part_of_fused_ring_system()
 @test test_ring()
-@test test_rings() broken=true
+@test test_rings()
 @test test_ring_containing_atom()
 @test test_label_atoms_by_ring_system()
 @test test_label_atoms_by_ring_system_including_spiro_fused()
@@ -856,3 +1027,18 @@ end
 @test test_add_bond()
 @test test_are_bonded()
 @test test_bond_between_atoms()
+@test test_bond_list() broken=true
+@test test_add_molecule()
+@test test_remove_atom()
+@test test_remove_atoms()
+@test test_remove_atoms_vector()
+@test test_delete_fragment()
+@test test_remove_fragment_containing_atom()
+@test test_remove_all()
+@test test_set_auto_create_new_elements()
+@test test_set_atomic_symbols_can_have_arbitrary_length()
+@test test_remove_all_non_natural_elements()
+@test test_remove_explicit_hydrogens()
+@test test_chop()
+@test test_remove_bonds_to_atom()
+@test test_remove_bond()

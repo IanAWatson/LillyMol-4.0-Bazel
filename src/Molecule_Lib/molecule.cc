@@ -2937,34 +2937,36 @@ Molecule::remove_atoms(Set_of_Atoms & atoms_to_remove)
   return rc;
 }
 
+template <typename T>
 int
-Molecule::remove_atoms(const int * to_remove)
+Molecule::remove_atoms(const T * to_remove)
 {
   assert(ok());
 
 #ifdef DEBUG_REMOVE_ATOMS
-  for (auto i = 0; i < _number_elements; ++i)
-  {
-    if (to_remove[i])
-      cerr << "Molecule will remove atom " << i << endl;
+  for (auto i = 0; i < _number_elements; ++i) {
+    if (to_remove[i]){
+      cerr << "Molecule will remove atom " << i << '\n';
+    }
   }
 #endif
 
   int rc = 0;
-  for (int i = _number_elements - 1; i >= 0; i--)
-  {
-    if (to_remove[i])
-    {
+  for (int i = _number_elements - 1; i >= 0; i--) {
+    if (to_remove[i]) {
       _remove_atom(i);
       rc++;
     }
   }
 
-  if (rc)
+  if (rc) {
     _set_modified();
+  }
 
   return rc;
 }
+template int Molecule::remove_atoms(const int32_t*);
+template int Molecule::remove_atoms(const int64_t*);
 
 int
 Molecule::remove_many_atoms(const int * to_remove)
@@ -4655,6 +4657,7 @@ Molecule::delete_fragment(int frag)
   assert(frag >= 0 && frag < number_fragments());
 
   Set_of_Atoms atoms_to_be_removed;
+  (void) number_fragments();
 
   _fragment_information.atoms_in_fragment(_number_elements, frag, atoms_to_be_removed);
 

@@ -82,16 +82,35 @@ BtypeEnumToBtype(const BondType btenum) {
 
 template <typename T>
 class ResizableArrayHolder {
-  private:
+  protected:
     const resizable_array_p<T>& _ref;
 
   public:
-    ResizableArrayHolder(const resizable_array_p<T>& rhs) {
-      _ref = rhs;
+    ResizableArrayHolder(const resizable_array_p<T>& rhs) : _ref(rhs) {
     }
 
     const T& operator[](int ndx) const {
-      return _ref[ndx];
+      return *_ref[ndx];
+    }
+    const T& item(int ndx) const {
+      return *_ref[ndx];
+    }
+
+    uint32_t size() const {
+      return _ref.size();
+    }
+};
+
+class SetOfRings : public ResizableArrayHolder<Ring> {
+  private:
+  public:
+    SetOfRings(const resizable_array_p<Ring>& r) : ResizableArrayHolder<Ring>(r) {
+    }
+    uint32_t length() const {
+      return _ref.size();
+    }
+    const Ring& operator[](int ndx) const {
+      return *_ref[ndx];
     }
 };
 
@@ -119,6 +138,12 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .constructor<>()
     .method("contains", &Set_of_Atoms::contains)
   ;
+
+  mod.method("add",
+    [](Set_of_Atoms& s, atom_number_t a) {
+      s.add(a);
+    }
+  );
 
   mod.add_type<Ring>("Ring")
     .constructor<>()
@@ -420,16 +445,45 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     mod.unset_override_module();
   ;
 
-  mod.add_type<ResizableArrayHolder<Ring>>("SetOfRings")
-  ;
-
-  mod.add_type<Bond_list>("BondList")
-    .constructor<>()
+  mod.add_type<SetOfRings>("SetOfRings")
+    .method("size",
+      [](const SetOfRings& r) {
+        return r.size();
+      }
+    )
+    .method("rings_in_set",
+      [](const SetOfRings&r) {
+        return r.size();
+      }
+    )
   ;
 
   mod.set_override_module(jl_base_module);
   mod.method("getindex",
-    [](const Bond_list& blist, int i)->Bond{
+    [](const SetOfRings& r, int i)->const Ring&{
+      return r[i];
+    }
+  );
+  mod.unset_override_module();
+
+  mod.add_type<Bond_list>("BondList")
+    .constructor<>()
+  ;
+  mod.method("bonds_in_set",
+    [](const Bond_list& b) {
+      return b.size();
+    }
+  );
+
+  mod.set_override_module(jl_base_module);
+  mod.method("getindex",
+    [](const jlcxx::BoxedValue<Bond_list>& boxed_bond_list, int ndx)->const Bond{
+      const Bond_list& b = jlcxx::unbox<const Bond_list&>(boxed_bond_list);
+      return *b[ndx];
+    }
+  );
+  mod.method("getindex",
+    [](const Bond_list& blist, int i)->const Bond{
       return *blist[i];
     }
   );
@@ -546,6 +600,11 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.atomic_number(a);
       }
     )
+    .method("atomic_symbol",
+      [](const Molecule& m, atom_number_t a)->std::string{
+        return m.atomic_symbol(a).AsString();
+      }
+    )
     .method("nrings",
       [](Molecule& m) {
         return m.nrings();
@@ -628,20 +687,12 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
 
-#ifdef NEEDS_TO_BE_FIXED
-    // Not working LoadError: No appropriate factory for type St6vectorI4RingSaIS0_EE
     .method("sssr_rings",
-      [](Molecule& m)->std::vector<Ring>{
-        std::vector<Ring> result;
-        result.reserve(m.nrings());
-        for (const Ring* r : m.sssr_rings()) {
-          Ring tmp(*r);
-          result.push_back(tmp);
-        }
+      [](Molecule& m)->SetOfRings{
+        SetOfRings result(m.sssr_rings());
         return result;
       }
     )
-#endif // NEEDS_TO_BE_FIXED
 
     .method("label_atoms_by_ring_system",
       [](Molecule& m)->std::vector<int>{
@@ -866,8 +917,75 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.bond_list();
       }
     )
+    .method("add",
+      [](Molecule& m, const Molecule& rhs) {
+        m.add_molecule(&rhs);
+      }
+    )
+    .method("has_partial_charges",
+      [](const Molecule& m)->bool{
+        return m.has_partial_charges();
+      }
+    )
+    .method("set_formal_charge",
+      [](Molecule& m, atom_number_t a, formal_charge_t q) {
+        return m.set_formal_charge(a, q);
+      }
+    )
+    .method("formal_charge", 
+      [](Molecule& m, atom_number_t a) {
+        return m.formal_charge(a);
+      }
+    )
+    .method("remove_atom",
+      [](Molecule& m, atom_number_t a) {
+        return m.remove_atom(a);
+      }
+    )
+    .method("remove_atoms",
+      [](Molecule& m, Set_of_Atoms& s) {
+        return m.remove_atoms(s);
+      }
+    )
+    .method("remove_atoms",
+      [](Molecule& m, const jlcxx::ArrayRef<int64_t> to_remove) {
+        return m.remove_atoms(to_remove.data());
+      }
+    )
+    .method("delete_fragment",
+      [](Molecule& m, int frag) {
+        return m.delete_fragment(frag);
+      }
+    )
+    .method("remove_fragment_containing_atom",
+      [](Molecule& m, atom_number_t a) {
+        return m.remove_fragment_containing_atom(a);
+      }
+    )
+    .method("remove_all",
+      [](Molecule& m, atomic_number_t z) {
+        return m.remove_all(z);
+      }
+    )
+    .method("remove_all_non_natural_elements", &Molecule::remove_all_non_natural_elements)
+    .method("valence_ok",
+      [](Molecule& m)->bool{
+        return m.valence_ok();
+      }
+    )
+    .method("remove_explicit_hydrogens", &Molecule::remove_explicit_hydrogens)
+    .method("chop", &Molecule::chop)
+    .method("remove_bonds_to_atom",
+      [](Molecule& m, atom_number_t a) {
+        return m.remove_bonds_to_atom(a);
+      }
+    )
+    .method("remove_bond", &Molecule::remove_bond)
 
   ;
+
+  mod.method("set_auto_create_new_elements", &set_auto_create_new_elements);
+  mod.method("set_atomic_symbols_can_have_arbitrary_length", &set_atomic_symbols_can_have_arbitrary_length);
 
   mod.set_override_module(jl_base_module);
   mod.method("getindex",
