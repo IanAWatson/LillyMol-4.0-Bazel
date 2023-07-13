@@ -3,9 +3,11 @@
 
 #include "jlcxx/jlcxx.hpp"
 
-#include "Molecule_Lib/standardise.h"
+#include "Molecule_Lib/chiral_centre.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/path.h"
+#include "Molecule_Lib/smiles.h"
+#include "Molecule_Lib/standardise.h"
 
 namespace lillymol_julia {
 
@@ -134,10 +136,71 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.set_const("SMI", FILE_TYPE_SMI);
   mod.set_const("SDF", FILE_TYPE_SDF);
 
+  mod.add_type<Chiral_Centre>("ChiralCentre")
+    .constructor<atom_number_t>()
+    .method("centre",
+      [](const Chiral_Centre& c)->atom_number_t{
+        return c.a();
+      }
+    )
+    .method("centre",
+      [](const jlcxx::BoxedValue<const Chiral_Centre>& boxed_chiral_centre)->atom_number_t{
+      const Chiral_Centre& c = jlcxx::unbox<const Chiral_Centre&>(boxed_chiral_centre);
+      return c.a();
+      }
+    )
+    .method("top_front", &Chiral_Centre::top_front)
+    .method("top_front",
+      [](const jlcxx::BoxedValue<const Chiral_Centre>& boxed_chiral_centre)->atom_number_t{
+      const Chiral_Centre& c = jlcxx::unbox<const Chiral_Centre&>(boxed_chiral_centre);
+      return c.top_front();
+      }
+    )
+    .method("top_back", &Chiral_Centre::top_back)
+    .method("top_back",
+      [](const jlcxx::BoxedValue<const Chiral_Centre>& boxed_chiral_centre)->atom_number_t{
+      const Chiral_Centre& c = jlcxx::unbox<const Chiral_Centre&>(boxed_chiral_centre);
+      return c.top_back();
+      }
+    )
+    .method("left_down", &Chiral_Centre::left_down)
+    .method("left_down",
+      [](const jlcxx::BoxedValue<const Chiral_Centre>& boxed_chiral_centre)->atom_number_t{
+      const Chiral_Centre& c = jlcxx::unbox<const Chiral_Centre&>(boxed_chiral_centre);
+      return c.left_down();
+      }
+    )
+    .method("right_down", &Chiral_Centre::right_down)
+    .method("right_down",
+      [](const jlcxx::BoxedValue<const Chiral_Centre>& boxed_chiral_centre)->atom_number_t{
+      const Chiral_Centre& c = jlcxx::unbox<const Chiral_Centre&>(boxed_chiral_centre);
+      return c.right_down();
+      }
+    )
+  ;
+
   mod.add_type<Set_of_Atoms>("SetOfAtoms")
     .constructor<>()
+    // Does not work
+    // LoadError: No appropriate factory for type St16initializer_listIiE
+    //.constructor<std::initializer_list<atom_number_t>>()
     .method("contains", &Set_of_Atoms::contains)
+    .method("push!",
+      [](Set_of_Atoms& s, atom_number_t zextra) {
+        s << zextra;
+      }
+    )
   ;
+#ifdef RAISES_DUPLICATE_REGISTRATON_ERROR
+  mod.set_override_module(jl_base_module);
+  mod.method("getindex",
+    [](const jlcxx::BoxedValue<const Set_of_Atoms>& boxed_atoms, int ndx)->atom_number_t{
+      const Set_of_Atoms& s = jlcxx::unbox<const Set_of_Atoms&>(boxed_atoms);
+      return s[ndx];
+    }
+  );
+  mod.unset_override_module();
+#endif
 
   mod.method("add",
     [](Set_of_Atoms& s, atom_number_t a) {
@@ -491,7 +554,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 
   mod.add_type<Molecule>("Molecule")
     .constructor<>()
-    //.constructor<jlcxx::cxxint_t>(false) // no finalizer
     .method("ok",
       [](const Molecule& m)->bool{
         return m.ok();
@@ -518,21 +580,37 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
         return m.z(a);
       }
     )
-    .method("set_x",
+    .method("setx",
       [](Molecule& m, atom_number_t a, float x){
         return m.setx(a, x);
       }
     )
-    .method("set_y",
+    .method("setx",
+      [](Molecule& m, atom_number_t a, double x) {
+        return m.setx(a, x);
+      }
+    )
+    .method("sety",
       [](Molecule& m, atom_number_t a, float y){
         return m.sety(a, y);
       }
     )
-    .method("set_z",
+    .method("sety",
+      [](Molecule& m, atom_number_t a, double y){
+        return m.sety(a, y);
+      }
+    )
+    .method("setz",
       [](Molecule& m, atom_number_t a, float z){
         return m.setz(a, z);
       }
     )
+    .method("setz",
+      [](Molecule& m, atom_number_t a, double z){
+        return m.setz(a, z);
+      }
+    )
+    .method("setxyz", &Molecule::setz)
 
     .method("add_bond",
       [](Molecule& m, atom_number_t a1, atom_number_t a2, BondType bt)->bool{
@@ -981,11 +1059,211 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("remove_bond", &Molecule::remove_bond)
+    .method("remove_bond_between_atoms", &Molecule::remove_bond_between_atoms)
+    .method("remove_all_bonds", &Molecule::remove_all_bonds)
+    .method("molecular_weight",
+      [](const Molecule& m) {
+        return m.molecular_weight();
+      }
+    )
+    .method("molecular_weight_count_isotopes", &Molecule::molecular_weight_count_isotopes)
+    .method("molecular_weight_ignore_isotopes", &Molecule::molecular_weight_ignore_isotopes)
+    .method("highest_coordinate_dimensionality", &Molecule::highest_coordinate_dimensionality)
+    .method("exact_mass",
+      [](const Molecule& m) {
+        return m.exact_mass();
+      }
+    )
+
+    .method("translate",
+      [](Molecule& m, float dx, float dy, float dz) {
+        return m.translate_atoms(dx, dy, dz);
+      }
+    )
+    .method("number_fragments",
+      [](Molecule& m) {
+        return m.number_fragments();
+      }
+    )
+    .method("fragment_membership",
+      [](Molecule& m, atom_number_t a) {
+        return m.fragment_membership(a);
+      }
+    )
+    .method("fragment_membership",
+      [](Molecule& m, jlcxx::ArrayRef<int64_t> fragm) {
+        std::unique_ptr<int[]> f = m.fragment_membership();
+        std::copy(f.get(), f.get() + m.natoms(), fragm.data());
+        return 1;
+      }
+    )
+    .method("atoms_in_fragment", 
+      [](Molecule& m, int frag) {
+        return m.atoms_in_fragment(frag);
+      }
+    )
+    .method("get_atoms_in_fragment",
+      [](Molecule& m, int frag)->Set_of_Atoms{
+        Set_of_Atoms result;
+        m.atoms_in_fragment(result, frag);
+        return result;
+      }
+    )
+    .method("largest_fragment", &Molecule::largest_fragment)
+    .method("identify_spinach",
+      [](Molecule& m)->std::vector<int64_t>{
+        const int matoms = m.natoms();
+        std::unique_ptr<int[]> spch = std::make_unique<int[]>(matoms);
+        m.identify_spinach(spch.get());
+        std::vector<int64_t> result(matoms);
+        for (int i = 0; i < matoms; ++i) {
+          result[i] = spch[i];
+        }
+        return result;
+      }
+    )
+    .method("rings_in_fragment", &Molecule::rings_in_fragment)
+#ifdef DOES_NOT_WORK
+    .method("create_components",
+      [](Molecule& m, jlcxx::ArrayRef<jlcxx::BoxedValue<Molecule>> result) {
+        resizable_array_p<Molecule> components;
+        m.create_components(components);
+        std::cerr << "result size " << result.size() << '\n';
+        for (uint32_t i = 0; i < components.size(); ++i) {
+          Molecule& destination = jlcxx::unbox<Molecule>(result[i]);
+          destination = *components[i];
+        }
+        return components.size();
+      }
+    )
+#endif
+    .method("create_subset",
+      [](Molecule& m, jlcxx::ArrayRef<int64_t> subset)->Molecule{
+        const int matoms = m.natoms();
+        std::unique_ptr<int[]> tmp = std::make_unique<int[]>(matoms);
+        for (int i = 0; i < matoms; ++i) {
+          if (subset[i] > 0) {
+            tmp[i] = 1;
+          } else {
+            tmp[i] = 0;
+          }
+        }
+        Molecule result;
+        m.create_subset(result, tmp.get(), 1);
+        return result;
+      }
+    )
+    .method("create_subset",
+      [](Molecule& m, const Set_of_Atoms& subset){
+        return m.create_subset(subset);
+      }
+    )
+    .method("reduce_to_largest_fragment", &Molecule::reduce_to_largest_fragment)
+    .method("reduce_to_largest_organic_fragment", &Molecule::reduce_to_largest_organic_fragment)
+    .method("reduce_to_largest_fragment_carefully", &Molecule::reduce_to_largest_fragment_carefully)
+
+    .method("contains_non_periodic_table_elements",
+      [](const Molecule& m)->bool {
+        return m.contains_non_periodic_table_elements();
+      }
+    )
+    .method("organic_only",
+      [](const Molecule& m)->bool {
+        return m.organic_only();
+      }
+    )
+    .method("longest_path", &Molecule::longest_path)
+    .method("bonds_between",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2) {
+        return m.bonds_between(a1, a2);
+      }
+    )
+    .method("atoms_between",
+      [](Molecule& m, atom_number_t a1, atom_number_t a2)->Set_of_Atoms{
+        Set_of_Atoms result;
+        m.atoms_between(a1, a2, result);
+        return result;
+      }
+    )
+    .method("implicit_hydrogens",
+      [](Molecule& m, atom_number_t a) {
+        return m.implicit_hydrogens(a);
+      }
+    )
+    .method("explicit_hydrogens", &Molecule::explicit_hydrogens)
+    .method("hcount", &Molecule::hcount)
+    .method("make_implicit_hydrogens_explicit",
+      [](Molecule& m) {
+        return m.make_implicit_hydrogens_explicit();
+      }
+    )
+    .method("move_hydrogens_to_end_of_connection_table", &Molecule::move_hydrogens_to_end_of_connection_table)
+    .method("pi_electrons",
+      [](Molecule& m, atom_number_t a) {
+        int result;
+        if (! m.pi_electrons(a, result)) {
+          return 0;
+        }
+        return result;
+      }
+    )
+    .method("lone_pair_count",
+      [](Molecule& m, atom_number_t a) {
+        int result;
+        if (! m.lone_pair_count(a, result)) {
+          return 0;
+        }
+
+        return result;
+      }
+    )
+    .method("aromatic_atom_count", &Molecule::aromatic_atom_count)
+    .method("aromatic_ring_count", &Molecule::aromatic_ring_count)
+    .method("distance_between_atoms", &Molecule::distance_between_atoms)
+    .method("longest_intra_molecular_distance", &Molecule::longest_intra_molecular_distance)
+    .method("saturated", 
+      [](const Molecule& m, atom_number_t a)->bool{
+        return m.saturated(a);
+      }
+    )
+    .method("chiral_centres", &Molecule::chiral_centres)
+    .method("chiral_centre_at_atom", &Molecule::chiral_centre_at_atom)
+    .method("chiral_centre_in_molecule_not_indexed_by_atom_number", &Molecule::chiral_centre_in_molecule_not_indexed_by_atom_number)
+    .method("remove_chiral_centre_at_atom", &Molecule::remove_chiral_centre_at_atom)
+    .method("remove_all_chiral_centres", &Molecule::remove_all_chiral_centres)
+    .method("invert_chirality_on_atom", &Molecule::invert_chirality_on_atom)
+    .method("smarts_equivalent_for_atom",
+      [](Molecule& m, atom_number_t a)->std::string{
+        return m.smarts_equivalent_for_atom(a).AsString();
+      }
+    )
+    .method("smarts",
+      [](Molecule& m)->std::string{
+        return m.smarts().AsString();
+      }
+    )
+    .method("atom_map_number", &Molecule::atom_map_number)
+    .method("set_atom_map_number", &Molecule::set_atom_map_number)
+    .method("atom_with_atom_map_number", &Molecule::atom_with_atom_map_number)
+    .method("reset_all_atom_map_numbers", &Molecule::reset_all_atom_map_numbers)
+
+    .method("unset_unnecessary_implicit_hydrogens_known_values", &Molecule::unset_unnecessary_implicit_hydrogens_known_values)
+    .method("discern_chirality_from_3d_structure", &Molecule::discern_chirality_from_3d_structure)
+
 
   ;
 
   mod.method("set_auto_create_new_elements", &set_auto_create_new_elements);
   mod.method("set_atomic_symbols_can_have_arbitrary_length", &set_atomic_symbols_can_have_arbitrary_length);
+  mod.method("set_include_atom_map_with_smiles", &set_include_atom_map_with_smiles);
+  mod.method("returns_vector",
+    [](int i, int j)->std::vector<int64_t>{
+      std::vector<int64_t> result;
+      result.push_back(i);
+      result.push_back(j);
+      return result;
+    }
+  );
 
   mod.set_override_module(jl_base_module);
   mod.method("getindex",
