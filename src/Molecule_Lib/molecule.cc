@@ -5109,17 +5109,24 @@ Molecule::stereo_preserving_substitute(atom_number_t a1,
 int
 Molecule::highest_coordinate_dimensionality() const
 {
-  int rc = 1;    
+  static constexpr coord_t kZero = static_cast<coord_t>(0.0);
+  int rc = 0;
 
   for (int i = 0; i < _number_elements; i++)
   {
     const Atom * ai = _things[i];
 
-    if (ai->z() != static_cast<coord_t>(0.0))
+    if (ai->z() != kZero) {
       return 3;
+    }
 
-    if (ai->x() != static_cast<coord_t>(0.0) || ai->y() != static_cast<coord_t>(0.0))
+    if (ai->x() != kZero && ai->y() != kZero) {
       rc = 2;
+    }
+
+    if (rc == 0 && ai->x() != kZero) {
+      rc = 1;
+    }
   }
 
   return rc;
