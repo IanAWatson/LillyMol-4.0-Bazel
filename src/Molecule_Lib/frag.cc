@@ -1016,11 +1016,15 @@ Molecule::number_fragments()
 }
 
 int
-Molecule::atoms_in_fragment (int zfrag) 
+Molecule::atoms_in_fragment(int zfrag) 
 {
   assert(zfrag >= 0);
 
   assert(zfrag < number_fragments());
+  if (zfrag >= number_fragments()) {
+    cerr << "Molecule::atoms_in_fragment:invalid fragment " << zfrag << '\n';
+    return 0;
+  }
 
   return _fragment_information.atoms_in_fragment(zfrag);
 }
@@ -1200,6 +1204,10 @@ Molecule::rings_in_fragment (int f)
   assert(f >= 0);
 
   assert(f < number_fragments());
+  if (f >= number_fragments()) {
+    cerr << "Molecule::rings_in_fragment invalid fragment " << f << '\n';
+    return 0;
+  }
 
   return _fragment_information.rings_in_fragment(f);
 }
