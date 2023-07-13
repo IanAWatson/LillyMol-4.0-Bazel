@@ -4,6 +4,7 @@
 #include "jlcxx/jlcxx.hpp"
 
 #include "Molecule_Lib/chiral_centre.h"
+#include "Molecule_Lib/istream_and_type.h"
 #include "Molecule_Lib/molecule.h"
 #include "Molecule_Lib/path.h"
 #include "Molecule_Lib/smiles.h"
@@ -118,6 +119,7 @@ class SetOfRings : public ResizableArrayHolder<Ring> {
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
+
   mod.method("greet", &greet);
 
   mod.add_type<World>("World")
@@ -135,6 +137,15 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.add_bits<FileType>("FileType", jlcxx::julia_type("CppEnum"));
   mod.set_const("SMI", FILE_TYPE_SMI);
   mod.set_const("SDF", FILE_TYPE_SDF);
+
+  mod.add_type<data_source_and_type<Molecule>>("MoleculeReader")
+    .constructor<const std::string& fname, FileType file-type>()
+    .method("next_molecule",
+      [](data_source_and_type<Molecule>& input)->Molecule{
+      }
+    )
+    
+  ;
 
   mod.add_type<Chiral_Centre>("ChiralCentre")
     .constructor<atom_number_t>()
@@ -201,6 +212,19 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   );
   mod.unset_override_module();
 #endif
+
+  mod.set_override_module(jl_base_module);
+  mod.method("getindex",
+    [](const Set_of_Atoms& s, int ndx)->atom_number_t{
+      return s[ndx];
+    }
+  );
+  mod.method("setindex!",
+    [](Set_of_Atoms& s, int32_t value, uint64_t ndx) {
+      s[ndx] = value;
+    }
+  );
+  mod.unset_override_module();
 
   mod.method("add",
     [](Set_of_Atoms& s, atom_number_t a) {

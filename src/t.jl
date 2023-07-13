@@ -1,6 +1,10 @@
 module LillyMol
   using CxxWrap
 
+  # abstract type AbstractSetOfAtoms <: AbstractVector{Int32} end
+
+  import Base: getindex, iterate, in, length, size, push!
+
   @wrapmodule(joinpath("bazel-bin/julia/","lillymol_julia.so"))
 
   function __init__()
@@ -15,7 +19,6 @@ module LillyMol
   export Molecule, SetOfAtoms, Atom, Bond, ChemicalStandardisation, BondList, Mol2Graph, ChiralCentre
   export SetOfRings
 
-  import Base: getindex, iterate, in, length
   # Now done in C++
   # getindex(m::Molecule, a::Int)=atom(m, a)
   # getindex(a::Atom, b::Int)=atom.item(b)
@@ -24,7 +27,7 @@ module LillyMol
   iterate(b::Bond, state=1) = (state == 1 ? (b.a1(), 2) : state == 2 ? (b.a2(), 2) : nothing)
   iterate(b::BondList, state=0) = (state >= size(b) ? nothing : (b[state], state + 1))
   iterate(r::Ring, state=0) = (state >= length(r) ? nothing : (r[state], state + 1))
-  iterate(s::SetOfAtoms, state=0) = (state >= s.size() ? nothing : (s[state], state + 1))
+  iterate(s::SetOfAtoms, state=0) = (state >= length(s) ? nothing : (s[state], state + 1))
   iterate(r::SetOfRings, state=0) = (state >= length(r) ? nothing : (r[state], state + 1))
   in(z::Int, m::Molecule) = (natoms(m, z) > 0)
   in(atom::Int, a::Atom) = involves(a, atom)
@@ -36,6 +39,7 @@ module LillyMol
   size(m::Molecule) = natoms(m)
   size(r::Ring) = (atoms_in_ring(r),)
   size(s::SetOfAtoms) = (length(s),)
+  size(s::SetOfAtomsAllocated) = (length(s),)
   size(s::SetOfRings) = (rings_in_set(s),)
   size(s::SetOfAtomsAllocated) = (length(s),)
   size(b::BondList) = (length(b),)
@@ -96,6 +100,29 @@ w = LillyMol.World()
 println(LillyMol.greet(w));
 LillyMol.set(w, "hello")
 println(LillyMol.greet(w))
+
+# Mimic the same functionality from GoogleTest
+# Implemented after I had finished this, use for new cases.
+function unordered_elements_are_array(v1::Vector, v2::Vector)::Bool
+  size(v1) != size(v2) && return false
+  return sort(v1) == sort(v2)
+end
+
+function test_set_of_atoms()::Bool
+  s = SetOfAtoms()
+  for i in 1:6
+    push!(s, i)
+  end
+  for i in 1:6
+    i in s || return false
+  end
+  for i in 1:6
+    s[i - 1] = 6 - i
+  end
+  collect(s) == [5, 4, 3, 2, 1, 0] || return false
+
+  return true
+end
 
 function test_build_from_smiles()::Bool
   m = Molecule()
@@ -625,6 +652,7 @@ function test_connections_molecule()::Bool
   c = connections(m, 1)
   length(c) == 4 || return false
   (0 in c && 2 in c && 3 in c && 4 in c) || return false
+  unordered_elements_are_array(collect(c), [0, 2, 3, 4]) || return false
   true
 end
 
@@ -752,7 +780,6 @@ function test_symmetry_class()::Bool
   true
 end
 
-# in SetOfAtomsAllocated is not working
 function test_symmetry_equivalents()::Bool
   m = Molecule()
   build_from_smiles(m, "FC(F)(F)C(C)C") || return false
@@ -1103,6 +1130,8 @@ function test_rings_in_fragment()::Bool
   true
 end
 
+# Cannot figure out how to return a std::vector<Molecule>.
+# This will change once I figure that out.
 function test_create_components()::Bool
   m = LillyMol.MolFromSmiles("CCC.C1CC1.C1CC1C2CC2")
   nf = number_fragments(m)
@@ -1486,7 +1515,7 @@ end
 
 function test_returns_vector()::Bool
   v = LillyMol.returns_vector(1, 2)
-  println("As returned $(v)")
+  v == [1, 2] || return false
   true
 end
 
@@ -1508,6 +1537,7 @@ end
 #  println("")
 #end
 
+@test test_set_of_atoms()
 @test test_build_from_smiles()
 @test test_set_name()
 @test test_natoms()
