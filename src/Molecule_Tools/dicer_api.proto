@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package dicer_aip;
+
+message DicerOptions {
+  optional uint32 min_fragment_size = 1;
+  optional uint32 max_fragment_size = 2;
+  optional uint32 max_bonds_to_break = 3;
+
+  optional bool break_amide_bonds = 4;
+  optional bool break_acid_bonds = 5;
+  optional bool break_cc_bonds = 6;
+
+  optional uint32 isotope = 7;
+
+  optional bool skip_bad_valence = 8;
+}
