@@ -3,7 +3,7 @@ module LillyMol
 
   # abstract type AbstractSetOfAtoms <: AbstractVector{Int32} end
 
-  import Base: getindex, iterate, in, length, size, push!
+  import Base: getindex, iterate, in, length, size, push!, show
 
   @wrapmodule(joinpath("bazel-bin/julia/","lillymol_julia.so"))
 
@@ -83,6 +83,10 @@ module LillyMol
   export is_single_bond, is_double_bond, is_triple_bond, is_aromatic
   export atomic_number
   export a1, a2
+  show(io::IO, s::SetOfAtoms) = print(io, set_of_atoms_show_text(s))
+  # For some reason this does not work, but works for set_of_atoms.
+  show(io::IO, r::Ring) = print(io, ring_show_text(r))
+  show(io::IO, m::Molecule) = print(io, molecule_show_text(m))
 
   export activate_all, process
 end
@@ -1632,7 +1636,7 @@ end
 @test test_largest_fragment()
 @test test_identify_spinach()
 @test test_rings_in_fragment()
-@test test_create_components() broken=true
+@test test_create_components()
 @test test_returns_vector()
 @test test_create_subset()
 @test test_create_subset_set_of_atoms()

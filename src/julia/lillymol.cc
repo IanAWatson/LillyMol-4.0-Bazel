@@ -117,6 +117,24 @@ class SetOfRings : public ResizableArrayHolder<Ring> {
     }
 };
 
+template <typename T>
+IWString
+AtomsAsString(const T & s, const char* name) {
+  IWString result;
+  result << name << " : N=" << s.size() << " [";
+  bool need_space = false;
+  for (atom_number_t a : s) {
+    if (need_space) {
+      result << ' ';
+    } else {
+      need_space = true;
+    }
+    result << a;
+  }
+  result << ']';
+  return result;
+}
+
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
 
@@ -139,12 +157,19 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   mod.set_const("SDF", FILE_TYPE_SDF);
 
   mod.add_type<data_source_and_type<Molecule>>("MoleculeReader")
-    .constructor<const std::string& fname, FileType file-type>()
+    .constructor<FileType, std::string&>()
+//#define NEED_CONSTRU
+#ifdef NEED_CONSTRU
     .method("next_molecule",
-      [](data_source_and_type<Molecule>& input)->Molecule{
+      [](data_source_and_type<Molecule>& input)->std::optional<Molecule>{
+        Molecule *tmp = input.next_molecule();
+        if (tmp == nullptr) {
+          return std::nullopt;
+        }
+        return *tmp;
       }
     )
-    
+#endif
   ;
 
   mod.add_type<Chiral_Centre>("ChiralCentre")
@@ -232,6 +257,12 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     }
   );
 
+  mod.method("set_of_atoms_show_text",
+    [](const Set_of_Atoms& s)->std::string{
+      return AtomsAsString(s, "SetOfAtoms").AsString();
+    }
+  );
+
   mod.add_type<Ring>("Ring")
     .constructor<>()
     .method("atoms_in_ring",
@@ -262,6 +293,31 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("contains",
       [](const Set_of_Atoms& s, atom_number_t a)->bool{
         return s.contains(a);
+      }
+    )
+    .method("ring_show_text",
+      [](const Ring& r)->std::string{
+        IWString result = AtomsAsString(r, "Ring");
+        if (r.is_aromatic()) {
+          result << " arom";
+        }
+        if (r.is_fused()) {
+          result << " fused";
+        }
+        return result.AsString();
+      }
+    )
+    .method("ring_show_text",
+      [](const jlcxx::BoxedValue<Ring>& boxed_ring)->std::string{
+        const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
+        IWString result = AtomsAsString(r, "Ring");
+        if (r.is_aromatic()) {
+          result << " arom";
+        }
+        if (r.is_fused()) {
+          result << " fused";
+        }
+        return result.AsString();
       }
     )
   ;
@@ -316,6 +372,36 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       return s.contains(atom);
     }
   );
+
+#ifdef RING_SHOW_TEXT
+  mod.method("ring_show_text",
+    [](const Ring& r)->std::string{
+      IWString result = AtomsAsString(r, "Ring");
+      if (r.is_aromatic()) {
+        result << " arom";
+      }
+      if (r.is_fused()) {
+        result << " fused";
+      }
+      return result.AsString();
+    }
+  );
+
+  mod.method("ring_show_text",
+    [](const jlcxx::BoxedValue<Ring>& boxed_ring)->std::string{
+      const Ring& r = jlcxx::unbox<Ring&>(boxed_ring);
+      IWString result = AtomsAsString(r, "Ring");
+      if (r.is_aromatic()) {
+        result << " arom";
+      }
+      if (r.is_fused()) {
+        result << " fused";
+      }
+      return result.AsString();
+    }
+  );
+#endif
+
 // collect not working, not sure why...
 //mod.method("collect",
 //  [](const jlcxx::BoxedValue<Ring>& boxed_ring)->std::vector<atom_number_t>{
@@ -672,6 +758,13 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
     .method("name",
       [](const Molecule& m)->std::string{
         return m.name().AsString();
+      }
+    )
+    .method("molecule_show_text",
+      [](Molecule& m)->std::string{
+        IWString result;
+        result << m.name() << ' ' << m.natoms() << " atoms\n";
+        return result.AsString();
       }
     )
     .method("molecular_formula",
@@ -1147,6 +1240,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("rings_in_fragment", &Molecule::rings_in_fragment)
+#define DOES_NOT_WORK
 #ifdef DOES_NOT_WORK
     .method("create_components",
       [](Molecule& m, jlcxx::ArrayRef<jlcxx::BoxedValue<Molecule>> result) {

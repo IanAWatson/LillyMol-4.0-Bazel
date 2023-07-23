@@ -873,8 +873,7 @@ Substructure_Atom_Specifier::_matches(Target_Atom & target)
     cerr << "Check hcount: target " << target.hcount() << " matches " << _hcount.matches(target.hcount()) << endl;
 #endif
 
-  if (_hcount.is_set())
-  {
+  if (_hcount.is_set()) {
     if (! _hcount.matches(target.hcount()))
       return 0;
 

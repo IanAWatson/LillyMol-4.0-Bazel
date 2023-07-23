@@ -1,4 +1,18 @@
 proto_library(
+    name = "dicer_api_proto",
+    srcs = [
+        "dicer_api.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "dicer_api_cc_proto",
+    deps = [
+        "dicer_api_proto",
+    ],
+)
+
+proto_library(
     name = "diced_molecule_proto",
     srcs = [
         "diced_molecule.proto",
@@ -275,8 +289,16 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
+)
+
+cc_binary(
+    name = "dicer_simple",
+    srcs = [
+        "dicer_simple.cc",
+    ],
+    deps = [
+        ":dicer_api",
+        "//Molecule_Lib:moleculeio",
     ],
 )
 
@@ -1516,6 +1538,22 @@ cc_library(
     ],
     deps = [
         "//Molecule_Lib:iwmolecule",
+    ],
+)
+
+cc_library(
+    name = "dicer_api",
+    srcs = [
+        "dicer_api.cc",
+    ],
+    hdrs = [
+        "dicer_api.h",
+    ],
+    deps = [
+        "dicer_api_cc_proto",
+        "//Molecule_Lib:iwmolecule",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
 

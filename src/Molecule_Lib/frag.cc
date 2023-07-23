@@ -1891,42 +1891,64 @@ Molecule::_compute_fragment_information_subset(Fragment_Information & fragment_i
     nf++;
   }
 
-  if (0 == nf)
-  {
+  if (0 == nf) {
     cerr << "Molecule::compute_fragment_information:subset contains no atoms\n";
     return 0;
   }
   assert(nf > 0);
 
-  if (! fragment_information.set_number_fragments(nf))
+  if (! fragment_information.set_number_fragments(nf)) {
     return 0;
+  }
 
   const int nb = nedges();
 
   resizable_array<int> & atoms_in_fragment = fragment_information.atoms_in_fragment();
   resizable_array<int> & bonds_in_fragment = fragment_information.bonds_in_fragment();
 
-  for (int i = 0; i < _number_elements; i++)
-  {
-    if (0 == include_atom[i])
+  for (int i = 0; i < _number_elements; i++) {
+    if (0 == include_atom[i]) {
       continue;
+    }
 
     const int f = fragment_membership[i];
     atoms_in_fragment[f]++;
   }
 
-  for (int i = 0; i < nb; ++i)
-  {
-    const Bond * b = _bond_list[i];
+  if (include_atom == nullptr) {
+    for (int i = 0; i < nb; ++i) {
+      const Bond * b = _bond_list[i];
 
-    const atom_number_t a1 = b->a1();
-    const atom_number_t a2 = b->a2();
+      const atom_number_t a1 = b->a1();
+      const atom_number_t a2 = b->a2();
 
-    const int f1 = fragment_membership[a1];
-    const int f2 = fragment_membership[a2];
+      const int f1 = fragment_membership[a1];
+      const int f2 = fragment_membership[a2];
 
-    if (f1 == f2)
-      bonds_in_fragment[f1]++;
+      if (f1 == f2) {
+        bonds_in_fragment[f1]++;
+      }
+    }
+  } else {
+    for (int i = 0; i < nb; ++i) {
+      const Bond * b = _bond_list[i];
+
+      const atom_number_t a1 = b->a1();
+      if (! include_atom[a1]) {
+        continue;
+      }
+      const atom_number_t a2 = b->a2();
+      if (! include_atom[a2]) {
+        continue;
+      }
+
+      const int f1 = fragment_membership[a1];
+      const int f2 = fragment_membership[a2];
+
+      if (f1 == f2) {
+        bonds_in_fragment[f1]++;
+      }
+    }
   }
 
   return nf;

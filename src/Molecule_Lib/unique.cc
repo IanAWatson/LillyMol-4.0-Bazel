@@ -1923,7 +1923,7 @@ class Unique_Determination : public resizable_array_p<Atom_and_Rank>
     int symmetry(int, int *) const;    // return previously computed values
     int symmetry(Molecule *, int *, const int *);
 
-    int canonical_order(Molecule &, int *, const int *);
+    int canonical_order(Molecule &, int* canonical_rank, const int* include_atom);
 };
 
 //#define DEBUG_UNIQUE_DETERMINATION
@@ -2245,17 +2245,14 @@ Unique_Determination::_choose_tie_breaker_atom()
 
   int chiral_atoms_still_active = 0;
 
-  for (int i = 0; i < _nactive; i++)
-  {
-    if (_things[i]->chiral_centre())
-    {
+  for (int i = 0; i < _nactive; i++) {
+    if (_things[i]->chiral_centre()) {
       chiral_atoms_still_active = 1;
       break;
     }
   }
 
-  if (0 == chiral_atoms_still_active)
-  {
+  if (0 == chiral_atoms_still_active) {
 #ifdef DEBUG_CHOOSE_TIE_BREAKER_ATOM
     cerr << "No chiral atoms remaining\n";
 #endif
@@ -2271,8 +2268,7 @@ Unique_Determination::_choose_tie_breaker_atom()
 
   int next_starting_position = _nactive - 1;
 
-  while (next_starting_position > 0)
-  {
+  while (next_starting_position > 0) {
     int sstart = next_starting_position;
     int chiral_atoms_in_sequence;
 
@@ -2288,8 +2284,7 @@ Unique_Determination::_choose_tie_breaker_atom()
     cerr << '\n';
 #endif
 
-    if (chiral_atoms_in_sequence > 0 && chiral_atoms_in_sequence < shortest_sequence)
-    {
+    if (chiral_atoms_in_sequence > 0 && chiral_atoms_in_sequence < shortest_sequence) {
       shortest_sequence = chiral_atoms_in_sequence;
       start_of_shortest_sequence = sstart;
     }
@@ -2302,8 +2297,7 @@ Unique_Determination::_choose_tie_breaker_atom()
   cerr << "Shortest chiral containing sequence starts at " << start_of_shortest_sequence << '\n';
 #endif
 
-  for (int i = start_of_shortest_sequence; i >= 0; i--)
-  {
+  for (int i = start_of_shortest_sequence; i >= 0; i--) {
     if (_things[i]->chirality_score())
       return i;
   }
@@ -3137,6 +3131,8 @@ Unique_Determination::symmetry(Molecule * m, int * symmetry_class,
   return rc;
 }
 
+// Potential problems if a subset has been perceived, since `matoms`
+// might not be correct.
 int
 Unique_Determination::symmetry (int matoms, int * symmetry_class) const
 {
@@ -3158,30 +3154,27 @@ Unique_Determination::_canonical_order(int stop_when_symmetry_perceived)
   _symmetry_stored = 0;
 
   int iterations = 0;
-  while (_nactive > 0)
-  {
+  while (_nactive > 0) {
     iterations++;
 
 #ifdef DEBUG_CANONICAL_ORDER
     cerr << "Unique_Determination::_canonical_order: iteration " << iterations << " nactive = " << _nactive << '\n';
 #endif
 
-    if (iterations > 1 && ! _ranks_changed())
-    {
+    if (iterations > 1 && ! _ranks_changed()) {
 #ifdef CIS_TRANS_DOES_NOT_WORK
-      if (_cis_trans_bonds > 0)
-      {
+      if (_cis_trans_bonds > 0) {
         _expand_around_cis_trans_bonds();
         continue;
       }
 #endif
 
-      if (0 == _symmetry_stored)
-      {
+      if (0 == _symmetry_stored) {
         _store_symmetry_info();
         _symmetry_stored = 1;
-        if (stop_when_symmetry_perceived)
+        if (stop_when_symmetry_perceived) {
           break;
+        }
 
 //      cerr << "ranks not changed, chirality " << _nchiral << '\n';
 
@@ -3195,14 +3188,12 @@ Unique_Determination::_canonical_order(int stop_when_symmetry_perceived)
       _break_a_tie();
     }
 
-    if (_process_all_unique_atoms())
-    {
+    if (_process_all_unique_atoms()) {
       if (0 == _nactive)
         break;
     }
 
-    if (iterations > 1 && _process_all_now_disconnected_atoms())
-    {
+    if (iterations > 1 && _process_all_now_disconnected_atoms()) {
       if (0 == _nactive)
         break;
     }
@@ -3224,6 +3215,7 @@ Unique_Determination::_canonical_order(int stop_when_symmetry_perceived)
 
 #ifdef DEBUG_CANONICAL_ORDER
   cerr << "Canonical order determined\n";
+  // this fails if we are doing a subset, do not have _matoms atoms.
   for (int i = 0; i < _matoms; i++)
   {
     const Atom_and_Rank * r = _things[i];
@@ -3843,36 +3835,29 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
   resizable_array_p<Target_Atom> target;
   target.resize(_matoms);
 
-  for (int i = 0; i < _matoms; i++)
-  {
+  _nactive = 0;
+  for (int i = 0; i < _matoms; i++) {
+    if (! include_atom[i]) {
+      continue;
+    }
+
+    ++_nactive;
+
     Target_Atom * s = new Target_Atom();
 
     Atom * a = const_cast<Atom *>(_m->atomi(i));   // loss of const OK
 
     s->initialise(_m, i, a, nullptr);
 
-    if (! include_atom[i])
-    {
-      s->set_element(nullptr);
-      s->set_ncon(0);
-    }
-    else    // only find neighbours for molecules that are in the subset
-    {
-      int neighbours_included = 0;
+    int neighbours_included = 0;
 
-      int acon = a->ncon();
-
-      for (int j = 0; j < acon; j++)
-      {
-        atom_number_t k = a->other(i, j);
-
-        if (include_atom[k])
-          neighbours_included++;
+    for (const Bond* b : *a) {
+      atom_number_t k = b->other(i);
+      if (include_atom[k]) {
+        ++neighbours_included;
       }
-
-      if (neighbours_included != acon)
-        s->set_ncon(neighbours_included);
     }
+    s->set_ncon(neighbours_included);
 
     target.add(s);
   }
@@ -3895,7 +3880,7 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
 
   int rank_to_assign = 0;
 
-  for (int i = 0; i < _matoms; i++)
+  for (int i = 0; i < _nactive; i++)
   {
     int tmp;
     if (i > 0)    // only compare with previous if there is a previous
@@ -3903,8 +3888,7 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
     else
       tmp = 0;
 
-    if (tmp < 0)
-    {
+    if (tmp < 0) {
       cerr << "Atoms out of order\n";
       target[i]->debug_print(cerr);
       target[i - 1]->debug_print(cerr);
@@ -3912,8 +3896,9 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
     assert (tmp >= 0);    // the array is supposed to be sorted
 
 //  if (tmp > 0 || INVALID_ATOMIC_NUMBER == target[i]->atomic_number())     // different from one before, increment rank
-    if (tmp > 0 || 0 == include_atom[i])   // different from one before, increment rank
+    if (tmp > 0) {
       rank_to_assign = _rank_in_use.IdentifyUnusedRank();
+    }
 
     atom_number_t a = target[i]->atom_number();
 
@@ -3941,10 +3926,8 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
   }
 
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
-  for (int i = 0; i < _matoms; i++)
-  {
-    if (nullptr == _atom_xref[i])
-    {
+  for (int i = 0; i < _nactive; i++) {
+    if (nullptr == _atom_xref[i]) {
       cerr << "Yipes, the point for atom " << i << " is null\n";
     }
   }
@@ -3952,25 +3935,18 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
 
 // Now add connections to each atom
 
-  for (int i = 0; i < _matoms; i++)
-  {
+  for (int i = 0; i < _nactive; i++) {
     Atom_and_Rank * r = _things[i];
     atom_number_t a = r->atom_number();
 
-    if (! include_atom[a])
-      continue;
-
     const Atom * ai = _m->atomi(a);
 
-    int acon = ai->ncon();
-
-    for (int j = 0; j < acon; j++)
-    {
-      const Bond * b = ai->item(j);
+    for (const Bond* b : *ai) {
       atom_number_t k = b->other(a);
 
-      if (include_atom[k])
+      if (include_atom[k]) {
         r->is_connected_to(_atom_xref[k], b);
+      }
     }
 
     _things[i]->establish_neighbours();
@@ -3978,7 +3954,7 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
 
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
   cerr << "After establishing neighbours\n";
-  for (int i = 0; i < _matoms; i++)
+  for (int i = 0; i < _nactive; i++)
   {
     const Atom_and_Rank * r = _things[i];
 
@@ -3991,8 +3967,6 @@ Unique_Determination::_assign_initial_ranks_legacy(const int * include_atom)
     _things[i]->debug_print(cerr);
   }
 #endif
-
-  _nactive = _matoms;
 
 #ifdef DEBUG_ASSIGN_INITIAL_RANKS
   cerr << "After establishing initial ranks\n";
@@ -4207,12 +4181,18 @@ Unique_Determination::canonical_order(Molecule & m,
 
   (void) _initialise(m, include_atom);
 
-  if (_matoms < 2)
+  if (_matoms < 2) {
     return 1;
+  }
 
   int rc = _canonical_order(0);    // 0 means don't stop when symmetry is perceived
 
-  copy_vector(canonical_rank, _canonical_rank, _matoms);
+  if (include_atom == nullptr) {
+    copy_vector(canonical_rank, _canonical_rank, _matoms);
+  } else {
+    // Do we need to do anything different if we have a subset?
+    copy_vector(canonical_rank, _canonical_rank, _matoms);
+  }
 
 #ifdef DEBUG_UNIQUE_DETERMINATION
   cerr << "Canonical order is\n";
@@ -4268,8 +4248,9 @@ Molecule::compute_canonical_ranking(Symmetry_Class_and_Canonical_Rank & sccr,
 {
   assert (ok());
 
-  if (0 == _number_elements)
+  if (0 == _number_elements) {
     return 1;
+  }
 
   compute_aromaticity_if_needed();
 
@@ -4279,8 +4260,9 @@ Molecule::compute_canonical_ranking(Symmetry_Class_and_Canonical_Rank & sccr,
 
 //cerr << "legacy_atom_ordering " << legacy_atom_ordering << endl;
 
-  if (! sccr.arrays_allocated())
+  if (! sccr.arrays_allocated()) {
     sccr.allocate_arrays(_number_elements);
+  }
 
   Unique_Determination unqd(legacy_atom_ordering);
 

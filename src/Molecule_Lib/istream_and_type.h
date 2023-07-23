@@ -1,6 +1,8 @@
 #ifndef IW_ISTREAM_AND_TYPE
 #define IW_ISTREAM_AND_TYPE
 
+#include <string>
+
 #include "Foundational/data_source/iwstring_data_source.h"
 
 #include "iwmtypes.h"
@@ -47,6 +49,7 @@ class data_source_and_type : public iwstring_data_source
 
   public:
     data_source_and_type (const IWString &);
+    data_source_and_type (FileType, std::string &);
     data_source_and_type (FileType, const char *);
     data_source_and_type (FileType, const IWString &);
     data_source_and_type ();
@@ -216,6 +219,21 @@ data_source_and_type<T>::data_source_and_type (const IWString & fname)
 }
 
 template <typename T>
+data_source_and_type<T>::data_source_and_type(FileType input_type,
+                         std::string& fname) : iwstring_data_source(fname.c_str()) {
+  if (! _default_values(input_type)) {
+    return;
+  }
+
+  IWString tmp(fname);
+  if (! _file_opened_ok(tmp)) {
+    return;
+  }
+
+  _do_skip_first();
+}
+
+template <typename T>
 data_source_and_type<T>::data_source_and_type()
 {
   _input_type = FILE_TYPE_INVALID;
@@ -289,19 +307,19 @@ data_source_and_type<T>::next_molecule()
 //debug_print(std::cerr);
 
   if (! _valid)
-    return NULL;
+    return nullptr;
 
   if (_do_only > 0 && _molecules_read >= _do_only)
   {
     std::cerr << "data_source_and_type::next_molecule: already read " << _molecules_read << " molecules\n";
     _valid = 0;
-    return NULL;
+    return nullptr;
   }
 
   if (! good())
   {
     _valid = 0;
-    return NULL;
+    return nullptr;
   }
 
   while (_connection_table_errors_encountered <= _connection_table_errors_allowed)
@@ -311,7 +329,7 @@ data_source_and_type<T>::next_molecule()
       _offset_for_most_recent_molecule = tellg();
 
       if (_offset_for_most_recent_molecule >= max_offset_from_command_line())
-        return NULL;
+        return nullptr;
     }
 
     T * m = new T;
@@ -372,7 +390,7 @@ data_source_and_type<T>::next_molecule()
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 template <typename T>

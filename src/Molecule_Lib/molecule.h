@@ -1604,6 +1604,8 @@ class Molecule : private resizable_array_p<Atom>
 
     uint64_t quick_atom_hash() const;
     uint64_t quick_bond_hash();    // not const because aromaticity is perceived
+    // A hash value based on atoms and connections.
+    // uint64_t quick_atom_hash();
 
 //  We are making a smarts of a subset and we want all the D and v directives to specify just
 //  the atoms in the subset or a minimum requirement

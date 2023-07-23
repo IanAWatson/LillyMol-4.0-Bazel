@@ -609,6 +609,16 @@ Sparse_Fingerprint_Creator::BitsWithoutCounts() const {
   return result;
 }
 
+int
+Sparse_Fingerprint_Creator::IsSet(unsigned int b) const {
+  auto iter = _fp.find(b);
+  if (iter == _fp.end()) {
+    return 0;
+  }
+
+  return iter->second;
+}
+
 #ifdef __GNUG__
 //template class hashtable<pair<unsigned int const, int>, unsigned int, hash<unsigned int>, _Select1st<pair<unsigned int const, int> >, equal_to<unsigned int>, allocator<int> >;
 template class IW_Hash_Map<unsigned int, int>;

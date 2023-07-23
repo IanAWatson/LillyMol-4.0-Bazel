@@ -78,6 +78,9 @@ class Sparse_Fingerprint_Creator
     const FPHash & bits_found () const { return _fp;}
 
     int flatten_to_01();
+
+    // Return the number of instances of `b`, zero if not in the hash.
+    int IsSet(unsigned int b) const;
 };
 
 /*

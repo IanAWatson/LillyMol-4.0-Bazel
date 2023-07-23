@@ -1684,8 +1684,7 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
 
   int rc = 0;
 
-  while (atom_to_process > number_initially_matched)    // we ignore any which may have previously been matched
-  {
+  while (atom_to_process > number_initially_matched) {    // first unmatched atom in matched_atoms[]
     Substructure_Atom * a = (Substructure_Atom *) matched_atoms[atom_to_process];
 
 #ifdef DEBUG_FIND_EMBEDDING
@@ -1703,11 +1702,11 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
       cerr << "Returning " << rc << '\n';
 #endif
 
-    if (nullptr == a->parent())    // must be a root atom, done
+    if (nullptr == a->parent()) {    // must be a root atom, done
       return rc;
+    }
 
-    if (! a->move_to_next_match_from_current_anchor(already_matched, matched_atoms))
-    {
+    if (! a->move_to_next_match_from_current_anchor(already_matched, matched_atoms)) {
 #ifdef DEBUG_FIND_EMBEDDING
       cerr << "Move to next failed for atom " << a->unique_id() << '\n';
 #endif
@@ -1730,18 +1729,17 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
               "), or = " << a->or_id() <<
               " atom to process = " << atom_to_process << " matched = " << matched_atoms.number_elements() << '\n';
 #endif
-      if (a->or_id())
+      if (a->or_id()) {
         remove_atoms_with_same_or(matched_atoms, atom_to_process + 1, a->or_id());
+      }
 
       a->add_your_children(matched_atoms);   // does nothing if already added
 
-      if (atom_to_process == matched_atoms.number_elements() - 1)
-      {
+      if (atom_to_process == matched_atoms.number_elements() - 1) {
 #ifdef DEBUG_FIND_EMBEDDING
         cerr << "AlL query atoms matched, calling _got_embedding, B4 have " << results.number_embeddings() << " rc " << rc << '\n';
 #endif
-        if (_got_embedding(matched_atoms, target_molecule, already_matched, results))
-        {
+        if (_got_embedding(matched_atoms, target_molecule, already_matched, results)) {
           rc++;
   
 #ifdef DEBUG_FIND_EMBEDDING
@@ -1753,8 +1751,9 @@ Single_Substructure_Query::_find_embedding(Molecule_to_Match & target_molecule,
             return rc;
         }
       }
-      else
+      else {
         atom_to_process++;
+      }
     }
   }
 
@@ -1864,8 +1863,9 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
     jstart = target_molecule.start_matching_at();
     jstop = jstart + 1;
   }
-  else if (! r->determine_start_stop(target_molecule, jstart, jstop))
+  else if (! r->determine_start_stop(target_molecule, jstart, jstop)) {
     return 0;
+  }
 
 #ifdef DEBUG_SUBSTRUCTURE_QUERY
   cerr << "Start atoms " << jstart << " and " << jstop << '\n';
@@ -2317,6 +2317,13 @@ Single_Substructure_Query::_substructure_search(Molecule_to_Match & target_molec
     if (! target_molecule.AssignAtomTypes(*_atom_typing))
       return 0;
   }
+
+#ifdef MATCH_POSSIBLE_IMPLEMENTED
+  std::unique_ptr<MatchPossible> match_possible;
+  if (_max_matches_to_find > 1) {
+    match_possible.reset(new MatchPossible(target_molecule.natoms()));
+  }
+#endif
 
   int * tmp = new_int(target_molecule.natoms()); std::unique_ptr<int[]> free_tmp(tmp);
   // No, this is not the way to go....
@@ -3256,3 +3263,25 @@ Single_Substructure_Query::RequiredBondsMatch(const Molecule& m) {
 
   return 1;
 }
+
+#ifdef MATCH_POSSIBLE_IMPLEMENTED
+MatchPossible::MatchPossible(int natoms) : _natoms(natoms) {
+  _status = new Status[_natoms * matoms];
+  std::fill_n(_status, _natoms * natoms, Status::kUnknown);
+}
+
+MatchPossible::~MatchPossible() {
+  delete [] _status;
+}
+
+MatchPossible::Status
+MatchPossible::CanMatch(int target_atom, int query_atom) const {
+  return _status[target_atom * _natoms + query_atom];
+}
+
+void
+MatchPossible::SetCanMatch(int target_atom, int query_atom, Status status) {
+  _status[target_atom * _natoms + query_atom] = 
+     _status[query_atom * _natoms + target_atom] = status;
+}
+#endif

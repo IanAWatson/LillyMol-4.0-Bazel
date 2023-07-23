@@ -1125,7 +1125,7 @@ convert_from_mdl_number_to_bond_type(int int_rep, bond_type_t & bt)
       return 0;
   }
 
-  assert(NULL == "Should not come here");
+  assert(nullptr == "Should not come here");
   return 0;
 }
 

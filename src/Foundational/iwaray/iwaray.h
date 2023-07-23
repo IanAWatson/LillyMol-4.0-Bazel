@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <initializer_list>
+#include <type_traits>
 
 #include "Foundational/iwmisc/iwconfig.h"
 
@@ -161,6 +162,7 @@ class resizable_array_base
 template <typename T>
 class resizable_array_p : public resizable_array_base<T *>
 {
+
 #ifdef IW_TWO_PHASE_TEMPLATES
   protected:
     using resizable_array_base<T *>::_number_elements;
@@ -213,6 +215,9 @@ class resizable_array_p : public resizable_array_base<T *>
 template <typename T>
 class resizable_array: public resizable_array_base <T>
 {
+  static_assert(std::is_default_constructible_v<T>,
+                "resizable_array requires default-constructible elements");
+
 #ifdef IW_TWO_PHASE_TEMPLATES
   protected:
     using resizable_array_base<T>::_number_elements;

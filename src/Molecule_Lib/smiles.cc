@@ -388,7 +388,14 @@ class Atom_Chooser_Unique
 int
 Atom_Chooser_Unique::next_starting_atom(const Molecule & m, const int * zorder, atom_number_t & first_atom, const int * include_atom) const
 {
-  int include_chiral_info = include_chiral_info_in_smiles();
+  int include_chiral_info;
+  if (m.chiral_centres() == 0) {
+    include_chiral_info = 0;
+  } else if (! include_chiral_info_in_smiles()) {
+    include_chiral_info = 0;
+  } else {
+    include_chiral_info = 1;
+  }
 
   const int matoms = m.natoms();
 
@@ -400,45 +407,69 @@ Atom_Chooser_Unique::next_starting_atom(const Molecule & m, const int * zorder, 
   atom_number_t chiral_atom_if_we_need_to = INVALID_ATOM_NUMBER;   // in case everything chiral [P@]12[P@]3[P@@]1[P@@]23
   int rank_chiral_atom = 0;
 
-  for (int i = 0; i < matoms; i++)
-  {
-    if (zorder[i] >= 0)    // already processed
-      continue;
+  // Duplicate the loop so we do not repeatedly check include_atom
+  if (include_atom == nullptr) {
+    for (int i = 0; i < matoms; i++) {
+      if (zorder[i] >= 0)    // already processed
+        continue;
 
-//  A smiles cannot START at a chiral atom
+//    A smiles cannot START at a chiral atom
 
-    if (include_chiral_info && m.chiral_centre_at_atom(i))
-    {
-      if (chiral_atom_if_we_need_to < 0 || _canonical_rank[i] > rank_chiral_atom)
-      {
-        chiral_atom_if_we_need_to = i;
-        rank_chiral_atom = _canonical_rank[i];
+      if (include_chiral_info && m.chiral_centre_at_atom(i)) {
+        if (chiral_atom_if_we_need_to < 0 || _canonical_rank[i] > rank_chiral_atom) {
+          chiral_atom_if_we_need_to = i;
+          rank_chiral_atom = _canonical_rank[i];
+        }
+        continue;
       }
-      continue;
+
+      const int ncon = m.ncon(i);
+
+      if (ncon < min_ncon) {
+        min_ncon = ncon;
+        first_atom = i;
+        rank_first_atom = _canonical_rank[i];
+      } else if (ncon == min_ncon && _canonical_rank[i] > rank_first_atom) {
+        first_atom = i;
+        rank_first_atom = _canonical_rank[i];
+      }
     }
+  } else {
+    for (int i = 0; i < matoms; i++) {
+      if (zorder[i] >= 0)    // already processed
+        continue;
+      if (! include_atom[i]) {
+        continue;
+      }
 
-    const Atom * a = m.atomi(i);
+//    A smiles cannot START at a chiral atom
 
-    const int ncon = a->ncon();
+      if (include_chiral_info && m.chiral_centre_at_atom(i)) {
+        if (chiral_atom_if_we_need_to < 0 || _canonical_rank[i] > rank_chiral_atom) {
+          chiral_atom_if_we_need_to = i;
+          rank_chiral_atom = _canonical_rank[i];
+        }
+        continue;
+      }
 
-    if (ncon < min_ncon)
-    {
-      min_ncon = ncon;
-      first_atom = i;
-      rank_first_atom = _canonical_rank[i];
-    }
-    else if (ncon == min_ncon && _canonical_rank[i] > rank_first_atom)
-    {
-      first_atom = i;
-      rank_first_atom = _canonical_rank[i];
+      const int ncon = m.ncon(i);
+
+      if (ncon < min_ncon) {
+        min_ncon = ncon;
+        first_atom = i;
+        rank_first_atom = _canonical_rank[i];
+      } else if (ncon == min_ncon && _canonical_rank[i] > rank_first_atom) {
+        first_atom = i;
+        rank_first_atom = _canonical_rank[i];
+      }
     }
   }
 
-  if (INVALID_ATOM_NUMBER != first_atom)
+  if (INVALID_ATOM_NUMBER != first_atom) {
     return 1;
+  }
 
-  if (chiral_atom_if_we_need_to >= 0)
-  {
+  if (chiral_atom_if_we_need_to >= 0) {
     first_atom = chiral_atom_if_we_need_to;
     return 1;
   }
@@ -501,8 +532,7 @@ Atom_Chooser_Unique::next_atom(const Molecule & m, const int * zorder,
 
     const int rj = _canonical_rank[j];
 
-    if (bcount > highest_bond_count)
-    {
+    if (bcount > highest_bond_count) {
       highest_bond_count = bcount;
       zdefault = j;
       hbc_save = rj;
@@ -518,8 +548,7 @@ Atom_Chooser_Unique::next_atom(const Molecule & m, const int * zorder,
     }
   }
 
-  if (INVALID_ATOM_NUMBER != zdefault)
-  {
+  if (INVALID_ATOM_NUMBER != zdefault) {
     b = zdefault;
 
 #ifdef DEBUG_UNIQUE_SMILES_ORDERING
@@ -1891,8 +1920,7 @@ Molecule::_identify_first_smiles_bond(atom_number_t zatom,
 int
 Molecule::_construct_smiles(const Fragment_Information & frag_info,
                             Smiles_Information & smi_info,
-                            const int * include_atom)
-{
+                            const int * include_atom) {
   int * already_done = new_int(_number_elements); std::unique_ptr<int[]> free_already_done(already_done);
 
   smi_info.prepare_to_build_smiles(_number_elements);
@@ -1900,8 +1928,7 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
   const int * zorder = smi_info.smiles_order();
 
 #ifdef DEBUG_SMILES_FORMATION
-  for (int i = 0; i < _number_elements; i++)
-  {
+  for (int i = 0; i < _number_elements; i++) {
     cerr << "Atom " << i << " (" << atomic_symbol(i) << ") order is " << zorder[i];
     if (include_atom != nullptr)
       cerr << " include_atom " << include_atom[i];
@@ -1913,7 +1940,8 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
 
   int n = smiles_start_atom.number_elements();
 
-  assert(n == frag_info.number_fragments());   // must be a smiles start atom in each fragment
+  // If we are processing all atoms, must be a smiles start atom in each fragment
+  //assert(include_atom == nullptr && n == frag_info.number_fragments());
 
   int rc = 0;
 
@@ -1921,8 +1949,7 @@ Molecule::_construct_smiles(const Fragment_Information & frag_info,
 
 #ifdef DEBUG_SMILES_FORMATION
   cerr << "Generating smiles for molecule with " << frag_info.number_fragments() << " fragments\n";
-  for (int i = 0; i < _number_elements; i++)
-  {
+  for (int i = 0; i < _number_elements; i++) {
     cerr << " atom " << i << " '" << smarts_equivalent_for_atom(i) << " in fragment " << frag_info.fragment_membership(i);
     if (include_atom != nullptr)
       cerr << " include " << include_atom[i];
@@ -2186,8 +2213,9 @@ Molecule::_unique_smiles(const Fragment_Information & frag_info,
     cerr << "Canonical rank already computed\n";
 #endif
 
-  if (! sccr.arrays_allocated())
+  if (! sccr.arrays_allocated()) {
     compute_canonical_ranking(sccr, include_atom);
+  }
 
 #ifdef DEBUG_UNIQUE_SMILES
   cerr << "Canonical rank computed\n";
@@ -2262,8 +2290,9 @@ Molecule::_unique_smiles(const Fragment_Information & frag_info,
     cerr << "Canonical rank already computed\n";
 #endif
 
-  if (! sccr.arrays_allocated())
+  if (! sccr.arrays_allocated()) {
     compute_canonical_ranking(sccr, include_atom);
+  }
 
 #ifdef DEBUG_UNIQUE_SMILES
   cerr << "Canonical rank computed\n";
@@ -2411,8 +2440,7 @@ Molecule::unique_smiles(Smiles_Information & smi_info,
 {
   assert(include_atom != nullptr);
 
-  if (0 == _number_elements)
-  {
+  if (0 == _number_elements) {
     _smiles_information.make_empty();
     return _smiles_information.smiles();
   }
@@ -2423,13 +2451,13 @@ Molecule::unique_smiles(Smiles_Information & smi_info,
 
   Hold_and_Restore_Global_Settings hrgs(1, 1);
 
-  if (hrgs.aromaticity_changed())
+  if (hrgs.aromaticity_changed()) {
     compute_aromaticity();
+  }
 
   Fragment_Information frag_info;
 
-  if (! compute_fragment_information(frag_info, include_atom))
-  {
+  if (! compute_fragment_information(frag_info, include_atom)) {
     cerr << "Molecule::unique_smiles:cannot compute fragment info for subset\n";
     smi_info.set_error();
     return smi_info.smiles();
@@ -2437,13 +2465,15 @@ Molecule::unique_smiles(Smiles_Information & smi_info,
 
   Symmetry_Class_and_Canonical_Rank sccr;
 
-  if (! sccr.allocate_arrays(_number_elements))
+  if (! sccr.allocate_arrays(_number_elements)) {
     return smi_info.set_error();
+  }
 
   compute_canonical_ranking(sccr, include_atom);
 
-  if (include_cis_trans_in_smiles())
+  if (include_cis_trans_in_smiles()) {
     _adjust_cis_trans_bonds_to_canonical_form(sccr.canonical_rank());
+  }
 
 // _smiles_choose_unique_*_atom need to have the molecule's canonical order fixed. Make
 // a copy of any existing data in _symmetry_class_and_canonical_rank and store the
