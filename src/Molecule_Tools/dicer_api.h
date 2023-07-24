@@ -7,6 +7,7 @@
 #include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iwstring/iwhash.h"
 
+#include "Molecule_Lib/etrans.h"
 #include "Molecule_Lib/molecule.h"
 
 #include "Molecule_Tools/dicer_api.pb.h"
@@ -58,8 +59,13 @@ class DicerApi {
 
     int _skip_bad_valence;
 
-    absl::flat_hash_map<IWString, uint32_t, IWStringHash> _frag_count;
+    // Translate from unique smiles to a bit number.
     absl::flat_hash_map<IWString, uint32_t, IWStringHash> _frag_to_ndx;
+
+    // Translate from bit number to various properties.
+    absl::flat_hash_map<uint32_t,  uint32_t> _frag_count;
+    absl::flat_hash_map<uint32_t, uint32_t> _atoms_in_frag;
+    absl::flat_hash_map<uint32_t, IWString> _ndx_to_frag;
 
   // private functions.
     bool OkSize(int matoms) const;
@@ -90,6 +96,12 @@ class DicerApi {
     int Initialise(Command_Line& cl);
 
     int Process(Molecule& m, Sparse_Fingerprint_Creator& sfc);
+
+    uint32_t nbits() const {
+      return _ndx_to_frag.size();
+    }
+
+    const IWString& Smiles(uint32_t bit) const;
 
     int Report(std::ostream& output) const;
 };

@@ -366,6 +366,34 @@ class Ring_Number_Manager;
 
 class Chiral_Centre;
 
+class BinaryMolecularFormula {
+  enum Atype {
+    kAliphaticCarbon = 0,
+    kAromaticCarbon = 1,
+    kAliphaticNitrogen = 2,
+    kAromaticNitrogen = 3,
+    kOxygen = 4,
+    kFluorine = 5,
+    kSulphur = 6,
+    kHeavyHalogen = 7
+  };
+  private:
+    union Counts {
+      uint8_t _count[8];
+      uint64_t _as_int;
+    };
+    Counts _data;
+
+    uint32_t _hcount;
+
+  public:
+    BinaryMolecularFormula(Molecule& m);
+
+    uint64_t ElementCounts() const {
+      return _data._as_int;
+    }
+};
+
 /*
   We want various degrees of control over how implicit Hydrogens are added
 */

@@ -5681,3 +5681,40 @@ Molecule::atom_with_atom_map_number(const int n) const
 
   return INVALID_ATOM_NUMBER;
 }
+
+BinaryMolecularFormula::BinaryMolecularFormula(Molecule& m) {
+  const int matoms = m.natoms();
+
+  _data._as_int = 0;
+  m.compute_aromaticity_if_needed();
+  _hcount = 0;
+  for (int i = 0; i < matoms; ++i) {
+    _hcount += m.hcount(i);
+
+    atomic_number_t z = m.atomic_number(i);
+    if (z == 6) {
+      if (m.is_aromatic(i)) {
+        ++_data._count[Atype::kAromaticCarbon];
+      } else {
+        ++_data._count[Atype::kAliphaticCarbon];
+      }
+    } else if (z == 7) {
+      if (m.is_aromatic(i)) {
+        ++_data._count[Atype::kAromaticNitrogen];
+      } else {
+        ++_data._count[Atype::kAliphaticNitrogen];
+      }
+    } else if (z == 8) {
+      ++_data._count[Atype::kOxygen];
+    } else if (z == 9) {
+      ++_data._count[Atype::kFluorine];
+    } else if (z == 16) {
+      ++_data._count[Atype::kSulphur];
+    } else if (z == 17 || z == 35 || z == 53) {
+      ++_data._count[Atype::kHeavyHalogen];
+    } else {
+      _data._as_int = 0;
+      return;
+    }
+  }
+}

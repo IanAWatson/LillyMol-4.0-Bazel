@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 #include "Molecule_Tools/dicer_api.h"
@@ -23,6 +24,11 @@ CurrentMoleculeData::SetMaxBondsBroken(int nb, int natoms) {
   }
 
   return nb;
+}
+
+uint32_t
+AtomsInSubset(const int * subset, int matoms) {
+  return std::accumulate(subset, subset + matoms, 0);
 }
 
 DicerApi::DicerApi() {
@@ -398,21 +404,19 @@ DicerApi::ProcessFragment(Molecule& m,
 
   const IWString& usmi = m.unique_smiles(smiles_info, subset);
 
-  auto iter_count = _frag_count.find(usmi);
-  if (iter_count == _frag_count.end()) {
-    _frag_count[usmi] = 1;
-  } else {
-    iter_count->second = iter_count->second + 1;
-  }
-
   uint32_t bit;
 
   auto iter_ndx = _frag_to_ndx.find(usmi);
+
   if (iter_ndx == _frag_to_ndx.end()) {
     bit = _frag_to_ndx.size();
     _frag_to_ndx[usmi] = bit;
+    _atoms_in_frag[bit] = AtomsInSubset(subset, m.natoms());
+    _ndx_to_frag[bit] = usmi;
+    _frag_count[bit] = 1;
   } else {
     bit = iter_ndx->second;
+    ++_frag_count[bit];
   }
 
   sfc.hit_bit(bit);
@@ -439,6 +443,18 @@ DicerApi::FinalProcessing(Molecule& m,
                 Sparse_Fingerprint_Creator& sfc) {
   // cerr << "Done " << m.name() << " set " << sfc.nbits() << '\n';
   return 1;
+}
+
+const IWString&
+DicerApi::Smiles(uint32_t bit) const {
+  static IWString empty_string;
+
+  auto iter = _ndx_to_frag.find(bit);
+  if (iter == _ndx_to_frag.end()) {
+    return empty_string;
+  }
+
+  return iter->second;
 }
 
 }  // namespace dicer_api
