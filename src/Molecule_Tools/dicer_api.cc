@@ -457,4 +457,14 @@ DicerApi::Smiles(uint32_t bit) const {
   return iter->second;
 }
 
+uint32_t
+DicerApi::AtomsInFrag(uint32_t bit) const {
+  auto iter = _atoms_in_frag.find(bit);
+  if (iter == _atoms_in_frag.end()) {
+    return 0;
+  }
+
+  return iter->second;
+}
+
 }  // namespace dicer_api

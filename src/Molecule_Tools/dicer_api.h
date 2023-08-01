@@ -100,6 +100,8 @@ class DicerApi {
     uint32_t nbits() const {
       return _ndx_to_frag.size();
     }
+    
+    uint32_t AtomsInFrag(uint32_t bit) const;
 
     const IWString& Smiles(uint32_t bit) const;
 

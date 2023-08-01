@@ -22,6 +22,7 @@ class FingerprintWriter {
       kSparse,
       kFixed,
       kDescriptor,
+      // Original bit numbers.
       kSvml,
     };
 
@@ -61,7 +62,7 @@ class FingerprintWriter {
     int WriteFixedFingerprint(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
     int WriteSparseFingerprint(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
     int WriteDescriptors(const IWString& mname, const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
-    int WriteSvml(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
+    int WriteSvml(const IWString& mname, const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output);
 
     int ChangeOutputTypeIfNeeded(const IWString& new_tag);
 
@@ -78,7 +79,8 @@ class FingerprintWriter {
     }
 
     int IsWritingDescriptors() const {
-      return _output_type == OutputType::kDescriptor;
+      return _output_type == OutputType::kDescriptor ||
+             _output_type == OutputType::kSvml;
     }
 
     int IsWritingSvml() const {

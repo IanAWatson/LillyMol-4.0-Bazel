@@ -165,7 +165,7 @@ process_to_streams (const const_IWSubstring & buffer,
     if (ntokens == s->tokens())
     {
       if (token_delimiter == output_token_delimiter)
-        *s << buffer << endl;
+        *s << buffer << '\n';
       else
         write_translate_to_output_delimiter(buffer, *s);
       return 1;
@@ -181,8 +181,8 @@ template class resizable_array_base<Stream_for_Columns *>;
 static void
 usage(int rc, int showDelimiterOptions = 0)
 {
-  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << endl;
-//cerr << "sizeof (off_t) " << sizeof (off_t) << " sizeof (streampos) " << sizeof (streampos) << endl;
+  cerr << __FILE__ << " compiled " << __DATE__ << " " << __TIME__ << '\n';
+//cerr << "sizeof (off_t) " << sizeof (off_t) << " sizeof (streampos) " << sizeof (streampos) << '\n';
   cerr << "Usage: " << prog_name << " <options> <fname1> <fname2> ...\n";
   cerr << "  -n <number>       process only the first <number> records from each file\n";
   cerr << "  -e <offset>       start processing <offset> bytes before EOF\n";
@@ -383,7 +383,7 @@ tcount(iwstring_data_source & input)
       if (abort_on_different_token_count)
       {
         cerr << "Line " << input.lines_read() << " has " << tokens << " tokens\n";
-        cerr << "Previous line had " << prev_token_count << endl;
+        cerr << "Previous line had " << prev_token_count << '\n';
         non_rectangular_files_found++;
         return 0;
       }
@@ -393,7 +393,7 @@ tcount(iwstring_data_source & input)
       if (report_different_token_count)
       {
         cerr << "Token count mismatch line " << input.lines_read() << ". " <<
-                tokens << " vs " << prev_token_count << endl;
+                tokens << " vs " << prev_token_count << '\n';
 
         reported = 1;
       }
@@ -402,7 +402,7 @@ tcount(iwstring_data_source & input)
     if (report_different_from_first_record && tokens != tokens_on_first_record)
     {
       cerr << "Token count mismatch, line " << input.lines_read() << 
-              ". First record had " << tokens_on_first_record << endl;
+              ". First record had " << tokens_on_first_record << '\n';
 
       reported++;
     }
@@ -414,13 +414,13 @@ tcount(iwstring_data_source & input)
     if (reported)
     {
       if (write_reported_records_to_cerr)
-        cerr << buffer << endl;
+        cerr << buffer << '\n';
 
       if (new_fname_reported.length())
-        new_fstream_reported << buffer << endl;
+        new_fstream_reported << buffer << '\n';
     }
     else if (new_fname_unreported.length())
-      new_fstream_unreported << buffer << endl;
+      new_fstream_unreported << buffer << '\n';
 
     if (records_to_process > 0 && input.lines_read() > records_to_process)
       break;
@@ -437,16 +437,21 @@ tcount(iwstring_data_source & input)
 
   int looks_like_R = header_record_has_only_different_token_count(token_counts, tokens_on_first_record);
 
-  for (int i = 0; i < nt; i++)
-  {
+  Accumulator_Int<uint32_t> acc;
+  for (int i = 0; i < nt; i++) {
     if (0 == token_counts[i])
       continue;
 
     cerr << token_counts[i] << " records had " << i << " tokens";
+    acc.extra(i, token_counts[i]);
     if (i == tokens_on_first_record && looks_like_R)
       cerr << " HEADER";
-    cerr << endl;
+    cerr << '\n';
     rc++;
+  }
+
+  if (acc.minval() < acc.maxval()) {
+    cerr << "Ave tokens per record " << acc.average() << '\n';
   }
 
   return rc - 1;
@@ -463,7 +468,7 @@ tcount (const char * fname)
   }
 
   if (verbose)
-    cerr << fname << endl;
+    cerr << fname << '\n';
 
   input.set_record_delimiter(record_delimiter);
 
@@ -473,7 +478,7 @@ tcount (const char * fname)
 
     if (fs < offset_from_eof)
     {
-      cerr << "Requested offset from EOF " << offset_from_eof << " larger than file " << fs << endl;
+      cerr << "Requested offset from EOF " << offset_from_eof << " larger than file " << fs << '\n';
       return 0;
     }
 
@@ -487,7 +492,7 @@ tcount (const char * fname)
     const_IWSubstring notused;
     if (! input.next_record(notused))
     {
-      cerr << "Yipes, could not read record from offset " << tmp << endl;
+      cerr << "Yipes, could not read record from offset " << tmp << '\n';
       return 0;
     }
   }
@@ -501,7 +506,7 @@ tcount (const char * fname)
     if (record_length.n() > 1)
       cerr << " ave " << record_length.average();
   }
-  cerr << endl;
+  cerr << '\n';
 
   return rc;
 }
@@ -737,8 +742,9 @@ tcount (int argc, char ** argv)
       cerr << "Will echo reported records to stderr\n";
   }
 
-  if (0 == cl.number_elements())
+  if (cl.empty()) {
     usage(1);
+  }
 
   if (cl.option_present('C'))
   {
@@ -776,10 +782,6 @@ main (int argc, char ** argv)
   prog_name = argv[0];
 
   int rc = tcount(argc, argv);
-
-#ifdef USE_IWMALLOC
-  terse_malloc_status (stderr);
-#endif
 
   return rc;
 }

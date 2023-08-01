@@ -41,6 +41,7 @@ FingerprintWriter::DisplayUsage(char flag,
   output << " -" << flag << " array          output is descriptor file form\n";
   output << " -" << flag << " fixed          output is fixed width fingerprint form\n";
   output << " -" << flag << " sparse         output is sparse fingerprint form\n";
+  output << " -" << flag << " svml           output is svml form\n";
 }
 
 int
@@ -202,7 +203,7 @@ FingerprintWriter::WriteFingerprint(const IWString& mname,
     case OutputType::kDescriptor:
       return WriteDescriptors(mname, sfc, output);
     case OutputType::kSvml:
-      return WriteSvml(sfc, output);
+      return WriteSvml(mname, sfc, output);
     default:
       cerr << "FingerprintWriter::WriteFixedFingerprint:what to write?\n";
       return 0;
@@ -256,8 +257,11 @@ FingerprintWriter::WriteFixedFingerprint(
 }
 
 int
-FingerprintWriter::WriteSvml(const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output) {
+FingerprintWriter::WriteSvml(const IWString& mname,
+                             const Sparse_Fingerprint_Creator& sfc, IWString_and_File_Descriptor& output) {
   static constexpr char kColon = ':';
+
+  output << mname;
 
   const auto n = sfc.nbits();
 
@@ -265,7 +269,11 @@ FingerprintWriter::WriteSvml(const Sparse_Fingerprint_Creator& sfc, IWString_and
 
   int ndx = 0;
   for (const auto& [bit, count] : sfc.bits_found()) {
-    for_sort[ndx].first = bit;
+    if (_nbits > 0) {
+      for_sort[ndx].first = bit % _nbits;
+    } else {
+      for_sort[ndx].first = bit;
+    }
     for_sort[ndx].second = count;
     ++ndx;
   }
@@ -276,9 +284,7 @@ FingerprintWriter::WriteSvml(const Sparse_Fingerprint_Creator& sfc, IWString_and
   });
 
   for (uint32_t i = 0; i < n; ++i) {
-    if (i > 0) {
-      output << _output_column_separator;
-    }
+    output << _output_column_separator;
     output << for_sort[i].first << kColon << for_sort[i].second;
   }
 

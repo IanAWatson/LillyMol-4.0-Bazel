@@ -6,6 +6,7 @@
 
 #define IWQSORT_IMPLEMENTATION
 #define IWQSORT_FO_IMPLEMENTATION
+#define RESIZABLE_ARRAY_IMPLEMENTATION
 #include "Foundational/cmdline/cmdline.h"
 #include "Foundational/iwmisc/sparse_fp_creator.h"
 #include "Foundational/iwqsort/iwqsort.h"
@@ -146,6 +147,41 @@ struct BitCount {
   }
 };
 
+class MoleculeAndFp {
+  private:
+    Molecule * _mol;
+
+    Sparse_Fingerprint_Creator _sfc;
+
+  public:
+    MoleculeAndFp(Molecule* m);
+    ~MoleculeAndFp();
+
+    // Set and assume ownership.
+    void SetMolecule(Molecule* m) {
+      _mol = m;
+    }
+    const Molecule& molecule() const {
+      return *_mol;
+    }
+
+    Sparse_Fingerprint_Creator& sfc() {
+      return _sfc;
+    }
+    const Sparse_Fingerprint_Creator& sfc() const {
+      return _sfc;
+    }
+};
+
+MoleculeAndFp::MoleculeAndFp(Molecule* m) : _mol(m) {
+}
+
+MoleculeAndFp::~MoleculeAndFp() {
+  if (_mol != nullptr) {
+    delete _mol;
+  }
+}
+
 class BitCountComparitor {
   public:
     int operator()(const BitCount& bc1, const BitCount& bc2) const {
@@ -180,7 +216,7 @@ class BitCounts {
       return _nbits;
     }
 
-    const BitCount* bit_count() {
+    const BitCount* bit_count() const {
       return _bit_count;
     }
 
@@ -219,26 +255,43 @@ BitCounts::~BitCounts() {
 
 int
 MaxCommonSubstructure(const DicerApi& dicer_api,
+                      MoleculeAndFp& mfp1,
+                      MoleculeAndFp& mfp2,
                       const BitCounts& fp1,
                       const BitCounts& fp2,
                       IWString_and_File_Descriptor& output) {
-  if (fp1.nbits() < fp2.nbits()) {
-    return MaxCommonSubstructure(dicer_api, fp2, fp1, output);
-  }
-
   uint32_t nb1 = fp1.nbits();
+  if (nb1 == 0) {
+    return 1;
+  }
   uint32_t nb2 = fp2.nbits();
+  if (nb2 == 0) {
+    return 1;
+  }
   uint32_t iptr = 0;
   uint32_t jptr = 0;
-  while (fp1.bit_count[iptr] < fp1.bit_count[jptr]) {
-  }
+  uint32_t bit1 = fp1.bit_count()[iptr].bit;
+  uint32_t bit2 = fp2.bit_count()[jptr].bit;
+  int in_common = 0;
+  do
+    if (bit1 == bit2) {
+      ++iptr;
+      ++jptr;
+    } else if (bit1 < bit2) {
+      for ( ; bit1 < bit2 && jptr < nb2; ++jptr) {
+        bit2 = fp2.bit_count()[jptr].bit;
+      }
+    } else {
+    }
+
+  } while (iptr < nb1 && jptr < nb2);
 
   return 1;
 }
 
 int
 MaxCommonSubstructure(const DicerApi& dicer_api,
-                      resizable_array_p<Sparse_Fingerprint_Creator>& fingerprint,
+                      resizable_array_p<MoleculeAndFp>& molfp,
                       IWString_and_File_Descriptor& output) {
   uint32_t nbits = dicer_api.nbits();
   std::unique_ptr<BitCount[]> bit_set = std::make_unique<BitCount[]>(nbits);
@@ -247,11 +300,12 @@ MaxCommonSubstructure(const DicerApi& dicer_api,
     bit_set[i].bit = i;
   }
 
-  for (const Sparse_Fingerprint_Creator* fp : fingerprint) {
-    for (auto [bit, _] : fp->bits_found()) {
+  for (const MoleculeAndFp* mfp : molfp) {
+    for (const auto [bit, _] : mfp->sfc().bits_found()) {
       ++bit_set[bit].count;
     }
   }
+
   BitCountComparitor cmp;
 #ifdef DEBUG_MAX_COMMON_SUBSTRUCTURE
   cerr << "For sorting\n";
@@ -266,16 +320,17 @@ MaxCommonSubstructure(const DicerApi& dicer_api,
     cerr << "Bit " << bit << " count " << bit_set[i].count << ' ' << dicer_api.Smiles(bit) << '\n';
   }
 
-  const uint32_t nmolecules = fingerprint.size();
+  const uint32_t nmolecules = molfp.size();
 
   std::unique_ptr<BitCounts[]> bit_counts = std::make_unique<BitCounts[]>(nmolecules);
   for (uint32_t i = 0; i < nmolecules; ++i) {
-    bit_counts[i].Initialise(i, *fingerprint[i]);
+    bit_counts[i].Initialise(i, molfp[i]->sfc());
   }
 
   for (uint32_t i = 0; i < nmolecules; ++i) {
+    cerr << "pair " << i << '\n';
     for (uint32_t j = i + 1; j < nmolecules; ++j) {
-      MaxCommonSubstructure(dicer_api, bit_counts[i], bit_counts[j], output);
+      MaxCommonSubstructure(dicer_api, *molfp[i], *molfp[j], bit_counts[i], bit_counts[j], output);
     }
   }
 
@@ -285,10 +340,9 @@ MaxCommonSubstructure(const DicerApi& dicer_api,
 int
 MaxCommonSubstructure(DicerApi& dicer,
             Molecule& m,
-            resizable_array_p<Sparse_Fingerprint_Creator>& fingerprint) {
-  std::unique_ptr<Sparse_Fingerprint_Creator> sfc = std::make_unique<Sparse_Fingerprint_Creator>();
-  dicer.Process(m, *sfc);
-  fingerprint << sfc.release();
+            MoleculeAndFp& molfp) {
+  Sparse_Fingerprint_Creator& sfc = molfp.sfc();
+  dicer.Process(m, sfc);
 
   return 1;
 }
@@ -306,16 +360,19 @@ int
 MaxCommonSubstructure(LocalOptions& local_options,
       DicerApi& dicer,
       data_source_and_type<Molecule>& input,
-      resizable_array_p<Sparse_Fingerprint_Creator>& fingerprint) {
+      resizable_array_p<MoleculeAndFp>& molfp) {
   Molecule * m;
   while ((m = input.next_molecule()) != nullptr) {
-    std::unique_ptr<Molecule> free_m(m);
-
     if (! local_options.Preprocess(*m)) {
-      return 0;
+      delete m;
+      continue;
     }
 
-    MaxCommonSubstructure(dicer, *m, fingerprint);
+    std::unique_ptr<MoleculeAndFp> q = std::make_unique<MoleculeAndFp>(m);
+
+    MaxCommonSubstructure(dicer, *m, *q);
+
+    molfp << q.release();
   }
 
   return 1;
@@ -362,7 +419,7 @@ int
 MaxCommonSubstructure(LocalOptions& local_options, DicerApi& dicer,
             const char * fname,
             FileType input_type,
-            resizable_array_p<Sparse_Fingerprint_Creator>& fingerprint) {
+            resizable_array_p<MoleculeAndFp>& molfp) {
   if (input_type == FILE_TYPE_INVALID) {
     input_type = discern_file_type_from_name(fname);
   }
@@ -373,7 +430,7 @@ MaxCommonSubstructure(LocalOptions& local_options, DicerApi& dicer,
     return 0;
   }
 
-  return MaxCommonSubstructure(local_options, dicer, input, fingerprint);
+  return MaxCommonSubstructure(local_options, dicer, input, molfp);
 }
 
 int
@@ -431,17 +488,17 @@ Main(int argc, char** argv) {
 
   IWString_and_File_Descriptor output(1);
   if (do_mcs) {
-    resizable_array_p<Sparse_Fingerprint_Creator> fingerprint;
+    resizable_array_p<MoleculeAndFp> molfp;
     for (const char* fname : cl) {
-      if (! MaxCommonSubstructure(local_options, dicer, fname, input_type, fingerprint)) {
+      if (! MaxCommonSubstructure(local_options, dicer, fname, input_type, molfp)) {
         cerr << "Fatal error processing '" << fname << "'\n";
         return 1;
       }
-      MaxCommonSubstructure(dicer, fingerprint, output);
     }
     if (verbose) {
-      cerr << "Read " << fingerprint.size() << " fingerprints\n";
+      cerr << "Read " << molfp.size() << " fingerprints\n";
     }
+    MaxCommonSubstructure(dicer, molfp, output);
   } else {
     for (const char* fname : cl) {
       if (! Dicer(local_options, dicer, fname, input_type, output)) {
