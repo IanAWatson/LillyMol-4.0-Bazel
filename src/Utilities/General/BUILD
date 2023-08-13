@@ -33,6 +33,27 @@ ruby_proto_compile(
 )
 
 proto_library(
+    name = "descriptor_model_proto",
+    srcs = [
+        "descriptor_model.proto",
+    ],
+)
+
+cc_proto_library(
+    name = "descriptor_model_cc_proto",
+    deps = [
+        "descriptor_model_proto",
+    ],
+)
+
+ruby_proto_compile(
+    name = "descriptor_model_rb_proto",
+    protos = [
+        "descriptor_model_proto",
+    ],
+)
+
+proto_library(
     name = "feature_scaling_proto",
     srcs = [
         "feature_scaling.proto",
@@ -137,6 +158,21 @@ cc_binary(
     ],
     linkopts = [
         "-lz",
+    ],
+)
+
+cc_binary(
+    name = "descriptor_file_to_svml",
+    srcs = [
+        "descriptor_file_to_svml.cc",
+    ],
+    deps = [
+        "descriptor_model_cc_proto",
+        "//Foundational/cmdline:iwcmdline",
+        "//Foundational/data_source:iwstring_data_source",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iwmisc:proto_support",
+        "//Foundational/iwstring:iwstring",
     ],
 )
 
