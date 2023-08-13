@@ -5682,13 +5682,17 @@ Molecule::atom_with_atom_map_number(const int n) const
   return INVALID_ATOM_NUMBER;
 }
 
-BinaryMolecularFormula::BinaryMolecularFormula(Molecule& m) {
+BinaryMolecularFormula::BinaryMolecularFormula(Molecule& m,
+                const int* include_atom) {
   const int matoms = m.natoms();
 
   _data._as_int = 0;
   m.compute_aromaticity_if_needed();
   _hcount = 0;
   for (int i = 0; i < matoms; ++i) {
+    if (include_atom != nullptr && ! include_atom[i]) {
+      continue;
+    }
     _hcount += m.hcount(i);
 
     atomic_number_t z = m.atomic_number(i);

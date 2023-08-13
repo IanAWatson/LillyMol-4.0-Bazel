@@ -387,7 +387,8 @@ class BinaryMolecularFormula {
     uint32_t _hcount;
 
   public:
-    BinaryMolecularFormula(Molecule& m);
+    // If only a subset of the molecule is being examined, subset is non null;
+    BinaryMolecularFormula(Molecule& m, const int* subset);
 
     uint64_t ElementCounts() const {
       return _data._as_int;
