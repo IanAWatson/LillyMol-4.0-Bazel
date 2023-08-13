@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <limits>
+#include <string_view>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -837,7 +838,8 @@ iwstring_data_source::skip_past(const char * pattern)
         if (0 == strlen(pattern))
                 return 0;
 
-        re2::StringPiece tmp(_buffer.data(), _buffer.length());
+        std::string_view tmp(_buffer.data(), _buffer.length());
+        //re2::StringPiece tmp(_buffer.data(), _buffer.length());
 
         if (_record_buffered && RE2::PartialMatch(tmp, pattern))
         {
@@ -847,7 +849,7 @@ iwstring_data_source::skip_past(const char * pattern)
 
         while (_fetch_record())
         {
-          tmp.set(_buffer.data(), _buffer.size());
+          std::string_view tmp(_buffer.data(), _buffer.size());
           if (RE2::PartialMatch(tmp, pattern))
             return 1;
         }

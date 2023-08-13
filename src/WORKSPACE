@@ -12,6 +12,14 @@ git_repository(
 )
 
 http_archive(
+    name = "x86-simd-sort",
+    urls = [
+        "https://github.com/intel/x86-simd-sort",
+    ],
+    strip_prefix = "include",
+)
+
+http_archive(
     name = "pybind11",
     build_file = "@pybind11_bazel//:pybind11.BUILD",
     strip_prefix = "pybind11-2.9.0",
@@ -20,16 +28,6 @@ http_archive(
     ],
 )
 
-# The next were all copied from Riegeli's WORKSPACE to enable riegeli
-#http_archive(
-#    name = "com_google_absl",
-#    sha256 = "6a6eee57ce3375e26d49c542d191ceb90822984d5b587f0ea8e0d0c77016b02b",
-#    strip_prefix = "abseil-cpp-20200225.3",
-#    urls = [
-#        "https://mirror.bazel.build/github.com/abseil/abseil-cpp/archive/20200225.3.zip",
-#        "https://github.com/abseil/abseil-cpp/archive/20200225.3.zip",  # 2020-10-09
-#    ],
-#)
 http_archive(
     name = "highwayhash",
     build_file = "//third_party:highwayhash.BUILD",
@@ -39,14 +37,6 @@ http_archive(
         "https://mirror.bazel.build/github.com/google/highwayhash/archive/276dd7b4b6d330e4734b756e97ccfb1b69cc2e12.zip",
         "https://github.com/google/highwayhash/archive/276dd7b4b6d330e4734b756e97ccfb1b69cc2e12.zip",  # 2019-02-22
     ],
-)
-
-
-
-
-local_repository(
-    name = 'benchmark',
-    path = "/home/ian/pub/benchmark",
 )
 
 local_repository(
@@ -214,8 +204,8 @@ llvm_register_toolchains()
 # taken from https://rules-proto-grpc.com/en/latest/lang/ruby.html
 http_archive(
     name = "rules_proto_grpc",
-    url = "https://github.com/rules-proto-grpc/rules_proto_grpc/archive/refs/tags/4.3.0.tar.gz",
-    strip_prefix = "rules_proto_grpc-4.3.0",
+    url = "https://github.com/rules-proto-grpc/rules_proto_grpc/archive/refs/tags/4.4.0.tar.gz",
+    strip_prefix = "rules_proto_grpc-4.4.0",
 )
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
