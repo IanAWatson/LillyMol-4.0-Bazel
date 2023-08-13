@@ -383,6 +383,19 @@ cc_binary(
 )
 
 cc_binary(
+    name = "gfp_modal_fingerprint",
+    srcs = [
+        "gfp_modal_fingerprint.cc",
+    ],
+    deps = [
+        ":gfp",
+        "//Foundational/cmdline_v2:cmdline_v2",
+        "//Foundational/iwmisc:sparse_fp_creator",
+        "@com_google_absl//absl/container:flat_hash_map",
+    ],
+)
+
+cc_binary(
     name = "gfp_pairwise_distances",
     srcs = [
         "gfp_pairwise_distances.cc",

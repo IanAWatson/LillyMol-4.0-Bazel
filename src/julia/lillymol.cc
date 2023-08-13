@@ -1240,7 +1240,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
       }
     )
     .method("rings_in_fragment", &Molecule::rings_in_fragment)
-#define DOES_NOT_WORK
+//#define DOES_NOT_WORK
 #ifdef DOES_NOT_WORK
     .method("create_components",
       [](Molecule& m, jlcxx::ArrayRef<jlcxx::BoxedValue<Molecule>> result) {

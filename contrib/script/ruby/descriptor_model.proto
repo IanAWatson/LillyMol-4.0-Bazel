@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package DescriptorModel;
+
+message NameToFeature {
+  // A mapping from descriptor name to feature number. Used when generating
+  // svm lite files.
+  optional string name = 1;
+  optional uint32 bit = 2;
+}
+message Model {
+  optional string model_file = 1;
+
+  optional string response = 2;
+
+  repeated NameToFeature xref = 3;
+}
+
