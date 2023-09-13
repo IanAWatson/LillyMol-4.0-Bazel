@@ -4,7 +4,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 #load("//build_deps/py:python_configure.bzl", "python_configure")
 #python_configure(name = "local_config_python")
 
-# pybond11
+# pybind11
 git_repository(
     name = "pybind11_bazel",
     commit = "f22df0e57ba664c2d3cf439ddfb7f8804e3f36c1",
@@ -41,14 +41,6 @@ http_archive(
     ],
 )
 
-
-
-
-local_repository(
-    name = 'benchmark',
-    path = "/home/ian/pub/benchmark",
-)
-
 local_repository(
     name = 'tensorflow',
     path = '/home/ian/pub/tensorflow',
@@ -81,54 +73,6 @@ http_archive(
 #   sha256 = "f82f3ddfb4e5e11fd34edc518cbf2943c6e7680a6144976eb33e97369af5453e",
     strip_prefix = "bazel-toolchain-master",
     urls = ["https://github.com/grailbio/bazel-toolchain/archive/master.tar.gz"],
-)
-
-# Does not work because the config file only gets produced by cmake
-#http_archive(
-#    name = "crc32",
-#    strip_prefix = "crc32c-main",
-#    urls = [
-#        "https://github.com/google/crc32c/archive/refs/heads/main.zip",
-#    ],
-#    build_file_content = """
-#cc_library(
-#    name = "crc32",
-#    srcs = glob(["src/*c", "src/*h"], exclude = ["src/*test*", "src/*benchmark*"]),
-#    hdrs = ["include/crc32c/crc32c.h"],
-#    copts = ["-iquote external/crc32", "-iquote external/crc32/include"],
-#
-#    visibility = ["//visibility:public"],
-#)
-#""",
-#)
-
-# Even with the config file generated, could never get it to compile
-#new_local_repository(
-#    name = "crc32",
-#    path = "/home/ian/pub/crc32c",
-#    build_file_content = """
-#cc_library(
-#    name = "crc32",
-#    visibility = ["//visibility:public"],
-#    srcs = glob(["src/*c", "src/*h"], exclude = ["src/*test*", "src/*benchmark*"]),
-#    hdrs = ["include/crc32c/crc32c.h"],
-#    copts = ["-iquote external/crc32/build/include", "-iquote build/include", "-iquote include", "-iquote src"],
-#)
-#""",
-#)
-
-new_local_repository(
-    name = "crc32",
-    path = "/home/ian/pub/crc32c",
-    build_file_content = """
-cc_library(
-    name = "crc32",
-    srcs = ["build/libcrc32c.a"],
-    strip_include_prefix = "include",
-    hdrs = ["include/crc32c/crc32c.h"],
-    visibility = ["//visibility:public"],
-)
-""",
 )
 
 new_local_repository(

@@ -6,7 +6,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "crc32c/crc32c.h"
+//#include "crc32c/crc32c.h"
+#include "absl/crc/crc32c.h"
 
 #include "Foundational/iwmisc/misc.h"
 
@@ -25,6 +26,11 @@ uint32_t
 MaskedCrc(uint32_t crc) {
   return ((crc >> 15) | (crc << 17)) + 0xa282ead8ul;
 }
+
+//uint32_t
+//MaskedCrc(absl::crc32c_t crc) {
+//  return ((static_cast<uint32_t>(crc) >> 15) | (static_cast<uint32_t>(crc) << 17)) + 0xa282ead8ul;
+//}
 
 void
 TFDataReader::DefaultValues() {
@@ -109,7 +115,9 @@ TFDataReader::GetLength() {
 #ifdef DEBUG_IW_TF_DATA
   cerr << "Length " << *lptr  << " crc " << *crc << '\n';
 #endif
-  uint32_t result = crc32c::Crc32c(reinterpret_cast<const char*>(lptr), sizeof_length);
+  absl::string_view tmp(reinterpret_cast<const char*>(lptr), sizeof_length);
+  // uint32_t result = crc32c::Crc32c(reinterpret_cast<const char*>(lptr), sizeof_length);
+  uint32_t result = static_cast<uint32_t>(absl::ComputeCrc32c(tmp));
   result = MaskedCrc(result);
   if (result != *crc) {
     cerr << "TFDataReader::GetLength:crc fails, length " << *lptr << '\n';
@@ -161,7 +169,9 @@ TFDataReader::Next() {
 
   const_IWSubstring result(_read_buffer.rawdata() + _next, *length);
 
-  const uint32_t crc_data = crc32c::Crc32c(result.data(), *length);
+  absl::string_view tmp(reinterpret_cast<const char*>(result.data()), *length);
+  uint32_t crc_data = static_cast<uint32_t>(absl::ComputeCrc32c(tmp));
+  // const uint32_t crc_data = crc32c::Crc32c(result.data(), *length);
   const uint32_t masked_crc = MaskedCrc(crc_data);
   const uint32_t * crc = reinterpret_cast<const uint32_t*>(_read_buffer.rawdata() + _next + *length);
   if (*crc != masked_crc) {
@@ -270,7 +280,9 @@ TFDataWriter::CommonWrite(const void * data, const uint64_t nbytes) {
     return 0;
   }
 
-  uint32_t crc = crc32c::Crc32c(p, nbytes);
+  //uint32_t crc = crc32c::Crc32c(p, nbytes);
+  absl::string_view tmp(reinterpret_cast<const char*>(p), nbytes);
+  uint32_t crc = static_cast<uint32_t>(absl::ComputeCrc32c(tmp));
   crc = MaskedCrc(crc);
   p = reinterpret_cast<const char *>(&crc);
   if (! _output.write(p, sizeof_crc)) {

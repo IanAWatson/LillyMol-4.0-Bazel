@@ -32,7 +32,7 @@ cc_library(
     deps = [
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwstring:iwstring",
-        "@crc32//:crc32",
+        "@com_google_absl//absl/crc:crc32c",
     ],
 )
 

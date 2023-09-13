@@ -458,11 +458,12 @@ Column_Condition::passes (Column_Data * cd)
 {
   Column_Data & mycd = cd[_column];
 
-  if (missing_value == mycd)
+  const_IWSubstring& tmp = mycd;
+  if (missing_value == tmp) {
     return missing_value_passes;
+  }
 
-  if (CC_OPERATOR_RX == _operator)
-  {
+  if (CC_OPERATOR_RX == _operator) {
     const_IWSubstring p = mycd;
 
 #ifdef DEBUG_RX_MATCHES
