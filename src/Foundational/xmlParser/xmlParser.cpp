@@ -1229,11 +1229,11 @@ char XMLNode::parseClearTag(void *px, void *_pClear)
 
 void XMLNode::exactMemory(XMLNodeData *d)
 {
-    if (d->pOrder)     d->pOrder=(int*)realloc(d->pOrder,(d->nChild+d->nText+d->nClear)*sizeof(int));
-    if (d->pChild)     d->pChild=(XMLNode*)realloc(d->pChild,d->nChild*sizeof(XMLNode));
-    if (d->pAttribute) d->pAttribute=(XMLAttribute*)realloc(d->pAttribute,d->nAttribute*sizeof(XMLAttribute));
-    if (d->pText)      d->pText=(XMLCSTR*)realloc(d->pText,d->nText*sizeof(XMLSTR));
-    if (d->pClear)     d->pClear=(XMLClear *)realloc(d->pClear,d->nClear*sizeof(XMLClear));
+    if (d->pOrder)     d->pOrder=(int*)realloc((void*)d->pOrder,(d->nChild+d->nText+d->nClear)*sizeof(int));
+    if (d->pChild)     d->pChild=(XMLNode*)realloc((void*)d->pChild,d->nChild*sizeof(XMLNode));
+    if (d->pAttribute) d->pAttribute=(XMLAttribute*)realloc((void*)d->pAttribute,d->nAttribute*sizeof(XMLAttribute));
+    if (d->pText)      d->pText=(XMLCSTR*)realloc((void*)d->pText,d->nText*sizeof(XMLSTR));
+    if (d->pClear)     d->pClear=(XMLClear *)realloc((void*)d->pClear,d->nClear*sizeof(XMLClear));
 }
 
 char XMLNode::maybeAddTxT(void *pa, XMLCSTR tokenPStr)
@@ -2107,7 +2107,7 @@ int XMLNode::detachFromParent(XMLNodeData *d)
     int i=0;
     while (((void*)(pa[i].d))!=((void*)d)) i++;
     d->pParent->nChild--;
-    if (d->pParent->nChild) memmove(pa+i,pa+i+1,(d->pParent->nChild-i)*sizeof(XMLNode));
+    if (d->pParent->nChild) memmove((void*)(pa+i),(void*)(pa+i+1),(d->pParent->nChild-i)*sizeof(XMLNode));
     else { free(pa); d->pParent->pChild=NULL; }
     return removeOrderElement(d->pParent,eNodeChild,i);
 }
@@ -2264,7 +2264,7 @@ void XMLNode::deleteAttribute(int i)
     XMLAttribute *p=d->pAttribute+i;
     free((void*)p->lpszName);
     if (p->lpszValue) free((void*)p->lpszValue);
-    if (d->nAttribute) memmove(p,p+1,(d->nAttribute-i)*sizeof(XMLAttribute)); else { free(p); d->pAttribute=NULL; }
+    if (d->nAttribute) memmove((void*) p,p+1,(d->nAttribute-i)*sizeof(XMLAttribute)); else { free(p); d->pAttribute=NULL; }
 }
 
 void XMLNode::deleteAttribute(XMLAttribute *a){ if (a) deleteAttribute(a->lpszName); }
@@ -2873,7 +2873,7 @@ unsigned char XMLParserBase64Tool::decode(XMLCSTR data, unsigned char *buf, int 
 void XMLParserBase64Tool::alloc(int newsize)
 {
     if ((!buf)&&(newsize)) { buf=malloc(newsize); buflen=newsize; return; }
-    if (newsize>buflen) { buf=realloc(buf,newsize); buflen=newsize; }
+    if (newsize>buflen) { buf=realloc((void*)buf,newsize); buflen=newsize; }
 }
 
 unsigned char *XMLParserBase64Tool::decode(XMLCSTR data, int *outlen, XMLError *xe)
