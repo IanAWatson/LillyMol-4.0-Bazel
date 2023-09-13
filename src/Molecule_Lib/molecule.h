@@ -754,6 +754,9 @@ class Molecule : private resizable_array_p<Atom>
 
     const Atom * atomi(atom_number_t) const;                 // the i'th atom
     const Atom & atom(atom_number_t) const;
+    const Atom& operator[](atom_number_t i) const {
+      return *_things[i];
+    }
     atom_number_t which_atom(const Atom * a) const { return index((Atom *) a);}
 
     int    atoms(const Atom **) const;                 // dangerous, use sparingly

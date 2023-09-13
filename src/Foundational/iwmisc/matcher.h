@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <optional>
 
 #include "Foundational/iwstring/iwstring.h"
 
@@ -101,6 +102,9 @@ class Matcher {
     template <typename C> bool AnyValue(C condition) const;
     // For each explicit value, update the value with `fn`.
     template <typename C> void UpdateValues(C fn);
+
+    // If this matcher has no min or max, and just a single value to match, return it.
+    std::optional<T> IsSingleValue() const;
 };
 
 #if (IW_IMPLEMENTATIONS_EXPOSED) || defined(MATCHER_IMPLEMENTATION)
@@ -790,6 +794,16 @@ Matcher<T>::UpdateValues(C fn) {
   }
 
   return;
+}
+
+template <typename T>
+std::optional<T>
+Matcher<T>::IsSingleValue() const {
+  if (_mask_and_int._mask[kSet]) {
+    return _single_value;
+  }
+
+  return std::nullopt;
 }
 
 

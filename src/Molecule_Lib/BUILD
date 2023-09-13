@@ -549,6 +549,9 @@ cc_library (
         ":iwmolecule",
         "@lemon//:lemon",
     ],
+    tags = [
+        "lemon",
+    ],
 )
 
 cc_library(

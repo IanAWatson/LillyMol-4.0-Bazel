@@ -195,3 +195,19 @@ load("@bazelruby_rules_ruby//ruby:deps.bzl", "rules_ruby_dependencies", "rules_r
 
 rules_ruby_dependencies()
 
+new_local_repository(
+    name = "lemon",
+    path="/home/ian/third_party/lemon_head/include",
+    build_file_content = """
+cc_library(
+    name = "lemon",
+    srcs = [
+    ],
+    hdrs = glob(
+        ["lemon/**/*.h"],
+    ),
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+""",
+)

@@ -745,6 +745,29 @@ class Substructure_Atom_Specifier
     const Min_Max_Specifier<int> & formal_charge () const { return _formal_charge;}
     const Min_Max_Specifier<int> & isotope () const { return _isotope;}
     const int & userAtomType () const { return _userAtomType;} 
+
+    // const getters for most of the properties.
+    const iwmatcher::Matcher<int>& ncon() const {
+      return _ncon;
+    }
+    const iwmatcher::Matcher<int>& get_nrings() const {
+      return _nrings;
+    }
+    const iwmatcher::Matcher<int>& ring_bond_count() const {
+      return _ring_bond_count;
+    }
+    const iwmatcher::Matcher<int>& ring_size() const {
+      return _ring_size;
+    }
+    const iwmatcher::Matcher<int>& hcount() const {
+      return _hcount;
+    }
+    const iwmatcher::Matcher<int>& attached_heteroatom_count() const {
+      return _attached_heteroatom_count;
+    }
+    const iwmatcher::Matcher<int>& unsaturation() const {
+      return _unsaturation;
+    }
 };
 
 class Substructure_Atom_Environment : public resizable_array_p<Substructure_Atom>
@@ -1082,6 +1105,9 @@ class Substructure_Atom : public Substructure_Atom_Specifier
 
     Substructure_Atom_Specifier * component(const int s) const { return _components[s];}
     int ncomponents() const { return _components.number_elements();}
+    const resizable_array_p<Substructure_Atom_Specifier>& Components() const {
+      return _components;
+    }
 
     int  highest_initial_atom_number () const;
     int  highest_atom_map_number () const;
@@ -1238,6 +1264,9 @@ class Substructure_Atom : public Substructure_Atom_Specifier
 
     int number_children () const { return _children.number_elements ();}
     Substructure_Atom * child (int i) const { return _children[i];}
+    const resizable_array_p<Substructure_Atom>& Children() const {
+      return _children;
+    }
     void add_child (Substructure_Atom * s) { _children.add(s);}
 
     int number_ring_closure_bonds() const { return _bonds.number_elements();}
@@ -2911,6 +2940,9 @@ class Single_Substructure_Query
 
     int   root_atoms() const { return _root_atoms.number_elements();}
     const Substructure_Atom * root_atom(int i) const { return _root_atoms[i];}
+    const resizable_array_p<Substructure_Atom>& RootAtoms() const {
+      return _root_atoms;
+    }
     int   add_root_atom(Substructure_Atom * r) { return _root_atoms.add(r);}
 
 //  Does a particular atom match the query?

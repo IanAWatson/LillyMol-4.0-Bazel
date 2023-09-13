@@ -12,4 +12,7 @@ cc_binary(
         "-lpthread",
         "-lre2",
     ],
+    tags = [
+        "leveldb",
+    ],
 )

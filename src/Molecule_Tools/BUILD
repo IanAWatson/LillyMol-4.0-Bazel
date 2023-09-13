@@ -45,20 +45,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "molecule3d_proto",
-    srcs = [
-        "molecule3d.proto",
-    ],
-)
-
-cc_proto_library(
-    name = "molecule3d_cc_proto",
-    deps = [
-        ":molecule3d_proto",
-    ],
-)
-
-proto_library(
     name = "scaffolds_proto",
     srcs = [
         "scaffolds.proto",
@@ -103,9 +89,6 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -119,9 +102,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:atom_pair_fingerprint",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -138,8 +118,8 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "@leveldb//:leveldb",
     ],
-    linkopts = [
-        "-lz",
+    tags = [
+        "leveldb",
     ],
 )
 
@@ -255,9 +235,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -274,9 +251,6 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -317,9 +291,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
     ],
-    linkopts = [
-        "-lz"
-    ],
 )
 
 cc_binary(
@@ -335,9 +306,6 @@ cc_binary(
         "//Foundational/cmdline_v2:cmdline_v2",
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -356,6 +324,9 @@ cc_binary(
         "@com_google_protobuf//:protobuf",
         "@leveldb//:leveldb",
     ],
+    tags = [
+        "leveldb",
+    ],
 )
 
 cc_binary(
@@ -371,6 +342,9 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "@leveldb//:leveldb",
+    ],
+    tags = [
+        "leveldb",
     ],
 )
 
@@ -402,9 +376,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
     ],
-    linkopts = [
-        "-lz",
-    ]
 )
 
 cc_binary(
@@ -428,9 +399,6 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
-    ],
-    linkopts = [
-        "-lz"
     ],
 )
 
@@ -459,8 +427,8 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "@leveldb//:leveldb",
     ],
-    linkopts = [
-        "-lz",
+    tags = [
+        "leveldb",
     ],
 )
 
@@ -498,9 +466,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -520,9 +485,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -541,9 +503,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -557,9 +516,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:linear_fingerprint",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -577,9 +533,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -594,9 +547,6 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -624,9 +574,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "@com_google_protobuf//:protobuf",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 
@@ -648,9 +595,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -665,9 +609,6 @@ cc_binary(
         "//Foundational/iwaray:iwaray",
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -685,9 +626,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -703,9 +641,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
         "//Foundational/iwmisc:proto_support",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -744,22 +679,6 @@ cc_binary(
 )
 
 cc_binary(
-    name = "mol2proto",
-    srcs = [
-        "mol2proto.cc",
-    ],
-    deps = [
-        ":molecule3d_cc_proto",
-        "//Foundational/data_source:iwtfdata_record",
-        "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculeio",
-        "//Foundational/cmdline:iwcmdline",
-        "@snappy//:snappy",
-    ],
-)
-
-
-cc_binary(
     name = "msort",
     srcs = [
         "msort.cc",
@@ -769,9 +688,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -799,9 +715,6 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
         "@com_google_protobuf//:protobuf",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -814,9 +727,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -839,9 +749,6 @@ cc_binary(
         "//Utilities/GFP_Tools:gfp_standard",
         "//Utilities/GFP_Tools:sparse_collection",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -854,9 +761,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -876,9 +780,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -896,9 +797,6 @@ cc_binary(
         "//Molecule_Lib:iwreaction",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -927,9 +825,6 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -943,9 +838,6 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -967,9 +859,6 @@ cc_binary(
         "//Molecule_Lib:substructure_cc_proto",
         "@com_google_protobuf//:protobuf",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -988,9 +877,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1019,9 +905,6 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1033,9 +916,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1050,9 +930,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1065,9 +942,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1094,9 +968,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1117,9 +988,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1137,9 +1005,6 @@ cc_binary(
         "//Molecule_Lib:iwreaction",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1159,9 +1024,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1179,9 +1041,6 @@ cc_binary(
         "//Molecule_Lib:iwreaction",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1214,9 +1073,6 @@ cc_binary(
 #        "@ord_schema//:dataset_cc_proto",
 #        "@ord_schema//:reaction_cc_proto",
 #    ],
-#    linkopts = [
-#        "-lz",
-#    ]
 #)
 
 cc_binary(
@@ -1255,9 +1111,6 @@ cc_binary(
         "//Molecule_Lib:iwreaction",
         "//Molecule_Lib:moleculeio",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1270,22 +1123,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
         "//Foundational/iw_tdt:iw_tdt",
-    ],
-    linkopts = [
-        "-lz",
-    ],
-)
-
-cc_binary(
-    name = "substructure_search",
-    srcs = [
-        "substructure_search.cc",
-        "qry2cpp.cc",
-    ],
-    deps = [
-        "//Molecule_Lib:iwmolecule",
-        "//Molecule_Lib:moleculeio",
-        "//Foundational/cmdline:iwcmdline",
     ],
 )
 
@@ -1313,9 +1150,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1329,9 +1163,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:linear_fingerprint",
     ],
-    linkopts = [
-        "-lz",
-    ]
 )
 
 cc_binary(
@@ -1347,9 +1178,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:linear_fingerprint",
     ],
-    linkopts = [
-        "-lz",
-    ]
 )
 
 cc_binary(
@@ -1368,9 +1196,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1383,9 +1208,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Foundational/cmdline:iwcmdline",
-    ],
-    linkopts = [
-        "-lz"
     ],
 )
 
@@ -1405,9 +1227,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1423,9 +1242,6 @@ cc_binary(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
-    ],
-    linkopts = [
-        "-lz",
     ],
 )
 
@@ -1447,9 +1263,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
         "//Molecule_Lib:substructure_cc_proto",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_binary(
@@ -1467,8 +1280,23 @@ cc_binary(
         "@com_google_absl//absl/container:flat_hash_set",
         "//Foundational/iwstring:absl_hash",
     ],
-    linkopts = [
-        "-lz",
+)
+
+cc_binary(
+    name = "vf_substructure_search",
+    srcs = [
+        "vf_substructure_search.cc",
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:llymol_lemon",
+        "//Molecule_Lib:moleculeio",
+        "//Foundational/iwaray:iwaray",
+        "//Foundational/iwmisc:iwmisc",
+        "//Foundational/iw_tdt:iw_tdt",
+    ],
+    tags = [
+        "lemon",
     ],
 )
 
@@ -1485,6 +1313,9 @@ cc_library(
         "//Molecule_Lib:iwmolecule",
         "//Molecule_Lib:moleculeio",
         "@leveldb//:leveldb",
+    ],
+    tags = [
+        "leveldb",
     ],
 )
 
@@ -1650,6 +1481,9 @@ cc_library(
         "//Molecule_Lib:iwmolecule",
         "@leveldb//:leveldb",
     ],
+    tags = [
+        "leveldb",
+    ],
 )
 
 cc_library(
@@ -1756,9 +1590,6 @@ cc_library(
         "//Foundational/iwmisc:sparse_fp_creator",
         "//Molecule_Lib:iwmolecule",
     ],
-    linkopts = [
-        "-lz"
-    ],
 )
 
 cc_library(
@@ -1843,9 +1674,6 @@ cc_test(
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test( 
@@ -1875,9 +1703,6 @@ cc_test(
         "@googletest//:gtest",
         "//Molecule_Lib:moleculeio",
     ],
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -1892,9 +1717,6 @@ cc_test(
         "//Molecule_Lib:moleculeio",
     ],
     timeout="short",
-    linkopts = [
-        "-lz",
-    ],
 )
 
 cc_test(
@@ -1950,9 +1772,6 @@ cc_test(
         "//Molecule_Lib:moleculeio",
     ],
     timeout="short",
-    linkopts = [
-        "-lz",
-    ],
 )
 
 #cc_test(
@@ -1967,8 +1786,6 @@ cc_test(
 #        "//Molecule_Lib:moleculeio",
 #        "@googletest//:gtest_main",
 #        "@googletest//:gtest",
-#    ],
-#    linkopts = [
 #    ],
 #)
 

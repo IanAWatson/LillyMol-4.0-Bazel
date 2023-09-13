@@ -263,7 +263,7 @@ SameAtomType::ReplaceFragments(Molecule& parent,
 
   const std::unordered_map<int, int> complement_isotopes = GetIsotopicAtoms(complement);
 
-  for (const auto [usmi, value] : _usmi_to_data) {
+  for (const auto& [usmi, value] : _usmi_to_data) {
     if (usmi == parent.unique_smiles()) {
       continue;
     }
