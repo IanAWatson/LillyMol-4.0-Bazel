@@ -68,7 +68,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -94,6 +93,5 @@ cc_binary(
         "//Foundational/cmdline:iwcmdline",
     ],
     linkopts = [
-        "-lz",
     ],
 )

@@ -53,7 +53,7 @@ local_repository(
 
 new_local_repository(
   name = "leveldb",
-  path = "/home/ian/pub/leveldb",
+  path = "/home/ian/third_party/leveldb",
   build_file_content = """
 cc_library(
     name = "leveldb",
@@ -77,7 +77,7 @@ http_archive(
 
 new_local_repository(
     name = "local_highwayhash",
-    path = "/home/ian/pub/highwayhash",
+    path = "/home/ian/third_party/highwayhash",
     build_file_content = """
 cc_library(
     name = "highwayhash",

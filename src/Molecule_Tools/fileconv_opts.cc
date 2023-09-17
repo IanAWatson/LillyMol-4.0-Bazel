@@ -244,6 +244,8 @@ FileconvConfig::DefaultValues() {
 
   append_molecular_formula_to_name = 0;
 
+  append_aromatic_distinguishing_formula_to_name = 0;
+
   append_isis_molecular_formula_to_name = 0;
 
   append_nrings_to_name = 0;
@@ -623,6 +625,13 @@ FileconvConfig::DoAppends(Molecule& m, IWString& extra_stuff) {
     IWString tmp;
     m.isis_like_molecular_formula_dot_between_fragments(tmp);
     extra_stuff += tmp;
+  }
+
+  if (append_aromatic_distinguishing_formula_to_name) {
+    extra_stuff << " aMF = ";
+    IWString tmp;
+    m.formula_distinguishing_aromatic(tmp);
+    extra_stuff << tmp;
   }
 
   if (append_natoms_to_name)
@@ -4224,6 +4233,11 @@ FileconvConfig::GatherAppendSpecifications(Command_Line& cl, char flag) {
         cerr << "The ISIS-like molecular formula will be appended to the name\n";
 
       appends_to_be_done = 1;
+    } else if (p == "aMF") {
+      append_aromatic_distinguishing_formula_to_name = 1;
+      if (verbose) {
+	cerr << "Will append aromatic distinguishing molecular formula to name\n";
+      }
     } else if ("NATOMS" == p) {
       append_natoms_to_name = 1;
       if (verbose)

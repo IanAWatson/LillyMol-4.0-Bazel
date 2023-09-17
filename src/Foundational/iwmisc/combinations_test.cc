@@ -2,7 +2,6 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "google/protobuf/text_format.h"
 
 #include "combinations.h"
 

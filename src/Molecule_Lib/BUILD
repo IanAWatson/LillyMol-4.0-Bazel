@@ -576,7 +576,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -590,7 +589,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -616,7 +614,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -632,7 +629,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -648,7 +644,6 @@ cc_test(
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -678,7 +673,6 @@ cc_test(
         "//Foundational/iwmisc:sparse_fp_creator",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -695,7 +689,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ]
 )
 
@@ -752,7 +745,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ]
 )
 
@@ -768,7 +760,6 @@ cc_test(
         "@com_google_protobuf//:protobuf",
     ],
     linkopts = [
-        "-lz",
     ]
 )
 
@@ -809,7 +800,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -824,7 +814,6 @@ cc_test(
         "@googletest//:gtest_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -840,7 +829,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -856,7 +844,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -872,7 +859,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -888,7 +874,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -904,7 +889,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -920,7 +904,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -935,7 +918,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -951,7 +933,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -967,7 +948,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -983,7 +963,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -999,7 +978,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -1014,7 +992,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -1030,7 +1007,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -1046,7 +1022,6 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 

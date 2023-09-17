@@ -86,7 +86,6 @@ cc_binary(
         "//Foundational/iwmisc:iwre2",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -103,7 +102,6 @@ cc_binary(
         "//Foundational/iwstring:iwstring",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -120,7 +118,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -136,7 +133,6 @@ cc_binary(
         "//Foundational/iwmisc:iw_tabular_data",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -152,7 +148,6 @@ cc_binary(
         "//Foundational/iwmisc:iw_tabular_data",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -170,7 +165,6 @@ cc_binary(
         "//Foundational/data_source:iwstring_data_source",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -196,7 +190,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -213,7 +206,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -230,7 +222,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -246,7 +237,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -263,7 +253,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -281,7 +270,6 @@ cc_binary(
         "//Foundational/iwstring:iwstring",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -297,7 +285,6 @@ cc_binary(
         "//Foundational/iwstring:iwstring",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -314,7 +301,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -333,7 +319,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -352,7 +337,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 

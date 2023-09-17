@@ -82,6 +82,5 @@ cc_test(
         "@googletest//:gtest",
     ],
     linkopts = [
-        "-lz",
     ],
 )

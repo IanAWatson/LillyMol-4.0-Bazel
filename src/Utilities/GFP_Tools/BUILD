@@ -156,7 +156,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -207,7 +206,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -229,7 +227,6 @@ cc_binary(
         "//Foundational/iw_tdt:iw_tdt",
     ],
     linkopts = [
-        "-lz",
 #       "-L/usr/lib/llvm-11/lib/",  # clang
         "-lgomp",
     ],
@@ -249,7 +246,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -266,7 +262,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -300,7 +295,6 @@ cc_binary(
         "//Foundational/iw_tdt:iw_tdt",
     ],
     linkopts = [
-        "-lz",
 #       "-L/usr/lib/llvm-11/lib/",  # clang
         "-lgomp",
     ],
@@ -341,7 +335,6 @@ cc_binary(
         "//Foundational/histogram:iwhistogram",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -356,7 +349,6 @@ cc_binary(
         ":neighbour_list",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -392,7 +384,6 @@ cc_binary(
         ":gfp",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -406,7 +397,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -420,21 +410,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
-    ],
-)
-
-cc_binary(
-    name = "gfp_to_proto",
-    srcs = [
-        "gfp_to_proto.cc",
-    ],
-    deps = [
-        ":gfp",
-        ":gfp_cc_proto",
-        "//Foundational/data_source:iwtfdata_record",
-        "//Foundational/iwmisc:iwmisc",
-        "@snappy//:snappy",
     ],
 )
 
@@ -449,7 +424,6 @@ cc_binary(
         "//Foundational/iwmisc:activity_from_file",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -467,7 +441,6 @@ cc_binary(
         "//Molecule_Lib:moleculeio",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -495,7 +468,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -514,7 +486,6 @@ cc_binary(
         "//Utilities/General:scaler",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -532,7 +503,6 @@ cc_binary(
         "//Foundational/iwmisc:iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -554,7 +524,6 @@ cc_binary(
         "//Foundational/iwqsort:iwqsort",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -572,7 +541,6 @@ cc_binary(
         "//Foundational/iw_tdt:iw_tdt",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 

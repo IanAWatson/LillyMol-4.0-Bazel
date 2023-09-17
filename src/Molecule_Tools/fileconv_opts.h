@@ -325,6 +325,8 @@ struct FileconvConfig {
 
   int append_molecular_formula_to_name = 0;
 
+  int append_aromatic_distinguishing_formula_to_name = 0;
+
   int append_isis_molecular_formula_to_name = 0;
 
   int append_nrings_to_name = 0;

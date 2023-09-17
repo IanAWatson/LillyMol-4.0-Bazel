@@ -1635,6 +1635,9 @@ cc_test(
         "@googletest//:gtest_main",
         "@googletest//:gtest",
     ],
+    tags = [
+        "leveldb",
+    ]
 )
 
 cc_test(

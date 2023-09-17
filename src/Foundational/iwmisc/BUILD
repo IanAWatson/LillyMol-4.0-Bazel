@@ -147,7 +147,6 @@ cc_library(
         ":iwmisc",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -178,7 +177,6 @@ cc_binary(
         "//Foundational/cmdline_v2:cmdline_v2",
     ],
     linkopts = [
-        "-lz",
     ],
 )
 
@@ -216,7 +214,6 @@ cc_test  (
     ],
     linkopts = [
         "-lm",
-        "-lz",
     ],
 )
 
@@ -231,7 +228,6 @@ cc_test  (
     ],
     linkopts = [
         "-lm",
-        "-lz",
     ],
 )
 
@@ -272,7 +268,6 @@ cc_test  (
     ],
     linkopts = [
         "-lm",
-        "-lz",
     ],
 )
 
@@ -286,6 +281,5 @@ cc_test  (
         "@benchmark//:benchmark_main",
     ],
     linkopts = [
-        "-lz",
     ],
 )
