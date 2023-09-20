@@ -31,10 +31,6 @@ Mol2Graph::Mol2Graph()
 
   _remove_chiral_centres = 1;
 
-  _append_molecular_formula = 0;
-
-  _aromatic_distinguishing_formula = 0;
-
   _active = false;
 
   return;
@@ -52,11 +48,21 @@ Mol2Graph::debug_print(std::ostream & output) const
   output << " _preserve_cc_double_bonds_saturated " << _preserve_cc_double_bonds_saturated << '\n';
   output << " _preserve_cc_double_bonds_no_heteroatoms " << _preserve_cc_double_bonds_no_heteroatoms
          << '\n';
-  output << " _append_molecular_formula " << _append_molecular_formula << '\n';
-  output << " _aromatic_distinguishing_formula " << _aromatic_distinguishing_formula << '\n';
 
   return output.good();
 }
+
+void
+Mol2Graph::TurnOnMostUsefulOptions() {
+  _remove_chiral_centres = 1;
+  _exclude_triple_bonds_from_graph_reduction = 1;
+  _revert_all_directional_bonds_to_non_directional = 1;
+  _preserve_cc_double_bonds_no_heteroatoms = 1;
+  _preserve_cc_double_bonds_saturated = 1;
+
+  return;
+}
+
 
 int
 Mol2Graph::construct(Command_Line & cl, const char flag, const int verbose)

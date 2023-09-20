@@ -50,6 +50,9 @@ class Mol2Graph
     void set_append_molecular_formula (int s) { _append_molecular_formula = s;}
     void set_aromatic_distinguishing_formula(int s) { _aromatic_distinguishing_formula = s;}
     void set_remove_chiral_centres (int s) { _remove_chiral_centres = s;}
+
+    // Activate what are likely the most useful options. May change over time.
+    void TurnOnMostUsefulOptions();
 };
 
 // Do not use, prefer Mol2Graph setting.

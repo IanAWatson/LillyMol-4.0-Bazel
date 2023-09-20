@@ -783,6 +783,17 @@ cc_binary(
 )
 
 cc_binary(
+    name = "representations",
+    srcs = [
+        "representations.cc"
+    ],
+    deps = [
+        "//Molecule_Lib:iwmolecule",
+        "//Molecule_Lib:moleculeio",
+    ]
+)
+
+cc_binary(
     name = "retrosynthesis",
     srcs = [
         "retrosynthesis.cc"
