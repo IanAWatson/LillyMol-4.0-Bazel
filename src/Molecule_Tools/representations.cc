@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Foundational/cmdline/cmdline.h"
+#include "Foundational/iwstring/iwstring.h"
 
 #include "Molecule_Lib/aromatic.h"
 #include "Molecule_Lib/istream_and_type.h"
@@ -19,10 +20,11 @@ using std::cerr;
 
 void
 Usage(int rc) {
-
-  cerr << " -c                remove chirality\n";
-  cerr << " -l                strip to largest fragment\n";
-  cerr << " -v                verbose output\n";
+  cerr << R"(Generates various unique smiles forms in tabular format
+ -g ...          apply chemical standardisation before any smiles formed
+ -o <char>       output separator, space by default, try '-o tab' or '-o ,'
+ -v              verbose output
+)";
 
   ::exit(rc);
 }
@@ -90,6 +92,15 @@ Options::Initialise(Command_Line& cl) {
     _reduce_to_largest_fragment = 1;
     if (_verbose) {
       cerr << "Will reduce molecules to largest fragment\n";
+    }
+  }
+
+  if (cl.option_present('o')) {
+    cl.value('o', _output_separator);
+    if (! char_name_to_char(_output_separator)) {
+      cerr << "Invalid -o option, the following directives are understood\n";
+      char_name_to_char_usage('o');
+      return 1;
     }
   }
 
@@ -234,7 +245,7 @@ MakeRepresentations(Options& options,
 
 int
 Main(int argc, char** argv) {
-  Command_Line cl(argc, argv, "vE:A:i:g:lc");
+  Command_Line cl(argc, argv, "vE:A:i:g:lco:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "unrecognised_options_encountered\n";
     Usage(1);

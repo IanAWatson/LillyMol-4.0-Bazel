@@ -1102,13 +1102,14 @@ process_input_type(const Command_Line & cl, FileType & input_type)
     }
     else if (optval.starts_with("SDFID:"))
     {
-      const const_IWSubstring sdfid = optval.substr(6);
+      IWString sdfid = optval.substr(6);
 
-      if (0 == sdfid.length())
-      {
+      if (sdfid.empty()) {
         cerr << "The 'SDFID:' specifier must be followed by the SDF identifier\n";
         return 0;
       }
+
+      sdfid.unhtml();
 
       if (! mdlfos->set_sdf_identifier(sdfid))    // bad pattern
         return 0;
