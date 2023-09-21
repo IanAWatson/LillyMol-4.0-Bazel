@@ -11,7 +11,7 @@ class MK
   def initialize
     @rx = Regexp.new('^MK')
     @description = 'MACCS keys fingerprint'
-    @executable = 'maccskeys_fn5'
+    @executable = 'maccskeys'
   end
 
   def match?(fp) # rubocop:disable Naming/MethodParameterName

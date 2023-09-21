@@ -37,6 +37,7 @@ end
 
 verbose = 0
 is_filter = false
+ignore_connection_table_errors = false
 remaining_args = []
 argptr = 0
 all_present = false
@@ -62,6 +63,10 @@ while argptr < ARGV.size
   end
   if arg == '-f'
     is_filter = true
+    next
+  end
+  if arg == '-ICTE'
+    ignore_connection_table_errors = true
     next
   end
   remaining_args.push(arg)
@@ -177,6 +182,7 @@ fp_args.each do |fp_option|
                                                               extra_qualifiers: fp_option.value))
   cmdline[-1] << ' ' << common_options if common_options
   if first_token
+    cmdline[0] << '-i ICTE' if ignore_connection_table_errors
     first_token = false
     cmdline[-1] << " #{files}"
   else
