@@ -1759,6 +1759,7 @@ class Molecule : private resizable_array_p<Atom>
     int _set_bond_length(atom_number_t a1, atom_number_t a2,
                          distance_t d, int * either_side);
     int _set_isotope_zero(atom_number_t zatom);
+    int _append_non_periodic_table_elements_to_mf(IWString& formula) const;
 #endif  // COMPILING_MOLECULE_MAIN
 #ifdef COMPILING_CTB
   private:

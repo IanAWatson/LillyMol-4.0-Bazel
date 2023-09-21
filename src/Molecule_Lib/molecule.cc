@@ -7,6 +7,7 @@ using std::cerr;
 using std::endl;
 
 #include "Foundational/iwmisc/misc.h"
+#include "Foundational/iwstring/iw_stl_hash_map.h"
 
 #define COMPILING_CTB
 #define COMPILING_MOLECULE_MAIN
@@ -1965,6 +1966,34 @@ append_formula_symbol(IWString & formula,
   return;
 }
 
+int
+Molecule::_append_non_periodic_table_elements_to_mf(IWString& formula) const {
+  IW_STL_Hash_Map_int ecount;
+  for (int i = 0; i < _number_elements; ++i) {
+    if (_things[i]->element()->is_in_periodic_table()) {
+      continue;
+    }
+    if (auto iter = ecount.find(_things[i]->atomic_symbol()); iter == ecount.end()) {
+      ecount[_things[i]->atomic_symbol()] = 1;
+    } else {
+      ++iter->second;
+    }
+  }
+
+  if (ecount.empty()) {
+    return 0;
+  }
+
+  for (const auto& [symbol, count] : ecount) {
+    formula << '[' << symbol << ']';
+    if (count > 1) {
+      formula << count;
+    }
+  }
+
+  return ecount.size();
+}
+
 IWString
 Molecule::molecular_formula() 
 {
@@ -2423,18 +2452,11 @@ Molecule::isis_like_molecular_formula(IWString & f)
 
 // Don't forget any non-periodic table elements. We don't handle multiple instances gracefully
   
-  for (int i = 0; i < _number_elements && completed < _number_elements; i++)
-  {
-    const Element * e = _things[i]->element();
-
-    if (e->is_in_periodic_table())
-      continue;
-
-    append_formula_symbol(f, e->symbol(), 1);
-    completed++;
+  if (non_periodic_table_atoms_present == 0 && completed == _number_elements) {
+    return 1;
   }
 
-  return 1;
+  return _append_non_periodic_table_elements_to_mf(f);
 }
 
 static int
@@ -2609,6 +2631,10 @@ Molecule::formula_distinguishing_aromatic(IWString & f)
 
   if (arom_string.length())
     f << 'a' << arom_string;
+
+  if (non_periodic_table_atoms_present) {
+    _append_non_periodic_table_elements_to_mf(f);
+  }
 
   return 1;
 }
