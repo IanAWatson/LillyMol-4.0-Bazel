@@ -131,13 +131,20 @@ int InDatabase(const char * fname,
 }
 
 int InDatabase(int argc, char ** argv) {
-  Command_Line cl(argc, argv, "vA:g:clGi:d:r:F:U:o:");
+  Command_Line cl(argc, argv, "vA:E:g:clG:i:d:r:F:U:o:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
     usage(1);
   }
 
   verbose = cl.option_count('v');
+
+  if (cl.option_present('E')) {
+    if (! process_elements(cl, verbose, 'E')) {
+      cerr << "Cannot process elements (-E)\n";
+      return 1;
+    }
+  }
 
   if (cl.option_present('A')) {
     if (! process_standard_aromaticity_options(cl, verbose, 'A')) {

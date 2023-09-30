@@ -235,7 +235,9 @@ Options::BuildSmiDb(Molecule& m) {
 
   if (mol2graph.active()) {
     // TOTO(ianiwatson@gmail.com) Implement graph processing...
-    cerr << "Implement graph storage sometime\n";
+    Molecule tmp(m);
+    tmp.change_to_graph_form(mol2graph);
+    return BuildSmiDb(tmp.unique_smiles(), m.name());
     return 0;
   }
 
@@ -288,10 +290,19 @@ Options::BuildSmiDb(const char * fname,
 }
 
 int BuildSmiDb(int argc, char ** argv) {
-  Command_Line cl(argc, argv, "vA:g:clGi:d:r:aQ:");
+  Command_Line cl(argc, argv, "vA:E:g:clG:i:d:r:aQ:");
   if (cl.unrecognised_options_encountered()) {
     cerr << "Unrecognised options encountered\n";
     Usage(1);
+  }
+
+  verbose = cl.option_count('v');
+
+  if (cl.option_present('E')) {
+    if (! process_elements(cl, verbose, 'E')) {
+      cerr << "Cannot process elements (-E)\n";
+      return 1;
+    }
   }
 
   Options options;
