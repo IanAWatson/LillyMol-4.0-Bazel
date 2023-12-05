@@ -273,7 +273,7 @@ MaxCommonSubstructure(const DicerApi& dicer_api,
   uint32_t bit1 = fp1.bit_count()[iptr].bit;
   uint32_t bit2 = fp2.bit_count()[jptr].bit;
   int in_common = 0;
-  do
+  do {
     if (bit1 == bit2) {
       ++iptr;
       ++jptr;
@@ -282,9 +282,9 @@ MaxCommonSubstructure(const DicerApi& dicer_api,
         bit2 = fp2.bit_count()[jptr].bit;
       }
     } else {
+      // implement this...
     }
-
-  } while (iptr < nb1 && jptr < nb2);
+  } while (true);
 
   return 1;
 }
