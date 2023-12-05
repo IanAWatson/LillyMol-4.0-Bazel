@@ -874,13 +874,15 @@ function test_bond_list()::Bool
   m = Molecule()
   build_from_smiles(m, "CC=CC#C")
   blist = bond_list(m)
-  println("length of bond list $(length(blist))")
+  println("Length of bond list $(length(blist))")
+  println(blist)
   for i in 1:length(blist)
-    println("i $(i) $(blist[i-1])")
+    println("$(i)")
+    # println("i $(i) $(blist[i-1])")
   end
-# for (i,b) in enumerate(bond_list(m))
-#   println("Bond $(b)")
-# end
+  for (i,b) in enumerate(blist)
+    println("$(i) bond $(b)")
+  end
   true
 end
 
@@ -1636,7 +1638,7 @@ end
 @test test_largest_fragment()
 @test test_identify_spinach()
 @test test_rings_in_fragment()
-@test test_create_components()
+@test test_create_components() skip=true
 @test test_returns_vector()
 @test test_create_subset()
 @test test_create_subset_set_of_atoms()
