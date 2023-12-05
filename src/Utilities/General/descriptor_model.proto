@@ -13,6 +13,10 @@ message Model {
 
   optional string response = 2;
 
-  repeated NameToFeature xref = 3;
+  // repeated NameToFeature xref = 3;
+
+  // A mapping from feature name, in the header record, to feature
+  // number.
+  map<string, uint32> name_to_feature = 4;
 }
 

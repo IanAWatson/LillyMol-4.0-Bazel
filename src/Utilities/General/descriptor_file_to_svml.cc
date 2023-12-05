@@ -33,6 +33,10 @@ class Options {
 
     char _input_separator;
 
+    // Are we creating a new cross reference (-C) or using a previously
+    // generated file (-U).
+    int _create_new;
+
     // The activity might be in a column of the name.
     int _activity_column;
 
@@ -45,8 +49,10 @@ class Options {
     DescriptorModel::Model _proto;
 
     // when using an existing cross reference proto we need a cross reference from
-    // columns in the current input to columns in the output.
-    uint32_t* _column_xref;
+    // columns in the current input to feature numbers.
+    uint32_t* _column_to_feature_number;
+
+    int _add_id;
 
   // private functions
     int ReadActivityData(const const_IWSubstring& fname);
@@ -57,6 +63,8 @@ class Options {
 
     int AnalyseHeaderCreateNew(const const_IWSubstring& header);
     int AnalyseHeaderUsePrevious(const const_IWSubstring& header);
+    int ProcessRecordUseExisting(const const_IWSubstring& buffer,
+                       IWString_and_File_Descriptor& output);
 
   public:
     Options();
@@ -82,12 +90,13 @@ Options::Options() {
   _input_separator = ' ';
   _activity_column = 1;
   _missing_value = '.';
-  _column_xref = nullptr;
+  _column_to_feature_number = nullptr;
+  _add_id = 0;
 }
 
 Options::~Options() {
-  if (_column_xref != nullptr) {
-    delete [] _column_xref;
+  if (_column_to_feature_number != nullptr) {
+    delete [] _column_to_feature_number;
   }
 }
 
@@ -97,6 +106,15 @@ Options::Initialise(Command_Line& cl) {
 
   if (! cl.option_present('A')) {
     cerr << "Activity file not specified (-A) assuming test set processing\n";
+  }
+
+  if (cl.option_present('C')) {
+    _create_new = 1;
+  } else if (cl.option_present('U')) {
+    _create_new = 0;
+  } else {
+    cerr << "Must specify either -C (create new) or -U (use existing) option\n";
+    return 0;
   }
 
   if (cl.option_present('A')) {
@@ -169,6 +187,7 @@ Options::ReadActivityData(iwstring_data_source& input) {
   return _id_to_activity.size();
 }
 
+// Extract the _activity_column field from `header` and set _proto.response.
 int
 Options::GetResponseName(const const_IWSubstring& header) {
   int i = 0;
@@ -231,7 +250,7 @@ Options::ReadFeatures(IWString& fname) {
 
 int
 Options::AnalyseHeader(const const_IWSubstring& header) {
-  if (_proto.xref().size() > 0) {
+  if (_proto.name_to_feature().size() > 0) {
     return AnalyseHeaderUsePrevious(header);
   } else {
     return AnalyseHeaderCreateNew(header);
@@ -248,26 +267,45 @@ Options::AnalyseHeaderCreateNew(const const_IWSubstring& header) {
     return 0;
   }
 
+  // retart `col` at zero so feature numbers start with 0.
   for (int col = 0; header.nextword(token, i, _input_separator); ++col) {
-    auto* x = _proto.mutable_xref()->Add();
-    x->set_bit(col);
-    x->set_name(token.data(), token.length());
+    const std::string feature_name(token.data(), token.length());
+    (*_proto.mutable_name_to_feature())[feature_name] = col;
   }
 
-  return _proto.xref().size();
+  return _proto.name_to_feature().size();
 }
 
-// We are reading a test set and can use the data in _proto to set up the
-// column cross reference.
+// We are reading a test set and can use the data in _proto to set up
+// _column_to_feature_number.
 int
 Options::AnalyseHeaderUsePrevious(const const_IWSubstring& header) {
+  const int ncol = header.nwords(_input_separator);
+  _column_to_feature_number = new uint32_t[ncol];
+
+  const_IWSubstring token;
+  int i = 0;
+  for (int col = 0; header.nextword(token, i, _input_separator); ++col) {
+    if (col == 0) {
+      continue;
+    }
+
+    std::string feature_name(token.data(), token.length());
+    auto iter = _proto.name_to_feature().find(feature_name);
+    if (iter == _proto.name_to_feature().end()) {
+      cerr << "Options::AnalyseHeaderUsePrevious:unrecognised feature " << token << "'\n";
+      return 0;
+    }
+    _column_to_feature_number[col - 1] = iter->second;
+  }
+
   return 1;
 }
 
 int 
 Options::ProcessRecord(const const_IWSubstring& buffer,
                        IWString_and_File_Descriptor& output) {
-  if (_proto.xref().size() > 0) {
+  if (! _create_new) {
     return ProcessRecordUseExisting(buffer, output);
   }
 
@@ -305,20 +343,32 @@ Options::ProcessRecord(const const_IWSubstring& buffer,
 int 
 Options::ProcessRecordUseExisting(const const_IWSubstring& buffer,
                        IWString_and_File_Descriptor& output) {
+  assert (_column_to_feature_number != nullptr);
+
+  IWString id;
+
   int i = 0;
-  const_IWSubstring token;
-  if (! buffer.nextword(token, i, _input_separator)) {
+  if (! buffer.nextword(id, i, _input_separator)) {
     cerr << "Options:ProcessRecordUseExisting:empty record\n";
     return 0;
   }
 
-  output << "0 ";
+  output << "0";
+
+  static const char kSpace = ' ';
+
+  const_IWSubstring token;
   for (int col = 0; buffer.nextword(token, i, _input_separator); ++col) {
-    auto iter = _proto.xref().find(col);
-    if (iter == _proto.xref().end()) {
-      continue;
-    }
+    output << kSpace << _column_to_feature_number[col] << ':' << token;
   }
+
+  if (_add_id) {
+    output << " # " << id;
+  }
+
+  output << '\n';
+
+  output.write_if_buffer_holds_more_than(8192);
 
   return 1;
 }

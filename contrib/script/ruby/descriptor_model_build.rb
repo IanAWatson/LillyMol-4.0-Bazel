@@ -63,41 +63,49 @@ end
 # `activity_fname` is a descriptor file holding the activity data.
 # We return the response name.
 def convert_to_libsvm(verbose, descriptor_file, activity_fname, destination_fname)
-  activity = {}
-  response_name = ''
-  File.readlines(activity_fname).each do |line|
-    if response_name.empty?
-      response_name = line.chomp.split[1]
-      next
-    end
-    f = line.chomp.split
-    activity[f[0]] = f[1]
-  end
+  cmd = "descriptor_file_to_svml -A #{activity_fname} #{descriptor_file} > #{destination_fname}"
+  return nil unless execute_cmd(cmd, verbose, [destination_fname])
 
-  $stderr << "Read #{activity.size} activity values from #{activity_fname}\n" if verbose
-  File.open(destination_fname, 'w') do |destination|
-    first_line = true
-    File.readlines(descriptor_file).each do |line|
-      if first_line
-        first_line = false
-        next
-      end
-      f = line.chomp.split
-      unless activity.key?(f[0])
-        $stderr << "No activity for #{f[0]}\n"
-        return false
-      end
-      destination << activity[f[0]]
-      # $stderr << "id #{f[0]} activity #{activity[f[0]]}\n"
+  # Fetch first line from file.
+  header = File.open(activity_fname, "r").first
+  return header.split[0]
 
-      f[1..].each_with_index do |token, ndx|
-        destination << " #{ndx + 1}:#{token}"
-      end
-      destination << "\n"
-    end
-  end
-
-  response_name
+# This works, but c++ based tool is better.
+#  activity = {}
+#  response_name = ''
+#  File.readlines(activity_fname).each do |line|
+#    if response_name.empty?
+#      response_name = line.chomp.split[1]
+#      next
+#    end
+#    f = line.chomp.split
+#    activity[f[0]] = f[1]
+#  end
+#
+#  $stderr << "Read #{activity.size} activity values from #{activity_fname}\n" if verbose
+#  File.open(destination_fname, 'w') do |destination|
+#    first_line = true
+#    File.readlines(descriptor_file).each do |line|
+#      if first_line
+#        first_line = false
+#        next
+#      end
+#      f = line.chomp.split
+#      unless activity.key?(f[0])
+#        $stderr << "No activity for #{f[0]}\n"
+#        return false
+#      end
+#      destination << activity[f[0]]
+#      # $stderr << "id #{f[0]} activity #{activity[f[0]]}\n"
+#
+#      f[1..].each_with_index do |token, ndx|
+#        destination << " #{ndx + 1}:#{token}"
+#      end
+#      destination << "\n"
+#    end
+#  end
+#
+# response_name
 end
 
 # A model file has been created in `mdir`. return the name.
@@ -170,7 +178,7 @@ def main
   end
 
   scripts = cl.values('desc')
-  scripts << 'iwdescr -O all' if scripts.empty?
+  scripts << 'iwdescr -g all -l -O all' if scripts.empty?
 
   descriptors = Tempfile.new('descriptor_model')
   dpath = descriptors.path
